@@ -15,7 +15,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authedReq).pipe(
     catchError(err => {
-      if (err.status === 401 && !req.url.includes('/auth/login') && !req.url.includes('/auth/register')) {
+      // 401 = the session is gone (no token, expired, or revoked server-side
+      // — the backend now returns a real 401 for all three, audit H1/H2).
+      // Clear it and bounce to /login. A 403 is "logged in, wrong role" and
+      // must NOT log the user out. Never react to a failure on /auth/* — a
+      // bad login is a 401 that the login page handles itself.
+      const isAuthEndpoint = req.url.includes('/auth/');
+      if (err.status === 401 && !isAuthEndpoint) {
         authService.logout();
         router.navigate(['/login']);
       }

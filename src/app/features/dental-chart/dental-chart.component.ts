@@ -286,6 +286,11 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     // defs — legal SVG, and it keeps every status pattern generated from one
     // place (core/clinical/tooth-status.ts) instead of hand-drawn per chart.
     const withPatterns = raw.replace('<defs>', `${odontogramPatternDefs()}<defs>`);
+    // Safe to bypass sanitisation here: both inputs are build-time constants —
+    // ADULT_SVG / CHILD_SVG and odontogramPatternDefs() (from
+    // core/clinical/tooth-status.ts) — with no patient or user data anywhere
+    // in the string. Do not let any runtime value into `withPatterns` without
+    // sanitising it first (audit L2).
     this.svgContent = this.sanitizer.bypassSecurityTrustHtml(withPatterns);
   }
 

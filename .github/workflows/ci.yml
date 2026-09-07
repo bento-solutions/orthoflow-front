@@ -11,10 +11,10 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
@@ -29,7 +29,7 @@ jobs:
         run: npx ng test --watch=false
 
       - name: Dependency vulnerability scan
-        run: npm audit --audit-level=critical
+        run: npm audit --audit-level=high
         continue-on-error: true
 
       - name: Build image (no push) to catch Dockerfile regressions
@@ -45,8 +45,8 @@ jobs:
     if: github.event_name == 'pull_request'
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - name: Dependency review
-        uses: actions/dependency-review-action@v5
+        uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high

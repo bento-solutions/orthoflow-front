@@ -47,6 +47,9 @@ export interface SessionSummary {
   totalFindings: number;
 }
 
+/** Sessions abandoned automatically after this period of voice inactivity. */
+const SESSION_TIMEOUT_MS = 45 * 60 * 1000; // 45 minutes
+
 @Injectable({ providedIn: 'root' })
 export class VoiceSessionService {
   private api = inject(VoiceApiService);
@@ -73,6 +76,36 @@ export class VoiceSessionService {
 
   isActive = computed(() => this.sessionSignal()?.status === 'ACTIVE');
 
+  /** Timer handle — reset on each voice command, fires on prolonged inactivity. */
+  private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Call this whenever voice activity happens inside an active session so the
+   * timeout clock resets. The orchestrator should call this after every
+   * command executes.
+   */
+  touchSession(): void {
+    if (!this.isActive()) return;
+    this.armSessionTimeout();
+  }
+
+  private armSessionTimeout(): void {
+    this.clearSessionTimeout();
+    this.timeoutHandle = setTimeout(() => {
+      if (this.isActive()) {
+        console.warn('[VoiceSession] Session timed out after inactivity — abandoning.');
+        void this.abandon();
+      }
+    }, SESSION_TIMEOUT_MS);
+  }
+
+  private clearSessionTimeout(): void {
+    if (this.timeoutHandle !== null) {
+      clearTimeout(this.timeoutHandle);
+      this.timeoutHandle = null;
+    }
+  }
+
   async start(): Promise<VoiceSessionDto> {
     const snapshot = this.context.snapshot();
     const session = await firstValueFrom(this.api.startSession(snapshot.patientId, snapshot.locale));
@@ -82,11 +115,6 @@ export class VoiceSessionService {
     this.narrativeErrorSignal.set(null);
     this.orchestrator.resetBuffer();
     this.context.setSessionId(session.id);
-
-    // The crash-resilience half of buffering. Everything is also audited
-    // server-side, so this is a convenience for resuming rather than the only
-    // copy — but it is what lets the dentist pick up where they left off
-    // instead of re-dictating.
     if (snapshot.patientId) {
       await this.buffer.begin({
         sessionId: session.id,
@@ -96,6 +124,7 @@ export class VoiceSessionService {
         startedAt: Date.now(),
       });
     }
+    this.armSessionTimeout();
     return session;
   }
 
@@ -112,6 +141,7 @@ export class VoiceSessionService {
     const session = this.sessionSignal();
     if (!session) return;
 
+    this.clearSessionTimeout();
     this.busySignal.set(true);
     try {
       this.orchestrator.stopListening();
@@ -232,14 +262,17 @@ export class VoiceSessionService {
     }
   }
 
-  /** Sign-off. Freezes the summary as reviewed. */
-  async confirm(): Promise<void> {
+  /** Sign-off. Freezes the summary as reviewed. Optionally appends clinician remarks. */
+  async confirm(clinicianNotes: string | null = null): Promise<void> {
     const session = this.sessionSignal();
     const summary = this.summarySignal();
     if (!session) return;
+    const summaryWithNotes = summary
+      ? { ...summary, clinicianNotes: clinicianNotes ?? '' }
+      : null;
     await firstValueFrom(this.api.completeSession(session.id, {
       status: 'COMPLETED',
-      summary: summary ? JSON.stringify(summary) : undefined,
+      summary: summaryWithNotes ? JSON.stringify(summaryWithNotes) : undefined,
       confirmed: true,
     }));
     this.summaryOpenSignal.set(false);
@@ -248,6 +281,7 @@ export class VoiceSessionService {
   async abandon(): Promise<void> {
     const session = this.sessionSignal();
     if (!session) return;
+    this.clearSessionTimeout();
     // ABANDONED marks the dictation as not reviewed. It does not remove
     // anything already written — those are clinical records with their own
     // audit trail, and a session ending untidily is not grounds to delete them.

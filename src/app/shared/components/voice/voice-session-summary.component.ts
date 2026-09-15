@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { VoiceSessionService } from '../../../core/voice/voice-session.service';
 import { ToastService } from '../../../core/services/toast.service';
 
@@ -16,7 +17,7 @@ import { ToastService } from '../../../core/services/toast.service';
 @Component({
   selector: 'app-voice-session-summary',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     @if (session.summaryOpen() && session.summary(); as summary) {
       <div class="summary-backdrop" (click)="session.closeSummary()">
@@ -129,6 +130,22 @@ import { ToastService } from '../../../core/services/toast.service';
             @if (summary.totalFindings === 0 && summary.notes.length === 0 && summary.allergies.length === 0) {
               <p class="empty">Nothing was recorded in this examination.</p>
             }
+
+            <!-- Editable clinician remarks — appended to the summary on confirm -->
+            <section class="notes-section">
+              <h3>Clinician remarks</h3>
+              <p class="notes-hint">
+                Optional free-text notes that will be saved with this consultation.
+              </p>
+              <textarea
+                class="notes-input"
+                [(ngModel)]="clinicianNotes"
+                name="clinicianNotes"
+                rows="4"
+                placeholder="Add any remarks, treatment plan notes, or follow-up instructions…"
+                aria-label="Clinician remarks"
+              ></textarea>
+            </section>
           </div>
 
           <footer class="summary-footer">
@@ -203,6 +220,20 @@ import { ToastService } from '../../../core/services/toast.service';
     .allergy .material-icons { font-size: 1rem; }
     .empty { color: rgb(var(--ink-500)); font-size: 0.875rem; text-align: center; padding: 1.5rem 0; }
 
+    .notes-section { margin-top: 0.25rem; padding-top: 1rem; border-top: 1px solid rgb(var(--ink-200)); }
+    .notes-hint { margin: 0 0 0.5rem; font-size: 0.75rem; color: rgb(var(--ink-500)); line-height: 1.45; }
+    .notes-input {
+      width: 100%; box-sizing: border-box;
+      border: 1px solid rgb(var(--ink-300)); border-radius: 8px;
+      padding: 0.5rem 0.625rem; font-size: 0.875rem; font-family: inherit;
+      color: rgb(var(--ink-900)); line-height: 1.5; resize: vertical;
+    }
+    .notes-input:focus {
+      outline: 2px solid rgb(var(--petrol-300)); outline-offset: -1px;
+      border-color: rgb(var(--petrol-400));
+    }
+    .notes-input::placeholder { color: rgb(var(--ink-400)); }
+
     .summary-footer { border-top: 1px solid rgb(var(--ink-200)); padding: 0.875rem 1.5rem 1.25rem; }
     .footer-note { margin: 0 0 0.75rem; font-size: 0.75rem; color: rgb(var(--ink-500)); line-height: 1.45; }
     .footer-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
@@ -213,11 +244,14 @@ export class VoiceSessionSummaryComponent {
   private toast = inject(ToastService);
 
   confirming = signal(false);
+  /** Free-text remarks the doctor can append before signing off. */
+  clinicianNotes = '';
 
   async confirm(): Promise<void> {
     this.confirming.set(true);
     try {
-      await this.session.confirm();
+      await this.session.confirm(this.clinicianNotes.trim() || null);
+      this.clinicianNotes = '';
       this.toast.success('Consultation confirmed.');
     } catch {
       this.toast.error('The consultation could not be marked as confirmed. The records themselves are saved.');

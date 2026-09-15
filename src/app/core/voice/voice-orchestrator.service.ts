@@ -8,6 +8,7 @@ import { SpeechFeedbackService } from './speech-feedback.service';
 import { VoiceContextService } from './voice-context.service';
 import { VoiceCommandRegistryService } from './voice-command-registry.service';
 import { VoiceApiService } from './voice-api.service';
+import { VoiceSessionService } from './voice-session.service';
 import { resolveWithGrammar } from './voice-grammar';
 import { repairClinicalTerms } from './voice-fuzzy';
 import { detectWake, isStopPhrase, FOLLOW_UP_WINDOW_MS, WAKE_WORD } from './voice-wake';
@@ -120,6 +121,7 @@ export class VoiceOrchestratorService {
   private registry = inject(VoiceCommandRegistryService);
   private api = inject(VoiceApiService);
   private toast = inject(ToastService);
+  private sessionService = inject(VoiceSessionService);
 
   private stateSignal = signal<VoiceState>('idle');
   private transcriptSignal = signal('');
@@ -687,6 +689,7 @@ export class VoiceOrchestratorService {
       );
 
       if (result.ok) {
+        this.sessionService.touchSession();
         this.context.rememberWrite({
           commandId: command.id,
           targetType: result.targetType ?? 'unknown',

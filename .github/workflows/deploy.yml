@@ -56,6 +56,9 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -69,5 +72,5 @@ jobs:
 
       - name: Deploy frontend to the VPS
         run: |
-          ssh "${{ secrets.DEPLOY_SSH_HOST }}" \
+          ssh -o ConnectTimeout=30 -o ServerAliveInterval=15 "${{ secrets.DEPLOY_SSH_HOST }}" \
             "GHCR_LOGIN_USER='${{ github.actor }}' GHCR_LOGIN_TOKEN='${{ secrets.GITHUB_TOKEN }}' /srv/bento/apps/ortho/deploy.sh front '${{ needs.build.outputs.tag }}'"

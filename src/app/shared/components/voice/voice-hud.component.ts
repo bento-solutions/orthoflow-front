@@ -178,16 +178,35 @@ import { SpeechFeedbackService } from '../../../core/voice/speech-feedback.servi
 
         <!-- Control bar -->
         <div class="hud-bar">
-          <button type="button"
-                  class="mic-btn"
-                  [class.listening]="voice.isListening()"
-                  [class.session]="voice.examinationMode()"
-                  [disabled]="!voice.isSupported()"
-                  (click)="toggleMic()"
-                  [attr.aria-label]="voice.isListening() ? 'Stop listening' : 'Start listening'"
-                  [title]="micTitle()">
-            <span class="material-icons">{{ voice.isListening() ? 'mic' : 'mic_none' }}</span>
-          </button>
+          <div class="mic-wrap">
+            <button type="button"
+                    class="mic-btn"
+                    [class.listening]="voice.isListening()"
+                    [class.session]="voice.examinationMode()"
+                    [class.processing]="voice.state() === 'processing' || voice.state() === 'executing'"
+                    [disabled]="!voice.isSupported()"
+                    (click)="toggleMic()"
+                    [attr.aria-label]="voice.isListening() ? 'Stop listening' : 'Start listening'"
+                    [title]="micTitle()">
+              <span class="material-icons">{{ voice.isListening() ? 'mic' : 'mic_none' }}</span>
+            </button>
+
+            <!-- Waveform: shown only while listening -->
+            @if (voice.isListening()) {
+              <div class="waveform" aria-hidden="true">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+              </div>
+            }
+
+            <!-- Processing spinner: shown while the NLU or execute is running -->
+            @if (voice.state() === 'processing' || voice.state() === 'executing') {
+              <div class="proc-ring" aria-hidden="true"></div>
+            }
+          </div>
 
           <button type="button" class="bar-label" (click)="expanded.set(!expanded())">
             <span class="dot" [attr.data-state]="voice.state()"></span>
@@ -338,16 +357,49 @@ import { SpeechFeedbackService } from '../../../core/voice/speech-feedback.servi
       box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.22);
     }
 
+    .mic-wrap {
+      position: relative; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+
     .mic-btn {
       width: 2.25rem; height: 2.25rem; border-radius: 50%; border: none; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      background: rgb(var(--ink-900)); color: #fff; flex-shrink: 0; transition: background 0.15s;
+      background: rgb(var(--ink-900)); color: #fff; transition: background 0.15s;
+      position: relative; z-index: 1;
     }
     .mic-btn:hover:not(:disabled) { background: rgb(var(--ink-700)); }
     .mic-btn:disabled { background: rgb(var(--ink-300)); cursor: not-allowed; }
     .mic-btn.listening { background: rgb(var(--critical-600)); animation: mic-pulse 1.6s ease-in-out infinite; }
     .mic-btn.session { background: rgb(var(--critical-600)); }
+    .mic-btn.processing { background: rgb(var(--petrol-600)); }
     .mic-btn .material-icons { font-size: 1.25rem; }
+
+    /* Animated waveform: five bars that bounce at staggered delays */
+    .waveform {
+      position: absolute; left: calc(100% + 0.375rem);
+      display: flex; align-items: center; gap: 2px; height: 1.25rem;
+    }
+    .bar {
+      width: 3px; border-radius: 999px;
+      background: rgb(var(--critical-500));
+      animation: bar-bounce 0.9s ease-in-out infinite;
+    }
+    .bar:nth-child(1) { height: 0.4rem; animation-delay: 0s; }
+    .bar:nth-child(2) { height: 0.75rem; animation-delay: 0.1s; }
+    .bar:nth-child(3) { height: 1.1rem; animation-delay: 0.2s; }
+    .bar:nth-child(4) { height: 0.7rem; animation-delay: 0.3s; }
+    .bar:nth-child(5) { height: 0.45rem; animation-delay: 0.4s; }
+
+    /* Processing/executing ring spinner around the mic button */
+    .proc-ring {
+      position: absolute; inset: -3px; border-radius: 50%;
+      border: 2px solid transparent;
+      border-top-color: rgb(var(--petrol-500));
+      border-right-color: rgb(var(--petrol-300));
+      animation: spin 0.8s linear infinite;
+      pointer-events: none;
+    }
 
     .bar-label {
       flex: 1; display: flex; align-items: center; gap: 0.375rem;
@@ -373,8 +425,15 @@ import { SpeechFeedbackService } from '../../../core/voice/speech-feedback.servi
       0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5); }
       50% { box-shadow: 0 0 0 0.5rem rgba(220, 38, 38, 0); }
     }
+    @keyframes bar-bounce {
+      0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
+      50%       { transform: scaleY(1.3); opacity: 1; }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
     @media (prefers-reduced-motion: reduce) {
-      .mic-btn.listening { animation: none; }
+      .mic-btn.listening, .bar, .proc-ring { animation: none; }
     }
   `],
 })

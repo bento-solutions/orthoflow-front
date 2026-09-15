@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, Injector, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ToastService } from '../services/toast.service';
 import { SpeechRecognitionService } from './speech-recognition.service';
@@ -121,7 +121,11 @@ export class VoiceOrchestratorService {
   private registry = inject(VoiceCommandRegistryService);
   private api = inject(VoiceApiService);
   private toast = inject(ToastService);
-  private sessionService = inject(VoiceSessionService);
+  private injector = inject(Injector);
+
+  private get sessionService(): VoiceSessionService {
+    return this.injector.get(VoiceSessionService);
+  }
 
   private stateSignal = signal<VoiceState>('idle');
   private transcriptSignal = signal('');

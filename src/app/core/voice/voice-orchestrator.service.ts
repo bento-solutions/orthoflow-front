@@ -1,5 +1,5 @@
 import { Injectable, Injector, computed, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 import { ToastService } from '../services/toast.service';
 import { SpeechRecognitionService } from './speech-recognition.service';
 import { AudioCaptureService } from './audio-capture.service';
@@ -7,13 +7,23 @@ import { SessionBufferService } from './session-buffer.service';
 import { SpeechFeedbackService } from './speech-feedback.service';
 import { VoiceContextService } from './voice-context.service';
 import { VoiceCommandRegistryService } from './voice-command-registry.service';
-import { VoiceApiService } from './voice-api.service';
+import { TranscriptionDto, VoiceApiService } from './voice-api.service';
 import { VoiceSessionService } from './voice-session.service';
 import { resolveWithGrammar } from './voice-grammar';
 import { repairClinicalTerms } from './voice-fuzzy';
-import { detectWake, isStopPhrase, FOLLOW_UP_WINDOW_MS, WAKE_WORD } from './voice-wake';
-import { allFindingCodes } from './clinical-lexicon';
+import { detectWake, isSelfEvidentDictation, isStopPhrase, stripWakeWord, FOLLOW_UP_WINDOW_MS } from './voice-wake';
+import { allFindingCodes, extractFindings, findingLabel } from './clinical-lexicon';
 import { describeFdi, resolveTooth } from './tooth-lexicon';
+import { WORD_END } from './voice-regex';
+import {
+  PhraseKey,
+  Spoken,
+  phrase,
+  speechHints,
+  spokenConfirmation,
+  spokenLanguage,
+  spokenQuestion,
+} from './voice-vocabulary';
 import {
   CommandOutcome,
   ConfirmationStatus,
@@ -23,37 +33,43 @@ import {
   VoiceIntent,
   VoiceResolution,
   entityString,
+  stagedFindingCodes,
 } from './voice-intent.model';
 
 /**
  * The pipeline, and the place every safety rule is actually enforced:
  *
- *   capture → transcribe → wake gate → grammar → fuzzy repair
- *           → (NLU fallback) → context resolution → validation → risk gate
- *           → buffer or execute → visual + spoken feedback → audit → undo
+ *   capture → transcribe (verbatim + normalized) → wake gate → grammar
+ *           → fuzzy repair → tooth guard → (NLU fallback) → validation
+ *           → risk gate → buffer or execute → visual + spoken feedback
+ *           → audit → undo
  *
  * Nothing downstream of this service ever sees a transcript. It hands a
  * registered command a validated argument object and nothing else, which is
  * what keeps a misrecognition bounded.
  *
- * Three stages carry most of the reliability, and they were the three that
- * were missing:
+ * **Two readings per clip.** The recogniser returns what was said and the
+ * same words respelled into the command vocabulary ("dent seize, carie
+ * récurente" → "dent 16, carie récurrente"). The normalized reading is parsed
+ * first because it is the one the grammar can match; the verbatim reading is
+ * the fallback, the audit record, and the check on the normalized one — a
+ * normalized tooth number the verbatim transcript contradicts becomes a
+ * question, never a finding on a different tooth.
  *
- * **Wake gate.** Dictation is hands-free, so the microphone is open for the
- * whole examination and hears the patient too. Only utterances addressed to
- * the system — prefixed with the wake word, or inside the window one opens —
- * are treated as commands. See `voice-wake.ts`.
+ * **Wake gate.** The microphone is open for the whole examination and hears
+ * the patient too. Only speech addressed to the system is a command: prefixed
+ * with the wake word, inside the window one opens, or dictation that names a
+ * tooth and a finding outright. See `voice-wake.ts`.
  *
- * **Fuzzy repair.** The grammar is regex and therefore exact, so "recurrence
- * caries" failed where "recurrent caries" succeeded, and the command was lost
- * even though the transcription was faithful. A miss is now repaired against
- * the lexicon's own vocabulary and retried before anything else happens. See
- * `voice-fuzzy.ts`.
+ * **Order.** Clips are transcribed concurrently but handled in the order they
+ * were spoken. "Calypso" and "dent 16, carie" arriving the wrong way round
+ * would otherwise have the command rejected for want of a wake word said
+ * before it.
  *
  * **Buffering.** A clinical write is staged as a PENDING audit row and left
  * there. Nothing reaches the clinical tables until the dentist has reviewed
- * the consultation and committed it, so "undo" during dictation is just a
- * buffer edit and cannot leave a half-written record behind.
+ * the consultation and committed it, so "undo" during dictation is a buffer
+ * edit and cannot leave a half-written record behind.
  */
 
 export type VoiceState =
@@ -108,8 +124,51 @@ const CONFIDENCE_FLOOR = 0.7;
 /** How long an Undo affordance stays offered (audit XII.4 §4). */
 const UNDO_WINDOW_MS = 12_000;
 
-const AFFIRMATIVE = /^(?:yes|yeah|yep|confirm(?:ed)?|correct|ok(?:ay)?|right|do\s+it|go\s+ahead|save\s+it|oui|confirme[rz]?|d'accord|exact|valide[rz]?|na'?am|أجل|نعم)\b/iu;
-const NEGATIVE = /^(?:no|nope|cancel|wrong|stop|discard|forget\s+it|don'?t|non|annule[rz]?|faux|laisse\s+tomber|la|لا)\b/iu;
+/** A clip whose transcription has not come back by then is given up on. */
+const TRANSCRIBE_TIMEOUT_MS = 20_000;
+
+/** Failed clips in a row before the failure is also spoken. */
+const FAILURES_BEFORE_SPEAKING = 2;
+
+const AFFIRMATIVE = new RegExp(
+  `^(?:yes|yeah|yep|confirm(?:ed)?|correct|ok(?:ay)?|right|do\\s+it|go\\s+ahead|save\\s+it|oui|ouais|`
+  + `confirme[rz]?|d['’]?\\s?accord|exact(?:ement)?|valide[rz]?|c['’]?\\s?est\\s+(?:bon|ça|ca)|parfait|vas[- ]y|`
+  + `na['’]?am|أجل|نعم)${WORD_END}`,
+  'iu',
+);
+
+/**
+ * "La" is Darija for no, and also the French article in "la seize" — the
+ * answer to "which tooth?". It only counts as a refusal on its own.
+ */
+const NEGATIVE = new RegExp(
+  `^(?:(?:no|nope|cancel|wrong|stop|discard|forget\\s+it|don['’]?t|non|annule[rz]?|faux|pas\\s+(?:ça|ca)|`
+  + `laisse\\s+tomber)${WORD_END}|(?:la|لا)[\\s.!]*$)`,
+  'iu',
+);
+
+function distinct(values: Array<string | null | undefined>): string[] {
+  const out: string[] = [];
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed && !out.includes(trimmed)) out.push(trimmed);
+  }
+  return out;
+}
+
+function describeTranscriptionError(error: string): string {
+  if (error === 'stt-http-429') {
+    return 'The speech service quota is used up (HTTP 429) — check the Gemini API plan. Repeat, or type the command.';
+  }
+  if (/^stt-http-5\d\d$/.test(error) || error === 'stt-timeout') {
+    return 'The speech service is overloaded right now. Repeat, or type the command.';
+  }
+  if (error === 'stt-http-400' || error === 'stt-http-401' || error === 'stt-http-403' || error === 'stt-http-404') {
+    return `The speech service refused the request (${error}) — the server configuration needs checking.`;
+  }
+  if (error === 'stt-non-transcript-response') return 'That clip could not be transcribed. Repeat it.';
+  return `Speech recognition failed (${error}). Repeat, or type the command.`;
+}
 
 @Injectable({ providedIn: 'root' })
 export class VoiceOrchestratorService {
@@ -129,6 +188,7 @@ export class VoiceOrchestratorService {
 
   private stateSignal = signal<VoiceState>('idle');
   private transcriptSignal = signal('');
+  private normalizedSignal = signal<string | null>(null);
   private interpretationSignal = signal<string | null>(null);
   private confirmationSignal = signal<PendingConfirmation | null>(null);
   private clarificationSignal = signal<VoiceClarification | null>(null);
@@ -138,13 +198,18 @@ export class VoiceOrchestratorService {
   private examinationModeSignal = signal(false);
   private errorSignal = signal<string | null>(null);
   private bufferedSignal = signal<BufferedEntry[]>([]);
-  private awakeUntilSignal = signal<number | null>(null);
+  private lastAcceptedAtSignal = signal<number | null>(null);
   private ignoredSignal = signal<string | null>(null);
+  private pendingClipsSignal = signal(0);
+  private transcriptionIssueSignal = signal<string | null>(null);
+  private speechPausedSignal = signal(false);
 
   state = this.stateSignal.asReadonly();
-  /** Final transcript of the last utterance, for the "I heard…" line. */
+  /** Verbatim transcript of the last utterance, for the "heard" line. */
   transcript = this.transcriptSignal.asReadonly();
-  /** Live partial text, so the doctor can see the microphone is working. */
+  /** The vocabulary-normalized reading, when it differs from what was heard. */
+  normalizedTranscript = this.normalizedSignal.asReadonly();
+  /** Live partial text from the browser recogniser fallback. */
   interimTranscript = this.speech.interimTranscript;
   /** The resolved reading, in application terms — never an echo of the words. */
   interpretation = this.interpretationSignal.asReadonly();
@@ -156,41 +221,57 @@ export class VoiceOrchestratorService {
   undoAvailable = this.undoSignal.asReadonly();
   examinationMode = this.examinationModeSignal.asReadonly();
   error = this.errorSignal.asReadonly();
-  /** Findings dictated but not yet committed — what the review page will show. */
+  /** Findings dictated but not yet committed — what review will show. */
   buffered = this.bufferedSignal.asReadonly();
   /**
-   * The last utterance the wake gate declined. Shown faintly in the HUD so a
-   * dentist whose wake word is being misheard can see that the microphone is
-   * working and the system simply did not consider itself addressed — the
-   * alternative is a mute HUD that looks broken.
+   * The last utterance the wake gate declined. Shown faintly so a dentist
+   * whose wake word is being misheard can see the microphone is working and
+   * the system simply did not consider itself addressed.
    */
   ignoredUtterance = this.ignoredSignal.asReadonly();
-  /** True while a bare utterance would still be taken as a command. */
-  awake = computed(() => {
-    const until = this.awakeUntilSignal();
-    return until !== null && until > Date.now();
+  /** Clips recorded and still being transcribed. */
+  pendingTranscriptions = this.pendingClipsSignal.asReadonly();
+  /** Why recent clips produced nothing, when they failed rather than were silent. */
+  transcriptionIssue = this.transcriptionIssueSignal.asReadonly();
+
+  /** When the follow-up window closes, or null while it is shut. */
+  awakeUntil = computed(() => {
+    const at = this.lastAcceptedAtSignal();
+    return at === null ? null : at + FOLLOW_UP_WINDOW_MS;
   });
 
-  isListening = computed(() => this.speech.status() === 'listening');
-  isSupported = computed(() => this.speech.isSupported());
-  recognitionIsLocal = computed(() => this.speech.recognitionIsLocal());
+  isListening = computed(() => this.capture.isActive() || this.speech.status() === 'listening');
+  /** 0–1 microphone level. */
+  inputLevel = this.capture.level;
+  /** True while the capture service is recording an utterance. */
+  userSpeaking = this.capture.speaking;
+  /** Listening is paused; the microphone stays open. */
+  paused = computed(() => this.capture.paused() || this.speechPausedSignal());
+  /** The OS suspended audio (a call, the screen locking) — a tap brings it back. */
+  microphoneSuspended = computed(() => this.capture.status() === 'suspended');
+  isSupported = computed(() => this.capture.isSupported() || this.speech.isSupported());
+
+  /** Whether this browser can record audio for server transcription at all. */
+  captureSupported(): boolean {
+    return this.capture.isSupported();
+  }
   /** True until the clinician has opted in to the microphone being opened. */
-  needsConsent = computed(() => this.speech.status() === 'consent-required');
+  needsConsent = computed(() => !this.speech.consented());
 
   grantMicrophoneConsent(): void {
     this.speech.grantConsent();
   }
 
   revokeMicrophoneConsent(): void {
+    this.stopListening();
     this.speech.revokeConsent();
-    this.examinationModeSignal.set(false);
     this.stateSignal.set('idle');
   }
 
   private undoTimer: ReturnType<typeof setTimeout> | null = null;
   private wired = false;
 
-  /** Set by VoiceSessionService so session commands can call back into it. */
+  /** Set by VoiceCommandsService so session commands can call back into it. */
   sessionHooks: {
     start: () => Promise<void>;
     end: () => Promise<void>;
@@ -204,59 +285,92 @@ export class VoiceOrchestratorService {
     this.speech.setResultHandler(result => {
       void this.handleTranscript(result.transcript, result.confidence);
     });
-    this.capture.setUtteranceHandler(clip => {
-      void this.transcribeAndHandle(clip);
-    });
+    this.capture.setUtteranceHandler(clip => this.transcribeClip(clip));
     this.wired = true;
   }
 
   /**
-   * One recorded utterance, transcribed server-side and fed into the same
-   * pipeline a typed or browser-recognised one takes.
+   * Opens the microphone, paused, for a session about to start.
    *
-   * A transcription that fails is not an error the dentist should see: it
-   * means this clip produced nothing, and the next one probably will. The
-   * exception is a persistent failure, which surfaces once the fallback
-   * recogniser has also had a turn.
+   * **Call synchronously from the tap that starts the session**, before
+   * awaiting the server — iOS only lets audio start inside the gesture, and
+   * the gesture does not survive the round trip that creates the session.
    */
-  private async transcribeAndHandle(clip: Blob): Promise<void> {
-    const snapshot = this.context.snapshot();
-    try {
-      const response = await firstValueFrom(this.api.transcribe(
-        clip,
-        // ISO-639-1, which is what the server passes to the provider; the
-        // context holds a BCP-47 tag.
-        snapshot.locale.split('-')[0],
-        this.biasPrompt(snapshot),
-      ));
-
-      if (response.error || !response.text.trim()) {
-        if (response.error && response.error !== 'stt-disabled') {
-          // Worth knowing about in development; not worth interrupting a
-          // consultation over.
-          console.warn(`Transcription unavailable (${response.error}).`);
-        }
-        return;
-      }
-      await this.handleTranscript(response.text, 1);
-    } catch {
-      // Network or auth failure. The utterance is lost; the session continues.
-      console.warn('Transcription request failed.');
-    }
+  openMicrophone(): Promise<boolean> {
+    this.wire();
+    this.errorSignal.set(null);
+    if (this.needsConsent() || !this.capture.isSupported()) return Promise.resolve(false);
+    return this.capture.start({ paused: true });
   }
 
   /**
-   * Spelling hints for the recogniser — names and terms it would otherwise
-   * mangle. Used for spelling only; it never becomes part of the transcript.
+   * Continuous dictation for the length of an examination.
+   *
+   * Server-side capture is the primary path: the clip goes to a recogniser
+   * told it is hearing French/English dental dictation and which command
+   * words to prefer. The browser's own recogniser is only used where audio
+   * cannot be captured at all, or the server has transcription switched off.
    */
-  private biasPrompt(snapshot: VoiceContextSnapshot): string {
-    const parts = [WAKE_WORD];
-    if (snapshot.patientName) parts.push(snapshot.patientName);
-    if (snapshot.selectedFdi) parts.push(`dent ${snapshot.selectedFdi}`);
-    return parts.join(', ');
+  async startExaminationMode(): Promise<void> {
+    this.wire();
+    this.errorSignal.set(null);
+    this.ignoredSignal.set(null);
+    this.transcriptionIssueSignal.set(null);
+    this.transcriptionFailures = 0;
+    if (this.needsConsent()) {
+      this.reportError('Enable the microphone first.');
+      return;
+    }
+
+    // Capture is tried whenever the browser has no recogniser of its own,
+    // too, because it is the path that explains *why* the microphone will not
+    // open (an http:// address, a blocked permission).
+    if (this.capture.isSupported() || !this.speech.isSupported()) {
+      if (!(await this.capture.start())) {
+        this.reportError(this.capture.lastError() ?? 'Could not open the microphone.');
+        return;
+      }
+      this.capture.setPaused(false);
+    } else if (!this.speech.start(this.context.locale(), true)) {
+      this.reportError(this.speech.lastError() ?? 'Could not start listening.');
+      return;
+    }
+
+    this.speechPausedSignal.set(false);
+    this.examinationModeSignal.set(true);
+    this.stateSignal.set('listening');
+    this.announce(true, 'Session started — say "Calypso" before a command.', this.say('sessionStarted'));
   }
 
-  /** One utterance, then stop. The default and the safer mode. */
+  /** Stops acting on speech without releasing the microphone. */
+  setPaused(paused: boolean): void {
+    if (this.capture.isActive()) {
+      this.capture.setPaused(paused);
+    } else if (this.examinationModeSignal()) {
+      if (paused) this.speech.stop();
+      else this.speech.start(this.context.locale(), true);
+      this.speechPausedSignal.set(paused);
+    }
+    if (paused) this.lastAcceptedAtSignal.set(null);
+    this.settle();
+  }
+
+  /** Brings back audio the OS suspended. Must be called from a tap. */
+  resumeMicrophone(): void {
+    void this.capture.resume();
+  }
+
+  stopListening(): void {
+    this.capture.stop();
+    this.speech.stop();
+    this.examinationModeSignal.set(false);
+    this.speechPausedSignal.set(false);
+    this.lastAcceptedAtSignal.set(null);
+    this.ignoredSignal.set(null);
+    if (this.stateSignal() === 'listening') this.stateSignal.set('idle');
+  }
+
+  /** One utterance through the browser recogniser, then stop (⌘⇧V). */
   listenOnce(): void {
     this.wire();
     this.errorSignal.set(null);
@@ -268,47 +382,9 @@ export class VoiceOrchestratorService {
     this.stateSignal.set('listening');
   }
 
-  /**
-   * Continuous dictation for the length of an examination.
-   *
-   * Server-side capture is the primary path: the clip goes to a recogniser
-   * that can be told it is hearing French-with-Darija dental dictation, which
-   * is the difference between "carie récurrente" arriving intact and arriving
-   * as something plausible-sounding. The browser's own recogniser remains as
-   * a fallback for when the microphone cannot be opened for recording, or the
-   * server has transcription switched off — a degraded session beats none.
-   *
-   * Never entered implicitly. The caller is always a deliberate press of
-   * Record, and the HUD shows an unmissable listening state throughout.
-   */
-  async startExaminationMode(): Promise<void> {
-    this.wire();
-    this.errorSignal.set(null);
-    this.ignoredSignal.set(null);
-    if (this.needsConsent()) return;
-
-    if (await this.capture.start()) {
-      this.examinationModeSignal.set(true);
-      this.stateSignal.set('listening');
-      this.announce(true, `Session started. Say "${WAKE_WORD}" before a command.`);
-      return;
-    }
-
-    if (!this.speech.start(this.context.locale(), true)) {
-      this.reportError(this.capture.lastError() ?? this.speech.lastError() ?? 'Could not start listening.');
-      return;
-    }
-    this.examinationModeSignal.set(true);
-    this.stateSignal.set('listening');
-  }
-
-  stopListening(): void {
-    this.capture.stop();
-    this.speech.stop();
-    this.examinationModeSignal.set(false);
-    this.awakeUntilSignal.set(null);
-    this.ignoredSignal.set(null);
-    if (this.stateSignal() === 'listening') this.stateSignal.set('idle');
+  toggleListening(): void {
+    if (this.isListening()) this.stopListening();
+    else this.listenOnce();
   }
 
   /** Discards the buffer without committing — an abandoned examination. */
@@ -321,9 +397,96 @@ export class VoiceOrchestratorService {
     this.bufferedSignal.set(entries);
   }
 
-  toggleListening(): void {
-    if (this.isListening()) this.stopListening();
-    else this.listenOnce();
+  // ── Transcription ───────────────────────────────────────────────────
+
+  private clipSequence = 0;
+  private nextClipToHandle = 0;
+  private transcribed = new Map<number, { result: TranscriptionDto | null; inSession: boolean }>();
+  private draining = false;
+  private transcriptionFailures = 0;
+
+  private transcribeClip(clip: Blob): void {
+    const sequence = this.clipSequence++;
+    // Read when the clip was recorded, not when its transcript returns: the
+    // last clip of a session is flushed as the session ends.
+    const inSession = this.examinationModeSignal();
+    const snapshot = this.context.snapshot();
+    this.pendingClipsSignal.update(count => count + 1);
+
+    firstValueFrom(
+      this.api.transcribe(clip, snapshot.locale.split('-')[0], speechHints(snapshot))
+        .pipe(timeout(TRANSCRIBE_TIMEOUT_MS)),
+    )
+      .catch(() => null)
+      .then(result => {
+        this.transcribed.set(sequence, { result, inSession });
+        void this.drainTranscriptions();
+      });
+  }
+
+  private async drainTranscriptions(): Promise<void> {
+    if (this.draining) return;
+    this.draining = true;
+    try {
+      while (this.transcribed.has(this.nextClipToHandle)) {
+        const { result, inSession } = this.transcribed.get(this.nextClipToHandle)!;
+        this.transcribed.delete(this.nextClipToHandle);
+        this.nextClipToHandle++;
+        this.pendingClipsSignal.update(count => Math.max(0, count - 1));
+        await this.acceptTranscription(result, inSession);
+      }
+    } finally {
+      this.draining = false;
+    }
+  }
+
+  /**
+   * A failed clip is not silent any more. It used to be a console warning,
+   * which on a phone meant a microphone that looked dead: every clip failed
+   * and nothing on screen said so.
+   */
+  private async acceptTranscription(result: TranscriptionDto | null, inSession: boolean): Promise<void> {
+    // The session ended while this clip was in flight; it must not be staged
+    // into a consultation that is already in review.
+    if (inSession && !this.sessionService.isActive()) return;
+
+    if (!result) {
+      this.noteTranscriptionFailure('The speech service did not answer — check the connection. Repeat, or type the command.');
+      return;
+    }
+    if (result.error) {
+      if (result.error === 'stt-disabled' || result.error === 'stt-not-configured') {
+        this.fallBackToBrowserRecognition();
+        return;
+      }
+      this.noteTranscriptionFailure(describeTranscriptionError(result.error));
+      return;
+    }
+
+    this.transcriptionFailures = 0;
+    this.transcriptionIssueSignal.set(null);
+    if (!result.text.trim()) return;
+    await this.handleTranscript(result.text, 1, result.normalized ?? null, inSession);
+  }
+
+  private noteTranscriptionFailure(message: string): void {
+    this.transcriptionFailures++;
+    this.transcriptionIssueSignal.set(message);
+    console.warn(`Voice: ${message}`);
+    if (this.transcriptionFailures === FAILURES_BEFORE_SPEAKING) {
+      this.feedback.speak(this.say('sttDown').text, this.say('sttDown').locale);
+    }
+  }
+
+  private fallBackToBrowserRecognition(): void {
+    if (!this.examinationModeSignal()) return;
+    this.capture.stop();
+    if (this.speech.isSupported() && this.speech.start(this.context.locale(), true)) {
+      this.transcriptionIssueSignal.set(
+        'Server transcription is switched off — using the browser\'s own recogniser, which is less accurate on dental terms.');
+      return;
+    }
+    this.reportError('Server transcription is switched off and this browser has no recogniser of its own. Type commands instead.');
   }
 
   // ── The pipeline ────────────────────────────────────────────────────
@@ -332,107 +495,187 @@ export class VoiceOrchestratorService {
    * Entry point for an utterance, whether spoken or typed. Typed input goes
    * through exactly the same path — which is what makes the whole system
    * testable without a microphone, and usable when recognition is unavailable.
+   *
+   * @param normalized the recogniser's vocabulary-normalized reading, if any
+   * @param gated whether the wake gate applies; true for everything heard
+   *   during a session, false for typed commands and one-shot listening
    */
-  async handleTranscript(transcript: string, recognitionConfidence = 1): Promise<void> {
-    const text = transcript.trim();
-    if (!text) return;
+  async handleTranscript(
+    transcript: string,
+    recognitionConfidence = 1,
+    normalized: string | null = null,
+    gated = this.examinationModeSignal(),
+  ): Promise<void> {
+    const heard = transcript.trim();
+    const cleaned = normalized?.trim() || null;
+    const said = heard || cleaned;
+    if (!said) return;
+    const readings = distinct([cleaned, said]);
 
-    this.transcriptSignal.set(text);
+    this.transcriptSignal.set(said);
+    this.normalizedSignal.set(cleaned && cleaned !== said ? cleaned : null);
     this.errorSignal.set(null);
 
     // A pending question owns the next utterance. Answering it must not be
     // reinterpreted as a fresh command.
     if (this.confirmationSignal()) {
-      await this.answerConfirmation(text);
+      await this.answerConfirmation(said, readings, gated);
       return;
     }
     if (this.clarificationSignal()) {
-      await this.answerClarification(text, recognitionConfidence);
+      await this.answerClarification(said, recognitionConfidence, cleaned, gated);
       return;
     }
 
     // Ending the session is honoured without the wake word. A dentist whose
-    // wake word is being misheard in a noisy surgery must still be able to
-    // stop by voice, and stopping writes nothing.
-    if (this.examinationModeSignal() && isStopPhrase(text)) {
-      this.awakeUntilSignal.set(null);
+    // wake word is being misheard must still be able to stop by voice.
+    if (gated && readings.some(reading => isStopPhrase(reading))) {
+      this.lastAcceptedAtSignal.set(null);
       await this.sessionHooks?.end();
       return;
     }
 
-    // Only speech addressed to the system is a command. During an
-    // examination the microphone hears the patient too, and "j'ai mal à la
-    // dent du fond" is a plausible finding and an implausible instruction.
-    if (this.examinationModeSignal()) {
-      const wake = detectWake(text, this.awakeUntilSignal(), Date.now());
-      if (!wake.addressed) {
-        this.ignoredSignal.set(text);
-        this.stateSignal.set('listening');
+    if (gated) {
+      const addressed = this.addressedCommand(readings);
+      if (!addressed) {
+        this.ignoredSignal.set(said);
+        this.settle();
         return;
       }
       this.ignoredSignal.set(null);
-      // A bare wake word with nothing after it opens the floor and waits.
-      if (!wake.command) {
+      // A bare wake word opens the floor and waits.
+      if (!addressed.primary) {
         this.touchWakeWindow();
-        this.stateSignal.set('listening');
+        this.settle();
         return;
       }
-      await this.resolveAndApply(wake.command, recognitionConfidence);
+      await this.resolveAndApply(addressed.primary, addressed.alternate, recognitionConfidence, said);
       return;
     }
 
-    await this.resolveAndApply(text, recognitionConfidence);
+    await this.resolveAndApply(readings[0], readings[1] ?? null, recognitionConfidence, said);
+  }
+
+  /**
+   * The command in an utterance addressed to the system, in both readings,
+   * or null when the utterance was not addressed to it.
+   */
+  private addressedCommand(readings: string[]): { primary: string; alternate: string | null } | null {
+    const now = Date.now();
+    const wakes = readings.map(reading => detectWake(reading, this.lastAcceptedAtSignal(), now));
+
+    // Either reading being a bare wake word makes the utterance one: the
+    // other reading is the recogniser's guess at the same single word.
+    if (wakes.some(wake => wake.reason === 'wake-word' && !wake.command)) {
+      return { primary: '', alternate: null };
+    }
+
+    const dentition = this.context.dentition();
+    const addressed = wakes.some(wake => wake.addressed)
+      || readings.some(reading => isSelfEvidentDictation(reading, dentition));
+    if (!addressed) return null;
+
+    const commands = distinct(readings.map((reading, index) =>
+      wakes[index].reason === 'wake-word' ? wakes[index].command : (stripWakeWord(reading) ?? reading)));
+    return { primary: commands[0] ?? '', alternate: commands[1] ?? null };
   }
 
   /**
    * Grammar, then fuzzy repair, then the LLM — in that order, because each is
    * an order of magnitude more expensive than the last and catches what the
-   * previous one could not.
+   * previous one could not. Each stage tries the normalized reading first.
    */
-  private async resolveAndApply(text: string, recognitionConfidence: number): Promise<void> {
+  private async resolveAndApply(
+    primary: string,
+    alternate: string | null,
+    recognitionConfidence: number,
+    heard: string,
+  ): Promise<void> {
     this.stateSignal.set('processing');
-    this.context.rememberUtterance(text);
+    this.context.rememberUtterance(heard);
+    this.sessionService.touchSession();
 
     const snapshot = this.context.snapshot();
-    let resolution = resolveWithGrammar(text, snapshot);
+    const readings = distinct([primary, alternate]);
+    let resolution: VoiceResolution = { kind: 'unrecognized', transcript: primary };
     let corrections: { from: string; to: string }[] = [];
+    let resolvedFrom = primary;
 
-    // A near miss — "recurrence caries" for "recurrent caries" — used to die
-    // here, however faithful the transcription was. Repairing against the
-    // lexicon's own vocabulary costs about a millisecond and rescues most of
-    // them without a round trip. Numbers are never repaired: a fuzzy tooth
-    // number is the one error that survives review looking correct.
-    // A clarification counts as a miss here too: "sixteen recurrence caries"
-    // resolves the tooth and then has to ask which finding, because the word
-    // was one letter out. Repairing it turns the question into the command
-    // the dentist actually gave. Only an outright intent is accepted from the
-    // retry — a repair that merely produces a different question has not
-    // understood anything and should not displace the original.
-    if (resolution.kind === 'unrecognized' || resolution.kind === 'clarification') {
-      // The grammar arbitrates between close candidates — it is the only
-      // thing that knows which repaired word actually parses.
-      const repair = repairClinicalTerms(
-        text,
-        candidate => resolveWithGrammar(candidate, snapshot).kind === 'intent',
-      );
-      if (repair.corrections.length > 0) {
+    for (const reading of readings) {
+      const attempt = resolveWithGrammar(reading, snapshot);
+      if (attempt.kind === 'intent') {
+        resolution = attempt;
+        resolvedFrom = reading;
+        break;
+      }
+      if (attempt.kind === 'clarification' && resolution.kind === 'unrecognized') {
+        resolution = attempt;
+        resolvedFrom = reading;
+      }
+    }
+
+    // A near miss — "recurrence caries" for "recurrent caries" — is repaired
+    // against the lexicon's own vocabulary and retried. Numbers are never
+    // repaired: a fuzzy tooth number is the one error that survives review
+    // looking correct. Only an outright intent is accepted from the retry.
+    if (resolution.kind !== 'intent') {
+      for (const reading of readings) {
+        const repair = repairClinicalTerms(reading, candidate => resolveWithGrammar(candidate, snapshot).kind === 'intent');
+        if (repair.corrections.length === 0) continue;
         const retried = resolveWithGrammar(repair.text, snapshot);
         if (retried.kind === 'intent') {
           resolution = retried;
           corrections = repair.corrections;
+          resolvedFrom = reading;
+          break;
         }
       }
     }
 
-    // Only what neither could parse is worth the round trip, and only if a
-    // provider is configured.
-    if (resolution.kind === 'unrecognized') {
-      resolution = await this.consultNlu(text, snapshot);
+    if (resolution.kind === 'intent' && resolvedFrom !== heard) {
+      resolution = this.guardTooth(resolution, heard, snapshot);
     }
+
+    // Only what neither could parse is worth the round trip.
+    if (resolution.kind === 'unrecognized') {
+      resolution = await this.consultNlu(primary, snapshot);
+    }
+
+    // What the dentist said is what the audit trail and the review page keep.
+    if (resolution.kind === 'intent') resolution.intent.transcript = heard;
+    if (resolution.kind === 'clarification') resolution.clarification.transcript = heard;
 
     this.pendingCorrections = corrections;
     await this.applyResolution(resolution, snapshot, recognitionConfidence);
     this.pendingCorrections = [];
+  }
+
+  /**
+   * The normalized reading may respell words; it may not move a finding.
+   * When the verbatim transcript names a tooth, the resolved command has to
+   * be about the same tooth, or the dentist is asked which one they meant.
+   */
+  private guardTooth(
+    resolution: Extract<VoiceResolution, { kind: 'intent' }>,
+    heard: string,
+    snapshot: VoiceContextSnapshot,
+  ): VoiceResolution {
+    const fdi = entityString(resolution.intent.entities, 'fdi');
+    if (!fdi) return resolution;
+    const spoken = resolveTooth(stripWakeWord(heard) ?? heard, snapshot.dentition);
+    if (spoken.kind !== 'resolved' || spoken.fdi === fdi) return resolution;
+
+    return {
+      kind: 'clarification',
+      clarification: {
+        question: `Tooth ${spoken.fdi} or tooth ${fdi}?`,
+        options: [spoken.fdi, fdi].map(code => ({ value: code, label: `${code} — ${describeFdi(code)}` })),
+        transcript: heard,
+        pendingIntent: resolution.intent.intent,
+        pendingEntities: resolution.intent.entities,
+        awaiting: 'fdi',
+      },
+    };
   }
 
   /** Terms repaired for the utterance currently being dispatched. */
@@ -444,7 +687,13 @@ export class VoiceOrchestratorService {
    * once.
    */
   private touchWakeWindow(): void {
-    this.awakeUntilSignal.set(Date.now() + FOLLOW_UP_WINDOW_MS);
+    this.lastAcceptedAtSignal.set(Date.now());
+  }
+
+  /** Back to listening during a session, idle otherwise. */
+  private settle(): void {
+    if (this.stateSignal() === 'error') return;
+    this.stateSignal.set(this.examinationModeSignal() && !this.paused() ? 'listening' : 'idle');
   }
 
   private async consultNlu(text: string, snapshot: VoiceContextSnapshot): Promise<VoiceResolution> {
@@ -479,15 +728,7 @@ export class VoiceOrchestratorService {
       }
       return { kind: 'unrecognized', transcript: text };
     } catch {
-      // A failed interpretation must not look like "understood, did nothing".
-      return {
-        kind: 'clarification',
-        clarification: {
-          question: 'I couldn\'t interpret that just now. Could you say it again?',
-          options: [],
-          transcript: text,
-        },
-      };
+      return { kind: 'unrecognized', transcript: text };
     }
   }
 
@@ -502,8 +743,8 @@ export class VoiceOrchestratorService {
     }
     if (resolution.kind === 'unrecognized') {
       this.interpretationSignal.set(null);
-      this.stateSignal.set('idle');
-      this.announce(false, 'I didn\'t understand that. Say "help" to hear what I can do here.');
+      this.settle();
+      this.announce(false, `No command recognised in “${resolution.transcript}”.`, this.say('notUnderstood'));
       await this.audit(
         { intent: 'unknown', entities: {}, confidence: 0, resolver: 'grammar', transcript: resolution.transcript },
         snapshot, 'SAFE', 'PENDING', 'CLARIFICATION', { errorMessage: 'No matching command' },
@@ -517,7 +758,10 @@ export class VoiceOrchestratorService {
     this.clarificationSignal.set(clarification);
     this.interpretationSignal.set(null);
     this.stateSignal.set('awaiting-clarification');
-    this.announce(false, clarification.question);
+    // A question opens the floor: the answer needs no wake word.
+    this.touchWakeWindow();
+    this.announce(false, clarification.question,
+      spokenQuestion(clarification.question, spokenLanguage(snapshot.locale)));
     void this.audit(
       {
         intent: clarification.pendingIntent ?? 'clarification',
@@ -539,8 +783,8 @@ export class VoiceOrchestratorService {
     const command = this.registry.get(intent.intent);
 
     if (!command) {
-      this.stateSignal.set('idle');
-      this.announce(false, 'I can\'t do that from this screen.');
+      this.settle();
+      this.announce(false, 'That can\'t be done by voice from here.');
       await this.audit(intent, snapshot, 'SAFE', 'REJECTED', 'REJECTED',
         { errorMessage: `Unknown or out-of-scope command: ${intent.intent}` });
       return;
@@ -549,7 +793,7 @@ export class VoiceOrchestratorService {
     // Never by voice. The assistant acknowledges and points at the screen
     // rather than pretending it did not hear (audit XII.4 §3).
     if (command.risk === 'BLOCKED') {
-      this.stateSignal.set('idle');
+      this.settle();
       const message = `That one needs to be done on screen — ${command.description.toLowerCase()} `
         + 'is deliberately not available by voice.';
       this.announce(false, message);
@@ -558,10 +802,16 @@ export class VoiceOrchestratorService {
     }
 
     if (command.requiresPatient && !snapshot.patientId) {
-      this.stateSignal.set('idle');
+      this.settle();
       this.announce(false, 'Open a patient\'s dossier first, then say that again.');
       await this.audit(intent, snapshot, command.risk, 'REJECTED', 'REJECTED',
         { errorMessage: 'No patient in context' });
+      return;
+    }
+
+    // "Enlève la carie sur la seize" during a session nearly always means the
+    // caries dictated a moment ago, not one already on the record.
+    if (command.id === 'chart.removeFinding' && await this.removeFromBuffer(intent)) {
       return;
     }
 
@@ -583,13 +833,7 @@ export class VoiceOrchestratorService {
     const combinedConfidence = intent.confidence * recognitionConfidence;
 
     // A clinical write is staged on the server as a PENDING audit row and
-    // left there. Nothing reaches the clinical tables during the examination:
-    // the dentist reviews the whole consultation afterwards, corrects what was
-    // misheard, removes what does not belong, and commits once.
-    //
-    // The audit row is written immediately even so. It is what survives a
-    // closed tab, and it is the record of what was said regardless of what is
-    // eventually saved.
+    // left there until the dentist reviews and commits the consultation.
     if (command.risk === 'CONFIRM' && command.serverIntent) {
       const serverEntities = command.toServerEntities
         ? command.toServerEntities(intent.entities, snapshot)
@@ -602,10 +846,9 @@ export class VoiceOrchestratorService {
 
       if (!auditId) {
         // Without a staged row there is nothing the commit could execute, and
-        // buffering it client-side only would lose it on a crash — the exact
-        // failure the audit row exists to prevent.
-        this.stateSignal.set('idle');
-        this.announce(false, 'I couldn\'t record that safely, so nothing was staged. Try again.');
+        // buffering it client-side only would lose it on a crash.
+        this.settle();
+        this.announce(false, 'That couldn\'t be recorded safely, so nothing was staged. Say it again.', this.say('notStaged'));
         return;
       }
 
@@ -618,18 +861,7 @@ export class VoiceOrchestratorService {
         corrections: this.pendingCorrections,
         at: Date.now(),
       };
-      this.bufferedSignal.update(entries => [...entries, entry]);
-      if (snapshot.sessionId) {
-        void this.buffer.append(snapshot.sessionId, {
-          auditId: entry.auditId,
-          intent: entry.intent,
-          entities: entry.entities,
-          transcript: entry.transcript,
-          preview: entry.preview,
-          corrections: entry.corrections,
-          at: entry.at,
-        });
-      }
+      this.stage(entry, snapshot.sessionId);
 
       this.context.rememberWrite({
         commandId: command.id,
@@ -642,12 +874,13 @@ export class VoiceOrchestratorService {
       this.offerUndo(`Undo: ${preview}`, () => this.discardBuffered(auditId), auditId);
 
       this.touchWakeWindow();
-      this.stateSignal.set('listening');
-      this.outcomeSignal.set({ ok: true, message: preview, at: Date.now() });
+      this.settle();
       // Spoken because the dentist is not looking at the screen. The resolved
-      // values, never an echo of the words — reading back what was heard
-      // proves nothing about what was understood.
-      this.announce(true, this.correctionAwarePreview(preview));
+      // values, never an echo of the words.
+      const language = spokenLanguage(snapshot.locale);
+      const spoken = spokenConfirmation(command.serverIntent, serverEntities, language)
+        ?? { text: preview, locale: 'en-US' };
+      this.announce(true, preview, this.withCorrections(spoken, language));
       return;
     }
 
@@ -655,11 +888,20 @@ export class VoiceOrchestratorService {
     if (combinedConfidence < CONFIDENCE_FLOOR) {
       this.confirmationSignal.set({ intent, command, preview, reason: 'low-confidence' });
       this.stateSignal.set('awaiting-confirmation');
+      this.touchWakeWindow();
+      // The preview is English, so the whole prompt is spoken in one voice.
       this.announce(false, `${preview}. Confirm?`);
       return;
     }
 
     await this.run(command, intent, snapshot, 'AUTO');
+  }
+
+  private stage(entry: BufferedEntry, sessionId: string | null): void {
+    this.bufferedSignal.update(entries => [...entries, entry]);
+    if (sessionId) {
+      void this.buffer.append(sessionId, { ...entry });
+    }
   }
 
   private async run(
@@ -670,7 +912,7 @@ export class VoiceOrchestratorService {
   ): Promise<void> {
     this.stateSignal.set('executing');
     if (!command.execute) {
-      this.stateSignal.set('idle');
+      this.settle();
       this.announce(false, 'That command can\'t run from here.');
       return;
     }
@@ -693,7 +935,7 @@ export class VoiceOrchestratorService {
       );
 
       if (result.ok) {
-        this.sessionService.touchSession();
+        this.touchWakeWindow();
         this.context.rememberWrite({
           commandId: command.id,
           targetType: result.targetType ?? 'unknown',
@@ -706,13 +948,13 @@ export class VoiceOrchestratorService {
         if (result.undo) this.offerUndo(result.message, result.undo, auditEntry);
       }
 
+      this.settle();
       this.announce(result.ok, result.message);
-      this.stateSignal.set('idle');
     } catch (error) {
       const message = this.describeFailure(error);
       this.outcomeSignal.set({ ok: false, message, at: Date.now() });
+      this.settle();
       this.announce(false, message);
-      this.stateSignal.set('idle');
       await this.audit(intent, snapshot, command.risk, confirmation, 'FAILED', { errorMessage: message });
     }
   }
@@ -744,8 +986,8 @@ export class VoiceOrchestratorService {
       if (audit.outcome !== 'EXECUTED') {
         const message = audit.errorMessage || 'That didn\'t save. Nothing was recorded.';
         this.outcomeSignal.set({ ok: false, message, at: Date.now() });
+        this.settle();
         this.announce(false, message);
-        this.stateSignal.set('idle');
         return;
       }
 
@@ -768,13 +1010,13 @@ export class VoiceOrchestratorService {
       });
       if (result.undo) this.offerUndo(result.message, result.undo, pending.auditId!);
 
+      this.settle();
       this.announce(true, result.message);
-      this.stateSignal.set('idle');
     } catch (error) {
       const message = this.describeFailure(error);
       this.outcomeSignal.set({ ok: false, message, at: Date.now() });
+      this.settle();
       this.announce(false, message);
-      this.stateSignal.set('idle');
     }
   }
 
@@ -782,10 +1024,10 @@ export class VoiceOrchestratorService {
     const pending = this.confirmationSignal();
     if (!pending) return;
     this.confirmationSignal.set(null);
-    this.stateSignal.set('idle');
     this.interpretationSignal.set(null);
     this.highlightSignal.set(null);
-    this.announce(false, 'Discarded. Nothing was recorded.');
+    this.settle();
+    this.announce(false, 'Discarded. Nothing was recorded.', this.say('discarded'));
 
     if (pending.auditId) {
       try {
@@ -800,17 +1042,21 @@ export class VoiceOrchestratorService {
     await this.audit(pending.intent, this.context.snapshot(), pending.command.risk, 'REJECTED', 'REJECTED');
   }
 
-  private async answerConfirmation(text: string): Promise<void> {
-    if (AFFIRMATIVE.test(text)) {
+  private async answerConfirmation(said: string, readings: string[], gated: boolean): Promise<void> {
+    if (readings.some(reading => AFFIRMATIVE.test(stripWakeWord(reading) ?? reading))) {
       await this.confirmPending();
       return;
     }
-    if (NEGATIVE.test(text)) {
+    if (readings.some(reading => NEGATIVE.test(stripWakeWord(reading) ?? reading))) {
       await this.rejectPending();
       return;
     }
-    // Anything else replaces the pending command rather than being read as a
-    // yes — silence and unrelated speech must never confirm a clinical write.
+    // Room conversation must neither confirm nor cancel a pending write.
+    if (gated && !this.addressedCommand(readings)) {
+      this.ignoredSignal.set(said);
+      return;
+    }
+    // A new command replaces the pending one rather than being read as a yes.
     const pending = this.confirmationSignal();
     this.confirmationSignal.set(null);
     if (pending?.auditId) {
@@ -823,15 +1069,22 @@ export class VoiceOrchestratorService {
       await this.audit(pending.intent, this.context.snapshot(), pending.command.risk, 'CANCELLED', 'REJECTED',
         { errorMessage: 'Superseded by a new utterance' });
     }
-    await this.handleTranscript(text);
+    const normalized = readings[0] !== said ? readings[0] : null;
+    await this.handleTranscript(said, 1, normalized, gated);
   }
 
   /** Answers a pending question and completes the command it belonged to. */
-  async answerClarification(text: string, recognitionConfidence = 1): Promise<void> {
+  async answerClarification(
+    text: string,
+    recognitionConfidence = 1,
+    normalized: string | null = null,
+    gated = false,
+  ): Promise<void> {
     const pending = this.clarificationSignal();
     if (!pending) return;
 
-    if (NEGATIVE.test(text)) {
+    const readings = distinct([normalized, text]).map(reading => stripWakeWord(reading) ?? reading);
+    if (readings.some(reading => NEGATIVE.test(reading))) {
       this.dismissClarification();
       return;
     }
@@ -839,8 +1092,9 @@ export class VoiceOrchestratorService {
     const snapshot = this.context.snapshot();
 
     if (pending.pendingIntent && pending.awaiting) {
-      const value = this.interpretClarificationAnswer(text, pending, snapshot);
-      if (value !== null) {
+      for (const reading of readings) {
+        const value = this.interpretClarificationAnswer(reading, pending, snapshot);
+        if (value === null) continue;
         this.clarificationSignal.set(null);
         await this.dispatch(
           {
@@ -857,17 +1111,22 @@ export class VoiceOrchestratorService {
       }
     }
 
-    // Not an answer to the question — treat it as a new command.
+    // Not an answer. Conversation in the room leaves the question standing;
+    // a new command addressed to the system replaces it.
+    if (gated && !this.addressedCommand(distinct([normalized, text]))) {
+      this.ignoredSignal.set(text);
+      return;
+    }
     this.clarificationSignal.set(null);
-    await this.handleTranscript(text, recognitionConfidence);
+    await this.handleTranscript(text, recognitionConfidence, normalized, gated);
   }
 
-  /** Picks an offered option, an FDI code, or a spoken tooth description. */
+  /** Picks an offered option, an FDI code, findings, or a spoken tooth description. */
   private interpretClarificationAnswer(
     text: string,
     pending: VoiceClarification,
     snapshot: VoiceContextSnapshot,
-  ): string | null {
+  ): unknown | null {
     const normalized = text.trim().toLowerCase();
 
     const option = pending.options.find(
@@ -878,11 +1137,24 @@ export class VoiceOrchestratorService {
     if (pending.awaiting === 'fdi') {
       const tooth = resolveTooth(text, snapshot.dentition);
       if (tooth.kind === 'resolved') return tooth.fdi;
-      return null;
+      // "Seize" or "16" on its own, which the resolver rightly declines
+      // without a tooth word, is an answer here.
+      const code = normalized.match(/^(?:la\s+|le\s+)?([1-8][1-8])$/);
+      if (code && pending.options.every(o => o.value !== code[1]) && resolveTooth(`dent ${code[1]}`, snapshot.dentition).kind === 'resolved') {
+        return code[1];
+      }
+      const worded = resolveTooth(`dent ${normalized}`, snapshot.dentition);
+      return worded.kind === 'resolved' ? worded.fdi : null;
+    }
+    if (pending.awaiting === 'findings') {
+      const findings = extractFindings(text);
+      return findings.length
+        ? findings.map(f => ({ code: f.code, label: f.label, kind: f.kind, surface: f.surface, severity: f.severity }))
+        : null;
     }
     if (pending.awaiting === 'category') {
-      if (/dental/i.test(text)) return 'DENTAL_HISTORY';
-      if (/medical/i.test(text)) return 'CONDITION';
+      if (/dental|dentaire/i.test(text)) return 'DENTAL_HISTORY';
+      if (/medical|m[ée]dical/i.test(text)) return 'CONDITION';
       if (/note/i.test(text)) return 'OBSERVATION';
       return null;
     }
@@ -896,26 +1168,24 @@ export class VoiceOrchestratorService {
 
   dismissClarification(): void {
     this.clarificationSignal.set(null);
-    this.stateSignal.set('idle');
     this.interpretationSignal.set(null);
+    this.settle();
   }
 
   // ── Undo ────────────────────────────────────────────────────────────
 
   /**
    * Offers the inverse of a write for a few seconds (audit XII.4 §4). The
-   * reversal is itself a normal authenticated write with its own audit trail
-   * — the original row keeps its EXECUTED outcome, because erasing the fact
-   * that the write happened is the opposite of what an audit trail is for.
+   * reversal is itself a normal authenticated write with its own audit trail.
    */
-  private offerUndo(label: string, run: () => Promise<void>, auditId: string | null): void {
+  private offerUndo(label: string, run: () => Promise<void>, _auditId: string | null): void {
     if (this.undoTimer) clearTimeout(this.undoTimer);
     this.undoSignal.set({
       label,
       run: async () => {
         await run();
         this.undoSignal.set(null);
-        this.announce(true, 'Undone.');
+        this.announce(true, 'Undone.', this.say('undone'));
       },
     });
     this.undoTimer = setTimeout(() => this.undoSignal.set(null), UNDO_WINDOW_MS);
@@ -924,7 +1194,7 @@ export class VoiceOrchestratorService {
   async undoLast(): Promise<void> {
     const undo = this.undoSignal();
     if (!undo) {
-      this.announce(false, 'There\'s nothing to undo.');
+      this.announce(false, 'There\'s nothing to undo.', this.say('nothingToUndo'));
       return;
     }
     try {
@@ -934,7 +1204,7 @@ export class VoiceOrchestratorService {
     }
   }
 
-  // ── Feedback and audit ──────────────────────────────────────────────
+  // ── The buffer ──────────────────────────────────────────────────────
 
   clearHighlight(): void {
     this.highlightSignal.set(null);
@@ -943,10 +1213,10 @@ export class VoiceOrchestratorService {
   /**
    * Removes one staged command from the buffer and rejects its audit row.
    *
-   * Nothing was written to the clinical record, so this is not a clinical
-   * undo — it is the dentist correcting the buffer mid-dictation. The audit
-   * row is marked rejected rather than deleted: what the system heard, and
-   * that the dentist took it back, are both part of the trail.
+   * Nothing was written to the clinical record, so this is the dentist
+   * correcting the buffer mid-dictation. The audit row is marked rejected
+   * rather than deleted: what the system heard, and that the dentist took it
+   * back, are both part of the trail.
    */
   async discardBuffered(auditId: string, sessionId?: string | null): Promise<void> {
     this.bufferedSignal.update(entries => entries.filter(entry => entry.auditId !== auditId));
@@ -955,26 +1225,19 @@ export class VoiceOrchestratorService {
     try {
       await firstValueFrom(this.api.rejectCommand(auditId));
     } catch {
-      // The row stays PENDING and is simply never approved at commit. The
-      // buffer is what the review page reads from, so the dentist still sees
-      // the right thing.
+      // The row stays PENDING and is simply never approved at commit.
     }
   }
 
   /**
-   * Removes a staged finding named by what it is rather than by position —
-   * "enlève la carie sur la seize".
-   *
-   * Ambiguity is always a question, never a guess. Deleting the wrong finding
-   * is invisible at review: what remains reads as an ordinary, correctly
-   * spelled record, and the dentist has no way to notice the one that went
-   * missing.
+   * Removes a staged finding named by what it is rather than by position.
+   * Ambiguity is always a question, never a guess.
    */
   async discardBufferedMatching(predicate: (entry: BufferedEntry) => boolean,
                                 describe: (matches: BufferedEntry[]) => string): Promise<boolean> {
     const matches = this.bufferedSignal().filter(predicate);
     if (matches.length === 0) {
-      this.announce(false, 'I don\'t have that in this session.');
+      this.announce(false, 'That isn\'t in this session.', this.say('notInSession'));
       return false;
     }
     if (matches.length > 1) {
@@ -982,31 +1245,105 @@ export class VoiceOrchestratorService {
       return false;
     }
     await this.discardBuffered(matches[0].auditId);
-    this.announce(true, `Removed: ${matches[0].preview}`);
+    this.announce(true, `Removed: ${matches[0].preview}`, this.say('removed'));
     return true;
   }
 
   /**
-   * Names a repaired term in the spoken confirmation.
-   *
-   * If the system heard "recurrence" and acted on "recurrent", the dentist is
-   * entitled to know that before they carry on — silently correcting a word
-   * and confirming as though it had been said correctly is how a wrong
-   * finding gets past someone who is not looking at the screen.
+   * Handles "remove caries on 16" against this session's staged findings.
+   * Returns false when nothing staged matches, so the command falls through
+   * to withdrawing a finding already on the record.
    */
-  private correctionAwarePreview(preview: string): string {
-    if (this.pendingCorrections.length === 0) return preview;
-    const corrected = this.pendingCorrections.map(c => `${c.from} as ${c.to}`).join(', ');
-    return `${preview}. I took ${corrected}.`;
+  private async removeFromBuffer(intent: VoiceIntent): Promise<boolean> {
+    const fdi = entityString(intent.entities, 'fdi');
+    const codes = stagedFindingCodes(intent.entities);
+    if (!fdi || codes.length === 0) return false;
+
+    const matches = this.bufferedSignal().filter(entry =>
+      entry.intent === 'clinical.addFindings'
+      && entityString(entry.entities, 'fdi') === fdi
+      && stagedFindingCodes(entry.entities).some(code => codes.includes(code)));
+    if (matches.length === 0) return false;
+
+    // Several entries naming the same finding on the same tooth are the same
+    // dictation repeated; the latest is the one being taken back.
+    const entry = matches[matches.length - 1];
+    const removed = await this.removeStagedFindings(entry, codes);
+    this.highlightSignal.set(fdi);
+    this.touchWakeWindow();
+    this.settle();
+    if (removed) {
+      const labels = codes.map(code => findingLabel(code)).join(', ');
+      this.announce(true, `Removed from tooth ${fdi}: ${labels}`, this.say('removed'));
+    } else {
+      this.announce(false, 'That couldn\'t be removed. Say it again.', this.say('notStaged'));
+    }
+    return true;
   }
 
-  private announce(ok: boolean, message: string): void {
-    // Every outcome resolves to something the doctor can observe without
-    // looking up: a toast, the HUD line, and — since their eyes are on the
-    // patient — spoken confirmation.
-    if (ok) this.toast.success(message);
-    else this.toast.info(message);
-    this.feedback.speak(message, this.context.locale());
+  /**
+   * Drops some findings from a staged entry. An entry left with other
+   * findings is re-staged as a new audit row carrying only those — the old
+   * row is rejected, never edited, so the trail shows what was said and what
+   * was taken back.
+   */
+  private async removeStagedFindings(entry: BufferedEntry, codes: string[]): Promise<boolean> {
+    const findings = Array.isArray(entry.entities['findings'])
+      ? (entry.entities['findings'] as Array<{ code?: string }>)
+      : [];
+    const remaining = findings.filter(finding => !codes.includes(String(finding.code)));
+    if (remaining.length === 0) {
+      await this.discardBuffered(entry.auditId);
+      return true;
+    }
+
+    const snapshot = this.context.snapshot();
+    const entities = { ...entry.entities, findings: remaining };
+    const auditId = await this.audit(
+      { intent: entry.intent, entities, confidence: 1, resolver: 'grammar', transcript: entry.transcript },
+      snapshot, 'CONFIRM', 'PENDING', 'CLARIFICATION',
+    );
+    if (!auditId) return false;
+
+    const fdi = entityString(entities, 'fdi') ?? '';
+    const labels = remaining.map(finding => findingLabel(String(finding.code))).join('; ');
+    const replacement: BufferedEntry = {
+      ...entry,
+      auditId,
+      entities,
+      preview: `Tooth ${fdi} (${describeFdi(fdi)}) → ${labels}`,
+    };
+    await this.discardBuffered(entry.auditId);
+    this.stage(replacement, snapshot.sessionId);
+    return true;
+  }
+
+  // ── Feedback and audit ──────────────────────────────────────────────
+
+  private withCorrections(spoken: Spoken, language: 'fr' | 'en'): Spoken {
+    if (this.pendingCorrections.length === 0) return spoken;
+    // If the system heard "recurrence" and acted on "recurrent", the dentist
+    // is entitled to know before they carry on.
+    const taken = this.pendingCorrections
+      .map(c => language === 'fr' ? `« ${c.from} » compris « ${c.to} »` : `took "${c.from}" as "${c.to}"`)
+      .join(', ');
+    return { ...spoken, text: `${spoken.text} (${taken})` };
+  }
+
+  private say(key: PhraseKey): Spoken {
+    return phrase(key, spokenLanguage(this.context.locale()));
+  }
+
+  private announce(ok: boolean, message: string, spoken?: Spoken): void {
+    this.outcomeSignal.set({ ok, message, at: Date.now() });
+    // A running session shows every outcome in its own panel, and a toast on
+    // top of that covers the chart on a phone.
+    if (!this.examinationModeSignal() && !this.sessionService.isActive()) {
+      if (ok) this.toast.success(message);
+      else this.toast.info(message);
+    }
+    const utterance = spoken ?? { text: message, locale: 'en-US' };
+    this.feedback.speak(utterance.text, utterance.locale);
   }
 
   private reportError(message: string): void {
@@ -1058,9 +1395,6 @@ export class VoiceOrchestratorService {
       }));
       return entry.id;
     } catch {
-      // The clinical write itself is already durable and separately audited
-      // by the server. A failed voice-audit post is worth a console note, not
-      // an interruption to the examination.
       console.warn('Voice audit entry could not be recorded for intent', intent.intent);
       return null;
     }

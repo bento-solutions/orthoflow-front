@@ -208,16 +208,30 @@ describe('conversational context', () => {
   });
 });
 
-describe('navigation, reads and other modules', () => {
-  it('opens a patient by name', () => {
-    const found = expectIntent("Open Ahmed El Amrani's dossier.", 'patients.open');
-    expect(String(found.entities['query']).toLowerCase()).toContain('ahmed');
+describe('reads, and what voice deliberately cannot do', () => {
+  it('never navigates away from the dossier', () => {
+    // Dictation results are shown in the dossier; a misheard "open" that
+    // swapped the screen mid-examination could not be undone hands-free.
+    expect(resolve("Open Ahmed El Amrani's dossier.").kind).toBe('unrecognized');
+    expect(resolve('Go to the schedule.').kind).toBe('unrecognized');
+    expect(resolve('Open the clinical tab.').kind).toBe('unrecognized');
   });
 
-  it('navigates between modules', () => {
-    expect(expectIntent('Go to the schedule.', 'nav.goto').entities['target']).toBe('nav.schedule');
-    expect(expectIntent('Open billing.', 'nav.goto').entities['target']).toBe('nav.billing');
-    expect(expectIntent('Show me the stock.', 'nav.goto').entities['target']).toBe('nav.stock');
+  it('reads a tooth, in English and French, without mistaking the question for a medication', () => {
+    expect(expectIntent('What is on tooth 16?', 'chart.readTooth').entities['fdi']).toBe('16');
+    expect(expectIntent('Lis la dent 26.', 'chart.readTooth').entities['fdi']).toBe('26');
+  });
+
+  it('opens and closes a session in French, with the article the recogniser splits', () => {
+    expectIntent("Commencer l'examen.", 'voice.session.start');
+    expectIntent("Fin de l'examen.", 'voice.session.end');
+    expectIntent('Montre les constatations.', 'voice.session.summary');
+    expectIntent('Résumé', 'voice.session.summary');
+  });
+
+  it('undoes in French', () => {
+    expectIntent('Annule.', 'voice.correction.undo');
+    expectIntent('Efface ça.', 'voice.correction.undo');
   });
 
   it('selects a tooth without writing anything', () => {

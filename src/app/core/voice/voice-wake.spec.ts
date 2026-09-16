@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { detectWake, FOLLOW_UP_WINDOW_MS, isStopPhrase, stripWakeWord, WAKE_WORD } from './voice-wake';
+import {
+  detectWake,
+  FOLLOW_UP_WINDOW_MS,
+  isSelfEvidentDictation,
+  isStopPhrase,
+  stripWakeWord,
+  WAKE_WORD,
+} from './voice-wake';
 
 /**
  * The wake gate is what makes an always-open microphone acceptable in a room
@@ -85,24 +92,43 @@ describe('voice-wake', () => {
   });
 
   describe('isStopPhrase', () => {
-    it('honours a bare stop, with or without the wake word', () => {
+    it('ends on a phrase naming the session, with or without the wake word', () => {
       // Deliberately asymmetric: a dentist whose wake word is being misheard
       // must still be able to stop, and stopping writes nothing.
-      expect(isStopPhrase('stop')).toBe(true);
       expect(isStopPhrase('end session')).toBe(true);
       expect(isStopPhrase(`${WAKE_WORD} end session`)).toBe(true);
     });
 
     it('recognises the French forms', () => {
-      expect(isStopPhrase('arrête')).toBe(true);
       expect(isStopPhrase('termine la session')).toBe(true);
-      expect(isStopPhrase("c'est fini")).toBe(true);
+      expect(isStopPhrase("fin de l'examen")).toBe(true);
+      expect(isStopPhrase('arrête la consultation')).toBe(true);
+    });
+
+    it('ignores a bare "stop" or "arrête" — what a patient says when it hurts', () => {
+      expect(isStopPhrase('stop')).toBe(false);
+      expect(isStopPhrase('arrête')).toBe(false);
+      expect(isStopPhrase("c'est fini")).toBe(false);
     });
 
     it('does not stop on a sentence that merely contains the word', () => {
       // "Stop" inside a finding must not end the examination.
       expect(isStopPhrase('stop the bleeding on sixteen')).toBe(false);
       expect(isStopPhrase('il faut arrêter le traitement')).toBe(false);
+    });
+  });
+
+  describe('isSelfEvidentDictation', () => {
+    it('accepts dictation that opens with a tooth code or a finding', () => {
+      expect(isSelfEvidentDictation('dent 16, carie récurrente occlusale')).toBe(true);
+      expect(isSelfEvidentDictation('carie profonde sur la seize')).toBe(true);
+      expect(isSelfEvidentDictation('16, couronne à remplacer')).toBe(true);
+    });
+
+    it('still needs the wake word for talk about a tooth', () => {
+      expect(isSelfEvidentDictation('passe-moi le composite pour la seize')).toBe(false);
+      expect(isSelfEvidentDictation("j'ai mal à la dent du fond")).toBe(false);
+      expect(isSelfEvidentDictation('dent 16')).toBe(false);
     });
   });
 });

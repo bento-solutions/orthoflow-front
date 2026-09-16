@@ -1,5 +1,6 @@
 import { describeFdi, normalizeUtterance, resolveTooth, ToothResolution } from './tooth-lexicon';
 import { extractFindings, ExtractedFinding } from './clinical-lexicon';
+import { WORD_END } from './voice-regex';
 import {
   FindingEntity,
   VoiceContextSnapshot,
@@ -95,10 +96,12 @@ const ANAPHORA = /\b(?:that|this|the\s+same|it|same)\s+(?:tooth|one)\b|\bcette\s
 
 // ── Rules ───────────────────────────────────────────────────────────────
 
+// `text` has had its apostrophes replaced by spaces, so "l'examen" arrives
+// as "l examen" — the article alternatives have to accept both spellings.
 const startExamination: GrammarRule = {
   id: 'grammar.session.start',
   match: (raw, text) => {
-    if (!/^(?:start|begin|commence[rz]?|d[ée]marre[rz]?|commencer)\s+(?:the\s+|l'|le\s+|la\s+)?(?:exam\w*|consultation|dictation)/iu.test(text)) {
+    if (!/^(?:start|begin|commence[rz]?|d[ée]marre[rz]?|commencer)\s+(?:the\s+|l'|l\s+|le\s+|la\s+)?(?:exam\w*|consultation|dictation|session|dict[ée]e)/iu.test(text)) {
       return null;
     }
     return intent('voice.session.start', {}, CONFIDENCE_EXACT, raw);
@@ -108,7 +111,7 @@ const startExamination: GrammarRule = {
 const endExamination: GrammarRule = {
   id: 'grammar.session.end',
   match: (raw, text) => {
-    if (!/^(?:end|stop|finish|terminer?|arr[êe]te[rz]?|fin\s+de)\s+(?:the\s+|l'|le\s+|la\s+)?(?:exam\w*|consultation|dictation)/iu.test(text)) {
+    if (!/^(?:end|stop|finish|terminer?|arr[êe]te[rz]?|fin\s+de)\s+(?:the\s+|l'|l\s+|le\s+|la\s+)?(?:exam\w*|consultation|dictation|session|dict[ée]e)/iu.test(text)) {
       return null;
     }
     return intent('voice.session.end', {}, CONFIDENCE_EXACT, raw);
@@ -118,8 +121,8 @@ const endExamination: GrammarRule = {
 const showFindings: GrammarRule = {
   id: 'grammar.session.summary',
   match: (raw, text) => {
-    if (!/\b(?:show|read|give|list|r[ée]capitule[rz]?|montre[rz]?)\b.*\b(?:today'?s?\s+)?(?:findings|summary|r[ée]sum[ée]|constatations|bilan)\b/iu.test(text)
-      && !/^(?:summary|r[ée]sum[ée])\b/iu.test(text)) {
+    if (!new RegExp(`\\b(?:show|read|give|list|r[ée]capitule[rz]?|montre[rz]?)\\b.*(?:findings|summary|r[ée]sum[ée]|constatations|bilan)${WORD_END}`, 'iu').test(text)
+      && !new RegExp(`^(?:summary|r[ée]sum[ée])${WORD_END}`, 'iu').test(text)) {
       return null;
     }
     return intent('voice.session.summary', {}, CONFIDENCE_EXACT, raw);
@@ -129,7 +132,10 @@ const showFindings: GrammarRule = {
 const undoLast: GrammarRule = {
   id: 'grammar.correction.undo',
   match: (raw, text) => {
-    if (!/^(?:undo|cancel\s+that|annule[rz]?|revenir\s+en\s+arri[èe]re)\b/iu.test(text)
+    if (!new RegExp(
+      `^(?:undo|cancel\\s+that|scratch\\s+that|annule[rz]?|efface[rz]?(?:\\s+(?:ça|ca|cela|la\\s+derni[èe]re))?|revenir\\s+en\\s+arri[èe]re|retour\\s+arri[èe]re)${WORD_END}`,
+      'iu',
+    ).test(text)
       && !/\bundo\s+(?:that|the\s+last)\b/iu.test(text)) {
       return null;
     }
@@ -293,6 +299,9 @@ const addMedicalHistory: GrammarRule = {
 const addMedication: GrammarRule = {
   id: 'grammar.history.medication',
   match: (raw, text) => {
+    // "What is on tooth 16" contains "is on"; a question is never a
+    // medication being recorded.
+    if (/^(?:what|which|where|read|tell|lis|lire|qu)\b/iu.test(text)) return null;
     const match = text.match(/\b(?:patient\s+)?(?:takes?|is\s+on|medication\s*:?|traitement\s*:?|prend)\s+(.+)$/iu);
     if (!match) return null;
     if (!/\bmedication\b|\btraitement\b|\btakes?\b|\bis\s+on\b|\bprend\b/iu.test(text)) return null;
@@ -367,61 +376,11 @@ const scheduleFollowUp: GrammarRule = {
   },
 };
 
-const openPatient: GrammarRule = {
-  id: 'grammar.nav.openPatient',
-  match: (raw, text) => {
-    const match = text.match(
-      /^(?:open|show|pull\s+up|go\s+to|ouvre[rz]?|affiche[rz]?)\s+(?:the\s+)?(?:patient\s+|dossier\s+(?:of\s+|de\s+)?|file\s+(?:of\s+)?)?(.+?)(?:'s)?\s*(?:dossier|file|record|chart|dossier\s+m[ée]dical)?$/iu,
-    );
-    if (!match) return null;
-    const name = match[1].replace(/^(?:patient|dossier|de|of)\s+/iu, '').replace(/[.,;]+$/, '').trim();
-    if (!name || name.length < 2) return null;
-    // Module names are handled by the navigation rule; this must not swallow them.
-    if (/^(?:the\s+)?(?:schedule|calendar|billing|invoices?|stock|inventory|treatments?|settings|dashboard|patients)$/iu.test(name)) {
-      return null;
-    }
-    return intent('patients.open', { query: name }, CONFIDENCE_MODERATE, raw);
-  },
-};
-
-const NAV_TARGETS: Array<{ id: string; patterns: RegExp }> = [
-  { id: 'nav.dashboard', patterns: /\b(?:dashboard|home|accueil|tableau\s+de\s+bord)\b/iu },
-  { id: 'nav.patients', patterns: /\b(?:patients?\s*(?:list|liste)?|liste\s+des\s+patients)\b/iu },
-  { id: 'nav.schedule', patterns: /\b(?:schedule|calendar|agenda|planning|rendez[- ]?vous)\b/iu },
-  { id: 'nav.billing', patterns: /\b(?:billing|invoices?|facturation|factures?)\b/iu },
-  { id: 'nav.stock', patterns: /\b(?:stock|inventory|inventaire)\b/iu },
-  { id: 'nav.treatments', patterns: /\b(?:treatments?\s*(?:catalog\w*)?|traitements?)\b/iu },
-  { id: 'nav.settings', patterns: /\b(?:settings|preferences|param[èe]tres)\b/iu },
-];
-
-const navigate: GrammarRule = {
-  id: 'grammar.nav.module',
-  match: (raw, text) => {
-    if (!/^(?:go\s+to|open|show(?:\s+me)?|navigate\s+to|va\s+[àa]|ouvre[rz]?|affiche[rz]?|montre[rz]?)\b/iu.test(text)) {
-      return null;
-    }
-    const target = NAV_TARGETS.find(t => t.patterns.test(text));
-    if (!target) return null;
-    return intent('nav.goto', { target: target.id }, CONFIDENCE_STRONG, raw);
-  },
-};
-
-const dossierTab: GrammarRule = {
-  id: 'grammar.nav.dossierTab',
-  match: (raw, text, context) => {
-    if (!context.patientId) return null;
-    if (!/^(?:open|show|go\s+to|ouvre[rz]?|affiche[rz]?)\b/iu.test(text)) return null;
-    // Deliberately does not match "billing" or "invoices": those name a whole
-    // module, and "open billing" from a dossier means the module, not this
-    // patient's Financial tab. Say "the financial tab" for that.
-    const tab = /\bclinical\b|\bclinique\b/iu.test(text) ? 'clinical'
-      : /\bfinancial\b|\bfinancier\b/iu.test(text) ? 'financial'
-      : /\boverview\b|\bsummary\b|\bapercu\b|\baper[çc]u\b/iu.test(text) ? 'overview'
-      : null;
-    if (!tab) return null;
-    return intent('dossier.openTab', { tab }, CONFIDENCE_STRONG, raw);
-  },
-};
+// Navigation — to another module, another patient, or another tab of this
+// dossier — is deliberately not in the grammar. Dictation happens inside one
+// patient's dossier and its results are shown there; a misheard "ouvre" that
+// swapped the screen mid-examination cost the dentist their view of the chart
+// and could not be undone hands-free. The command palette still navigates.
 
 const selectTooth: GrammarRule = {
   id: 'grammar.chart.selectTooth',
@@ -445,7 +404,7 @@ const readBalance: GrammarRule = {
   id: 'grammar.query.balance',
   match: (raw, text, context) => {
     if (!context.patientId) return null;
-    if (!/\b(?:balance|outstanding|owed?|solde|reste\s+[àa]\s+payer|impay[ée])\b/iu.test(text)) return null;
+    if (!new RegExp(`\\b(?:balance|outstanding|owed?|solde|reste\\s+[àa]\\s+payer|impay[ée])${WORD_END}`, 'iu').test(text)) return null;
     return intent('patients.readBalance', {}, CONFIDENCE_STRONG, raw);
   },
 };
@@ -462,8 +421,8 @@ const readNextAppointment: GrammarRule = {
 const readToothFindings: GrammarRule = {
   id: 'grammar.query.toothFindings',
   match: (raw, text, context) => {
-    if (!/^(?:what(?:'s| is| are)|read|tell\s+me)\b/iu.test(text)) return null;
-    if (!/\b(?:tooth|dent|molar|incisor|canine|premolar)\b/iu.test(text)) return null;
+    if (!/^(?:what(?:'s|\s+s|\s+is|\s+are)|read|tell\s+me|lis|lire|qu\s*y\s+a\s+t\s+il|qu\s+est\s+ce\s+qu\s*il\s+y\s+a)\b/iu.test(text)) return null;
+    if (!/\b(?:tooth|dent|molar|incisor|canine|premolar|molaire|incisive|pr[ée]molaire)\b/iu.test(text)) return null;
     const tooth = resolveTooth(raw, context.dentition);
     const fdi = tooth.kind === 'resolved' ? tooth.fdi : context.selectedFdi;
     if (!fdi) return null;
@@ -534,8 +493,8 @@ const toothFindings: GrammarRule = {
 
 /**
  * Ordered. Session control and corrections first (they are short and
- * unmistakable), then structured clinical records, then the general tooth
- * rule, then navigation and reads.
+ * unmistakable), then structured clinical records, then reads, then the
+ * general tooth rule.
  */
 export const GRAMMAR_RULES: GrammarRule[] = [
   startExamination,
@@ -556,9 +515,6 @@ export const GRAMMAR_RULES: GrammarRule[] = [
   readBalance,
   readNextAppointment,
   toothFindings,
-  dossierTab,
-  navigate,
-  openPatient,
 ];
 
 /**

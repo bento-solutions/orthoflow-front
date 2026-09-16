@@ -23,15 +23,16 @@ import { ClinicalRecordService } from '../../../core/services/clinical-record.se
 import { VoiceContextService } from '../../../core/voice/voice-context.service';
 import { VoiceOrchestratorService } from '../../../core/voice/voice-orchestrator.service';
 import { VoiceSessionService } from '../../../core/voice/voice-session.service';
-import { VoiceHudComponent } from '../../../shared/components/voice/voice-hud.component';
+import { VoiceSessionPanelComponent } from '../../../shared/components/voice/voice-session-panel.component';
+import { VoiceSessionDockComponent } from '../../../shared/components/voice/voice-session-dock.component';
 import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clinical-record.model';
 
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceHudComponent],
+  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent],
   template: `
-    <div class="dossier-container">
+    <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive()">
       @if (patientService.currentPatient(); as patient) {
       <!-- Dossier Header -->
       <header class="dossier-header">
@@ -50,26 +51,35 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
               <button type="button" class="btn btn-recording" (click)="endSession()"
                       [disabled]="voiceSession.busy()">
                 <span class="material-icons" aria-hidden="true">stop_circle</span>
-                {{ voiceSession.busy() ? 'Ending…' : 'End session' }}
+                {{ (voiceSession.busy() ? 'VOICE.ENDING' : 'VOICE.END_AND_REVIEW') | translate }}
+              </button>
+            } @else if (voiceSession.reviewing()) {
+              <button type="button" class="btn btn-record" (click)="activeTab.set('voice')">
+                <span class="material-icons" aria-hidden="true">fact_check</span>
+                {{ 'VOICE.REVIEWING' | translate }}
               </button>
             } @else {
               <button type="button" class="btn btn-record" (click)="startSession()"
-                      [disabled]="voiceSession.busy()">
+                      [disabled]="voiceStarting()">
                 <span class="material-icons" aria-hidden="true">mic</span>
-                Record
+                {{ (voiceStarting() ? 'VOICE.STARTING' : 'VOICE.START') | translate }}
               </button>
             }
-            <button type="button" class="btn btn-secondary" (click)="onPrint()">
-              <span class="material-icons">print</span>
-              {{ 'COMMON.PRINT' | translate }}
+            <button type="button" class="btn btn-secondary btn-compact" (click)="onPrint()"
+                    [attr.aria-label]="'COMMON.PRINT' | translate" [title]="'COMMON.PRINT' | translate">
+              <span class="material-icons" aria-hidden="true">print</span>
+              <span class="btn-label">{{ 'COMMON.PRINT' | translate }}</span>
             </button>
-            <button type="button" class="btn btn-primary" [routerLink]="['edit']">
-              <span class="material-icons">edit</span>
-              {{ 'COMMON.EDIT' | translate }} {{ 'PATIENTS.NAME' | translate }}
+            <button type="button" class="btn btn-primary btn-compact" [routerLink]="['edit']"
+                    [attr.aria-label]="('COMMON.EDIT' | translate) + ' ' + ('PATIENTS.NAME' | translate)"
+                    [title]="('COMMON.EDIT' | translate) + ' ' + ('PATIENTS.NAME' | translate)">
+              <span class="material-icons" aria-hidden="true">edit</span>
+              <span class="btn-label">{{ 'COMMON.EDIT' | translate }} {{ 'PATIENTS.NAME' | translate }}</span>
             </button>
-            <button type="button" class="btn btn-danger" (click)="onDelete()">
-              <span class="material-icons">delete</span>
-              {{ 'COMMON.DELETE' | translate }}
+            <button type="button" class="btn btn-danger btn-compact" (click)="onDelete()"
+                    [attr.aria-label]="'COMMON.DELETE' | translate" [title]="'COMMON.DELETE' | translate">
+              <span class="material-icons" aria-hidden="true">delete</span>
+              <span class="btn-label">{{ 'COMMON.DELETE' | translate }}</span>
             </button>
           </div>
         </div>
@@ -102,8 +112,8 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
         </div>
 
         <!-- Tabs Navigation -->
-        <nav class="dossier-tabs no-print" role="tablist" [attr.aria-label]="'PATIENTS.DOSSIER.TITLE' | translate" (keydown)="onTabKeydown($event, tabs, activeTab(), setActiveTab.bind(this), 'dossier-tab-')">
-          @for (tab of tabs; track tab.id) {
+        <nav class="dossier-tabs no-print" role="tablist" [attr.aria-label]="'PATIENTS.DOSSIER.TITLE' | translate" (keydown)="onTabKeydown($event, navTabs(), activeTab(), setActiveTab.bind(this), 'dossier-tab-')">
+          @for (tab of navTabs(); track tab.id) {
             <button type="button"
               [id]="'dossier-tab-' + tab.id"
               role="tab"
@@ -111,10 +121,14 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
               [attr.aria-controls]="'dossier-panel-' + tab.id"
               [tabindex]="activeTab() === tab.id ? 0 : -1"
               [class.active]="activeTab() === tab.id"
+              [class.voice-tab]="tab.id === 'voice'"
               (click)="activeTab.set(tab.id)"
             >
               <span class="material-icons" aria-hidden="true">{{ tab.icon }}</span>
               {{ tab.key | translate }}
+              @if (tab.id === 'voice' && voiceSession.isActive()) {
+                <span class="tab-live-dot" aria-hidden="true"></span>
+              }
             </button>
           }
         </nav>
@@ -123,6 +137,22 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
       <!-- Main Content Area -->
       <main class="dossier-content">
         @switch (activeTab()) {
+          @case ('voice') {
+            <!-- Every voice result is shown here: the chart with what is staged
+                 drawn on it, what was dictated, and the review. Nothing a
+                 dentist says moves them to another tab or view. -->
+            <div class="tab-pane" role="tabpanel" id="dossier-panel-voice" aria-labelledby="dossier-tab-voice" tabindex="0">
+              <app-voice-session-panel
+                [chart]="dentalChartState()"
+                [findings]="clinicalRecordService.findings()"
+                [treatments]="patientTreatments()"
+                [patientId]="patient.id"
+                [starting]="voiceStarting()"
+                (begin)="beginSession()"
+                (saved)="onVoiceSaved()"
+              />
+            </div>
+          }
           @case ('overview') {
             <div class="tab-pane" role="tabpanel" id="dossier-panel-overview" aria-labelledby="dossier-tab-overview" tabindex="0">
               <div class="overview-grid">
@@ -744,7 +774,11 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
            command like "sixteen, recurrent caries" only has a referent when a
            patient's record is open; showing a live microphone on the billing
            screen invited exactly the ambiguity this rework removes. -->
-      <app-voice-hud />
+      <app-voice-session-dock
+        [onVoiceTab]="activeTab() === 'voice'"
+        (openPanel)="activeTab.set('voice')"
+        (resume)="beginSession()"
+      />
     </div>
   `,
   styles: [`
@@ -839,6 +873,13 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
     .btn-record, .btn-recording {
       display: inline-flex; align-items: center; gap: .4rem;
     }
+    .btn-compact { display: inline-flex; align-items: center; gap: .4rem; }
+    .tab-live-dot {
+      width: .5rem; height: .5rem; border-radius: 50%; background: #c62828;
+      animation: recording-pulse 1.6s ease-in-out infinite;
+    }
+    /* Room for the recording dock, so it never covers the last row. */
+    .dossier-container.has-voice-dock { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
     .btn-record { background: var(--primary, #2563eb); color: #fff; }
     /* Unmissable while the microphone is live — the dentist is not looking at
        the screen, so the one person who can see this state is whoever else is
@@ -1606,24 +1647,53 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
 
     /* Responsive Styles */
     @media (max-width: 768px) {
+      /* The header used to stack four full-width buttons and stay sticky,
+         which on a phone pinned most of the screen above the content. It now
+         scrolls away, keeps the voice button as the one full-width action,
+         and reduces the others to icons. */
       .dossier-header {
-        padding: 1rem 1rem 0 1rem;
+        position: static;
+        padding: .75rem 1rem 0 1rem;
       }
 
       .header-top {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
+        flex-wrap: wrap;
+        gap: .5rem .75rem;
+        margin-bottom: 1rem;
+      }
+
+      .patient-title {
+        min-width: 0;
+        flex-wrap: wrap;
+        gap: .5rem;
+      }
+
+      .patient-title h1 {
+        font-size: 1.25rem;
+        overflow-wrap: anywhere;
       }
 
       .header-actions {
         width: 100%;
-        flex-direction: column;
+        gap: .5rem;
       }
 
-      .header-actions button {
-        width: 100%;
+      .header-actions .btn-record,
+      .header-actions .btn-recording {
+        flex: 1;
         justify-content: center;
+        min-height: 2.75rem;
+      }
+
+      .header-actions .btn-compact {
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+        justify-content: center;
+        padding-inline: .625rem;
+      }
+
+      .header-actions .btn-compact .btn-label {
+        display: none;
       }
 
       .patient-quick-info {
@@ -1683,22 +1753,25 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   private voice = inject(VoiceOrchestratorService);
 
   /**
-   * A voice command that names a tooth must make that tooth visible before the
-   * doctor confirms it — spoken input carries none of the implicit visual
-   * feedback a click does (audit XII.2), so the chart selection follows
-   * whatever the assistant resolved.
+   * A tooth named by voice becomes the dossier's selected tooth, so the
+   * treatment panel follows it when the dentist later looks there.
+   *
+   * It no longer switches tabs. That used to throw the dossier onto Clinical
+   * and its 3D viewer on every dictated tooth — the view moving under a
+   * dentist who cannot touch the screen to get back. Voice results are shown
+   * in the voice panel's own chart instead (audit XII.2's visual check,
+   * without the navigation).
    *
    * Declared as a field rather than created in ngOnInit: `effect()` requires
    * an injection context, and a field initializer is one.
    */
   private readonly voiceToothSync = effect(() => {
     const fdi = this.voiceContext.selectedFdi();
-    if (!fdi || fdi === this.selectedToothForTreatments()) return;
-    this.selectedToothForTreatments.set(fdi);
-    // Findings are recorded under Clinical; switching there is what makes a
-    // dictated finding observable without the doctor touching anything.
-    if (this.activeTab() !== 'clinical') this.activeTab.set('clinical');
+    if (fdi && fdi !== this.selectedToothForTreatments()) this.selectedToothForTreatments.set(fdi);
   });
+
+  /** The microphone is being opened and the session created. */
+  voiceStarting = signal(false);
 
   activeTab = signal('overview');
   showDentalChartFullscreen = signal(false);
@@ -1831,6 +1904,12 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     { id: 'clinical', key: 'PATIENTS.DOSSIER.CLINICAL', icon: 'healing' },
     { id: 'financial', key: 'PATIENTS.DOSSIER.FINANCIAL', icon: 'payments' },
   ];
+
+  /** The voice tab exists while a session does, or while one is being started. */
+  navTabs = computed(() =>
+    this.voiceSession.isActive() || this.voiceSession.reviewing() || this.activeTab() === 'voice'
+      ? [{ id: 'voice', key: 'VOICE.TAB', icon: 'mic' }, ...this.tabs]
+      : this.tabs);
 
   clinicalSubTabs = [
     { id: 'treatments', key: 'COMMON.TREATMENTS', icon: 'healing' },
@@ -1987,6 +2066,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
           this.loadPatientBilling(patient.id);
           this.loadPatientTreatments(patient.id);
           this.clinicalRecordService.refresh(patient.id);
+          void this.restoreVoiceSession(patient.id);
         },
         error: (err) => console.error('Failed to load patient', err)
       });
@@ -2010,24 +2090,17 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
         execute: () => this.activeTab.set(tab.id),
       }))
     );
-
-    // The voice command for tab switching is dispatched as a DOM event so the
-    // command definitions stay free of a dependency on this 2 000-line
-    // component (and on it being mounted at all).
-    window.addEventListener('orthoflow:voice:open-tab', this.onVoiceOpenTab);
   }
-
-  /** Bound instance member so removeEventListener gets the same reference. */
-  private onVoiceOpenTab = (event: Event): void => {
-    const tab = (event as CustomEvent<{ tab: string }>).detail?.tab;
-    if (tab && this.tabs.some(t => t.id === tab)) this.activeTab.set(tab);
-  };
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
     this.tabs.forEach(tab => this.commandRegistry.unregister(`dossier.tab.${tab.id}`));
-    window.removeEventListener('orthoflow:voice:open-tab', this.onVoiceOpenTab);
+    // Leaving the dossier closes the microphone: there is nowhere else a
+    // session's results are shown, and a live microphone behind another
+    // screen is one nobody is watching. The session itself is kept and
+    // offered back when this patient's dossier opens again.
+    this.voiceSession.detach();
     // A tooth selected by voice on this patient must not follow the doctor to
     // the next one — "that tooth" would silently resolve to the wrong record.
     this.voiceContext.selectTooth(null);
@@ -2243,36 +2316,87 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Begins a dictated examination for the patient whose dossier is open.
+   * The header's voice button. Opens the voice tab; the session starts at
+   * once unless consent is still needed, in which case the panel asks for it
+   * and its button starts the session from inside that tap.
+   */
+  startSession(): void {
+    this.activeTab.set('voice');
+    if (this.voice.needsConsent()) return;
+    void this.beginSession();
+  }
+
+  /**
+   * Opens the microphone and starts — or resumes — dictation for this patient.
    *
-   * If an earlier examination for this same patient was interrupted — a closed
-   * tab, a flat battery — it is offered back instead of being silently
-   * replaced. Resuming is scoped to this patient on purpose: offering Ahmed's
+   * **Must be reached synchronously from a tap.** The microphone is requested
+   * before anything is awaited, because iOS only lets audio start inside the
+   * user's gesture and the round trip that creates the session would outlive
+   * it; this ordering is what makes the microphone work on an iPhone.
+   *
+   * An interrupted examination for this patient has already been restored by
+   * the time the dossier shows its voice tab, so resuming is the same tap as
+   * starting. It is scoped to this patient on purpose: offering Ahmed's
    * half-finished examination while Fatima's chart is on screen is how
    * findings end up on the wrong record.
    */
-  async startSession(): Promise<void> {
+  async beginSession(): Promise<void> {
     const patient = this.patientService.currentPatient();
-    if (!patient) return;
+    if (!patient || this.voiceStarting() || this.voiceSession.busy()) return;
 
-    const resumable = await this.voiceSession.resumeIfAvailable(patient.id);
-    if (resumable) {
-      const resume = await this.confirmDialog.confirm(
-        'An unfinished examination for this patient was found. Resume it?',
-        { confirmLabel: 'Resume' },
-      );
-      if (resume) {
-        await this.voice.startExaminationMode();
-        return;
+    const microphone = this.voice.openMicrophone();
+    this.activeTab.set('voice');
+    this.voiceStarting.set(true);
+    try {
+      if (!this.voiceSession.isActive()) {
+        const restored = await this.voiceSession.resumeIfAvailable(patient.id);
+        if (restored === 'review') {
+          this.voice.stopListening();
+          return;
+        }
+        if (restored === null) {
+          // No server session for a microphone that will not open.
+          if (!(await microphone) && this.voice.captureSupported()) {
+            await this.voice.startExaminationMode();
+            return;
+          }
+          await this.voiceSession.start();
+        }
       }
+      await this.voice.startExaminationMode();
+    } catch {
+      this.voice.stopListening();
+      this.toast.error('The voice session could not start — check the connection and try again.');
+    } finally {
+      this.voiceStarting.set(false);
     }
-
-    await this.voiceSession.start();
-    await this.voice.startExaminationMode();
   }
 
-  /** Ends dictation and navigates to review. Nothing is written here. */
+  /** Ends dictation and switches the voice panel to review. Nothing is written here. */
   async endSession(): Promise<void> {
+    this.activeTab.set('voice');
     await this.voiceSession.end();
+  }
+
+  /** The reviewed consultation is on the record; show it on the chart. */
+  onVoiceSaved(): void {
+    const patient = this.patientService.currentPatient();
+    if (!patient) return;
+    this.chartService.loadChart(patient.id, patient.dateOfBirth);
+    this.clinicalRecordService.refresh(patient.id);
+  }
+
+  /**
+   * Picks up an examination left unfinished for this patient — still
+   * dictating, or waiting in review — and shows it in the voice tab. A
+   * session belonging to a different patient is let go first.
+   */
+  private async restoreVoiceSession(patientId: string): Promise<void> {
+    const current = this.voiceSession.session();
+    if (current && current.patientId !== patientId) this.voiceSession.detach();
+    const restored = await this.voiceSession.resumeIfAvailable(patientId);
+    if (restored && this.patientService.currentPatient()?.id === patientId) {
+      this.activeTab.set('voice');
+    }
   }
 }

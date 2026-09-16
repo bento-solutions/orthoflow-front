@@ -72,6 +72,12 @@ export type ServerIntent =
 
 export interface TranscriptionDto {
   text: string;
+  /**
+   * The transcript respelled into the command vocabulary — tooth numbers as
+   * digits, near-miss terms as the grammar spells them. Parsed first; absent
+   * from older servers and from providers that do not produce one.
+   */
+  normalized?: string | null;
   provider: string;
   model: string;
   language: string | null;

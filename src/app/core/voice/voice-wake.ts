@@ -1,4 +1,6 @@
 import { foldAccents, similarity } from './voice-fuzzy';
+import { Dentition, resolveTooth } from './tooth-lexicon';
+import { extractFindings } from './clinical-lexicon';
 
 /**
  * The wake word, and the window it opens.
@@ -166,22 +168,51 @@ function stripLeadingPunctuation(text: string): string {
 /**
  * Phrases that end the session, recognised without the wake word.
  *
- * The asymmetry is deliberate. Requiring "Calypso, arrête" to stop means a
+ * The asymmetry is deliberate. Requiring "Calypso, fin de l'examen" means a
  * dentist whose wake word is being misheard — a noisy room, a cold — cannot
- * stop the microphone by voice at all, and their hands are occupied. Ending a
- * session is also the one command that cannot do clinical harm: it writes
- * nothing, and everything dictated is already in the buffer and the audit
- * trail. So a bare "stop" is honoured, and the cost of a false positive is a
- * session that ends early and is resumed.
+ * stop by voice at all, and their hands are occupied. Ending a session writes
+ * nothing: everything dictated is already in the buffer and the audit trail.
+ *
+ * What is *not* here any more is a bare "stop", "arrête" or "fini". Those are
+ * exactly what a patient in the chair says when something hurts, and a
+ * session that ended on the patient's word dropped the dentist into review
+ * mid-examination. The phrase has to name what is ending.
  */
 const STOP_PHRASES = [
-  /^(?:end|stop|finish|close)\s+(?:the\s+)?(?:session|examination|exam|consultation)\b/iu,
-  /^(?:end|stop|finish)\s+(?:it|here|now)?$/iu,
-  /^stop$/iu,
-  /^(?:termine[rz]?|arr[êe]te[rz]?|finis|fin)\s+(?:la\s+)?(?:session|consultation|examen)\b/iu,
-  /^(?:arr[êe]te[rz]?|termine[rz]?|fin)$/iu,
-  /^(?:c'?est\s+)?(?:fini|termin[ée])$/iu,
+  /^(?:end|stop|finish|close)\s+(?:the\s+)?(?:session|examination|exam|consultation|dictation)\b/iu,
+  /^(?:termine[rz]?|arr[êe]te[rz]?|finis|fin)\s+(?:de\s+)?(?:la\s+|le\s+|l['’]\s*|l\s+)?(?:session|consultation|examen|dict[ée]e)(?![\p{L}\p{N}])/iu,
 ];
+
+/** A dictated finding is a short sentence; a conversation is not. */
+const DICTATION_MAX_WORDS = 16;
+
+/**
+ * Dictation that is unmistakably dictation, accepted without the wake word.
+ *
+ * "Dent 16, carie récurrente occlusale" names a tooth by its code and a
+ * finding from the lexicon, and opens with one of them. Patients do not speak
+ * in FDI numbers, and requiring "Calypso" in front of every one of these was
+ * the main reason commands were missed: the wake word is the first thing a
+ * recogniser clips. Every such command is still read back aloud, staged
+ * rather than written, and reviewed before it reaches the record.
+ *
+ * The opening requirement is what keeps it from firing on talk *about* a
+ * tooth: "passe-moi le composite pour la seize" contains a finding word and a
+ * tooth, but opens with neither, and still needs the wake word.
+ */
+export function isSelfEvidentDictation(transcript: string, dentition: Dentition = 'adult'): boolean {
+  const text = transcript.trim();
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length === 0 || words.length > DICTATION_MAX_WORDS) return false;
+  if (resolveTooth(text, dentition).kind !== 'resolved') return false;
+
+  const findings = extractFindings(text);
+  if (findings.length === 0) return false;
+
+  if (resolveTooth(words.slice(0, 4).join(' '), dentition).kind === 'resolved') return true;
+  const firstFinding = text.toLowerCase().indexOf(findings[0].matchedText.toLowerCase());
+  return firstFinding >= 0 && firstFinding <= 1;
+}
 
 export function isStopPhrase(transcript: string): boolean {
   // The wake word is optional on a stop, so try both forms.

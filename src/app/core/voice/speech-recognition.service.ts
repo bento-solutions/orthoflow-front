@@ -79,8 +79,16 @@ export class SpeechRecognitionService {
   private statusSignal = signal<RecognitionStatus>('idle');
   private interimSignal = signal('');
   private errorSignal = signal<string | null>(null);
+  private consentSignal = signal(this.hasConsent());
 
   status = this.statusSignal.asReadonly();
+  /**
+   * Whether the clinician has agreed to the microphone being opened. Tracked
+   * separately from {@link status}, which only knows about this recogniser:
+   * on a browser with no SpeechRecognition at all the status is
+   * 'unsupported', and consent used to read as already given there.
+   */
+  consented = this.consentSignal.asReadonly();
   /** Live partial transcript — the user must always see what is being heard. */
   interimTranscript = this.interimSignal.asReadonly();
   lastError = this.errorSignal.asReadonly();
@@ -108,16 +116,30 @@ export class SpeechRecognitionService {
    * and a self-hosted recogniser as the real answers.
    */
   hasConsent(): boolean {
-    return localStorage.getItem(CONSENT_KEY) === 'true';
+    try {
+      return localStorage.getItem(CONSENT_KEY) === 'true';
+    } catch {
+      return false;
+    }
   }
 
   grantConsent(): void {
-    localStorage.setItem(CONSENT_KEY, 'true');
+    try {
+      localStorage.setItem(CONSENT_KEY, 'true');
+    } catch {
+      // Private mode: consent holds for this page load only.
+    }
+    this.consentSignal.set(true);
     if (this.statusSignal() === 'consent-required') this.statusSignal.set('idle');
   }
 
   revokeConsent(): void {
-    localStorage.removeItem(CONSENT_KEY);
+    try {
+      localStorage.removeItem(CONSENT_KEY);
+    } catch {
+      // Nothing stored.
+    }
+    this.consentSignal.set(false);
     this.stop();
     if (this.isSupported()) this.statusSignal.set('consent-required');
   }
@@ -159,7 +181,7 @@ export class SpeechRecognitionService {
       this.statusSignal.set('unsupported');
       return false;
     }
-    if (!this.hasConsent()) {
+    if (!this.consentSignal()) {
       this.statusSignal.set('consent-required');
       return false;
     }

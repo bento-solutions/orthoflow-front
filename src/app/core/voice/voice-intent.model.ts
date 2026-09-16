@@ -198,3 +198,28 @@ export function entityString(
   if (typeof value === 'number' && Number.isFinite(value)) return String(value);
   return null;
 }
+
+/**
+ * The finding codes a staged command carries, whatever shape its entities
+ * took. A staged tooth finding holds `findings: [{ code }]` — the server
+ * intent's shape — while the NLU and older rows use `findingCodes` or a
+ * single `findingCode`. Readers that only knew the latter two found nothing
+ * on any dictated finding: removing one by voice matched no entry, and the
+ * review page listed teeth with no findings on them.
+ */
+export function stagedFindingCodes(entities: Record<string, unknown> | undefined): string[] {
+  if (!entities) return [];
+  const codes: string[] = [];
+  const findings = entities['findings'];
+  if (Array.isArray(findings)) {
+    for (const finding of findings) {
+      const code = (finding as { code?: unknown } | null)?.code;
+      if (typeof code === 'string') codes.push(code);
+    }
+  }
+  if (Array.isArray(entities['findingCodes'])) {
+    codes.push(...(entities['findingCodes'] as unknown[]).map(String));
+  }
+  if (typeof entities['findingCode'] === 'string') codes.push(entities['findingCode']);
+  return [...new Set(codes)];
+}

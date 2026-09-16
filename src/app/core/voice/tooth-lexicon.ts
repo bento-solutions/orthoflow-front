@@ -351,6 +351,23 @@ function parseToothPhrase(utterance: string, dentition: Dentition): ParsedTooth 
     }
   }
 
+  // "Carie sur la seize", "la vingt-six" — how French dental dictation
+  // actually names a tooth: an article in place of "dent". Only a spoken
+  // number that is itself a valid code qualifies, so "la deux" or "le
+  // second" never become teeth — and the word after the article must be a
+  // number, so "la carie" is skipped and "sur la seize" further on is found.
+  const articleCodes = text.matchAll(
+    /(?:^|[^\p{L}\p{N}])(?:sur\s+)?(?:la|le|number|numero|numéro)\s+(\p{L}+(?:\s+(?:et\s+)?\p{L}+)?)(?![\p{L}\p{N}])/gu,
+  );
+  for (const articleCode of articleCodes) {
+    if (ALL_UNITS[articleCode[1].split(' ')[0]] === undefined) continue;
+    const value = parseNumber(articleCode[1]);
+    if (value !== null && value >= 11 && isValidFdi(String(value))) {
+      parsed.explicitFdi = String(value);
+      return parsed;
+    }
+  }
+
   // A bare two-digit FDI with no "tooth" in front ("sixteen, recurrent caries").
   const bareCode = text.match(/(?:^|[^\p{L}\p{N}])([1-8][1-8])(?![\p{L}\p{N}])/u);
   if (bareCode && isValidFdi(bareCode[1])) {

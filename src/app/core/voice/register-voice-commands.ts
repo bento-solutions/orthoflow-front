@@ -1,5 +1,4 @@
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PatientService } from '../services/patient.service';
 import { DentalChartService } from '../services/dental-chart.service';
@@ -14,7 +13,14 @@ import { VoiceOrchestratorService } from './voice-orchestrator.service';
 import { describeFdi } from './tooth-lexicon';
 import { findingLabel } from './clinical-lexicon';
 import { WAKE_WORD } from './voice-wake';
-import { FindingEntity, VoiceCommand, VoiceCommandResult, VoiceContextSnapshot, entityString } from './voice-intent.model';
+import {
+  FindingEntity,
+  VoiceCommand,
+  VoiceCommandResult,
+  VoiceContextSnapshot,
+  entityString,
+  stagedFindingCodes,
+} from './voice-intent.model';
 
 /**
  * The command set. This is the whole vocabulary of things voice can do —
@@ -42,14 +48,18 @@ export class VoiceCommandsService {
   private context = inject(VoiceContextService);
   private sessions = inject(VoiceSessionService);
   private orchestrator = inject(VoiceOrchestratorService);
-  private router = inject(Router);
 
+  /**
+   * No navigation commands. Voice works inside one patient's dossier and
+   * shows its results there; switching module, patient or tab by voice
+   * mid-examination took the chart away from a dentist who could not touch
+   * the screen to get it back.
+   */
   registerAll(): void {
     this.registry.registerMany([
       ...this.sessionCommands(),
       ...this.chartCommands(),
       ...this.clinicalCommands(),
-      ...this.navigationCommands(),
       ...this.readCommands(),
       ...this.blockedCommands(),
     ]);
@@ -152,11 +162,8 @@ export class VoiceCommandsService {
 
           const removed = await this.orchestrator.discardBufferedMatching(
             entry => {
-              const entities = entry.entities as Record<string, unknown>;
-              const entryFdi = entityString(entities, 'fdi');
-              const codes = Array.isArray(entities['findingCodes'])
-                ? (entities['findingCodes'] as unknown[]).map(String)
-                : typeof entities['findingCode'] === 'string' ? [entities['findingCode'] as string] : [];
+              const entryFdi = entityString(entry.entities, 'fdi');
+              const codes = stagedFindingCodes(entry.entities);
               if (fdi && entryFdi !== fdi) return false;
               if (code && !codes.includes(code)) return false;
               return true;
@@ -340,7 +347,8 @@ export class VoiceCommandsService {
     const fdi = String(entities['fdi'] ?? '');
     const findings = this.findingsOf(entities);
     const labels = findings.map(f => {
-      const parts = [f.label];
+      // The grammar attaches a label; the NLU fallback returns codes only.
+      const parts = [f.label ?? findingLabel(f.code)];
       if (f.severity) parts.push(f.severity.toLowerCase());
       if (f.surface) parts.push(f.surface);
       return parts.join(', ');
@@ -544,81 +552,7 @@ export class VoiceCommandsService {
     ];
   }
 
-  // ── Navigation and reads ────────────────────────────────────────────
-
-  private navigationCommands(): VoiceCommand[] {
-    const routes: Record<string, string> = {
-      'nav.dashboard': '/',
-      'nav.patients': '/patients',
-      'nav.schedule': '/schedule',
-      'nav.billing': '/billing/invoices',
-      'nav.stock': '/stock',
-      'nav.treatments': '/treatments',
-      'nav.settings': '/settings',
-    };
-
-    return [
-      {
-        id: 'nav.goto',
-        description: 'Navigate to another module of the application',
-        risk: 'SAFE',
-        args: { target: `one of: ${Object.keys(routes).join(', ')}` },
-        examples: ['go to the schedule', 'open billing', 'show me the stock'],
-        preview: (entities) => `Go to ${String(entities['target']).replace('nav.', '')}`,
-        execute: async (entities) => {
-          const path = routes[String(entities['target'])];
-          if (!path) return { ok: false, message: 'I don\'t know that screen.' };
-          await this.router.navigateByUrl(path);
-          return { ok: true, message: `Opened ${String(entities['target']).replace('nav.', '')}.` };
-        },
-      },
-      {
-        id: 'patients.open',
-        description: 'Open a patient\'s dossier by name',
-        risk: 'SAFE',
-        args: { query: 'the patient\'s name as spoken' },
-        examples: ['open Ahmed El Amrani\'s dossier', 'pull up Fatima Benali'],
-        preview: (entities) => `Open the dossier for "${entities['query']}"`,
-        execute: async (entities) => {
-          const query = String(entities['query'] ?? '').toLowerCase().trim();
-          const matches = this.patients.patients().filter(p =>
-            `${p.firstName} ${p.lastName}`.toLowerCase().includes(query)
-            || `${p.lastName} ${p.firstName}`.toLowerCase().includes(query),
-          );
-
-          if (matches.length === 0) {
-            return { ok: false, message: `I couldn't find a patient matching "${entities['query']}".` };
-          }
-          // Opening the wrong patient's record is a serious error even though
-          // navigation itself is read-only, so several matches are listed
-          // rather than resolved to the first one.
-          if (matches.length > 1) {
-            const names = matches.slice(0, 4).map(p => `${p.firstName} ${p.lastName}`).join(', ');
-            return { ok: false, message: `Several patients match: ${names}. Which one?` };
-          }
-          const patient = matches[0];
-          await this.router.navigate(['/patients', patient.id]);
-          return { ok: true, message: `Opened ${patient.firstName} ${patient.lastName}'s dossier.` };
-        },
-      },
-      {
-        id: 'dossier.openTab',
-        description: 'Switch between the tabs of the open patient dossier',
-        risk: 'SAFE',
-        module: 'patient-dossier',
-        requiresPatient: true,
-        args: { tab: 'overview | clinical | financial' },
-        examples: ['open the clinical tab', 'show the financial tab'],
-        preview: (entities) => `Open the ${entities['tab']} tab`,
-        execute: async (entities) => {
-          const tab = String(entities['tab']);
-          // The dossier component owns its tab state; it listens for this.
-          window.dispatchEvent(new CustomEvent('orthoflow:voice:open-tab', { detail: { tab } }));
-          return { ok: true, message: `Opened the ${tab} tab.` };
-        },
-      },
-    ];
-  }
+  // ── Reads ───────────────────────────────────────────────────────────
 
   private readCommands(): VoiceCommand[] {
     return [

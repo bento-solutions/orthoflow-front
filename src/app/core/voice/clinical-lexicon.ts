@@ -18,7 +18,13 @@
  *    recurrent caries underneath, crown needs replacement" is three findings.
  *    Recording only the last one — which a single-status model forces — throws
  *    away most of what the doctor said.
+ *
+ * Patterns are written with `\b` for readability and always executed through
+ * {@link unicodeBoundaries}; see `voice-regex.ts` for why a raw `\b` loses
+ * every French term that ends in an accent.
  */
+
+import { unicodeBoundaries } from './voice-regex';
 
 export type FindingKind = 'EXISTING' | 'CONDITION' | 'TREATMENT_REQUIRED' | 'OBSERVATION';
 export type Severity = 'MILD' | 'MODERATE' | 'SEVERE';
@@ -265,10 +271,10 @@ export function allFindingCodes(): string[] {
 
 const SURFACES: Array<{ code: string; pattern: RegExp }> = [
   { code: 'occlusal', pattern: /\bocclusal\w*|\bbiting\s+surface\b/iu },
-  { code: 'mesial', pattern: /\bmesial\w*/iu },
+  { code: 'mesial', pattern: /\bm[ée]sial\w*/iu },
   { code: 'distal', pattern: /\bdistal\w*/iu },
-  { code: 'buccal', pattern: /\bbuccal\w*|\bvestibular\w*|\bfacial\s+surface\b/iu },
-  { code: 'lingual', pattern: /\blingual\w*|\bpalatal\w*/iu },
+  { code: 'buccal', pattern: /\bbuccal\w*|\bvestibul\w*|\bfacial\s+surface\b/iu },
+  { code: 'lingual', pattern: /\blingual\w*|\bpalatal\w*|\bpalatin\w*/iu },
   { code: 'incisal', pattern: /\bincisal\w*/iu },
   { code: 'cervical', pattern: /\bcervical\w*|\bneck\s+of\s+the\s+tooth\b/iu },
 ];
@@ -280,11 +286,11 @@ const SEVERITIES: Array<{ code: Severity; pattern: RegExp }> = [
 ];
 
 export function detectSurface(text: string): string | null {
-  return SURFACES.find(s => s.pattern.test(text))?.code ?? null;
+  return SURFACES.find(s => unicodeBoundaries(s.pattern).test(text))?.code ?? null;
 }
 
 export function detectSeverity(text: string): Severity | null {
-  return SEVERITIES.find(s => s.pattern.test(text))?.code ?? null;
+  return SEVERITIES.find(s => unicodeBoundaries(s.pattern).test(text))?.code ?? null;
 }
 
 // ── Extraction ──────────────────────────────────────────────────────────
@@ -313,7 +319,7 @@ export function extractFindings(utterance: string): ExtractedFinding[] {
 
   for (const definition of FINDINGS) {
     for (const pattern of definition.patterns) {
-      const match = pattern.exec(remaining);
+      const match = unicodeBoundaries(pattern).exec(remaining);
       if (!match) continue;
 
       const matchedText = match[0];

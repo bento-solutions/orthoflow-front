@@ -88,6 +88,29 @@ describe('extractFindings — French clinical phrasing', () => {
   });
 });
 
+describe('extractFindings — French terms that start or end with an accent', () => {
+  // JavaScript's \b is ASCII-only, so every one of these used to match nothing.
+  it('reads terms ending in an accented letter', () => {
+    expect(codesOf('cavité')).toEqual(['cavity']);
+    expect(codesOf('mobilité sur la 16')).toEqual(['mobility']);
+    expect(codesOf('sensibilité au froid')).toEqual(['sensitivity']);
+    expect(codesOf('dent fêlé')).toEqual(['fracture']);
+    expect(codesOf('dent dévitalisé')).toEqual(['existing_root_canal']);
+  });
+
+  it('reads terms starting with "à"', () => {
+    expect(codesOf('dent à soigner')).toEqual(['restoration_required']);
+    expect(codesOf('à obturer')).toEqual(['filling_required']);
+  });
+
+  it('reads French surfaces and severities', () => {
+    expect(detectSurface('carie mésiale')).toBe('mesial');
+    expect(detectSurface('carie vestibulaire')).toBe('buccal');
+    expect(detectSurface('face palatine')).toBe('lingual');
+    expect(detectSeverity('mobilité modéré')).toBe('MODERATE');
+  });
+});
+
 describe('surface and severity', () => {
   it('detects tooth surfaces', () => {
     expect(detectSurface('occlusal caries')).toBe('occlusal');

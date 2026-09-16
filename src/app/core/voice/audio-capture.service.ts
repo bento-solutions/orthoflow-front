@@ -1,25 +1,39 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { SpeechFeedbackService } from './speech-feedback.service';
+import { toUploadWav, UtteranceSegmenter } from './audio-segmenter';
 
 /**
- * Continuous microphone capture, segmented into utterances by silence.
+ * Continuous microphone capture for a voice session, segmented into
+ * utterances and shipped as 16 kHz WAV.
  *
  * ── Why this exists alongside SpeechRecognitionService ──────────────────
  *
- * `SpeechRecognitionService` wraps the browser's own recogniser. That was the
- * only capture path, and it is the reason dictation was unreliable: on Chrome
- * it is a general-purpose recogniser with no notion of dental vocabulary, and
- * it loses clinical terms in French-with-Darija speech. It stays as an offline
- * fallback; this is the primary path, and it does something different — it
- * records audio and hands the clip to the server, which transcribes it with a
- * model that can be told what kind of speech to expect.
+ * `SpeechRecognitionService` wraps the browser's own recogniser, which has no
+ * notion of dental vocabulary and loses clinical terms in French-with-Darija
+ * speech. It stays as a fallback. This is the primary path: it records the
+ * audio and hands each clip to the server, whose recogniser is told what
+ * kind of speech and which command words to expect.
  *
- * ── Segmentation, and why not push-to-talk ──────────────────────────────
+ * ── What made it fail on phones ─────────────────────────────────────────
  *
- * A dentist mid-examination cannot press anything. So the microphone stays
- * open for the whole session and this decides where one utterance ends: an
- * {@link AnalyserNode} watches the input level, and a stretch of quiet closes
- * the clip and ships it. Everything captured is gated by the wake word
- * downstream, so an open microphone is not the same as an acting one.
+ * Three separate things, any one of which was enough:
+ *
+ * 1. The AudioContext was created *after* `await getUserMedia()`. iOS Safari
+ *    only lets a context run when it is created or resumed inside the tap
+ *    that asked for it, and that allowance does not survive an await. The
+ *    context stayed suspended, the level meter read silence forever, and no
+ *    utterance ever opened. Both are now started synchronously, before the
+ *    first await, and a context the OS suspends later (a call, the screen
+ *    locking) is resumed on return or offered back as a tap.
+ * 2. A MediaRecorder was started at speech onset, clipping the wake word.
+ *    See `audio-segmenter.ts` — audio is now tapped continuously and the
+ *    utterance includes a pre-roll.
+ * 3. MediaRecorder writes WebM on Chrome and MP4 on Safari. Encoding WAV
+ *    ourselves removes the one per-browser difference the server saw.
+ *
+ * The screen is also kept awake while listening: a phone that dims and locks
+ * mid-examination suspends the page and with it the microphone, and the
+ * dentist's hands are not free to wake it.
  *
  * ── What is not kept ────────────────────────────────────────────────────
  *
@@ -28,49 +42,50 @@ import { Injectable, signal } from '@angular/core';
  * recordings — a browser profile should not accumulate consultation audio.
  */
 
-export type CaptureStatus = 'idle' | 'starting' | 'capturing' | 'error';
+export type CaptureStatus = 'idle' | 'starting' | 'capturing' | 'suspended' | 'error';
 
-/** Below this RMS the input counts as silence. */
-const SILENCE_THRESHOLD = 0.012;
+/** Served from `public/`; loads under `script-src 'self'`. */
+const WORKLET_PATH = 'voice/pcm-capture-worklet.js';
 
-/** Quiet for this long closes the current utterance. */
-const SILENCE_HANG_MS = 800;
+/** The level meter does not need 47 updates a second. */
+const LEVEL_INTERVAL_MS = 70;
 
-/** A clip shorter than this is a cough or a door, not speech. */
-const MIN_UTTERANCE_MS = 350;
+type AudioContextCtor = new (options?: AudioContextOptions) => AudioContext;
 
-/**
- * A clip is closed at this length regardless of silence. Long dictation is
- * normal; a single unbounded clip is not — it would delay transcription until
- * the dentist stopped talking, and risk the server's size ceiling.
- */
-const MAX_UTTERANCE_MS = 20_000;
-
-/** How often the level is sampled. */
-const POLL_MS = 50;
+function audioContextCtor(): AudioContextCtor | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as { AudioContext?: AudioContextCtor; webkitAudioContext?: AudioContextCtor };
+  return w.AudioContext ?? w.webkitAudioContext ?? null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AudioCaptureService {
+  private feedback = inject(SpeechFeedbackService);
+
   private statusSignal = signal<CaptureStatus>('idle');
   private levelSignal = signal(0);
+  private speakingSignal = signal(false);
+  private pausedSignal = signal(false);
   private errorSignal = signal<string | null>(null);
 
   status = this.statusSignal.asReadonly();
-  /** 0–1 input level, so the HUD can show the microphone is live. */
+  /** 0–1 input level, so the dentist can see the microphone hears them. */
   level = this.levelSignal.asReadonly();
+  /** True while an utterance is being recorded. */
+  speaking = this.speakingSignal.asReadonly();
+  /** Listening is paused without releasing the microphone. */
+  paused = this.pausedSignal.asReadonly();
   lastError = this.errorSignal.asReadonly();
 
+  private context: AudioContext | null = null;
   private stream: MediaStream | null = null;
-  private recorder: MediaRecorder | null = null;
-  private audioContext: AudioContext | null = null;
-  private analyser: AnalyserNode | null = null;
-  private pollTimer: ReturnType<typeof setInterval> | null = null;
-
-  private chunks: Blob[] = [];
-  private speaking = false;
-  private silenceSince: number | null = null;
-  private utteranceStartedAt = 0;
-  private stopping = false;
+  private source: MediaStreamAudioSourceNode | null = null;
+  private tap: AudioNode | null = null;
+  private sink: GainNode | null = null;
+  private segmenter: UtteranceSegmenter | null = null;
+  private wakeLock: WakeLockSentinel | null = null;
+  private starting: Promise<boolean> | null = null;
+  private lastLevelAt = 0;
 
   private onUtterance: ((clip: Blob) => void) | null = null;
 
@@ -80,204 +95,294 @@ export class AudioCaptureService {
   }
 
   isSupported(): boolean {
-    return typeof navigator !== 'undefined'
+    return typeof window !== 'undefined'
+      && window.isSecureContext
       && !!navigator.mediaDevices?.getUserMedia
-      && typeof MediaRecorder !== 'undefined';
+      && audioContextCtor() !== null;
+  }
+
+  isActive(): boolean {
+    const status = this.statusSignal();
+    return status === 'capturing' || status === 'suspended' || status === 'starting';
   }
 
   /**
    * Opens the microphone and begins segmenting.
    *
-   * @returns false when capture could not start — the caller falls back to
-   *   browser recognition rather than leaving the dentist with a dead
-   *   microphone and no explanation.
+   * **Call this synchronously from the tap or click that asked for it**,
+   * before awaiting anything else — see the class comment for why iOS
+   * requires it.
+   *
+   * @param options.paused open the microphone without acting on speech yet —
+   *   for a tap that must open it immediately, while the session it belongs
+   *   to is still being created.
+   * @returns false when capture could not start; {@link lastError} says why.
    */
-  async start(): Promise<boolean> {
-    if (this.statusSignal() === 'capturing') return true;
-    if (!this.isSupported()) {
-      this.errorSignal.set('This browser cannot record audio. Falling back to browser recognition.');
-      this.statusSignal.set('error');
-      return false;
+  start(options: { paused?: boolean } = {}): Promise<boolean> {
+    if (this.starting) return this.starting;
+    const status = this.statusSignal();
+    if (status === 'capturing' || status === 'suspended') {
+      void this.resume();
+      return Promise.resolve(true);
+    }
+    this.pausedSignal.set(options.paused ?? false);
+    this.starting = this.open().finally(() => { this.starting = null; });
+    return this.starting;
+  }
+
+  private async open(): Promise<boolean> {
+    this.errorSignal.set(null);
+
+    if (typeof window === 'undefined' || !window.isSecureContext) {
+      return this.fail('The microphone only works over a secure connection. Open OrthoFlow from its https:// address.');
+    }
+    const Ctor = audioContextCtor();
+    if (!navigator.mediaDevices?.getUserMedia || !Ctor) {
+      return this.fail('This browser cannot capture audio from the microphone.');
     }
 
     this.statusSignal.set('starting');
-    this.errorSignal.set(null);
 
+    // Both requests leave before the first await — iOS only honours them
+    // inside the user's tap.
+    let context: AudioContext;
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          // A consultation room has suction, handpieces and a second person
-          // in it. These are the browser's own DSP and cost nothing.
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
+      context = new Ctor({ latencyHint: 'interactive' });
+    } catch {
+      return this.fail('Could not open the audio pipeline.');
+    }
+    this.context = context;
+    const resumed = context.resume().catch(() => undefined);
+    const streamRequest = navigator.mediaDevices.getUserMedia({
+      audio: {
+        // A consultation room has suction, handpieces and a second person in
+        // it. These are the browser's own DSP and cost nothing.
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: 1,
+      },
+    });
+
+    let stream: MediaStream;
+    try {
+      stream = await streamRequest;
     } catch (error) {
-      this.errorSignal.set(this.describeGetUserMediaError(error));
-      this.statusSignal.set('error');
+      this.teardown();
+      return this.fail(describeGetUserMediaError(error));
+    }
+    await resumed;
+
+    // Stopped while the permission prompt was up.
+    if (this.context !== context) {
+      stream.getTracks().forEach(track => track.stop());
       return false;
     }
+    this.stream = stream;
 
     try {
-      this.audioContext = new AudioContext();
-      const source = this.audioContext.createMediaStreamSource(this.stream);
-      this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 1024;
-      source.connect(this.analyser);
-
-      this.stopping = false;
-      this.statusSignal.set('capturing');
-      this.pollTimer = setInterval(() => this.poll(), POLL_MS);
-      return true;
-    } catch (error) {
-      this.errorSignal.set('Could not open the audio pipeline.');
-      this.statusSignal.set('error');
-      this.releaseStream();
-      return false;
-    }
-  }
-
-  stop(): void {
-    this.stopping = true;
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
-    }
-    // Ship whatever is mid-utterance rather than discarding a finding the
-    // dentist has already said.
-    this.closeUtterance();
-    this.releaseStream();
-    this.levelSignal.set(0);
-    if (this.statusSignal() !== 'error') this.statusSignal.set('idle');
-  }
-
-  private poll(): void {
-    if (!this.analyser) return;
-
-    const buffer = new Float32Array(this.analyser.fftSize);
-    this.analyser.getFloatTimeDomainData(buffer);
-
-    let sum = 0;
-    for (const sample of buffer) sum += sample * sample;
-    const rms = Math.sqrt(sum / buffer.length);
-    this.levelSignal.set(Math.min(1, rms * 12));
-
-    const now = Date.now();
-
-    if (rms >= SILENCE_THRESHOLD) {
-      this.silenceSince = null;
-      if (!this.speaking) this.openUtterance(now);
-      // A dentist dictating a long finding should not have it cut mid-clause,
-      // but an unbounded clip delays everything behind it.
-      if (now - this.utteranceStartedAt >= MAX_UTTERANCE_MS) this.closeUtterance();
-      return;
-    }
-
-    if (!this.speaking) return;
-
-    if (this.silenceSince === null) {
-      this.silenceSince = now;
-    } else if (now - this.silenceSince >= SILENCE_HANG_MS) {
-      this.closeUtterance();
-    }
-  }
-
-  private openUtterance(now: number): void {
-    if (!this.stream || this.stopping) return;
-
-    this.chunks = [];
-    this.speaking = true;
-    this.utteranceStartedAt = now;
-
-    try {
-      this.recorder = new MediaRecorder(this.stream, { mimeType: this.pickMimeType() });
-      this.recorder.ondataavailable = event => {
-        if (event.data.size > 0) this.chunks.push(event.data);
-      };
-      this.recorder.onstop = () => this.emitClip();
-      this.recorder.start();
+      this.source = context.createMediaStreamSource(stream);
+      // The tap has to reach the destination to be pulled on every engine;
+      // a muted gain keeps the microphone out of the speaker.
+      this.sink = context.createGain();
+      this.sink.gain.value = 0;
+      this.sink.connect(context.destination);
+      this.tap = await this.createTap(context);
+      this.source.connect(this.tap);
+      this.tap.connect(this.sink);
     } catch {
-      // A recorder that will not start is not recoverable per-utterance; the
-      // caller's fallback handles it.
-      this.speaking = false;
-    }
-  }
-
-  private closeUtterance(): void {
-    if (!this.speaking || !this.recorder) {
-      this.speaking = false;
-      return;
-    }
-    this.speaking = false;
-    this.silenceSince = null;
-    const tooShort = Date.now() - this.utteranceStartedAt < MIN_UTTERANCE_MS;
-
-    try {
-      if (this.recorder.state !== 'inactive') this.recorder.stop();
-    } catch {
-      // Already stopped.
+      this.teardown();
+      return this.fail('Could not open the audio pipeline.');
     }
 
-    if (tooShort) {
-      // Drop it without emitting: a door closing is not an utterance, and
-      // transcribing it costs a round trip and risks a spurious command.
-      this.chunks = [];
-    }
-  }
-
-  private emitClip(): void {
-    const chunks = this.chunks;
-    this.chunks = [];
-    this.recorder = null;
-    if (chunks.length === 0) return;
-
-    const clip = new Blob(chunks, { type: chunks[0].type || 'audio/webm' });
-    this.onUtterance?.(clip);
+    this.segmenter = new UtteranceSegmenter({ sampleRate: context.sampleRate });
+    stream.getAudioTracks().forEach(track => track.addEventListener('ended', this.onTrackEnded));
+    context.onstatechange = () => this.syncContextState();
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
+    void this.acquireWakeLock();
+    this.syncContextState();
+    return true;
   }
 
   /**
-   * The first container this browser will actually record. Chrome and Firefox
-   * produce webm/opus; Safari only records mp4. All are accepted upstream.
+   * Resumes a context the OS suspended. Safe to call from any tap; on iOS it
+   * is the only thing that will bring the microphone back after a call.
    */
-  private pickMimeType(): string {
-    const candidates = [
-      'audio/webm;codecs=opus',
-      'audio/webm',
-      'audio/ogg;codecs=opus',
-      'audio/mp4',
-    ];
-    for (const candidate of candidates) {
-      if (MediaRecorder.isTypeSupported(candidate)) return candidate;
+  async resume(): Promise<void> {
+    if (!this.context) return;
+    try {
+      await this.context.resume();
+    } catch {
+      // Stays suspended; the status says so and the UI offers the tap again.
     }
-    return '';
+    this.syncContextState();
+    void this.acquireWakeLock();
   }
 
-  private releaseStream(): void {
+  /** Stops acting on speech without releasing the microphone. */
+  setPaused(paused: boolean): void {
+    this.pausedSignal.set(paused);
+    this.segmenter?.discard();
+    if (paused) this.publish(0, false, true);
+  }
+
+  stop(): void {
+    // Ship whatever is mid-utterance rather than discarding a finding the
+    // dentist has already said.
+    const context = this.context;
+    const tail = this.pausedSignal() ? null : this.segmenter?.flush() ?? null;
+    if (tail && context) this.emit(tail, context.sampleRate);
+
+    this.teardown();
+    if (this.statusSignal() !== 'error') this.statusSignal.set('idle');
+  }
+
+  // ── Audio graph ─────────────────────────────────────────────────────
+
+  private async createTap(context: AudioContext): Promise<AudioNode> {
+    if (context.audioWorklet && typeof AudioWorkletNode !== 'undefined') {
+      try {
+        await context.audioWorklet.addModule(new URL(WORKLET_PATH, document.baseURI).href);
+        const node = new AudioWorkletNode(context, 'pcm-capture', {
+          numberOfInputs: 1,
+          numberOfOutputs: 1,
+          channelCount: 1,
+          channelCountMode: 'explicit',
+        });
+        node.port.onmessage = (event: MessageEvent<Float32Array>) => this.onFrame(event.data);
+        return node;
+      } catch {
+        // Fall through to the legacy tap.
+      }
+    }
+    // Deprecated, but the only tap older WebKit has — a working microphone on
+    // an old iPad beats a modern one that never opens.
+    const processor = context.createScriptProcessor(2048, 1, 1);
+    processor.onaudioprocess = event => this.onFrame(new Float32Array(event.inputBuffer.getChannelData(0)));
+    return processor;
+  }
+
+  private onFrame(frame: Float32Array): void {
+    const segmenter = this.segmenter;
+    if (!segmenter || !this.context) return;
+
+    // Half-duplex. Echo cancellation does not reliably cover speech
+    // synthesis, and a spoken confirmation transcribed back is the worst
+    // possible false trigger — it is phrased exactly like a command.
+    if (this.pausedSignal() || this.feedback.isAudible()) {
+      segmenter.discard();
+      this.publish(0, false);
+      return;
+    }
+
+    const clip = segmenter.push(frame);
+    this.publish(segmenter.level, segmenter.speaking);
+    if (clip) this.emit(clip, this.context.sampleRate);
+  }
+
+  private publish(level: number, speaking: boolean, force = false): void {
+    if (speaking !== this.speakingSignal()) this.speakingSignal.set(speaking);
+    const now = performance.now();
+    if (force || now - this.lastLevelAt >= LEVEL_INTERVAL_MS) {
+      this.lastLevelAt = now;
+      this.levelSignal.set(level);
+    }
+  }
+
+  private emit(samples: Float32Array, sampleRate: number): void {
+    const wav = toUploadWav(samples, sampleRate);
+    this.onUtterance?.(new Blob([wav], { type: 'audio/wav' }));
+  }
+
+  private syncContextState(): void {
+    const context = this.context;
+    if (!context || this.statusSignal() === 'error') return;
+    if (context.state === 'running') {
+      this.statusSignal.set('capturing');
+      return;
+    }
+    if (context.state === 'closed') return;
+    // 'suspended', or WebKit's 'interrupted' after a phone call.
+    this.statusSignal.set('suspended');
+    this.publish(0, false, true);
+    void context.resume().catch(() => undefined);
+  }
+
+  private onVisibilityChange = (): void => {
+    if (document.visibilityState === 'visible') void this.resume();
+  };
+
+  /** The OS took the microphone — a phone call, another app, a headset unplugged. */
+  private onTrackEnded = (): void => {
+    this.teardown();
+    this.fail('The microphone was disconnected or taken by another app. Start listening again.');
+  };
+
+  private async acquireWakeLock(): Promise<void> {
+    if (this.wakeLock || !('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+    try {
+      const sentinel = await navigator.wakeLock.request('screen');
+      // Released by the browser whenever the page is hidden.
+      sentinel.addEventListener('release', () => {
+        if (this.wakeLock === sentinel) this.wakeLock = null;
+      });
+      this.wakeLock = sentinel;
+    } catch {
+      // Low battery mode or an unsupported browser. Listening still works
+      // while the screen is on.
+    }
+  }
+
+  private teardown(): void {
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    this.stream?.getAudioTracks().forEach(track => track.removeEventListener('ended', this.onTrackEnded));
+    try { this.source?.disconnect(); } catch { /* already */ }
+    try { this.tap?.disconnect(); } catch { /* already */ }
+    try { this.sink?.disconnect(); } catch { /* already */ }
+    if (typeof AudioWorkletNode !== 'undefined' && this.tap instanceof AudioWorkletNode) {
+      this.tap.port.onmessage = null;
+    }
     this.stream?.getTracks().forEach(track => track.stop());
+    if (this.context) {
+      this.context.onstatechange = null;
+      void this.context.close().catch(() => undefined);
+    }
+    void this.wakeLock?.release().catch(() => undefined);
+
+    this.context = null;
     this.stream = null;
-    this.analyser = null;
-    void this.audioContext?.close().catch(() => undefined);
-    this.audioContext = null;
-    this.recorder = null;
-    this.chunks = [];
-    this.speaking = false;
-    this.silenceSince = null;
+    this.source = null;
+    this.tap = null;
+    this.sink = null;
+    this.segmenter = null;
+    this.wakeLock = null;
+    this.pausedSignal.set(false);
+    this.publish(0, false, true);
   }
 
-  private describeGetUserMediaError(error: unknown): string {
-    const name = (error as { name?: string } | null)?.name ?? '';
-    switch (name) {
-      case 'NotAllowedError':
-      case 'SecurityError':
-        return 'Microphone access was blocked. Allow it in the browser\'s site settings, then try again.';
-      case 'NotFoundError':
-      case 'DevicesNotFoundError':
-        return 'No microphone was found.';
-      case 'NotReadableError':
-        return 'The microphone is in use by another application.';
-      default:
-        return 'Could not open the microphone.';
-    }
+  private fail(message: string): false {
+    this.errorSignal.set(message);
+    this.statusSignal.set('error');
+    return false;
+  }
+}
+
+function describeGetUserMediaError(error: unknown): string {
+  const name = (error as { name?: string } | null)?.name ?? '';
+  switch (name) {
+    case 'NotAllowedError':
+    case 'SecurityError':
+      return 'Microphone access is blocked for this site. Allow it in the browser\'s site settings '
+        + '(iPhone: aA › Website Settings › Microphone; Android: lock icon › Permissions), then try again.';
+    case 'NotFoundError':
+    case 'DevicesNotFoundError':
+      return 'No microphone was found.';
+    case 'NotReadableError':
+    case 'AbortError':
+      return 'The microphone is in use by another app. Close it, then try again.';
+    case 'OverconstrainedError':
+      return 'The microphone does not support the requested settings.';
+    default:
+      return 'Could not open the microphone.';
   }
 }

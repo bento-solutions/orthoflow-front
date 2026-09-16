@@ -1,6 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { Router } from '@angular/router';
 import { VoiceApiService, VoiceSessionDto } from './voice-api.service';
 import { SessionBufferService } from './session-buffer.service';
 import { VoiceOrchestratorService } from './voice-orchestrator.service';
@@ -10,24 +9,22 @@ import { findingLabel } from './clinical-lexicon';
 import { describeFdi } from './tooth-lexicon';
 
 /**
- * A dictated examination, from "start examination" to "end examination".
+ * A dictated examination, from start to review.
  *
- * Sessions are what make hands-free documentation practical. Confirming forty
- * individual writes is not something a doctor with gloves on will do, so
- * findings accumulate under a session id and the whole consultation is
- * reviewed and confirmed once at the end — while each individual write is
- * still separately audited underneath, so the session summary is a review
- * step rather than the only record.
+ * Findings accumulate under a session id and the whole consultation is
+ * reviewed and confirmed once at the end, while each individual write is
+ * still separately audited underneath.
  *
  * Dictation is buffered. Each command is audited server-side as it is spoken
  * — so a closed tab never loses what was said — but nothing reaches the
- * clinical tables until the dentist has reviewed the consultation on the
- * review page and committed it. {@link end} therefore moves the session to
- * PENDING_REVIEW and navigates there; {@link commit} is what actually writes.
+ * clinical tables until the dentist has reviewed the consultation and
+ * committed it. {@link end} moves the session to PENDING_REVIEW; {@link
+ * commit} is what actually writes.
  *
- * The structured summary is still read back from the server rather than
- * assembled from what the browser thinks it sent. The generated narrative is
- * separate and comes from {@link VoiceApiService.summarizeSession}.
+ * Everything happens inside the patient's dossier. Ending a session used to
+ * navigate to a separate review route, which took the dentist away from the
+ * chart they had just dictated onto; the dossier now switches its own voice
+ * panel into review instead, and the route remains only for direct links.
  */
 
 export interface ToothSummaryRow {
@@ -47,8 +44,11 @@ export interface SessionSummary {
   totalFindings: number;
 }
 
+/** What a dossier found waiting for its patient when it opened. */
+export type ResumableState = 'active' | 'review' | null;
+
 /** Sessions abandoned automatically after this period of voice inactivity. */
-const SESSION_TIMEOUT_MS = 45 * 60 * 1000; // 45 minutes
+const SESSION_TIMEOUT_MS = 45 * 60 * 1000;
 
 @Injectable({ providedIn: 'root' })
 export class VoiceSessionService {
@@ -56,7 +56,6 @@ export class VoiceSessionService {
   private context = inject(VoiceContextService);
   private buffer = inject(SessionBufferService);
   private orchestrator = inject(VoiceOrchestratorService);
-  private router = inject(Router);
 
   private sessionSignal = signal<VoiceSessionDto | null>(null);
   private summarySignal = signal<SessionSummary | null>(null);
@@ -64,26 +63,27 @@ export class VoiceSessionService {
   private busySignal = signal(false);
   private narrativeSignal = signal<string | null>(null);
   private narrativeErrorSignal = signal<string | null>(null);
+  private startedAtSignal = signal<number | null>(null);
 
   session = this.sessionSignal.asReadonly();
   summary = this.summarySignal.asReadonly();
   summaryOpen = this.summaryOpenSignal.asReadonly();
   busy = this.busySignal.asReadonly();
-  /** The generated consultation narrative, for the review page to edit. */
+  /** The generated consultation narrative, for review to edit. */
   narrative = this.narrativeSignal.asReadonly();
   /** Why no narrative is available, when there isn't one. */
   narrativeError = this.narrativeErrorSignal.asReadonly();
+  /** Epoch ms the session started, for the elapsed-time display. */
+  startedAt = this.startedAtSignal.asReadonly();
 
   isActive = computed(() => this.sessionSignal()?.status === 'ACTIVE');
+  /** Dictation has ended and the consultation is waiting to be saved. */
+  reviewing = computed(() => this.sessionSignal()?.status === 'PENDING_REVIEW');
 
   /** Timer handle — reset on each voice command, fires on prolonged inactivity. */
   private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
-  /**
-   * Call this whenever voice activity happens inside an active session so the
-   * timeout clock resets. The orchestrator should call this after every
-   * command executes.
-   */
+  /** Resets the inactivity clock. The orchestrator calls this for every utterance. */
   touchSession(): void {
     if (!this.isActive()) return;
     this.armSessionTimeout();
@@ -93,8 +93,10 @@ export class VoiceSessionService {
     this.clearSessionTimeout();
     this.timeoutHandle = setTimeout(() => {
       if (this.isActive()) {
-        console.warn('[VoiceSession] Session timed out after inactivity — abandoning.');
-        void this.abandon();
+        // Into review rather than abandoned: whatever was dictated is still
+        // worth saving, and discarding it is the dentist's call.
+        console.warn('[VoiceSession] No speech for 45 minutes — ending dictation.');
+        void this.end();
       }
     }, SESSION_TIMEOUT_MS);
   }
@@ -110,10 +112,12 @@ export class VoiceSessionService {
     const snapshot = this.context.snapshot();
     const session = await firstValueFrom(this.api.startSession(snapshot.patientId, snapshot.locale));
     this.sessionSignal.set(session);
+    this.startedAtSignal.set(Date.now());
     this.summarySignal.set(null);
     this.narrativeSignal.set(null);
     this.narrativeErrorSignal.set(null);
     this.orchestrator.resetBuffer();
+    this.context.clearConversation();
     this.context.setSessionId(session.id);
     if (snapshot.patientId) {
       await this.buffer.begin({
@@ -129,35 +133,25 @@ export class VoiceSessionService {
   }
 
   /**
-   * Ends dictation and takes the dentist to review.
+   * Ends dictation and moves the consultation into review, in place.
    *
-   * Nothing is written here. The session moves to PENDING_REVIEW, the
-   * narrative is generated from the audit trail, and the review page is where
-   * the consultation is corrected and committed. Failing to generate a
-   * narrative does not block any of that — the structured findings are what
-   * the record is made of, and the prose is an aid to reading them.
+   * Nothing is written here. Failing to generate a narrative does not block
+   * review — the structured findings are what the record is made of.
    */
   async end(): Promise<void> {
     const session = this.sessionSignal();
-    if (!session) return;
+    if (!session || session.status !== 'ACTIVE') return;
 
     this.clearSessionTimeout();
     this.busySignal.set(true);
     try {
       this.orchestrator.stopListening();
-
       const pending = await firstValueFrom(this.api.completeSession(session.id, {
         status: 'PENDING_REVIEW',
         confirmed: false,
       }));
       this.sessionSignal.set(pending);
-
       await this.generateNarrative(session.id);
-
-      const patientId = session.patientId ?? this.context.snapshot().patientId;
-      if (patientId) {
-        await this.router.navigate(['/patients', patientId, 'session', session.id, 'review']);
-      }
     } finally {
       this.busySignal.set(false);
     }
@@ -188,8 +182,7 @@ export class VoiceSessionService {
    *
    * Commands are named by audit id rather than resent as values, so what the
    * server executes is what it recorded and showed. A partial failure is
-   * reported rather than swallowed: the session stays in PENDING_REVIEW and
-   * the page tells the dentist which findings did not save.
+   * reported rather than swallowed.
    */
   async commit(
     sessionId: string,
@@ -214,6 +207,7 @@ export class VoiceSessionService {
         this.orchestrator.resetBuffer();
         this.context.setSessionId(null);
         this.context.clearConversation();
+        this.startedAtSignal.set(null);
       }
 
       return {
@@ -227,39 +221,59 @@ export class VoiceSessionService {
   }
 
   /**
-   * Restores an examination interrupted by a crash or a closed tab.
+   * Restores an examination interrupted by a crash, a closed tab or leaving
+   * the dossier — still dictating, or waiting in review.
    *
-   * Offered only for the patient whose dossier is open — resuming Ahmed's
+   * Offered only for the patient whose dossier is open: resuming Ahmed's
    * half-finished examination while Fatima's chart is on screen is how
    * findings end up on the wrong record.
    */
-  async resumeIfAvailable(patientId: string): Promise<boolean> {
+  async resumeIfAvailable(patientId: string): Promise<ResumableState> {
+    const current = this.sessionSignal();
+    if (current && current.patientId === patientId && (current.status === 'ACTIVE' || current.status === 'PENDING_REVIEW')) {
+      return current.status === 'ACTIVE' ? 'active' : 'review';
+    }
+
     const buffered = await this.buffer.findResumable(patientId);
-    if (!buffered) return false;
+    if (!buffered) return null;
 
     try {
       const session = await firstValueFrom(this.api.getSession(buffered.sessionId));
-      if (session.status !== 'ACTIVE') {
+      if (session.status !== 'ACTIVE' && session.status !== 'PENDING_REVIEW') {
         await this.buffer.clear(buffered.sessionId);
-        return false;
+        return null;
       }
       this.sessionSignal.set(session);
+      this.startedAtSignal.set(buffered.startedAt);
       this.context.setSessionId(session.id);
-      this.orchestrator.restoreBuffer(buffered.commands.map(command => ({
-        auditId: command.auditId,
-        intent: command.intent,
-        entities: command.entities,
-        preview: command.preview,
-        transcript: command.transcript,
-        corrections: command.corrections,
-        at: command.at,
-      })));
-      return true;
+      this.orchestrator.restoreBuffer(buffered.commands.map(command => ({ ...command })));
+      if (session.status === 'ACTIVE') {
+        this.armSessionTimeout();
+        return 'active';
+      }
+      if (!this.narrativeSignal()) void this.generateNarrative(session.id);
+      return 'review';
     } catch {
       // The session no longer exists server-side; the buffer is orphaned.
       await this.buffer.clear(buffered.sessionId);
-      return false;
+      return null;
     }
+  }
+
+  /**
+   * Lets go of the session in this tab without ending it — the dentist left
+   * the dossier. The microphone closes; the buffer and the server session
+   * stay, and the dossier offers them back on return.
+   */
+  detach(): void {
+    if (!this.sessionSignal()) return;
+    this.clearSessionTimeout();
+    this.orchestrator.stopListening();
+    this.sessionSignal.set(null);
+    this.startedAtSignal.set(null);
+    this.orchestrator.resetBuffer();
+    this.context.setSessionId(null);
+    this.context.clearConversation();
   }
 
   /** Sign-off. Freezes the summary as reviewed. Optionally appends clinician remarks. */
@@ -278,15 +292,26 @@ export class VoiceSessionService {
     this.summaryOpenSignal.set(false);
   }
 
+  /**
+   * Throws the consultation away: nothing staged is written. ABANDONED marks
+   * the dictation as not reviewed; the staged audit rows stay PENDING and
+   * are never executed.
+   */
   async abandon(): Promise<void> {
     const session = this.sessionSignal();
     if (!session) return;
     this.clearSessionTimeout();
-    // ABANDONED marks the dictation as not reviewed. It does not remove
-    // anything already written — those are clinical records with their own
-    // audit trail, and a session ending untidily is not grounds to delete them.
-    await firstValueFrom(this.api.completeSession(session.id, { status: 'ABANDONED', confirmed: false }));
+    this.orchestrator.stopListening();
+    try {
+      await firstValueFrom(this.api.completeSession(session.id, { status: 'ABANDONED', confirmed: false }));
+    } catch {
+      // Locally discarded either way; a server session that stays in review
+      // is harmless — nothing in it was ever executed.
+    }
+    await this.buffer.clear(session.id);
+    this.orchestrator.resetBuffer();
     this.sessionSignal.set(null);
+    this.startedAtSignal.set(null);
     this.context.setSessionId(null);
     this.context.clearConversation();
     this.summaryOpenSignal.set(false);
@@ -335,9 +360,6 @@ export class VoiceSessionService {
 
     const teeth = [...byTooth.values()].sort((a, b) => a.fdi.localeCompare(b.fdi));
 
-    // Diagnoses and treatments are the same findings sliced by kind — the
-    // doctor reviews "what is wrong" separately from "what needs doing",
-    // which is how a consultation summary is actually read.
     const diagnoses: string[] = [];
     const treatments: string[] = [];
     for (const row of teeth) {
@@ -366,8 +388,17 @@ export class VoiceSessionService {
     };
   }
 
-  /** A short read-back for "show me today's findings" while hands are busy. */
+  /**
+   * A short read-back for "show me today's findings". During a buffered
+   * session nothing is on the record yet, so this counts what is staged.
+   */
   spokenSummary(summary: SessionSummary): string {
+    const staged = this.orchestrator.buffered();
+    if (staged.length > 0) {
+      const teeth = new Set(staged.map(entry => String(entry.entities['fdi'] ?? '')).filter(Boolean));
+      return `${staged.length} ${staged.length === 1 ? 'entry' : 'entries'} dictated, on ${teeth.size} `
+        + `${teeth.size === 1 ? 'tooth' : 'teeth'}. Everything is listed on screen.`;
+    }
     if (summary.totalFindings === 0 && summary.notes.length === 0) {
       return 'Nothing recorded in this examination yet.';
     }

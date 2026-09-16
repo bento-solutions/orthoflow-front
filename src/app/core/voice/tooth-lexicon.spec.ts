@@ -189,3 +189,16 @@ describe('parseNumber — the recogniser hands us words as often as digits', () 
     expect(parseNumber('crown replacement')).toBeNull();
   });
 });
+
+describe('resolveTooth — French article forms', () => {
+  it('reads "sur la seize" and "la vingt-six" as teeth, as French dictation names them', () => {
+    expect(resolveTooth('carie sur la seize')).toMatchObject({ kind: 'resolved', fdi: '16' });
+    expect(resolveTooth('la vingt-six, couronne à remplacer')).toMatchObject({ kind: 'resolved', fdi: '26' });
+    expect(resolveTooth('enlève la carie sur la seize')).toMatchObject({ kind: 'resolved', fdi: '16' });
+  });
+
+  it('never turns an article and a small number, or a noun, into a tooth', () => {
+    expect(resolveTooth('la deux')).toEqual({ kind: 'none' });
+    expect(resolveTooth('la carie')).toEqual({ kind: 'none' });
+  });
+});

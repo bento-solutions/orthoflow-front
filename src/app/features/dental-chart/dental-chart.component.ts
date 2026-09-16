@@ -184,6 +184,16 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
   @Input() patientTreatments: PatientTreatment[] = [];
   /** Active clinical findings, used to draw the planned-work overlay (audit VIII.10 / IX). */
   @Input() findings: ToothFinding[] = [];
+  /** Teeth a voice session has dictated findings on that are not saved yet. */
+  @Input() stagedTeeth: string[] = [];
+  /** The tooth the last voice command was about, drawn so it can be checked at a glance. */
+  @Input() focusFdi: string | null = null;
+  /**
+   * Whether clicking a tooth opens the status picker. Off in the voice
+   * session panel, where a tap only tells the assistant what "that tooth"
+   * means — a picker covering the chart mid-dictation hides what it verifies.
+   */
+  @Input() statusMenu = true;
 
   @Output() toothSelected = new EventEmitter<ToothState>();
   @Output() toothHovered = new EventEmitter<ToothState | null>();
@@ -257,12 +267,9 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     if (changes['findings'] || changes['teeth']) {
       this.overlays = toothOverlays(this.findings ?? []);
     }
-    if ((changes['teeth'] || changes['patientTreatments'] || changes['findings']) && this.chartContainer) {
-      setTimeout(() => {
-        this.applyAllToothColors();
-        this.applyTreatmentIndicators();
-        this.applyOverlays();
-      }, 0);
+    const repaintKeys = ['teeth', 'patientTreatments', 'findings', 'stagedTeeth', 'focusFdi'];
+    if (repaintKeys.some(key => changes[key]) && this.chartContainer) {
+      setTimeout(() => this.repaint(), 0);
     }
   }
 
@@ -274,10 +281,17 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     this.listenersAttached = false;
     setTimeout(() => {
       this.attachToothListeners();
-      this.applyAllToothColors();
-      this.applyTreatmentIndicators();
-      this.applyOverlays();
+      this.repaint();
     }, 150); // Increased delay for SVG rendering
+  }
+
+  /** Every paint layer, bottom to top; each pass starts from a clean outline. */
+  private repaint() {
+    this.clearVoiceMarks();
+    this.applyAllToothColors();
+    this.applyTreatmentIndicators();
+    this.applyOverlays();
+    this.applyVoiceMarks();
   }
 
   private updateSvgContent() {
@@ -415,6 +429,10 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
   onToothLeave(toothId: string) {
     this.hoveredTooth = null;
     this.highlightTooth(toothId, false);
+    // The hover reset the outline to black; put back whatever it covered.
+    if (this.stagedTeeth.length || this.focusFdi || this.patientTreatments.length || this.findings.length) {
+      this.repaint();
+    }
     this.toothHovered.emit(null);
   }
 
@@ -435,9 +453,11 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
   }
 
   onToothClick(toothId: string) {
-    this.selectedTooth = toothId;
     const state = (this.teeth && this.teeth[toothId]) || { id: toothId, status: 'present' };
-    this.currentToothNote = state.notes || '';
+    if (this.statusMenu) {
+      this.selectedTooth = toothId;
+      this.currentToothNote = state.notes || '';
+    }
     this.toothSelected.emit(state);
   }
 
@@ -819,4 +839,72 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
       svg.appendChild(marker);
     }
   }
+
+  /** Removes the voice layer, restoring the plain outline it was drawn over. */
+  private clearVoiceMarks() {
+    const svg = this.chartContainer?.nativeElement.querySelector('svg');
+    if (!svg) return;
+    svg.querySelectorAll('.odo-voice-marker').forEach((n) => n.remove());
+    svg.querySelectorAll('[data-odo-voice]').forEach((node) => {
+      const el = node as HTMLElement;
+      el.style.stroke = '#000';
+      el.style.strokeWidth = '1px';
+      el.style.strokeDasharray = 'none';
+      el.style.filter = 'none';
+      delete el.dataset['odoVoice'];
+    });
+  }
+
+  /**
+   * The voice session's layer, drawn last so it has the final say while a
+   * consultation is being dictated: an amber outline and dot on every tooth
+   * with findings staged but not yet saved, and a heavy petrol outline on the
+   * tooth the last command was about. The dentist glances up and sees which
+   * tooth was understood — the check a click gives for free and speech does
+   * not (audit XII.2).
+   */
+  private applyVoiceMarks() {
+    const svg = this.chartContainer?.nativeElement.querySelector('svg');
+    if (!svg) return;
+    const prefix = this.getToothPrefix();
+
+    for (const fdi of new Set(this.stagedTeeth ?? [])) {
+      const el = svg.querySelector(`.${prefix}${fdi}-parent`) as (SVGGraphicsElement & HTMLElement) | null;
+      if (!el) continue;
+      el.dataset['odoVoice'] = 'staged';
+      el.style.stroke = VOICE_STAGED_INK;
+      el.style.strokeWidth = '3px';
+      el.style.strokeDasharray = 'none';
+
+      const bbox = el.getBBox();
+      const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      marker.setAttribute('class', 'odo-voice-marker');
+      marker.setAttribute('cx', String(bbox.x + bbox.width / 2));
+      marker.setAttribute('cy', String(bbox.y + bbox.height / 2));
+      marker.setAttribute('r', '2.6');
+      marker.setAttribute('fill', VOICE_STAGED_INK);
+      marker.setAttribute('stroke', '#ffffff');
+      marker.setAttribute('stroke-width', '0.8');
+      marker.setAttribute('pointer-events', 'none');
+      marker.setAttribute('role', 'img');
+      this.translate.get('VOICE.CHART_STAGED').subscribe((label) => marker.setAttribute('aria-label', label));
+      svg.appendChild(marker);
+    }
+
+    if (this.focusFdi) {
+      const el = svg.querySelector(`.${prefix}${this.focusFdi}-parent`) as HTMLElement | null;
+      if (el) {
+        el.dataset['odoVoice'] = 'focus';
+        el.style.stroke = VOICE_FOCUS_INK;
+        el.style.strokeWidth = '4px';
+        el.style.strokeDasharray = 'none';
+        el.style.filter = 'drop-shadow(0 0 3px rgba(14, 116, 144, 0.9))';
+      }
+    }
+  }
 }
+
+/** Dictated, not yet saved. Amber reads as "pending" beside every status family. */
+const VOICE_STAGED_INK = '#d97706';
+/** The tooth the last command was about. */
+const VOICE_FOCUS_INK = '#0e7490';

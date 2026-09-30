@@ -830,6 +830,7 @@
     "REVIEW_GENERATING": "Génération…",
     "REVIEW_REGENERATE": "Régénérer",
     "REVIEW_REPORT_HINT": "Généré à partir de la dictée et enregistré comme note clinique. Modifiez-le librement.",
-    "REVIEW_REPORT_UNAVAILABLE": "Aucun compte rendu n'a pu être généré ({{reason}}). Rédigez-le vous-même ou laissez-le vide — les constatations sont enregistrées dans tous les cas."
+    "REVIEW_REPORT_UNAVAILABLE": "Aucun compte rendu n'a pu être généré ({{reason}}). Rédigez-le vous-même ou laissez-le vide — les constatations sont enregistrées dans tous les cas.",
+    "REVIEW_REPORT_STRUCTURED": "Rédigé directement à partir des constatations enregistrées — le résumé IA n'était pas disponible ou ne correspondait pas exactement au dossier."
   }
 }

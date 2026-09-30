@@ -9,20 +9,24 @@ import { VoiceContextService } from './voice-context.service';
 import { VoiceCommandRegistryService } from './voice-command-registry.service';
 import { TranscriptionDto, VoiceApiService } from './voice-api.service';
 import { VoiceSessionService } from './voice-session.service';
-import { resolveWithGrammar } from './voice-grammar';
+import { SEVERAL_TEETH_QUESTION, resolveWithGrammar } from './voice-grammar';
 import { repairClinicalTerms } from './voice-fuzzy';
 import { detectWake, isSelfEvidentDictation, isStopPhrase, stripWakeWord, FOLLOW_UP_WINDOW_MS } from './voice-wake';
-import { allFindingCodes, extractFindings, findingLabel } from './clinical-lexicon';
-import { describeFdi, resolveTooth } from './tooth-lexicon';
+import { affirmedFindings, allFindingCodes, extractFindings, findingLabel, spokenFindingCovers } from './clinical-lexicon';
+import { describeFdi, findToothMentions, resolveTooth } from './tooth-lexicon';
 import { WORD_END } from './voice-regex';
 import {
   PhraseKey,
   Spoken,
+  SpokenLanguage,
+  dictationLanguage,
   phrase,
   speechHints,
   spokenConfirmation,
   spokenLanguage,
+  spokenFindingLabel,
   spokenQuestion,
+  synthesisLocale,
 } from './voice-vocabulary';
 import {
   CommandOutcome,
@@ -147,6 +151,20 @@ const NEGATIVE = new RegExp(
   'iu',
 );
 
+/** What a sequence of commands from one utterance collects as it stages. */
+interface StagedBatch {
+  auditIds: string[];
+  previews: string[];
+  spoken: Spoken[];
+  /** Teeth whose command could not be recorded. */
+  failedTeeth: string[];
+}
+
+/** A resolution that is something to do, not a question or a miss. */
+function isCommand(resolution: VoiceResolution): boolean {
+  return resolution.kind === 'intent' || resolution.kind === 'sequence';
+}
+
 function distinct(values: Array<string | null | undefined>): string[] {
   const out: string[] = [];
   for (const value of values) {
@@ -156,14 +174,22 @@ function distinct(values: Array<string | null | undefined>): string[] {
   return out;
 }
 
+/**
+ * What the dentist is told when a clip produced nothing. The server has
+ * already tried every configured recogniser by the time one of these
+ * arrives, so the message names the last failure in plain words.
+ */
 function describeTranscriptionError(error: string): string {
-  if (error === 'stt-http-429') {
-    return 'The speech service quota is used up (HTTP 429) — check the Gemini API plan. Repeat, or type the command.';
+  if (error === 'stt-http-429' || error === 'stt-rate-limited') {
+    return 'Every speech service is at its usage limit right now — check the API plans. Repeat, or type the command.';
   }
-  if (/^stt-http-5\d\d$/.test(error) || error === 'stt-timeout') {
-    return 'The speech service is overloaded right now. Repeat, or type the command.';
+  if (/^stt-http-5\d\d$/.test(error) || error === 'stt-timeout' || error === 'stt-unavailable') {
+    return 'The speech services are overloaded right now. Repeat, or type the command.';
   }
-  if (error === 'stt-http-400' || error === 'stt-http-401' || error === 'stt-http-403' || error === 'stt-http-404') {
+  if (error === 'stt-http-402') {
+    return 'The speech service account has run out of credit — the server configuration needs checking.';
+  }
+  if (/^stt-http-4(00|01|03|04|13|15)$/.test(error) || error === 'stt-unsupported-format') {
     return `The speech service refused the request (${error}) — the server configuration needs checking.`;
   }
   if (error === 'stt-non-transcript-response') return 'That clip could not be transcribed. Repeat it.';
@@ -203,6 +229,12 @@ export class VoiceOrchestratorService {
   private pendingClipsSignal = signal(0);
   private transcriptionIssueSignal = signal<string | null>(null);
   private speechPausedSignal = signal(false);
+  /**
+   * The language the dentist is actually dictating in, from the recogniser.
+   * Confirmations follow it rather than the interface language: a dentist
+   * with the app in English who dictates in French hears French back.
+   */
+  private dictationLanguageSignal = signal<SpokenLanguage | null>(null);
 
   state = this.stateSignal.asReadonly();
   /** Verbatim transcript of the last utterance, for the "heard" line. */
@@ -466,6 +498,8 @@ export class VoiceOrchestratorService {
     this.transcriptionFailures = 0;
     this.transcriptionIssueSignal.set(null);
     if (!result.text.trim()) return;
+    const detected = dictationLanguage(result.language);
+    if (detected) this.dictationLanguageSignal.set(detected);
     await this.handleTranscript(result.text, 1, result.normalized ?? null, inSession);
   }
 
@@ -603,7 +637,7 @@ export class VoiceOrchestratorService {
 
     for (const reading of readings) {
       const attempt = resolveWithGrammar(reading, snapshot);
-      if (attempt.kind === 'intent') {
+      if (attempt.kind === 'intent' || attempt.kind === 'sequence') {
         resolution = attempt;
         resolvedFrom = reading;
         break;
@@ -618,12 +652,12 @@ export class VoiceOrchestratorService {
     // against the lexicon's own vocabulary and retried. Numbers are never
     // repaired: a fuzzy tooth number is the one error that survives review
     // looking correct. Only an outright intent is accepted from the retry.
-    if (resolution.kind !== 'intent') {
+    if (resolution.kind !== 'intent' && resolution.kind !== 'sequence') {
       for (const reading of readings) {
-        const repair = repairClinicalTerms(reading, candidate => resolveWithGrammar(candidate, snapshot).kind === 'intent');
+        const repair = repairClinicalTerms(reading, candidate => isCommand(resolveWithGrammar(candidate, snapshot)));
         if (repair.corrections.length === 0) continue;
         const retried = resolveWithGrammar(repair.text, snapshot);
-        if (retried.kind === 'intent') {
+        if (retried.kind === 'intent' || retried.kind === 'sequence') {
           resolution = retried;
           corrections = repair.corrections;
           resolvedFrom = reading;
@@ -632,8 +666,9 @@ export class VoiceOrchestratorService {
       }
     }
 
-    if (resolution.kind === 'intent' && resolvedFrom !== heard) {
-      resolution = this.guardTooth(resolution, heard, snapshot);
+    if (resolvedFrom !== heard) {
+      if (resolution.kind === 'intent') resolution = this.guardTooth(resolution, heard, snapshot);
+      else if (resolution.kind === 'sequence') resolution = this.guardTeeth(resolution, heard);
     }
 
     // Only what neither could parse is worth the round trip.
@@ -643,6 +678,7 @@ export class VoiceOrchestratorService {
 
     // What the dentist said is what the audit trail and the review page keep.
     if (resolution.kind === 'intent') resolution.intent.transcript = heard;
+    if (resolution.kind === 'sequence') resolution.intents.forEach(intent => { intent.transcript = heard; });
     if (resolution.kind === 'clarification') resolution.clarification.transcript = heard;
 
     this.pendingCorrections = corrections;
@@ -675,6 +711,29 @@ export class VoiceOrchestratorService {
         pendingEntities: resolution.intent.entities,
         awaiting: 'fdi',
       },
+    };
+  }
+
+  /**
+   * The same check for an utterance that named several teeth: every tooth the
+   * normalized reading acted on has to be one the verbatim transcript also
+   * names. Otherwise it is asked, one tooth at a time, rather than staged.
+   */
+  private guardTeeth(
+    resolution: Extract<VoiceResolution, { kind: 'sequence' }>,
+    heard: string,
+  ): VoiceResolution {
+    const spoken = new Set(findToothMentions(heard).map(mention => mention.fdi));
+    if (spoken.size === 0) return resolution;
+
+    const unsupported = resolution.intents.some(intent => {
+      const fdi = entityString(intent.entities, 'fdi');
+      return !!fdi && !spoken.has(fdi);
+    });
+    if (!unsupported) return resolution;
+    return {
+      kind: 'clarification',
+      clarification: { question: SEVERAL_TEETH_QUESTION, options: [], transcript: heard },
     };
   }
 
@@ -751,7 +810,47 @@ export class VoiceOrchestratorService {
       );
       return;
     }
+    if (resolution.kind === 'sequence') {
+      await this.applySequence(resolution.intents, snapshot, recognitionConfidence);
+      return;
+    }
     await this.dispatch(resolution.intent, snapshot, recognitionConfidence);
+  }
+
+  /**
+   * Several commands from one utterance, staged in order and answered once.
+   *
+   * Read back together because a spoken confirmation interrupts the one
+   * before it: said one after another, only the last tooth would ever be
+   * heard. Undone together for the same reason it was said together.
+   */
+  private async applySequence(
+    intents: VoiceIntent[],
+    snapshot: VoiceContextSnapshot,
+    recognitionConfidence: number,
+  ): Promise<void> {
+    const batch: StagedBatch = { auditIds: [], previews: [], spoken: [], failedTeeth: [] };
+    for (const intent of intents) {
+      await this.dispatch(intent, snapshot, recognitionConfidence, batch);
+    }
+    // Nothing staged: dispatch has already said why.
+    if (batch.auditIds.length === 0) return;
+
+    const language = this.language();
+    const fr = language === 'fr';
+    const heard = batch.spoken.map(part => part.text);
+    if (batch.failedTeeth.length > 0) {
+      const teeth = batch.failedTeeth.join(fr ? ' et ' : ' and ');
+      heard.push(fr ? `Dent ${teeth} non enregistrée. Répétez.` : `Tooth ${teeth} was not recorded. Say it again.`);
+    }
+    const ids = [...batch.auditIds];
+    this.offerUndo(`Undo: ${batch.previews.join(' · ')}`, async () => {
+      for (const id of ids) await this.discardBuffered(id);
+    }, ids[ids.length - 1]);
+
+    this.settle();
+    this.announce(batch.failedTeeth.length === 0, batch.previews.join(' · '),
+      this.withCorrections({ text: heard.join(' '), locale: batch.spoken[0].locale }, language));
   }
 
   private askClarification(clarification: VoiceClarification, snapshot: VoiceContextSnapshot): void {
@@ -761,7 +860,7 @@ export class VoiceOrchestratorService {
     // A question opens the floor: the answer needs no wake word.
     this.touchWakeWindow();
     this.announce(false, clarification.question,
-      spokenQuestion(clarification.question, spokenLanguage(snapshot.locale)));
+      spokenQuestion(clarification.question, this.language()));
     void this.audit(
       {
         intent: clarification.pendingIntent ?? 'clarification',
@@ -779,12 +878,13 @@ export class VoiceOrchestratorService {
     intent: VoiceIntent,
     snapshot: VoiceContextSnapshot,
     recognitionConfidence: number,
+    batch?: StagedBatch,
   ): Promise<void> {
     const command = this.registry.get(intent.intent);
 
     if (!command) {
       this.settle();
-      this.announce(false, 'That can\'t be done by voice from here.');
+      this.announce(false, 'That can\'t be done by voice from here.', this.say('notByVoiceHere'));
       await this.audit(intent, snapshot, 'SAFE', 'REJECTED', 'REJECTED',
         { errorMessage: `Unknown or out-of-scope command: ${intent.intent}` });
       return;
@@ -796,14 +896,14 @@ export class VoiceOrchestratorService {
       this.settle();
       const message = `That one needs to be done on screen — ${command.description.toLowerCase()} `
         + 'is deliberately not available by voice.';
-      this.announce(false, message);
+      this.announce(false, message, this.say('onScreenOnly'));
       await this.audit(intent, snapshot, 'BLOCKED', 'REJECTED', 'REJECTED', { errorMessage: 'Blocked risk tier' });
       return;
     }
 
     if (command.requiresPatient && !snapshot.patientId) {
       this.settle();
-      this.announce(false, 'Open a patient\'s dossier first, then say that again.');
+      this.announce(false, 'Open a patient\'s dossier first, then say that again.', this.say('openPatientFirst'));
       await this.audit(intent, snapshot, command.risk, 'REJECTED', 'REJECTED',
         { errorMessage: 'No patient in context' });
       return;
@@ -813,6 +913,20 @@ export class VoiceOrchestratorService {
     // caries dictated a moment ago, not one already on the record.
     if (command.id === 'chart.removeFinding' && await this.removeFromBuffer(intent)) {
       return;
+    }
+
+    // "Non, en fait…" corrects the entry just staged. In the buffered flow
+    // nothing is on the record yet, so the correction replaces that entry; it
+    // cannot retract anything. Found before anything is staged, so a
+    // correction with nothing to correct changes nothing.
+    let replaced: BufferedEntry | null = null;
+    if (command.id === 'chart.replaceLastFinding') {
+      replaced = this.stagedToReplace(snapshot);
+      if (!replaced) {
+        this.settle();
+        this.announce(false, 'There is no entry to correct.', this.say('nothingToCorrect'));
+        return;
+      }
     }
 
     this.context.rememberIntent(intent);
@@ -847,6 +961,10 @@ export class VoiceOrchestratorService {
       if (!auditId) {
         // Without a staged row there is nothing the commit could execute, and
         // buffering it client-side only would lose it on a crash.
+        if (batch) {
+          batch.failedTeeth.push(fdi ?? '?');
+          return;
+        }
         this.settle();
         this.announce(false, 'That couldn\'t be recorded safely, so nothing was staged. Say it again.', this.say('notStaged'));
         return;
@@ -862,6 +980,9 @@ export class VoiceOrchestratorService {
         at: Date.now(),
       };
       this.stage(entry, snapshot.sessionId);
+      // The correction is in place; only now is the entry it replaces taken
+      // out, so a failure above leaves the original standing.
+      if (replaced) await this.discardBuffered(replaced.auditId);
 
       this.context.rememberWrite({
         commandId: command.id,
@@ -871,15 +992,25 @@ export class VoiceOrchestratorService {
         description: preview,
         auditId,
       });
-      this.offerUndo(`Undo: ${preview}`, () => this.discardBuffered(auditId), auditId);
 
-      this.touchWakeWindow();
-      this.settle();
       // Spoken because the dentist is not looking at the screen. The resolved
       // values, never an echo of the words.
-      const language = spokenLanguage(snapshot.locale);
-      const spoken = spokenConfirmation(command.serverIntent, serverEntities, language)
+      const language = this.language();
+      let spoken = spokenConfirmation(command.serverIntent, serverEntities, language)
         ?? { text: preview, locale: 'en-US' };
+      if (replaced) spoken = { ...spoken, text: `${this.say('corrected').text} ${spoken.text}` };
+
+      if (batch) {
+        batch.auditIds.push(auditId);
+        batch.previews.push(preview);
+        batch.spoken.push(spoken);
+        this.touchWakeWindow();
+        return;
+      }
+
+      this.offerUndo(`Undo: ${preview}`, () => this.discardBuffered(auditId), auditId);
+      this.touchWakeWindow();
+      this.settle();
       this.announce(true, preview, this.withCorrections(spoken, language));
       return;
     }
@@ -889,12 +1020,24 @@ export class VoiceOrchestratorService {
       this.confirmationSignal.set({ intent, command, preview, reason: 'low-confidence' });
       this.stateSignal.set('awaiting-confirmation');
       this.touchWakeWindow();
-      // The preview is English, so the whole prompt is spoken in one voice.
-      this.announce(false, `${preview}. Confirm?`);
+      this.announce(false, `${preview}. Confirm?`,
+        this.language() === 'fr' ? this.say('confirmUnsure') : { text: `${preview}. Confirm?`, locale: 'en-US' });
       return;
     }
 
     await this.run(command, intent, snapshot, 'AUTO');
+  }
+
+  /**
+   * The staged entry "no, actually…" refers to: the last thing staged, if it
+   * is still in the buffer and is a set of findings. Null when there is
+   * nothing to correct — it was undone, or the last thing said was a note.
+   */
+  private stagedToReplace(snapshot: VoiceContextSnapshot): BufferedEntry | null {
+    const last = snapshot.lastWrite;
+    if (!last || last.targetType !== 'BufferedCommand') return null;
+    const entry = this.bufferedSignal().find(candidate => candidate.auditId === last.targetId);
+    return entry && entry.intent === 'clinical.addFindings' ? entry : null;
   }
 
   private stage(entry: BufferedEntry, sessionId: string | null): void {
@@ -913,7 +1056,7 @@ export class VoiceOrchestratorService {
     this.stateSignal.set('executing');
     if (!command.execute) {
       this.settle();
-      this.announce(false, 'That command can\'t run from here.');
+      this.announce(false, 'That command can\'t run from here.', this.say('cannotRunHere'));
       return;
     }
     try {
@@ -949,12 +1092,12 @@ export class VoiceOrchestratorService {
       }
 
       this.settle();
-      this.announce(result.ok, result.message);
+      this.announce(result.ok, result.message, this.spokenResult(result));
     } catch (error) {
       const message = this.describeFailure(error);
       this.outcomeSignal.set({ ok: false, message, at: Date.now() });
       this.settle();
-      this.announce(false, message);
+      this.announce(false, message, this.spokenFailure(error));
       await this.audit(intent, snapshot, command.risk, confirmation, 'FAILED', { errorMessage: message });
     }
   }
@@ -987,7 +1130,7 @@ export class VoiceOrchestratorService {
         const message = audit.errorMessage || 'That didn\'t save. Nothing was recorded.';
         this.outcomeSignal.set({ ok: false, message, at: Date.now() });
         this.settle();
-        this.announce(false, message);
+        this.announce(false, message, this.say('saveFailed'));
         return;
       }
 
@@ -1011,12 +1154,12 @@ export class VoiceOrchestratorService {
       if (result.undo) this.offerUndo(result.message, result.undo, pending.auditId!);
 
       this.settle();
-      this.announce(true, result.message);
+      this.announce(true, result.message, this.spokenResult(result));
     } catch (error) {
       const message = this.describeFailure(error);
       this.outcomeSignal.set({ ok: false, message, at: Date.now() });
       this.settle();
-      this.announce(false, message);
+      this.announce(false, message, this.spokenFailure(error));
     }
   }
 
@@ -1147,7 +1290,7 @@ export class VoiceOrchestratorService {
       return worded.kind === 'resolved' ? worded.fdi : null;
     }
     if (pending.awaiting === 'findings') {
-      const findings = extractFindings(text);
+      const findings = affirmedFindings(extractFindings(text));
       return findings.length
         ? findings.map(f => ({ code: f.code, label: f.label, kind: f.kind, surface: f.surface, severity: f.severity }))
         : null;
@@ -1200,7 +1343,7 @@ export class VoiceOrchestratorService {
     try {
       await undo.run();
     } catch (error) {
-      this.announce(false, this.describeFailure(error));
+      this.announce(false, this.describeFailure(error), this.spokenFailure(error));
     }
   }
 
@@ -1241,7 +1384,10 @@ export class VoiceOrchestratorService {
       return false;
     }
     if (matches.length > 1) {
-      this.announce(false, describe(matches));
+      const teeth = [...new Set(matches.map(match => entityString(match.entities, 'fdi')).filter(Boolean))];
+      this.announce(false, describe(matches), this.language() === 'fr'
+        ? { text: `Sur quelle dent : ${teeth.join(' ou ')} ?`, locale: 'fr-FR' }
+        : undefined);
       return false;
     }
     await this.discardBuffered(matches[0].auditId);
@@ -1259,22 +1405,33 @@ export class VoiceOrchestratorService {
     const codes = stagedFindingCodes(intent.entities);
     if (!fdi || codes.length === 0) return false;
 
+    // A general term covers the specific finding it names: "la carie" takes
+    // back the "carie récurrente" dictated a moment ago.
+    const covered = (entry: BufferedEntry) =>
+      stagedFindingCodes(entry.entities).filter(staged => codes.some(spoken => spokenFindingCovers(spoken, staged)));
     const matches = this.bufferedSignal().filter(entry =>
       entry.intent === 'clinical.addFindings'
       && entityString(entry.entities, 'fdi') === fdi
-      && stagedFindingCodes(entry.entities).some(code => codes.includes(code)));
+      && covered(entry).length > 0);
     if (matches.length === 0) return false;
 
     // Several entries naming the same finding on the same tooth are the same
     // dictation repeated; the latest is the one being taken back.
     const entry = matches[matches.length - 1];
-    const removed = await this.removeStagedFindings(entry, codes);
+    const removedCodes = covered(entry);
+    const removed = await this.removeStagedFindings(entry, removedCodes);
     this.highlightSignal.set(fdi);
     this.touchWakeWindow();
     this.settle();
     if (removed) {
-      const labels = codes.map(code => findingLabel(code)).join(', ');
-      this.announce(true, `Removed from tooth ${fdi}: ${labels}`, this.say('removed'));
+      const labels = removedCodes.map(code => findingLabel(code)).join(', ');
+      // Read back what was taken off, not just that something was.
+      const fr = this.language() === 'fr';
+      const spokenLabels = removedCodes.map(code => spokenFindingLabel(code, fr ? 'fr' : 'en')).join(', ');
+      this.announce(true, `Removed from tooth ${fdi}: ${labels}`, {
+        text: fr ? `Retiré de la dent ${fdi} : ${spokenLabels}.` : `Removed from tooth ${fdi}: ${spokenLabels}.`,
+        locale: synthesisLocale(fr ? 'fr' : 'en'),
+      });
     } else {
       this.announce(false, 'That couldn\'t be removed. Say it again.', this.say('notStaged'));
     }
@@ -1330,8 +1487,30 @@ export class VoiceOrchestratorService {
     return { ...spoken, text: `${spoken.text} (${taken})` };
   }
 
+  /** The dictation language if the recogniser reported one, else the interface language. */
+  private language(): SpokenLanguage {
+    return this.dictationLanguageSignal() ?? spokenLanguage(this.context.locale());
+  }
+
   private say(key: PhraseKey): Spoken {
-    return phrase(key, spokenLanguage(this.context.locale()));
+    return phrase(key, this.language());
+  }
+
+  /** A command's result, read in the dentist's language when it has a French reading. */
+  private spokenResult(result: { message: string; spokenFr?: string }): Spoken {
+    if (this.language() === 'fr' && result.spokenFr) {
+      return { text: result.spokenFr, locale: synthesisLocale('fr') };
+    }
+    return { text: result.message, locale: 'en-US' };
+  }
+
+  private spokenFailure(error: unknown): Spoken {
+    const status = (error as { status?: number })?.status;
+    if (status === 403) return this.say('noPermission');
+    if (status === 404) return this.say('recordGone');
+    if (status === 400) return this.say('notAccepted');
+    if (status === 0 || status === undefined) return this.say('noConnection');
+    return this.say('saveFailed');
   }
 
   private announce(ok: boolean, message: string, spoken?: Spoken): void {

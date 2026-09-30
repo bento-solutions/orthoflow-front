@@ -1,11 +1,26 @@
-import { describeFdi, normalizeUtterance, resolveTooth, ToothResolution } from './tooth-lexicon';
-import { extractFindings, ExtractedFinding } from './clinical-lexicon';
+import {
+  describeFdi,
+  findToothMentions,
+  normalizeUtterance,
+  resolveTooth,
+  ToothMention,
+  ToothResolution,
+} from './tooth-lexicon';
+import { affirmedFindings, extractEveryFinding, extractFindings, ExtractedFinding } from './clinical-lexicon';
+import { clauseAround, containsNegation, firstNegationIndex, isNegatedAt, startsNegated } from './voice-negation';
 import { WORD_END } from './voice-regex';
 import {
   FindingEntity,
   VoiceContextSnapshot,
+  VoiceIntent,
   VoiceResolution,
 } from './voice-intent.model';
+
+/** Asked when one utterance names several teeth the grammar cannot safely split. */
+export const SEVERAL_TEETH_QUESTION = 'I heard more than one tooth. Please give them one at a time.';
+
+/** Asked when a number was said as a tooth that no tooth has — "dent 58". */
+export const NO_SUCH_TOOTH_QUESTION = 'That tooth number does not exist. Which tooth did you mean?';
 
 /**
  * The deterministic first stage of the pipeline.
@@ -34,13 +49,22 @@ const CONFIDENCE_EXACT = 0.95;
 const CONFIDENCE_STRONG = 0.9;
 const CONFIDENCE_MODERATE = 0.75;
 
+function makeIntent(
+  id: string,
+  entities: Record<string, unknown>,
+  confidence: number,
+  transcript: string,
+): VoiceIntent {
+  return { intent: id, entities, confidence, resolver: 'grammar', transcript };
+}
+
 function intent(
   id: string,
   entities: Record<string, unknown>,
   confidence: number,
   transcript: string,
 ): VoiceResolution {
-  return { kind: 'intent', intent: { intent: id, entities, confidence, resolver: 'grammar', transcript } };
+  return { kind: 'intent', intent: makeIntent(id, entities, confidence, transcript) };
 }
 
 function ask(
@@ -90,6 +114,121 @@ function residualNote(raw: string, findings: ExtractedFinding[]): string | undef
   // already claimed ("recurrent caries underneath" leaves "underneath"), not a
   // clinical note worth attaching to every finding on the tooth.
   return remainder.split(' ').filter(Boolean).length >= 2 ? remainder : undefined;
+}
+
+/**
+ * A negated statement kept as the dentist's own words. Never a finding: "pas
+ * de carie" recorded as caries is the opposite of what was said. As a note it
+ * is a true record, and it is read back aloud so the dentist hears it.
+ */
+function noteIntent(
+  content: string,
+  category: string,
+  fdi: string | null,
+  confidence: number,
+  transcript: string,
+): VoiceIntent {
+  const entities: Record<string, unknown> = { category, content: content.replace(/[.!\s]+$/u, '').trim() };
+  if (fdi) entities['fdi'] = fdi;
+  return makeIntent('clinical.addNote', entities, confidence, transcript);
+}
+
+function uniqueByCode(findings: ExtractedFinding[]): ExtractedFinding[] {
+  const seen = new Set<string>();
+  return findings.filter(f => (seen.has(f.code) ? false : (seen.add(f.code), true)));
+}
+
+/** The clauses of the utterance a negation governed, without repeats. */
+function negatedClauses(findings: ExtractedFinding[]): string[] {
+  return [...new Set(findings.filter(f => f.negated).map(f => f.clause).filter(Boolean))];
+}
+
+/**
+ * What one tooth's findings become: the affirmed ones as findings, and any
+ * clause a negation governed as the tooth's note. When nothing was affirmed
+ * the whole thing is a note.
+ */
+function recordOnTooth(
+  raw: string,
+  findings: ExtractedFinding[],
+  fdi: string,
+  confidence: number,
+  withResidualNote: boolean,
+): VoiceIntent {
+  const affirmed = uniqueByCode(affirmedFindings(findings));
+  const denied = negatedClauses(findings);
+
+  if (affirmed.length === 0) {
+    return noteIntent(denied.join('; '), 'OBSERVATION', fdi, Math.min(confidence, CONFIDENCE_STRONG), raw);
+  }
+  const note = [withResidualNote ? residualNote(raw, affirmed) : undefined, ...denied]
+    .filter((part): part is string => !!part)
+    .join('; ') || undefined;
+  return makeIntent('chart.addToothFindings', { fdi, findings: toEntities(affirmed), note }, confidence, raw);
+}
+
+/**
+ * One utterance naming several teeth. The single-tooth path reads the first
+ * and puts every finding on it, so "dent 16 carie et dent 17 couronne" used
+ * to record both on 16 and never mention 17. Split it when the split is
+ * unambiguous; otherwise ask, because a finding on the wrong tooth reads as an
+ * ordinary, correctly spelled record.
+ */
+function severalTeeth(
+  raw: string,
+  findings: ExtractedFinding[],
+  mentions: ToothMention[],
+  context: VoiceContextSnapshot,
+): VoiceResolution {
+  const teeth = [...new Set(mentions.map(m => m.fdi))];
+
+  // Each has to be a tooth this patient's chart has.
+  for (const fdi of teeth) {
+    const tooth = resolveTooth(`dent ${fdi}`, context.dentition);
+    if (tooth.kind === 'ambiguous') return ask(tooth.question, raw);
+  }
+
+  const firstStart = mentions[0].start;
+  const lastEnd = mentions[mentions.length - 1].end;
+  const leading = findings.filter(f => f.at < firstStart);
+  const trailing = findings.filter(f => f.at >= lastEnd);
+  const between = findings.filter(f => f.at >= firstStart && f.at < lastEnd);
+
+  // "Dent 16, 17 et 18 : carie" / "carie sur la 16 et la 17" — the teeth are
+  // listed together and the findings sit wholly on one side of the list.
+  if (between.length === 0 && (leading.length === 0 || trailing.length === 0)) {
+    return {
+      kind: 'sequence',
+      intents: teeth.map(fdi => recordOnTooth(raw, findings, fdi, CONFIDENCE_STRONG, false)),
+    };
+  }
+
+  // "Dent 16 carie et dent 17 couronne" — each tooth followed by its own
+  // findings. Anything said before the first tooth belongs to no tooth.
+  if (leading.length === 0) {
+    const byTooth = new Map<string, ExtractedFinding[]>();
+    mentions.forEach((mention, index) => {
+      const next = mentions[index + 1]?.start ?? raw.length;
+      const segment = raw.slice(mention.start, next);
+      // A negation's clause is clipped to this tooth's own words, so the note
+      // on tooth 16 does not carry what was said about tooth 17.
+      const own = findings
+        .filter(f => f.at >= mention.start && f.at < next)
+        .map(f => (f.negated
+          ? { ...f, clause: clauseAround(segment, f.at - mention.start).replace(/\s+(?:et|and|puis|then|mais|but)$/iu, '') }
+          : f));
+      byTooth.set(mention.fdi, [...(byTooth.get(mention.fdi) ?? []), ...own]);
+    });
+    if ([...byTooth.values()].every(own => own.length > 0)) {
+      const intents: VoiceIntent[] = [];
+      for (const [fdi, own] of byTooth) {
+        intents.push(recordOnTooth(raw, own, fdi, CONFIDENCE_STRONG, false));
+      }
+      return { kind: 'sequence', intents };
+    }
+  }
+
+  return ask(SEVERAL_TEETH_QUESTION, raw);
 }
 
 const ANAPHORA = /\b(?:that|this|the\s+same|it|same)\s+(?:tooth|one)\b|\bcette\s+dent\b|\bla\s+m[êe]me\s+dent\b/iu;
@@ -158,7 +297,8 @@ const correctLast: GrammarRule = {
       || /^(?:actually|en\s+fait|plut[ôo]t)\b/iu.test(text);
     if (!isCorrection) return null;
 
-    const findings = extractFindings(raw);
+    // A negated finding is not something to change it to.
+    const findings = affirmedFindings(extractFindings(raw));
     if (findings.length === 0) {
       return ask(
         'What should I change it to?',
@@ -262,6 +402,31 @@ const patientNarrative: GrammarRule = {
   },
 };
 
+/**
+ * "Pas d'allergie", "le patient n'est pas allergique à la pénicilline",
+ * "no known allergies". Matched before the allergy rule, which would read the
+ * same words as an allergy to penicillin — or to "connue". A statement that
+ * there is no allergy is worth keeping, as a note in the dentist's own words.
+ */
+const noAllergy: GrammarRule = {
+  id: 'grammar.allergy.none',
+  match: (raw) => {
+    const allergy = /allerg\w*/iu.exec(raw);
+    if (!allergy) return null;
+    const denied = isNegatedAt(raw, allergy.index)
+      || /allerg\w*\s*[:\-–]?\s*(?:aucune?s?|none|nil|n[ée]ant|non|no)(?![\p{L}\p{N}])/iu.test(raw);
+    if (!denied) return null;
+    return { kind: 'intent', intent: noteIntent(raw, 'MEDICAL_HISTORY', null, CONFIDENCE_STRONG, raw) };
+  },
+};
+
+/** The part of a spoken label before any negation, and whether nothing is left. */
+function beforeNegation(label: string): string {
+  const cut = firstNegationIndex(label);
+  const kept = cut > 0 ? label.slice(0, cut) : label;
+  return kept.replace(/\s*(?:mais|but|et|and)?\s*$/iu, '').trim();
+}
+
 const addAllergy: GrammarRule = {
   id: 'grammar.allergy.add',
   match: (raw, text) => {
@@ -272,8 +437,18 @@ const addAllergy: GrammarRule = {
     const raw_substance = (explicit?.[1] ?? patientIs?.[1] ?? '').trim();
     if (!raw_substance) return null;
 
-    const substance = raw_substance.replace(/[.,;]+$/, '').trim();
-    if (!substance) {
+    // "allergie à la pénicilline" — the article is grammar, not the substance.
+    // "… mais pas à l'amoxicilline" is a second statement, not part of the name.
+    const substance = beforeNegation(raw_substance)
+      .replace(/[.,;]+$/, '')
+      // A whole word only — "latex" is not "la" + "tex". The normaliser has
+      // already turned "l'amoxicilline" into "l amoxicilline".
+      .replace(/^(?:(?:de\s+la|de\s+l|la|le|les|l|du|des|the)\s+|l['’]\s*)/iu, '')
+      .trim();
+    if (!substance || startsNegated(substance)) {
+      if (startsNegated(raw_substance)) {
+        return { kind: 'intent', intent: noteIntent(raw, 'MEDICAL_HISTORY', null, CONFIDENCE_STRONG, raw) };
+      }
       return ask('Allergic to what?', raw, [], { intent: 'clinical.addAllergy', entities: {}, awaiting: 'substance' });
     }
     return intent('clinical.addAllergy', { substance }, CONFIDENCE_STRONG, raw);
@@ -285,8 +460,12 @@ const addMedicalHistory: GrammarRule = {
   match: (raw, text) => {
     const match = text.match(/\b(?:medical\s+history|ant[ée]c[ée]dents?\s+m[ée]dicaux?)\s*(?::|is|includes?)?\s*(.+)$/iu);
     if (!match) return null;
-    const label = match[1].replace(/[.,;]+$/, '').trim();
+    const label = beforeNegation(match[1].replace(/[.,;]+$/, '').trim());
     if (!label) return ask('What should I add to the medical history?', raw);
+    // "Antécédents médicaux : aucun" is a statement, not an entry called "aucun".
+    if (startsNegated(label)) {
+      return { kind: 'intent', intent: noteIntent(raw, 'MEDICAL_HISTORY', null, CONFIDENCE_STRONG, raw) };
+    }
     return intent(
       'clinical.addMedicalHistory',
       { category: 'CONDITION', label },
@@ -307,6 +486,10 @@ const addMedication: GrammarRule = {
     if (!/\bmedication\b|\btraitement\b|\btakes?\b|\bis\s+on\b|\bprend\b/iu.test(text)) return null;
     const label = match[1].replace(/[.,;]+$/, '').trim();
     if (!label) return null;
+    // "Ne prend pas de médicaments" is the absence of one, not one called "pas de médicaments".
+    if (startsNegated(label) || isNegatedAt(text, match.index ?? 0)) {
+      return { kind: 'intent', intent: noteIntent(raw, 'MEDICAL_HISTORY', null, CONFIDENCE_STRONG, raw) };
+    }
     return intent('clinical.addMedicalHistory', { category: 'MEDICATION', label }, CONFIDENCE_MODERATE, raw);
   },
 };
@@ -326,6 +509,9 @@ const addDentalHistory: GrammarRule = {
     if (!match) return null;
     const detail = match[1].replace(/[.,;]+$/, '').trim();
     if (!detail) return ask('What should I add to the dental history?', raw);
+    if (startsNegated(detail)) {
+      return { kind: 'intent', intent: noteIntent(raw, 'DENTAL_HISTORY', null, CONFIDENCE_STRONG, raw) };
+    }
 
     const tooth = resolveTooth(detail, context.dentition);
     return intent(
@@ -372,6 +558,8 @@ const scheduleFollowUp: GrammarRule = {
   match: (raw, text) => {
     if (!/\b(?:schedule|book|set\s+up|programme[rz]?|planifie[rz]?|fixe[rz]?)\b/iu.test(text)) return null;
     if (!/\b(?:follow[- ]?up|appointment|recall|rendez[- ]?vous|contr[ôo]le|rdv)\b/iu.test(text)) return null;
+    // "Pas besoin de rendez-vous" would be filed as a follow-up to book.
+    if (containsNegation(raw)) return null;
     return intent('schedule.followUp', { when: raw.trim() }, CONFIDENCE_MODERATE, raw);
   },
 };
@@ -446,8 +634,22 @@ const toothFindings: GrammarRule = {
     const findings = extractFindings(raw);
     if (findings.length === 0) return null;
 
+    const mentions = findToothMentions(raw);
+
+    // A number said as a tooth that does not exist ("dent 58") must not fall
+    // through to whichever tooth happens to be selected.
+    if (mentions.some(mention => !mention.valid)) {
+      return ask(NO_SUCH_TOOTH_QUESTION, raw, [], pendingForTooth(findings, affirmedFindings(findings)));
+    }
+
+    // More than one tooth named: split the utterance or ask, never pick the first.
+    if (new Set(mentions.map(mention => mention.fdi)).size > 1) {
+      return severalTeeth(raw, extractEveryFinding(raw), mentions, context);
+    }
+
     const tooth = resolveTooth(raw, context.dentition);
     const usesAnaphora = ANAPHORA.test(raw);
+    const affirmed = affirmedFindings(findings);
 
     let fdi: string | null = null;
     if (tooth.kind === 'resolved') {
@@ -455,41 +657,50 @@ const toothFindings: GrammarRule = {
     } else if (tooth.kind === 'ambiguous') {
       // The doctor clearly meant a tooth but did not name one uniquely.
       // Offer the candidates rather than picking (audit XII.4 §5).
-      return ask(tooth.question, raw, toothOptions(tooth), {
-        intent: 'chart.addToothFindings',
-        entities: { findings: toEntities(findings) },
-        awaiting: 'fdi',
-      });
+      return ask(tooth.question, raw, toothOptions(tooth), pendingForTooth(findings, affirmed));
     } else if (usesAnaphora || context.selectedFdi) {
       // "that tooth", or simply continuing on the tooth already selected.
       fdi = context.selectedFdi;
     }
 
     if (!fdi) {
-      return ask('Which tooth is that for?', raw, [], {
-        intent: 'chart.addToothFindings',
-        entities: { findings: toEntities(findings) },
-        awaiting: 'fdi',
-      });
+      return ask('Which tooth is that for?', raw, [], pendingForTooth(findings, affirmed));
     }
 
     // Whatever the doctor said beyond the recognised findings is kept as the
     // tooth's free-text note, so nuance the closed vocabulary cannot express
     // ("patient anxious about this one") is not silently dropped.
-    const note = residualNote(raw, findings);
-
     const confidence = tooth.kind === 'resolved'
       ? Math.min(tooth.confidence, CONFIDENCE_STRONG)
       : CONFIDENCE_MODERATE;
 
-    return intent(
-      'chart.addToothFindings',
-      { fdi, findings: toEntities(findings), note },
-      confidence,
-      raw,
-    );
+    return { kind: 'intent', intent: recordOnTooth(raw, findings, fdi, confidence, true) };
   },
 };
+
+/**
+ * What to finish once the doctor says which tooth. Findings that were
+ * affirmed carry on as findings; if everything was negated, what waits is the
+ * note that says so.
+ */
+function pendingForTooth(
+  findings: ExtractedFinding[],
+  affirmed: ExtractedFinding[],
+): { intent: string; entities: Record<string, unknown>; awaiting: string } {
+  if (affirmed.length === 0) {
+    return {
+      intent: 'clinical.addNote',
+      entities: { category: 'OBSERVATION', content: negatedClauses(findings).join('; ') },
+      awaiting: 'fdi',
+    };
+  }
+  const denied = negatedClauses(findings).join('; ');
+  return {
+    intent: 'chart.addToothFindings',
+    entities: { findings: toEntities(affirmed), ...(denied ? { note: denied } : {}) },
+    awaiting: 'fdi',
+  };
+}
 
 /**
  * Ordered. Session control and corrections first (they are short and
@@ -503,6 +714,7 @@ export const GRAMMAR_RULES: GrammarRule[] = [
   undoLast,
   correctLast,
   removeFinding,
+  noAllergy,
   addAllergy,
   addMedicalHistory,
   addDentalHistory,

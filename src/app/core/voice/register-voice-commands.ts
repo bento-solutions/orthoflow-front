@@ -12,6 +12,7 @@ import { VoiceSessionService } from './voice-session.service';
 import { VoiceOrchestratorService } from './voice-orchestrator.service';
 import { describeFdi } from './tooth-lexicon';
 import { findingLabel } from './clinical-lexicon';
+import { spokenFindingLabel } from './voice-vocabulary';
 import { WAKE_WORD } from './voice-wake';
 import {
   FindingEntity,
@@ -92,6 +93,7 @@ export class VoiceCommandsService {
           return {
             ok: true,
             message: `Examination started. Say "${WAKE_WORD}" before a command.`,
+            spokenFr: 'Examen démarré.',
           };
         },
       },
@@ -109,6 +111,7 @@ export class VoiceCommandsService {
           return {
             ok: true,
             message: 'Examination ended. Review it on screen before saving.',
+            spokenFr: 'Examen terminé. Le compte rendu est prêt à relire.',
           };
         },
       },
@@ -122,9 +125,17 @@ export class VoiceCommandsService {
         execute: async () => {
           const summary = await this.sessions.refreshSummary();
           if (!summary) {
-            return { ok: true, message: 'No examination is running. Say "start examination" to begin one.' };
+            return {
+              ok: true,
+              message: 'No examination is running. Say "start examination" to begin one.',
+              spokenFr: 'Aucun examen en cours.',
+            };
           }
-          return { ok: true, message: this.sessions.spokenSummary(summary) };
+          return {
+            ok: true,
+            message: this.sessions.spokenSummary(summary),
+            spokenFr: this.sessions.spokenSummary(summary, 'fr'),
+          };
         },
       },
       {
@@ -157,7 +168,11 @@ export class VoiceCommandsService {
           const fdi = entities['fdi'] ? String(entities['fdi']) : null;
           const code = entities['findingCode'] ? String(entities['findingCode']) : null;
           if (!fdi && !code) {
-            return { ok: false, message: 'Say which finding to remove, and on which tooth.' };
+            return {
+              ok: false,
+              message: 'Say which finding to remove, and on which tooth.',
+              spokenFr: 'Quelle constatation retirer, et sur quelle dent ?',
+            };
           }
 
           const removed = await this.orchestrator.discardBufferedMatching(
@@ -176,8 +191,8 @@ export class VoiceCommandsService {
             },
           );
           return removed
-            ? { ok: true, message: 'Removed from this examination.' }
-            : { ok: false, message: 'Nothing removed.' };
+            ? { ok: true, message: 'Removed from this examination.', spokenFr: 'Retiré.' }
+            : { ok: false, message: 'Nothing removed.', spokenFr: 'Rien retiré.' };
         },
       },
       {
@@ -189,9 +204,9 @@ export class VoiceCommandsService {
         preview: () => 'Undo the last entry',
         execute: async () => {
           const undo = this.orchestrator.undoAvailable();
-          if (!undo) return { ok: false, message: 'There\'s nothing to undo.' };
+          if (!undo) return { ok: false, message: 'There\'s nothing to undo.', spokenFr: 'Rien à annuler.' };
           await undo.run();
-          return { ok: true, message: 'Undone.' };
+          return { ok: true, message: 'Undone.', spokenFr: 'Annulé.' };
         },
       },
     ];
@@ -246,12 +261,15 @@ export class VoiceCommandsService {
             ? `Correct tooth ${fdi} (${describeFdi(fdi)}) to: ${labels}`
             : `Correct the last entry to: ${labels}`;
         },
-        // The superseded findings are withdrawn and the replacements recorded
-        // in the same server transaction, so the record never passes through
-        // a state where the tooth carries neither.
+        // While an examination is being dictated nothing is on the record: the
+        // last write is a staged entry, and its id is an audit row, not a
+        // finding. The orchestrator replaces that entry, so there is nothing
+        // to retract. Only a write that reached the record carries finding ids.
         toServerEntities: (entities, context) => ({
           fdi: context.lastWrite?.fdi ?? String(entities['fdi'] ?? ''),
-          retractIds: (context.lastWrite?.targetId ?? '').split(',').filter(Boolean),
+          ...(context.lastWrite?.targetType === 'BufferedCommand'
+            ? {}
+            : { retractIds: (context.lastWrite?.targetId ?? '').split(',').filter(Boolean) }),
           findings: this.findingsOf(entities).map(f => ({
             code: f.code,
             surface: f.surface ?? undefined,
@@ -273,7 +291,7 @@ export class VoiceCommandsService {
         examples: ['remove the sensitivity note from that tooth'],
         preview: (entities) => {
           const fdi = String(entities['fdi'] ?? '');
-          const labels = this.findingsOf(entities).map(f => f.label).join(', ');
+          const labels = this.findingsOf(entities).map(f => f.label ?? findingLabel(f.code)).join(', ');
           return `Withdraw from tooth ${fdi} (${describeFdi(fdi)}): ${labels}`;
         },
         // Sent as codes rather than ids: the server resolves them against what
@@ -306,7 +324,7 @@ export class VoiceCommandsService {
         execute: async (entities) => {
           const fdi = String(entities['fdi']);
           this.context.selectTooth(fdi);
-          return { ok: true, message: `Tooth ${fdi} — ${describeFdi(fdi)}`, highlightFdi: fdi };
+          return { ok: true, message: `Tooth ${fdi} — ${describeFdi(fdi)}`, spokenFr: `Dent ${fdi}.`, highlightFdi: fdi };
         },
       },
       {
@@ -324,10 +342,16 @@ export class VoiceCommandsService {
           );
           this.context.selectTooth(fdi);
           if (findings.length === 0) {
-            return { ok: true, message: `Tooth ${fdi} (${describeFdi(fdi)}) has nothing recorded.`, highlightFdi: fdi };
+            return {
+              ok: true,
+              message: `Tooth ${fdi} (${describeFdi(fdi)}) has nothing recorded.`,
+              spokenFr: `Dent ${fdi} : rien d'enregistré.`,
+              highlightFdi: fdi,
+            };
           }
           const labels = findings.map(f => findingLabel(f.findingCode)).join(', ');
-          return { ok: true, message: `Tooth ${fdi} — ${labels}.`, highlightFdi: fdi };
+          const labelsFr = findings.map(f => spokenFindingLabel(f.findingCode, 'fr')).join(', ');
+          return { ok: true, message: `Tooth ${fdi} — ${labels}.`, spokenFr: `Dent ${fdi} : ${labelsFr}.`, highlightFdi: fdi };
         },
       },
     ];
@@ -574,6 +598,9 @@ export class VoiceCommandsService {
             message: outstanding > 0
               ? `Outstanding balance: ${outstanding.toFixed(2)} dirhams.`
               : 'Nothing outstanding — the account is settled.',
+            spokenFr: outstanding > 0
+              ? `Reste à payer : ${outstanding.toFixed(2).replace('.', ',')} dirhams.`
+              : 'Rien à payer, le compte est soldé.',
           };
         },
       },
@@ -591,9 +618,15 @@ export class VoiceCommandsService {
             .filter(a => a.patientId === context.patientId && a.status !== 'CANCELLED')
             .filter(a => new Date(a.dateTime).getTime() >= now)
             .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())[0];
-          if (!next) return { ok: true, message: 'No upcoming appointment is booked.' };
+          if (!next) {
+            return { ok: true, message: 'No upcoming appointment is booked.', spokenFr: 'Aucun rendez-vous prévu.' };
+          }
           const when = new Date(next.dateTime);
-          return { ok: true, message: `Next appointment: ${when.toLocaleString()}.` };
+          return {
+            ok: true,
+            message: `Next appointment: ${when.toLocaleString()}.`,
+            spokenFr: `Prochain rendez-vous : ${when.toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}.`,
+          };
         },
       },
     ];
@@ -614,7 +647,11 @@ export class VoiceCommandsService {
       args: {},
       examples,
       preview: () => `${description} — not available by voice`,
-      execute: async () => ({ ok: false, message: `${description} has to be done on screen.` }),
+      execute: async () => ({
+        ok: false,
+        message: `${description} has to be done on screen.`,
+        spokenFr: 'Cela se fait à l\'écran, pas à la voix.',
+      }),
     });
 
     return [

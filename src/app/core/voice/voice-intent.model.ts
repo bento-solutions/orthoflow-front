@@ -66,6 +66,12 @@ export interface VoiceClarification {
 
 export type VoiceResolution =
   | { kind: 'intent'; intent: VoiceIntent }
+  /**
+   * One utterance that is really several commands — "dent 16 carie et dent 17
+   * couronne" — each about its own tooth. Staged in order, read back together,
+   * and undone together.
+   */
+  | { kind: 'sequence'; intents: VoiceIntent[] }
   | { kind: 'clarification'; clarification: VoiceClarification }
   | { kind: 'unrecognized'; transcript: string };
 
@@ -101,6 +107,11 @@ export interface VoiceCommandResult {
   ok: boolean;
   /** Shown in the HUD and spoken back. Should name the resolved values, not echo the transcript. */
   message: string;
+  /**
+   * The same answer for a French-speaking dentist. Without it a French
+   * dentist hears {@link message} in an English voice.
+   */
+  spokenFr?: string;
   targetType?: string;
   targetId?: string;
   previousValue?: string;

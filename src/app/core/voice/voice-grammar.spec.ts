@@ -253,3 +253,227 @@ describe('unrecognised input is never forced into a command', () => {
     expect(result.kind).toBe('unrecognized');
   });
 });
+
+describe('allergy substance', () => {
+  it('keeps the substance and drops the French article', () => {
+    const snapshot = {
+      patientId: 'p', patientName: null, dentition: 'adult', module: 'patient-dossier', route: '/patients/p',
+      selectedFdi: null, sessionId: null, locale: 'fr-MA', recentIntents: [], recentUtterances: [], lastWrite: null,
+    } as const;
+    for (const [said, substance] of [
+      ['allergie à la pénicilline', 'pénicilline'],
+      ["allergie à l'amoxicilline", 'amoxicilline'],
+      ['allergie au latex', 'latex'],
+      ['allergy to penicillin', 'penicillin'],
+    ]) {
+      const resolution = resolveWithGrammar(said, snapshot as never);
+      expect(resolution.kind).toBe('intent');
+      if (resolution.kind === 'intent') expect(resolution.intent.entities['substance']).toBe(substance);
+    }
+  });
+});
+
+// ── What a dictated sentence must never be recorded as ─────────────────────
+
+/** Every entry an utterance resolves to, whether it is one command or several. */
+const intentsOf = (utterance: string, overrides: Partial<VoiceContextSnapshot> = {}) => {
+  const result = resolve(utterance, overrides);
+  if (result.kind === 'intent') return [result.intent];
+  if (result.kind === 'sequence') return result.intents;
+  return [];
+};
+
+const describeAll = (utterance: string, overrides: Partial<VoiceContextSnapshot> = {}) =>
+  intentsOf(utterance, overrides).map(i => `${i.intent}:${i.entities['fdi'] ?? ''}:${findingCodes(i.entities).join('+')}`);
+
+describe('negation — a denied finding is never recorded as a finding', () => {
+  const NEVER_A_FINDING = [
+    'pas de carie sur la seize',
+    'dent 16 pas de carie',
+    'dent 16 sans carie',
+    'dent 16 no caries',
+    'dent 16 not fractured',
+    'la 16 n\'est pas fracturée',
+    'dent 16 pas de carie ni de fracture',
+    'dent 26 pas normal',
+  ];
+
+  for (const utterance of NEVER_A_FINDING) {
+    it(`keeps "${utterance}" as a note in the dentist's own words`, () => {
+      const [only] = intentsOf(utterance);
+      expect(only.intent, utterance).toBe('clinical.addNote');
+      expect(String(only.entities['content']).length).toBeGreaterThan(0);
+      expect(only.entities['fdi'], utterance).toBeDefined();
+    });
+  }
+
+  it('records what is affirmed and keeps the denial as the tooth\'s note', () => {
+    const [only] = intentsOf('dent 16 pas de carie mais fracture');
+    expect(only.intent).toBe('chart.addToothFindings');
+    expect(findingCodes(only.entities)).toEqual(['fracture']);
+    expect(only.entities['note']).toBe('dent 16 pas de carie');
+  });
+
+  it('asks which tooth when a denial names none, and finishes it as a note', () => {
+    const result = resolve('pas de carie');
+    expect(result.kind).toBe('clarification');
+    if (result.kind === 'clarification') {
+      expect(result.clarification.pendingIntent).toBe('clinical.addNote');
+      expect(result.clarification.awaiting).toBe('fdi');
+    }
+  });
+
+  it('attaches a denial to the tooth already selected', () => {
+    const [only] = intentsOf('pas de carie', { selectedFdi: '16' });
+    expect(only.intent).toBe('clinical.addNote');
+    expect(only.entities['fdi']).toBe('16');
+  });
+
+  it('does not treat the "non" that opens a correction as a denial', () => {
+    const result = resolve('non, en fait couronne à remplacer', {
+      lastWrite: { commandId: 'chart.addToothFindings', targetType: 'BufferedCommand', targetId: 'a-1', fdi: '16', description: '' },
+    });
+    expect(result.kind).toBe('intent');
+    if (result.kind === 'intent') {
+      expect(result.intent.intent).toBe('chart.replaceLastFinding');
+      expect(findingCodes(result.intent.entities)).toEqual(['crown_replacement_required']);
+    }
+  });
+});
+
+describe('negation — an allergy the patient does not have is not an allergy', () => {
+  const NOT_AN_ALLERGY = [
+    'le patient n\'est pas allergique à la pénicilline',
+    'aucune allergie connue',
+    'pas d\'allergie',
+    'patient sans allergie',
+    'le patient n\'a pas d\'allergie',
+    'no known allergies',
+    'patient not allergic to penicillin',
+    'allergie: aucune',
+  ];
+
+  for (const utterance of NOT_AN_ALLERGY) {
+    it(`keeps "${utterance}" as a medical-history note`, () => {
+      const [only] = intentsOf(utterance);
+      expect(only.intent, utterance).toBe('clinical.addNote');
+      expect(only.entities['category']).toBe('MEDICAL_HISTORY');
+      expect(only.entities['substance']).toBeUndefined();
+    });
+  }
+
+  it('still records a real allergy', () => {
+    expect(expectIntent('allergie à la pénicilline', 'clinical.addAllergy').entities['substance']).toBe('pénicilline');
+    expect(expectIntent('allergy: latex', 'clinical.addAllergy').entities['substance']).toBe('latex');
+  });
+
+  it('leaves out a second allergy the patient was said not to have', () => {
+    const allergy = expectIntent('allergie à la pénicilline mais pas à l\'amoxicilline', 'clinical.addAllergy');
+    expect(allergy.entities['substance']).toBe('pénicilline');
+  });
+
+  it('does not file "no medication" as a medication', () => {
+    const [only] = intentsOf('le patient ne prend pas de médicaments');
+    expect(only.intent).toBe('clinical.addNote');
+  });
+
+  it('does not file "none" as a medical history entry', () => {
+    const [only] = intentsOf('antécédents médicaux : aucun');
+    expect(only.intent).toBe('clinical.addNote');
+    expect(only.entities['label']).toBeUndefined();
+  });
+
+  it('does not book a follow-up that was declined', () => {
+    expect(resolve('pas besoin de rendez-vous').kind).toBe('unrecognized');
+  });
+});
+
+describe('several teeth in one utterance — nothing lands on the wrong one', () => {
+  it('gives each tooth its own findings', () => {
+    expect(describeAll('dent 16 carie et dent 17 couronne')).toEqual([
+      'chart.addToothFindings:16:caries',
+      'chart.addToothFindings:17:existing_crown',
+    ]);
+    expect(describeAll('dent 16 carie puis la 17 fracture')).toEqual([
+      'chart.addToothFindings:16:caries',
+      'chart.addToothFindings:17:fracture',
+    ]);
+  });
+
+  it('reads teeth said in French words', () => {
+    expect(describeAll('la seize carie, la dix-sept obturation existante')).toEqual([
+      'chart.addToothFindings:16:caries',
+      'chart.addToothFindings:17:existing_filling',
+    ]);
+  });
+
+  it('gives the same finding to every tooth in a list', () => {
+    expect(describeAll('dent 16, 17 et 18 carie')).toEqual([
+      'chart.addToothFindings:16:caries',
+      'chart.addToothFindings:17:caries',
+      'chart.addToothFindings:18:caries',
+    ]);
+    expect(describeAll('carie sur la 16 et la 17')).toEqual([
+      'chart.addToothFindings:16:caries',
+      'chart.addToothFindings:17:caries',
+    ]);
+  });
+
+  it('names the same finding on two teeth, which the first-only reading could not', () => {
+    expect(describeAll('dent 16 carie, dent 17 carie')).toEqual([
+      'chart.addToothFindings:16:caries',
+      'chart.addToothFindings:17:caries',
+    ]);
+  });
+
+  it('keeps a denial on the tooth it was said about', () => {
+    const [sixteen, seventeen] = intentsOf('dent 16 pas de carie et dent 17 carie');
+    expect(sixteen.intent).toBe('clinical.addNote');
+    expect(sixteen.entities['fdi']).toBe('16');
+    expect(sixteen.entities['content']).toBe('dent 16 pas de carie');
+    expect(seventeen.intent).toBe('chart.addToothFindings');
+    expect(seventeen.entities['fdi']).toBe('17');
+  });
+
+  it('asks instead of guessing when a tooth has no findings of its own', () => {
+    for (const utterance of ['dent 16 carie et 17', 'carie, dent 16 couronne, dent 17', 'dent 16 pas de carie et dent 17']) {
+      const result = resolve(utterance);
+      expect(result.kind, utterance).toBe('clarification');
+    }
+  });
+
+  it('does not take a quantity for a second tooth', () => {
+    expect(describeAll('dent 16 carie, contrôle dans 15 jours')).toEqual(['chart.addToothFindings:16:caries+follow_up']);
+  });
+
+  it('refuses a number that is not a tooth rather than use the selected one', () => {
+    const result = resolve('dent 58 carie', { selectedFdi: '16' });
+    expect(result.kind).toBe('clarification');
+    if (result.kind === 'clarification') expect(result.clarification.question).toMatch(/does not exist/);
+  });
+
+  it('asks about a baby tooth said against an adult chart', () => {
+    expect(resolve('dent 16 carie et dent 52 fracture').kind).toBe('clarification');
+  });
+});
+
+describe('a treatment need is never recorded as the restoration', () => {
+  it('reads "à faire" and "à refaire" as work to do', () => {
+    expect(describeAll('dent 25 couronne à faire')).toEqual(['chart.addToothFindings:25:crown_required']);
+    expect(describeAll('dent 12 composite à refaire')).toEqual(['chart.addToothFindings:12:filling_required']);
+    expect(describeAll('dent 47 amalgame à remplacer')).toEqual(['chart.addToothFindings:47:filling_required']);
+    expect(describeAll('dent 16 bridge à faire')).toEqual(['chart.addToothFindings:16:bridge_required']);
+    expect(describeAll('dent 21 facette à refaire')).toEqual(['chart.addToothFindings:21:veneer_required']);
+  });
+
+  it('reads a need said before the restoration', () => {
+    const result = resolve('il faudra une couronne', { selectedFdi: '16' });
+    expect(result.kind).toBe('intent');
+    if (result.kind === 'intent') expect(findingCodes(result.intent.entities)).toEqual(['crown_required']);
+  });
+
+  it('still records a restoration that is simply there', () => {
+    expect(describeAll('dent 16 couronne existante')).toEqual(['chart.addToothFindings:16:existing_crown']);
+    expect(describeAll('dent 16 composite')).toEqual(['chart.addToothFindings:16:existing_composite']);
+  });
+});

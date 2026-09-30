@@ -1,4 +1,5 @@
 import { WAKE_WORD } from './voice-wake';
+import { NO_SUCH_TOOTH_QUESTION, SEVERAL_TEETH_QUESTION } from './voice-grammar';
 import { findingLabel } from './clinical-lexicon';
 import { VoiceContextSnapshot, entityString, stagedFindingCodes } from './voice-intent.model';
 
@@ -156,10 +157,25 @@ const PHRASES = {
   notInSession: { fr: 'Pas dans cette session.', en: 'Not in this session.' },
   notStaged: { fr: 'Non enregistré. Répétez.', en: 'Not recorded. Say it again.' },
   discarded: { fr: 'Abandonné.', en: 'Discarded.' },
+  corrected: { fr: 'Corrigé.', en: 'Corrected.' },
+  nothingToCorrect: { fr: 'Rien à corriger.', en: 'Nothing to correct.' },
   sttDown: {
     fr: 'La reconnaissance vocale ne répond pas. Répétez.',
     en: 'Speech recognition is not responding. Say it again.',
   },
+  notByVoiceHere: { fr: 'Pas possible à la voix ici.', en: 'That can\'t be done by voice from here.' },
+  onScreenOnly: { fr: 'Cela se fait à l\'écran, pas à la voix.', en: 'That one has to be done on screen.' },
+  openPatientFirst: { fr: 'Ouvrez d\'abord le dossier du patient.', en: 'Open a patient\'s dossier first.' },
+  confirmUnsure: {
+    fr: 'Je ne suis pas sûr. Dites oui pour confirmer, non pour annuler.',
+    en: 'I\'m not sure. Say yes to confirm, no to cancel.',
+  },
+  cannotRunHere: { fr: 'Commande impossible ici.', en: 'That command can\'t run from here.' },
+  saveFailed: { fr: 'Échec. Rien n\'a été enregistré.', en: 'That didn\'t save. Nothing was recorded.' },
+  noConnection: { fr: 'Pas de connexion. Rien n\'a été enregistré.', en: 'No connection. Nothing was recorded.' },
+  noPermission: { fr: 'Vous n\'avez pas le droit de faire cela.', en: 'You don\'t have permission to do that.' },
+  recordGone: { fr: 'Cet élément n\'existe plus.', en: 'That record no longer exists.' },
+  notAccepted: { fr: 'Refusé : les détails ne sont pas valides.', en: 'That wasn\'t accepted — the details didn\'t validate.' },
 } as const;
 
 export type PhraseKey = keyof typeof PHRASES;
@@ -172,6 +188,9 @@ export interface Spoken {
 export function phrase(key: PhraseKey, language: SpokenLanguage): Spoken {
   return { text: PHRASES[key][language], locale: synthesisLocale(language) };
 }
+
+/** Longer than this and a read-back is a monologue; the words are on screen. */
+const NOTE_READBACK_MAX_CHARS = 90;
 
 /**
  * The read-back for a staged write, in the resolved values: tooth number and
@@ -208,10 +227,21 @@ export function spokenConfirmation(
       const labels = codes.map(code => spokenFindingLabel(code, language)).join(', ');
       return { text: fr ? `Retrait sur la dent ${fdi} : ${labels}.` : `Withdraw from tooth ${fdi}: ${labels}.`, locale };
     }
-    case 'clinical.addNote':
-      return entities['category'] === 'FOLLOW_UP'
-        ? { text: fr ? 'Contrôle noté.' : 'Follow-up noted.', locale }
-        : { text: fr ? 'Note ajoutée.' : 'Note added.', locale };
+    case 'clinical.addNote': {
+      if (entities['category'] === 'FOLLOW_UP') {
+        return { text: fr ? 'Contrôle noté.' : 'Follow-up noted.', locale };
+      }
+      // The words themselves, when they are short enough to listen to. A note
+      // read back as only "Note ajoutée" lets "pas de carie" be filed and the
+      // dentist never hear what was filed.
+      const content = typeof entities['content'] === 'string' ? entities['content'].trim() : '';
+      const fdi = entityString(entities, 'fdi');
+      if (content && content.length <= NOTE_READBACK_MAX_CHARS) {
+        const where = fdi ? (fr ? ` sur la dent ${fdi}` : ` on tooth ${fdi}`) : '';
+        return { text: fr ? `Note${where} : ${content}.` : `Note${where}: ${content}.`, locale };
+      }
+      return { text: fr ? 'Note ajoutée.' : 'Note added.', locale };
+    }
     case 'clinical.addAllergy':
       return { text: fr ? `Allergie : ${entities['substance']}.` : `Allergy: ${entities['substance']}.`, locale };
     case 'clinical.addMedicalHistory':
@@ -226,6 +256,8 @@ const QUESTIONS_FR: Record<string, string> = {
   'Which tooth is that for?': 'Quelle dent ?',
   'Which finding should I remove?': 'Quelle constatation retirer ?',
   'Which tooth should I remove that from?': 'Sur quelle dent ?',
+  [SEVERAL_TEETH_QUESTION]: 'Plusieurs dents. Dites-les une à la fois.',
+  [NO_SUCH_TOOTH_QUESTION]: 'Ce numéro de dent n\'existe pas. Quelle dent ?',
   'What should I change it to?': 'Remplacer par quoi ?',
   'I don\'t have a previous entry to correct. Which tooth and finding do you mean?':
     'Rien à corriger. Quelle dent et quelle constatation ?',
@@ -248,5 +280,26 @@ export function spokenQuestion(question: string, language: SpokenLanguage): Spok
       return { text: `Dent ${[...new Set(codes)].join(' ou ')} ?`, locale: 'fr-FR' };
     }
   }
-  return { text: question, locale: 'en-US' };
+  // The interpreter asks in the dentist's language; read it in a voice for
+  // that language rather than the UI's.
+  return { text: question, locale: synthesisLocale(looksFrench(question) ? 'fr' : 'en') };
+}
+
+const FRENCH_MARKERS = /[àâçéèêëîïôûùüÿœ]|\b(?:quelle?s?|quel|dent|laquelle|lequel|pouvez|voulez|vous|est-ce|sur|pour|avec|une?|des|les?)\b/iu;
+
+/** A cheap guess at whether a sentence is French, for choosing the voice that reads it. */
+export function looksFrench(text: string): boolean {
+  return FRENCH_MARKERS.test(text);
+}
+
+/**
+ * The language the dentist is dictating in, as the recogniser reported it —
+ * which is what confirmations should be read back in, whatever the UI is set
+ * to. Null when the recogniser did not say, or said "mixed".
+ */
+export function dictationLanguage(reported: string | null | undefined): SpokenLanguage | null {
+  const value = (reported ?? '').toLowerCase();
+  if (value.startsWith('fr')) return 'fr';
+  if (value.startsWith('en')) return 'en';
+  return null;
 }

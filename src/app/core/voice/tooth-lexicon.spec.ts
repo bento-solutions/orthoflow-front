@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  findToothMentions,
   resolveTooth,
   describeFdi,
   isValidFdi,
@@ -200,5 +201,89 @@ describe('resolveTooth — French article forms', () => {
   it('never turns an article and a small number, or a noun, into a tooth', () => {
     expect(resolveTooth('la deux')).toEqual({ kind: 'none' });
     expect(resolveTooth('la carie')).toEqual({ kind: 'none' });
+  });
+});
+
+describe('parseNumber — French numbers above sixteen', () => {
+  it('reads dix-sept and dix-huit, the wisdom teeth and second molars', () => {
+    expect(parseNumber('dix-sept')).toBe(17);
+    expect(parseNumber('dix huit')).toBe(18);
+  });
+
+  it('reads the deciduous codes 51–85', () => {
+    expect(parseNumber('cinquante et un')).toBe(51);
+    expect(parseNumber('cinquante-cinq')).toBe(55);
+    expect(parseNumber('soixante-deux')).toBe(62);
+    expect(parseNumber('soixante et onze')).toBe(71);
+    expect(parseNumber('soixante-quinze')).toBe(75);
+    expect(parseNumber('quatre-vingt un')).toBe(81);
+    expect(parseNumber('quatre-vingt-cinq')).toBe(85);
+  });
+
+  it('leaves the numbers it already read alone', () => {
+    expect(parseNumber('seize')).toBe(16);
+    expect(parseNumber('quarante et un')).toBe(41);
+    expect(parseNumber('vingt-six')).toBe(26);
+  });
+});
+
+describe('resolveTooth — French codes on both dentitions', () => {
+  it('names the 17 and 18 in words', () => {
+    expect(resolveTooth('dent dix-sept')).toMatchObject({ kind: 'resolved', fdi: '17' });
+    expect(resolveTooth('la dix-huit')).toMatchObject({ kind: 'resolved', fdi: '18' });
+  });
+
+  it('names a baby tooth in words on a child chart', () => {
+    expect(resolveTooth('dent cinquante-deux', 'child')).toMatchObject({ kind: 'resolved', fdi: '52' });
+    expect(resolveTooth('dent soixante-cinq', 'child')).toMatchObject({ kind: 'resolved', fdi: '65' });
+    expect(resolveTooth('dent quatre-vingt deux', 'child')).toMatchObject({ kind: 'resolved', fdi: '82' });
+  });
+});
+
+describe('findToothMentions — every tooth an utterance names', () => {
+  const fdis = (text: string) => findToothMentions(text).map(m => m.fdi);
+
+  it('finds one tooth, however it is named', () => {
+    expect(fdis('dent 16 carie')).toEqual(['16']);
+    expect(fdis('la seize carie')).toEqual(['16']);
+    expect(fdis('dent un six')).toEqual(['16']);
+    expect(fdis('tooth sixteen')).toEqual(['16']);
+    expect(fdis('carie sur la vingt-six')).toEqual(['26']);
+  });
+
+  it('finds several teeth in the order they were named', () => {
+    expect(fdis('dent 16 carie et dent 17 couronne')).toEqual(['16', '17']);
+    expect(fdis('la seize carie, la dix-sept obturation')).toEqual(['16', '17']);
+    expect(fdis('carie sur la 16 et la 17')).toEqual(['16', '17']);
+  });
+
+  it('reads a list of codes after one announcement', () => {
+    expect(fdis('dent 16, 17 et 18 carie')).toEqual(['16', '17', '18']);
+    expect(fdis('dents 16 17 carie')).toEqual(['16', '17']);
+    expect(fdis('dent seize dix-sept et dix-huit')).toEqual(['16', '17', '18']);
+  });
+
+  it('does not take a quantity or a date for a tooth', () => {
+    expect(fdis('dent 16 carie, contrôle dans 15 jours')).toEqual(['16']);
+    expect(fdis('dent 16 depuis 12 mois')).toEqual(['16']);
+    expect(fdis('dent 16 revoir le 15 mai')).toEqual(['16']);
+  });
+
+  it('reports a number said as a tooth that no tooth has', () => {
+    expect(findToothMentions('dent 58 carie')).toEqual([expect.objectContaining({ fdi: '58', valid: false })]);
+    expect(findToothMentions('dent 19')).toEqual([expect.objectContaining({ fdi: '19', valid: false })]);
+    expect(findToothMentions('dent 16')[0].valid).toBe(true);
+  });
+
+  it('locates each mention at the word that introduced it', () => {
+    const text = 'dent 16 carie et dent 17 couronne';
+    const [first, second] = findToothMentions(text);
+    expect(first.start).toBe(0);
+    expect(second.start).toBe(text.indexOf('dent 17'));
+  });
+
+  it('finds none in a description that names no code', () => {
+    expect(fdis('upper right first molar')).toEqual([]);
+    expect(fdis('carie profonde')).toEqual([]);
   });
 });

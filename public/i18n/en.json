@@ -830,6 +830,7 @@
     "REVIEW_GENERATING": "Generating…",
     "REVIEW_REGENERATE": "Regenerate",
     "REVIEW_REPORT_HINT": "Generated from what was dictated and saved as a clinical note. Edit it freely.",
-    "REVIEW_REPORT_UNAVAILABLE": "No report could be generated ({{reason}}). Write it yourself or leave it blank — the findings save either way."
+    "REVIEW_REPORT_UNAVAILABLE": "No report could be generated ({{reason}}). Write it yourself or leave it blank — the findings save either way.",
+    "REVIEW_REPORT_STRUCTURED": "Written from the recorded findings directly — no AI narrative was available or it did not match the record exactly."
   }
 }

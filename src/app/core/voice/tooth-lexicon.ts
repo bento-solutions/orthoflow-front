@@ -63,6 +63,9 @@ const UNITS_FR: Record<string, number> = {
   zero: 0, un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6,
   sept: 7, huit: 8, neuf: 9, dix: 10, onze: 11, douze: 12, treize: 13,
   quatorze: 14, quinze: 15, seize: 16, vingt: 20, trente: 30, quarante: 40,
+  cinquante: 50, soixante: 60,
+  // "quatre-vingt" is two words that are one number; parseNumber joins them.
+  quatrevingt: 80,
 };
 
 /**
@@ -227,7 +230,8 @@ export function normalizeUtterance(text: string): string {
  * languages. Handles French "vingt et un" and English "twenty one" compounds.
  */
 export function parseNumber(text: string): number | null {
-  const normalized = normalizeUtterance(text);
+  const normalized = normalizeUtterance(text)
+    .replace(/\bquatre vingts?\b/g, 'quatrevingt');
   if (!normalized) return null;
 
   const digits = normalized.match(/\b\d{1,2}\b/);
@@ -240,14 +244,177 @@ export function parseNumber(text: string): number | null {
     if (value === undefined) continue;
     if (total === null) {
       total = value;
-    } else if (total % 10 === 0 && total >= 20 && value < 10) {
-      // "twenty" + "one" → 21; "vingt" + "et" + "un" → 21
+    } else if (extendsNumber(total, value)) {
       total += value;
     } else {
       break;
     }
   }
   return total;
+}
+
+/**
+ * Whether `value` continues the number `total` already read:
+ * "twenty" + "one" → 21, "vingt" + "et" + "un" → 21, "dix" + "sept" → 17,
+ * "soixante" + "et" + "onze" → 71 (the deciduous upper-left teeth).
+ */
+function extendsNumber(total: number, value: number): boolean {
+  if (total % 10 === 0 && total >= 20 && value < 10) return true;
+  if (total === 10 && value >= 7 && value <= 9) return true;
+  return total === 60 && value >= 11 && value <= 16;
+}
+
+// ── Every tooth an utterance names ──────────────────────────────────────
+
+/** One explicit tooth reference, located in the utterance it came from. */
+export interface ToothMention {
+  fdi: string;
+  /**
+   * False for a number said as a tooth that no tooth has — "dent 58" on an
+   * adult chart, "dent 19". Reported instead of skipped: skipping it left the
+   * finding to land on whichever tooth happened to be selected.
+   */
+  valid: boolean;
+  /** Offsets into the utterance passed to {@link findToothMentions}. */
+  start: number;
+  end: number;
+}
+
+const MENTION_TOOTH_WORDS: ReadonlySet<string> = new Set(TOOTH_WORD);
+const MENTION_ARTICLES: ReadonlySet<string> = new Set(['la', 'le', 'number', 'numero', 'numéro']);
+
+/** A two-digit number followed by a unit of time or size is a quantity, not a tooth. */
+const QUANTITY_AFTER =
+  /^\s*(?:mois|ans?|jours?|semaines?|heures?|h|mm|cm|mg|ml|%|months?|years?|days?|weeks?|hours?|minutes?|min|secondes?|janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[uû]t|septembre|octobre|novembre|d[ée]cembre|january|february|march|april|may|june|july|august|september|november|december)(?![\p{L}\p{N}])/iu;
+const QUANTITY_BEFORE = /(?:dans|pendant|depuis|in|for|after|apr[eè]s|every|chaque|tous\s+les)\s*$/iu;
+
+/**
+ * The longest run of number words at the start of `words`, read by the same
+ * rules as {@link parseNumber} but reporting how many words it used — so a
+ * scanner can tell "seize" from "seize dix-sept".
+ */
+function consumeNumber(words: string[]): { value: number; used: number } | null {
+  let total: number | null = null;
+  let index = 0;
+  let used = 0;
+  while (index < words.length) {
+    let word = words[index];
+    let width = 1;
+
+    if (word === 'et' || word === 'and') {
+      const next = words[index + 1];
+      if (total === null || next === undefined || (ALL_UNITS[next] === undefined && !/^\d{1,2}$/.test(next))) break;
+      word = next;
+      width = 2;
+    }
+    if ((word === 'quatre') && (words[index + width] === 'vingt' || words[index + width] === 'vingts')) {
+      word = 'quatrevingt';
+      width += 1;
+    }
+
+    const value = ALL_UNITS[word] ?? (/^\d{1,2}$/.test(word) ? Number(word) : undefined);
+    if (value === undefined) break;
+    if (total === null) total = value;
+    else if (extendsNumber(total, value)) total += value;
+    else break;
+    index += width;
+    used = index;
+  }
+  return total === null ? null : { value: total, used };
+}
+
+/**
+ * Every tooth an utterance names by code, in the order named. Digits or
+ * number words, with or without the word "tooth" ("dent 16", "la seize",
+ * "dent 16, 17 et dix-huit").
+ *
+ * The single-tooth resolver reads the first tooth and stops. That is right
+ * for "dent 16, carie" and wrong for "dent 16 carie et dent 17 couronne",
+ * where it silently put both findings on 16. This is what lets the grammar
+ * see that a second tooth is there at all.
+ *
+ * Descriptive references ("upper right first molar") are not scanned.
+ */
+export function findToothMentions(utterance: string): ToothMention[] {
+  // Same length as the input, so offsets found here are offsets into it.
+  const text = utterance
+    .toLowerCase()
+    .replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+    .replace(/[.,;:!?()"'’\-–—]/g, ' ');
+  const tokens = [...text.matchAll(/[\p{L}\p{N}]+/gu)].map(match => ({
+    word: match[0],
+    start: match.index ?? 0,
+    end: (match.index ?? 0) + match[0].length,
+  }));
+
+  const mentions: ToothMention[] = [];
+  /** `anchor` is the word that introduced the code ("dent", "la"), so a segment starts there. */
+  const push = (fdi: string, first: number, last: number, valid = true, anchor = first) =>
+    mentions.push({ fdi, valid, start: tokens[anchor].start, end: tokens[last].end });
+  const wordsFrom = (from: number, count = 5) => tokens.slice(from, from + count).map(t => t.word);
+  const quantity = (last: number) => QUANTITY_AFTER.test(text.slice(tokens[last].end))
+    || QUANTITY_BEFORE.test(text.slice(0, tokens[last].start));
+
+  /** Reads consecutive codes after one that was announced: "16, 17 et 18". */
+  const enumerate = (from: number): number => {
+    let at = from;
+    for (;;) {
+      // "16, 17 et 18" — the "et" joins the next code, it is not part of one.
+      if (tokens[at] && (tokens[at].word === 'et' || tokens[at].word === 'and')) at++;
+      const run = consumeNumber(wordsFrom(at));
+      if (!run || run.value < 11 || !isValidFdi(String(run.value))) return at;
+      const last = at + run.used - 1;
+      if (quantity(last)) return at;
+      push(String(run.value), at, last);
+      at = last + 1;
+    }
+  };
+
+  let i = 0;
+  while (i < tokens.length) {
+    const word = tokens[i].word;
+
+    if (MENTION_TOOTH_WORDS.has(word) && i + 1 < tokens.length) {
+      const a = tokens[i + 1].word;
+      const b = tokens[i + 2]?.word;
+      // "dent 1 6", then "dent un six" — digit by digit.
+      if (/^[1-8]$/.test(a) && b !== undefined && /^[1-8]$/.test(b) && isValidFdi(`${a}${b}`)) {
+        push(`${a}${b}`, i + 1, i + 2, true, i);
+        i = enumerate(i + 3);
+        continue;
+      }
+      const ua = ALL_UNITS[a];
+      const ub = b === undefined ? undefined : ALL_UNITS[b];
+      if (ua !== undefined && ub !== undefined && ua >= 1 && ua <= 8 && isValidFdi(`${ua}${ub}`)) {
+        push(`${ua}${ub}`, i + 1, i + 2, true, i);
+        i = enumerate(i + 3);
+        continue;
+      }
+      const run = consumeNumber(wordsFrom(i + 1));
+      if (run && run.value >= 11) {
+        push(String(run.value), i + 1, i + run.used, isValidFdi(String(run.value)), i);
+        i = enumerate(i + 1 + run.used);
+        continue;
+      }
+    }
+
+    if (MENTION_ARTICLES.has(word) && tokens[i + 1]
+      && (ALL_UNITS[tokens[i + 1].word] !== undefined || /^\d{2}$/.test(tokens[i + 1].word))) {
+      const run = consumeNumber(wordsFrom(i + 1));
+      // "le 15 mai" and "la 12 heures" are not teeth.
+      if (run && run.value >= 11 && isValidFdi(String(run.value)) && !quantity(i + run.used)) {
+        push(String(run.value), i + 1, i + run.used, true, i);
+        i = enumerate(i + 1 + run.used);
+        continue;
+      }
+    }
+
+    if (/^[1-8][1-8]$/.test(word) && isValidFdi(word) && !quantity(i)) {
+      push(word, i, i);
+    }
+    i++;
+  }
+  return mentions;
 }
 
 // ── The resolver ────────────────────────────────────────────────────────
@@ -341,7 +508,7 @@ function parseToothPhrase(utterance: string, dentition: Dentition): ParsedTooth 
 
   // "tooth sixteen" / "dent 16" — a whole two-digit code spoken as one number.
   const wholeCode = text.match(
-    new RegExp(`\\b(?:${TOOTH_WORD.join('|')})\\s+(\\d{2}|[a-z؀-ۿ]+(?:\\s+(?:et\\s+)?[a-z؀-ۿ]+)?)\\b`)
+    new RegExp(`\\b(?:${TOOTH_WORD.join('|')})\\s+(\\d{2}|[a-z؀-ۿ]+(?:\\s+(?:et\\s+)?[a-z؀-ۿ]+){0,2})\\b`)
   );
   if (wholeCode) {
     const value = parseNumber(wholeCode[1]);

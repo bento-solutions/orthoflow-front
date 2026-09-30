@@ -63,6 +63,7 @@ export class VoiceSessionService {
   private busySignal = signal(false);
   private narrativeSignal = signal<string | null>(null);
   private narrativeErrorSignal = signal<string | null>(null);
+  private narrativeGeneratedSignal = signal(true);
   private startedAtSignal = signal<number | null>(null);
 
   session = this.sessionSignal.asReadonly();
@@ -73,6 +74,8 @@ export class VoiceSessionService {
   narrative = this.narrativeSignal.asReadonly();
   /** Why no narrative is available, when there isn't one. */
   narrativeError = this.narrativeErrorSignal.asReadonly();
+  /** False when the narrative is the structured report written from the records, not by a model. */
+  narrativeGenerated = this.narrativeGeneratedSignal.asReadonly();
   /** Epoch ms the session started, for the elapsed-time display. */
   startedAt = this.startedAtSignal.asReadonly();
 
@@ -160,16 +163,20 @@ export class VoiceSessionService {
   /**
    * Requests the narrative. Safe to call repeatedly — the server persists
    * nothing, so the dentist can regenerate after changing what is included.
+   *
+   * @param includedAuditIds the entries still included at review; omitted,
+   *   the narrative covers everything the session staged
    */
-  async generateNarrative(sessionId: string): Promise<void> {
+  async generateNarrative(sessionId: string, includedAuditIds?: string[]): Promise<void> {
     try {
-      const response = await firstValueFrom(this.api.summarizeSession(sessionId));
+      const response = await firstValueFrom(this.api.summarizeSession(sessionId, includedAuditIds));
       if (response.error) {
         this.narrativeSignal.set(null);
         this.narrativeErrorSignal.set(response.error);
         return;
       }
       this.narrativeSignal.set(response.summary);
+      this.narrativeGeneratedSignal.set(response.generated !== false);
       this.narrativeErrorSignal.set(null);
     } catch {
       this.narrativeSignal.set(null);
@@ -392,15 +399,28 @@ export class VoiceSessionService {
    * A short read-back for "show me today's findings". During a buffered
    * session nothing is on the record yet, so this counts what is staged.
    */
-  spokenSummary(summary: SessionSummary): string {
+  spokenSummary(summary: SessionSummary, language: 'fr' | 'en' = 'en'): string {
+    const fr = language === 'fr';
     const staged = this.orchestrator.buffered();
     if (staged.length > 0) {
       const teeth = new Set(staged.map(entry => String(entry.entities['fdi'] ?? '')).filter(Boolean));
+      if (fr) {
+        return `${staged.length} ${staged.length === 1 ? 'élément dicté' : 'éléments dictés'}, sur ${teeth.size} `
+          + `${teeth.size === 1 ? 'dent' : 'dents'}. Tout est affiché à l'écran.`;
+      }
       return `${staged.length} ${staged.length === 1 ? 'entry' : 'entries'} dictated, on ${teeth.size} `
         + `${teeth.size === 1 ? 'tooth' : 'teeth'}. Everything is listed on screen.`;
     }
     if (summary.totalFindings === 0 && summary.notes.length === 0) {
-      return 'Nothing recorded in this examination yet.';
+      return fr ? 'Rien d\'enregistré pour cet examen.' : 'Nothing recorded in this examination yet.';
+    }
+    if (fr) {
+      const parts: string[] = [];
+      if (summary.teeth.length) parts.push(`${summary.teeth.length} ${summary.teeth.length === 1 ? 'dent' : 'dents'} avec constatations`);
+      if (summary.treatments.length) parts.push(`${summary.treatments.length} traitements à prévoir`);
+      if (summary.allergies.length) parts.push(`${summary.allergies.length} allergies`);
+      if (summary.notes.length) parts.push(`${summary.notes.length} notes`);
+      return `Pour l'instant : ${parts.join(', ')}. Le détail est à l'écran.`;
     }
     const parts: string[] = [];
     if (summary.teeth.length) {

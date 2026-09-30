@@ -92,6 +92,11 @@ export interface SessionSummaryDto {
   model: string;
   commandCount: number;
   truncated: boolean;
+  /**
+   * True for a model-written narrative that matched the records; false for
+   * the structured report the server writes from the records themselves.
+   */
+  generated?: boolean;
   error: string | null;
 }
 
@@ -229,9 +234,13 @@ export class VoiceApiService {
    * The generated consultation narrative, built server-side from the session's
    * own audit trail. Persists nothing, so the review page may call it again
    * every time the dentist changes what is included.
+   *
+   * @param auditIds the entries still included at review, so the narrative
+   *   never describes one the dentist removed
    */
-  summarizeSession(sessionId: string): Observable<SessionSummaryDto> {
-    return this.http.post<SessionSummaryDto>(`${this.base}/sessions/${sessionId}/summarize`, {});
+  summarizeSession(sessionId: string, auditIds?: string[]): Observable<SessionSummaryDto> {
+    return this.http.post<SessionSummaryDto>(`${this.base}/sessions/${sessionId}/summarize`,
+      auditIds?.length ? { auditIds } : {});
   }
 
   /**

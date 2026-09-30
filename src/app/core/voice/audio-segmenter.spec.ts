@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { encodeWav, resample, rms, toUploadWav, UtteranceSegmenter, UPLOAD_SAMPLE_RATE } from './audio-segmenter';
+import { encodeWav, resample, rms, SpeechBandFilter, toUploadWav, UtteranceSegmenter, UPLOAD_SAMPLE_RATE } from './audio-segmenter';
 
 /**
  * The segmenter decides what the recogniser ever hears. The failures worth
@@ -12,13 +12,42 @@ const RATE = 48_000;
 const FRAME = 1024;
 const frameMs = (FRAME / RATE) * 1000;
 
-/** A frame of a tone at the given amplitude, with a little noise. */
-function voiced(amplitude: number, phase = 0): Float32Array {
+/** Running sample clock, so a syllable envelope continues across frames. */
+let clock = 0;
+
+/**
+ * A frame of voice-like sound: a 220 Hz tone whose level rises and falls
+ * five times a second, as syllables do. A steady tone is what a machine
+ * sounds like, and the segmenter is right to reject it.
+ */
+function voiced(amplitude: number, phase = clock): Float32Array {
   const frame = new Float32Array(FRAME);
   for (let i = 0; i < FRAME; i++) {
-    frame[i] = amplitude * Math.sin(((phase + i) * 2 * Math.PI * 220) / RATE);
+    const t = (phase + i) / RATE;
+    const syllables = 0.15 + 0.85 * Math.abs(Math.sin(Math.PI * 5 * t));
+    frame[i] = amplitude * syllables * Math.sin(((phase + i) * 2 * Math.PI * 220) / RATE);
   }
+  clock = phase + FRAME;
   return frame;
+}
+
+/** A machine: one level, held. */
+function steadyTone(amplitude: number, hz = 800): Float32Array {
+  const frame = new Float32Array(FRAME);
+  for (let i = 0; i < FRAME; i++) frame[i] = amplitude * Math.sin(((clock + i) * 2 * Math.PI * hz) / RATE);
+  clock += FRAME;
+  return frame;
+}
+
+/** A dental turbine: a whine well above the voice, loud. */
+function whine(amplitude: number, hz = 6000, phase = 0): Float32Array {
+  const frame = new Float32Array(FRAME);
+  for (let i = 0; i < FRAME; i++) frame[i] = amplitude * Math.sin(((phase + i) * 2 * Math.PI * hz) / RATE);
+  return frame;
+}
+
+function sum(a: Float32Array, b: Float32Array): Float32Array {
+  return a.map((v, i) => v + b[i]);
 }
 
 function quiet(amplitude = 0.001): Float32Array {
@@ -90,6 +119,51 @@ describe('UtteranceSegmenter', () => {
     expect(clips).toHaveLength(0);
   });
 
+  it('does not open an utterance for a handpiece whine, however loud', () => {
+    const segmenter = new UtteranceSegmenter({ sampleRate: RATE });
+    let phase = 0;
+    const clips = feed(segmenter, [
+      ...times(600, () => quiet()),
+      ...times(3000, () => { const f = whine(0.3, 6000, phase); phase += FRAME; return f; }),
+      ...times(1200, () => quiet()),
+    ]);
+    expect(clips).toHaveLength(0);
+  });
+
+  it('still hears the dentist over the handpiece', () => {
+    const segmenter = new UtteranceSegmenter({ sampleRate: RATE });
+    let phase = 0;
+    const next = (voice: number) => { const f = sum(whine(0.1, 6000, phase), voiced(voice)); phase += FRAME; return f; };
+    const clips = feed(segmenter, [
+      ...times(1500, () => next(0)),
+      ...times(1000, () => next(0.2)),
+      ...times(1500, () => next(0)),
+    ]);
+    expect(clips).toHaveLength(1);
+  });
+
+  it('drops a steady machine noise in the speech band and stops re-triggering on it', () => {
+    const segmenter = new UtteranceSegmenter({ sampleRate: RATE });
+    const clips = feed(segmenter, [
+      ...times(600, () => quiet()),
+      // Suction starts and runs.
+      ...times(5000, () => sum(steadyTone(0.08), quiet(0.004))),
+    ]);
+    expect(clips).toHaveLength(0);
+    expect(segmenter.speaking).toBe(false);
+  });
+
+  it('hears speech over steady suction once the floor has risen to it', () => {
+    const segmenter = new UtteranceSegmenter({ sampleRate: RATE });
+    const clips = feed(segmenter, [
+      ...times(600, () => quiet()),
+      ...times(3000, () => steadyTone(0.03)),
+      ...times(1200, () => sum(steadyTone(0.03), voiced(0.3))),
+      ...times(1500, () => steadyTone(0.03)),
+    ]);
+    expect(clips).toHaveLength(1);
+  });
+
   it('drops a click too short to be speech', () => {
     const segmenter = new UtteranceSegmenter({ sampleRate: RATE });
     const clips = feed(segmenter, [
@@ -123,12 +197,39 @@ describe('UtteranceSegmenter', () => {
   });
 });
 
+describe('SpeechBandFilter', () => {
+  it('passes the voice and attenuates a turbine whine and a motor rumble', () => {
+    const tone = (hz: number) => { const f = new Float32Array(RATE / 2); for (let i = 0; i < f.length; i++) f[i] = Math.sin((2 * Math.PI * hz * i) / RATE); return f; };
+    const through = (hz: number) => new SpeechBandFilter(RATE).rms(tone(hz)) / rms(tone(hz));
+    expect(through(1000)).toBeGreaterThan(0.9);
+    expect(through(6000)).toBeLessThan(0.3);
+    expect(through(9000)).toBeLessThan(0.1);
+    expect(through(40)).toBeLessThan(0.15);
+  });
+});
+
 describe('encoding', () => {
   it('resamples 48 kHz to 16 kHz by a factor of three', () => {
     const input = new Float32Array(48_000).fill(0.5);
     const out = resample(input, 48_000, 16_000);
     expect(out.length).toBe(16_000);
     expect(out[100]).toBeCloseTo(0.5);
+  });
+
+  it('filters out a whine above the new Nyquist instead of folding it into the voice band', () => {
+    // 11 kHz at 48 kHz would alias to 5 kHz at 16 kHz.
+    const input = new Float32Array(48_000);
+    for (let i = 0; i < input.length; i++) input[i] = Math.sin((2 * Math.PI * 11_000 * i) / 48_000);
+    const out = resample(input, 48_000, 16_000);
+    expect(rms(out.subarray(100, out.length - 100))).toBeLessThan(0.02);
+  });
+
+  it('keeps speech-band content through resampling, including from 44.1 kHz', () => {
+    const input = new Float32Array(44_100);
+    for (let i = 0; i < input.length; i++) input[i] = Math.sin((2 * Math.PI * 1000 * i) / 44_100);
+    const out = resample(input, 44_100, 16_000);
+    expect(out.length).toBe(16_000);
+    expect(rms(out.subarray(100, out.length - 100))).toBeGreaterThan(0.65);
   });
 
   it('writes a valid mono 16-bit PCM WAV header', () => {

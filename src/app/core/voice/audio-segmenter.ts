@@ -26,6 +26,24 @@
  * - **Onset and hangover.** A click must last long enough to be a voice
  *   before it opens an utterance, and a pause between "carie" and
  *   "récurrente" must last long enough to be the end before it closes one.
+ *
+ * ── Why the detector only listens to the speech band ─────────────────────
+ *
+ * A dental surgery's loudest noises sit outside the voice. An air turbine
+ * whines at 5–8 kHz and above, a compressor and the chair motor rumble below
+ * 100 Hz, and measured on the full band either one opened "utterances" of
+ * pure noise — each one a round trip to the recogniser, a slice of a
+ * rate-limited quota, and a chance for it to hallucinate a finding. So the
+ * level the detector reacts to is measured after a band-pass over the
+ * speech formants ({@link SpeechBandFilter}); the clip that is uploaded is
+ * still the full, unfiltered signal.
+ *
+ * Band-limiting alone does not stop a loud turbine or the suction, whose
+ * noise reaches into the speech band. What does is that speech is not
+ * steady: its level rises and falls with every syllable, four to eight times
+ * a second, while a machine holds one level. An open "utterance" whose level
+ * barely moves is noise; it is dropped, and the noise floor jumps to it so
+ * the machine stops re-triggering the detector until it is switched off.
  */
 
 export interface SegmenterOptions {
@@ -50,6 +68,14 @@ export interface SegmenterOptions {
    * Hysteresis: the tail of a word is quieter than its onset.
    */
   releaseRatio: number;
+  /** How long an open utterance runs before it is checked for being a machine. */
+  steadyCheckMs: number;
+  /**
+   * Coefficient of variation of the frame levels below which a sound is
+   * steady noise. Speech measures 0.5 and above; a turbine or the suction
+   * well under 0.2.
+   */
+  steadyMaxVariation: number;
 }
 
 export const DEFAULT_SEGMENTER_OPTIONS: Omit<SegmenterOptions, 'sampleRate'> = {
@@ -61,7 +87,83 @@ export const DEFAULT_SEGMENTER_OPTIONS: Omit<SegmenterOptions, 'sampleRate'> = {
   minThreshold: 0.004,
   noiseMultiplier: 3,
   releaseRatio: 0.5,
+  steadyCheckMs: 1200,
+  steadyMaxVariation: 0.2,
 };
+
+/** Fewer frames than this say nothing reliable about variation. */
+const MIN_FRAMES_FOR_VARIATION = 10;
+
+/** Coefficient of variation — standard deviation over mean. */
+export function variation(values: number[]): number {
+  if (values.length === 0) return 0;
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  if (mean === 0) return 0;
+  const variance = values.reduce((a, b) => a + (b - mean) * (b - mean), 0) / values.length;
+  return Math.sqrt(variance) / mean;
+}
+
+/**
+ * One RBJ biquad section, direct form I, state kept across frames so a
+ * frame boundary is not a discontinuity.
+ */
+class Biquad {
+  private x1 = 0; private x2 = 0; private y1 = 0; private y2 = 0;
+  private constructor(private b0: number, private b1: number, private b2: number,
+                      private a1: number, private a2: number) {}
+
+  static lowPass(sampleRate: number, cutoff: number, q = Math.SQRT1_2): Biquad {
+    const w = (2 * Math.PI * Math.min(cutoff, sampleRate * 0.45)) / sampleRate;
+    const alpha = Math.sin(w) / (2 * q);
+    const cos = Math.cos(w);
+    const a0 = 1 + alpha;
+    return new Biquad(((1 - cos) / 2) / a0, (1 - cos) / a0, ((1 - cos) / 2) / a0, (-2 * cos) / a0, (1 - alpha) / a0);
+  }
+
+  static highPass(sampleRate: number, cutoff: number, q = Math.SQRT1_2): Biquad {
+    const w = (2 * Math.PI * cutoff) / sampleRate;
+    const alpha = Math.sin(w) / (2 * q);
+    const cos = Math.cos(w);
+    const a0 = 1 + alpha;
+    return new Biquad(((1 + cos) / 2) / a0, (-(1 + cos)) / a0, ((1 + cos) / 2) / a0, (-2 * cos) / a0, (1 - alpha) / a0);
+  }
+
+  step(x: number): number {
+    const y = this.b0 * x + this.b1 * this.x1 + this.b2 * this.x2 - this.a1 * this.y1 - this.a2 * this.y2;
+    this.x2 = this.x1; this.x1 = x;
+    this.y2 = this.y1; this.y1 = y;
+    return y;
+  }
+}
+
+/**
+ * The band the voice-activity detector listens to: 150 Hz – 3.8 kHz, with
+ * the upper edge fourth-order so a turbine's whine is well down before it
+ * can open an utterance.
+ */
+export class SpeechBandFilter {
+  private readonly stages: Biquad[];
+
+  constructor(sampleRate: number, lowHz = 150, highHz = 3800) {
+    this.stages = [
+      Biquad.highPass(sampleRate, lowHz),
+      Biquad.lowPass(sampleRate, highHz),
+      Biquad.lowPass(sampleRate, highHz),
+    ];
+  }
+
+  /** RMS of the frame within the speech band. */
+  rms(frame: Float32Array): number {
+    if (frame.length === 0) return 0;
+    let sum = 0;
+    for (let i = 0; i < frame.length; i++) {
+      let v = frame[i];
+      for (const stage of this.stages) v = stage.step(v);
+      sum += v * v;
+    }
+    return Math.sqrt(sum / frame.length);
+  }
+}
 
 /** Trailing silence kept on a closed utterance; the rest is not worth uploading. */
 const KEPT_TAIL_MS = 300;
@@ -96,12 +198,17 @@ export class UtteranceSegmenter {
   private voicedTotalMs = 0;
   private silenceRunMs = 0;
   private noiseFloor: number | null = null;
+  /** Speech-band level of each frame of the open utterance. */
+  private levels: number[] = [];
+  private steadyChecked = false;
+  private readonly band: SpeechBandFilter;
 
   /** 0–1 input level of the last frame. */
   level = 0;
 
   constructor(options: Partial<SegmenterOptions> & { sampleRate: number }) {
     this.options = { ...DEFAULT_SEGMENTER_OPTIONS, ...options };
+    this.band = new SpeechBandFilter(this.options.sampleRate);
   }
 
   /** True while an utterance is open — the speaker is talking. */
@@ -121,7 +228,9 @@ export class UtteranceSegmenter {
    */
   push(frame: Float32Array): Float32Array | null {
     const frameMs = (frame.length / this.options.sampleRate) * 1000;
-    const energy = rms(frame);
+    // Speech-band energy decides; the meter shows the same, so a dentist
+    // watching it sees what the detector reacts to, not the turbine.
+    const energy = this.band.rms(frame);
     this.level = levelOf(energy);
 
     if (!this.open) {
@@ -138,6 +247,7 @@ export class UtteranceSegmenter {
 
     this.utterance.push(frame);
     this.utteranceSamples += frame.length;
+    this.levels.push(energy);
 
     if (energy >= this.threshold * this.options.releaseRatio) {
       this.voicedTotalMs += frameMs;
@@ -147,6 +257,13 @@ export class UtteranceSegmenter {
     }
 
     const durationMs = (this.utteranceSamples / this.options.sampleRate) * 1000;
+    if (!this.steadyChecked && durationMs >= this.options.steadyCheckMs) {
+      this.steadyChecked = true;
+      if (this.isSteady(this.levels)) {
+        this.rejectAsMachine();
+        return null;
+      }
+    }
     if (this.silenceRunMs >= this.options.hangoverMs || durationMs >= this.options.maxUtteranceMs) {
       return this.close();
     }
@@ -172,6 +289,28 @@ export class UtteranceSegmenter {
     this.voicedRunMs = 0;
     this.voicedTotalMs = 0;
     this.silenceRunMs = 0;
+    this.levels = [];
+    this.steadyChecked = false;
+  }
+
+  /** True when the voiced part of an utterance holds one level — a machine, not a voice. */
+  private isSteady(levels: number[]): boolean {
+    const floor = this.threshold * this.options.releaseRatio;
+    const voiced = levels.filter(level => level >= floor);
+    return voiced.length >= MIN_FRAMES_FOR_VARIATION && variation(voiced) < this.options.steadyMaxVariation;
+  }
+
+  /**
+   * Drops a steady sound and makes it the new quiet, so the machine that
+   * made it cannot open the next utterance either. The floor falls back
+   * quickly once it stops.
+   */
+  private rejectAsMachine(): void {
+    const floor = this.threshold * this.options.releaseRatio;
+    const voiced = this.levels.filter(level => level >= floor);
+    const mean = voiced.reduce((a, b) => a + b, 0) / Math.max(1, voiced.length);
+    this.discard();
+    this.noiseFloor = Math.min(MAX_NOISE_FLOOR * 3, Math.max(this.noiseFloor ?? 0, mean));
   }
 
   private keepPreRoll(frame: Float32Array): void {
@@ -187,6 +326,8 @@ export class UtteranceSegmenter {
 
   private openUtterance(): void {
     this.open = true;
+    this.levels = [];
+    this.steadyChecked = false;
     this.utterance = this.preRoll;
     this.utteranceSamples = this.preRollSamples;
     this.preRoll = [];
@@ -215,14 +356,19 @@ export class UtteranceSegmenter {
     const total = this.utteranceSamples;
     const voicedMs = this.voicedTotalMs;
     const trailingSamples = Math.round((this.silenceRunMs / 1000) * this.options.sampleRate);
+    // A short steady burst — a beep, a brief run of the handpiece — never
+    // reached the in-flight check.
+    const steady = !this.steadyChecked && this.isSteady(this.levels);
 
     this.utterance = [];
     this.utteranceSamples = 0;
     this.open = false;
     this.voicedTotalMs = 0;
     this.silenceRunMs = 0;
+    this.levels = [];
+    this.steadyChecked = false;
 
-    if (voicedMs < this.options.minVoicedMs) return null;
+    if (voicedMs < this.options.minVoicedMs || steady) return null;
 
     const keptTail = Math.round((KEPT_TAIL_MS / 1000) * this.options.sampleRate);
     const length = total - Math.max(0, trailingSamples - keptTail);
@@ -247,23 +393,67 @@ function concat(chunks: Float32Array[], length: number): Float32Array {
 /** What the recogniser receives: 16 kHz is all speech recognition uses. */
 export const UPLOAD_SAMPLE_RATE = 16_000;
 
+/** Taps in the anti-aliasing filter; odd, so it has a centre. */
+const ANTI_ALIAS_TAPS = 63;
+
 /**
- * Box-filter resampling. Averaging every input sample that falls inside an
- * output sample is a crude low-pass, but for speech going to a recogniser it
- * is indistinguishable from a proper filter and avoids the aliasing a plain
- * decimation would add.
+ * Windowed-sinc low-pass, normalised to unity gain at DC.
+ *
+ * @param cutoff as a fraction of the sample rate (0–0.5)
+ */
+function lowPassKernel(cutoff: number, taps = ANTI_ALIAS_TAPS): Float32Array {
+  const kernel = new Float32Array(taps);
+  const middle = (taps - 1) / 2;
+  let sum = 0;
+  for (let i = 0; i < taps; i++) {
+    const n = i - middle;
+    const sinc = n === 0 ? 2 * cutoff : Math.sin(2 * Math.PI * cutoff * n) / (Math.PI * n);
+    const blackman = 0.42 - 0.5 * Math.cos((2 * Math.PI * i) / (taps - 1)) + 0.08 * Math.cos((4 * Math.PI * i) / (taps - 1));
+    kernel[i] = sinc * blackman;
+    sum += kernel[i];
+  }
+  for (let i = 0; i < taps; i++) kernel[i] /= sum;
+  return kernel;
+}
+
+/**
+ * Resampling with a real anti-aliasing filter.
+ *
+ * The box filter this replaced averaged three samples per output sample,
+ * which barely attenuates anything above the new Nyquist: a handpiece
+ * whining at 9–12 kHz folded straight down into the 4–7 kHz band, on top of
+ * the fricatives that tell "seize" from "treize". A 63-tap windowed sinc
+ * with its cutoff just under 8 kHz removes it, then samples are taken by
+ * linear interpolation, which also handles 44.1 kHz hardware cleanly.
  */
 export function resample(samples: Float32Array, inputRate: number, outputRate: number): Float32Array {
   if (inputRate === outputRate) return samples;
+
+  let source = samples;
+  if (outputRate < inputRate) {
+    const kernel = lowPassKernel((0.45 * outputRate) / inputRate);
+    const half = (kernel.length - 1) / 2;
+    const filtered = new Float32Array(samples.length);
+    for (let i = 0; i < samples.length; i++) {
+      let acc = 0;
+      for (let k = 0; k < kernel.length; k++) {
+        const j = i + k - half;
+        if (j >= 0 && j < samples.length) acc += samples[j] * kernel[k];
+      }
+      filtered[i] = acc;
+    }
+    source = filtered;
+  }
+
   const ratio = inputRate / outputRate;
   const outLength = Math.floor(samples.length / ratio);
   const out = new Float32Array(outLength);
   for (let i = 0; i < outLength; i++) {
-    const start = Math.floor(i * ratio);
-    const end = Math.min(samples.length, Math.max(start + 1, Math.floor((i + 1) * ratio)));
-    let sum = 0;
-    for (let j = start; j < end; j++) sum += samples[j];
-    out[i] = sum / (end - start);
+    const position = i * ratio;
+    const index = Math.floor(position);
+    const fraction = position - index;
+    const next = index + 1 < source.length ? source[index + 1] : source[index];
+    out[i] = source[index] + (next - source[index]) * fraction;
   }
   return out;
 }

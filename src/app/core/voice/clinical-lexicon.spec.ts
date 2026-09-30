@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
+  affirmedFindings,
+  extractEveryFinding,
   extractFindings,
   findingLabel,
   findingKind,
@@ -7,6 +9,7 @@ import {
   detectSurface,
   detectSeverity,
   assertLexiconMatches,
+  spokenFindingCovers,
 } from './clinical-lexicon';
 
 const codesOf = (utterance: string) => extractFindings(utterance).map(f => f.code);
@@ -154,5 +157,107 @@ describe('lexicon integrity', () => {
     expect(drifted.ok).toBe(false);
     expect(drifted.message).toContain('caries');
     expect(drifted.message).toContain('invented_code');
+  });
+});
+
+describe('spokenFindingCovers — taking back what was just dictated', () => {
+  it('lets a general term remove the specific finding it names', () => {
+    expect(spokenFindingCovers('caries', 'recurrent_caries')).toBe(true);
+    expect(spokenFindingCovers('caries', 'deep_caries')).toBe(true);
+    expect(spokenFindingCovers('existing_crown', 'crown_replacement_required')).toBe(true);
+    expect(spokenFindingCovers('abscess', 'abscess')).toBe(true);
+  });
+
+  it('never lets one finding remove an unrelated one', () => {
+    expect(spokenFindingCovers('recurrent_caries', 'caries')).toBe(false);
+    expect(spokenFindingCovers('caries', 'abscess')).toBe(false);
+    expect(spokenFindingCovers('mobility', 'periodontal_pocket')).toBe(false);
+  });
+});
+
+describe('extractFindings — a negation is reported, never recorded as the finding', () => {
+  const affirmed = (utterance: string) => affirmedFindings(extractFindings(utterance)).map(f => f.code);
+  const denied = (utterance: string) => extractFindings(utterance).filter(f => f.negated).map(f => f.code);
+
+  it('marks a finding a negation governs', () => {
+    expect(denied('pas de carie')).toEqual(['caries']);
+    expect(denied('dent 16 sans carie')).toEqual(['caries']);
+    expect(denied('no caries')).toEqual(['caries']);
+    expect(denied('16 is not fractured')).toEqual(['fracture']);
+    expect(denied('la 16 n\'est pas fracturée')).toEqual(['fracture']);
+    expect(denied('sans mobilité')).toEqual(['mobility']);
+  });
+
+  it('leaves nothing affirmed when everything is denied', () => {
+    expect(affirmed('pas de carie ni de fracture')).toEqual([]);
+    expect(denied('pas de carie ni de fracture').sort()).toEqual(['caries', 'fracture']);
+  });
+
+  it('keeps what is affirmed beside what is denied', () => {
+    expect(affirmed('pas de carie mais fracture')).toEqual(['fracture']);
+    expect(denied('pas de carie mais fracture')).toEqual(['caries']);
+    expect(affirmed('carie sans douleur')).toEqual(['caries']);
+    expect(denied('carie sans douleur')).toEqual(['pain']);
+  });
+
+  it('does not deny a finding just because "non" opened a correction', () => {
+    expect(denied('non, en fait couronne à remplacer')).toEqual([]);
+    expect(affirmed('non, en fait couronne à remplacer')).toEqual(['crown_replacement_required']);
+  });
+
+  it('carries the clause the words came from, for a note', () => {
+    const [finding] = extractFindings('dent 16 pas de carie, à surveiller');
+    expect(finding.negated).toBe(true);
+    expect(finding.clause).toBe('dent 16 pas de carie');
+  });
+});
+
+describe('extractFindings — "à faire" is a need, never an existing restoration', () => {
+  it('turns an existing restoration into the treatment it needs', () => {
+    expect(codesOf('couronne à faire')).toEqual(['crown_required']);
+    expect(codesOf('il faudra une couronne')).toEqual(['crown_required']);
+    expect(codesOf('ancienne couronne à refaire')).toEqual(['crown_replacement_required']);
+    expect(codesOf('composite à refaire')).toEqual(['filling_required']);
+    expect(codesOf('amalgame à remplacer')).toEqual(['filling_required']);
+    expect(codesOf('l\'obturation est à refaire')).toEqual(['filling_required']);
+    expect(codesOf('bridge à faire')).toEqual(['bridge_required']);
+    expect(codesOf('implant à poser')).toEqual(['implant_required']);
+    expect(codesOf('facette à refaire')).toEqual(['veneer_required']);
+    expect(codesOf('dévitalisation à faire')).toEqual(['root_canal_required']);
+    expect(codesOf('détartrage à faire')).toEqual(['scaling_required']);
+  });
+
+  it('does the same in English', () => {
+    expect(codesOf('composite needs to be redone')).toEqual(['filling_required']);
+    expect(codesOf('the amalgam is to be replaced')).toEqual(['filling_required']);
+    expect(codesOf('crown is recommended')).toEqual(['crown_required']);
+  });
+
+  it('still reads a restoration that is simply there as existing', () => {
+    expect(codesOf('couronne existante')).toEqual(['existing_crown']);
+    expect(codesOf('composite')).toEqual(['existing_composite']);
+    expect(codesOf('amalgame existant')).toEqual(['existing_amalgam']);
+    expect(codesOf('ancienne obturation')).toEqual(['existing_filling']);
+  });
+
+  it('does not let a need in another clause reach the restoration', () => {
+    expect(codesOf('couronne, à surveiller')).toEqual(['existing_crown', 'monitor']);
+    expect(codesOf('composite. il faudra une radio')).toEqual(['existing_composite']);
+  });
+
+  it('keeps one need once when two phrasings name it', () => {
+    expect(codesOf('composite à refaire, needs a filling')).toEqual(['filling_required']);
+  });
+});
+
+describe('extractEveryFinding', () => {
+  it('finds a finding named twice, where extractFindings finds it once', () => {
+    const utterance = 'dent 16 carie, dent 17 carie';
+    expect(extractFindings(utterance)).toHaveLength(1);
+    expect(extractEveryFinding(utterance).map(f => f.code)).toEqual(['caries', 'caries']);
+    expect(extractEveryFinding(utterance).map(f => f.at)).toEqual([
+      utterance.indexOf('carie'),
+      utterance.lastIndexOf('carie'),
+    ]);
   });
 });

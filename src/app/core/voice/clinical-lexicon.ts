@@ -25,6 +25,7 @@
  */
 
 import { unicodeBoundaries } from './voice-regex';
+import { clauseBounds, clauseAround, isNegatedAt } from './voice-negation';
 
 export type FindingKind = 'EXISTING' | 'CONDITION' | 'TREATMENT_REQUIRED' | 'OBSERVATION';
 export type Severity = 'MILD' | 'MODERATE' | 'SEVERE';
@@ -68,12 +69,13 @@ export const FINDINGS: FindingDefinition[] = [
     /\b(?:needs?|requires?|indicated\s+for)\s+(?:a\s+|an\s+)?(?:new\s+|full\s+)?crown/iu,
     /\bcrown\s+(?:is\s+)?(?:required|needed|indicated|recommended)/iu,
     /\b(?:pose|poser|mettre)\s+(?:une\s+)?couronne/iu,
-    /\bcouronne\s+(?:[àa]\s+poser|n[ée]cessaire|indiqu[ée]e?|recommand[ée]e?)/iu),
+    /\bcouronne\s+(?:[àa]\s+(?:poser|faire|placer|pr[ée]voir|r[ée]aliser)|n[ée]cessaire|indiqu[ée]e?|recommand[ée]e?)/iu),
 
   F('root_canal_required', 'TREATMENT_REQUIRED', 'Root canal required',
     /\b(?:needs?|requires?)\s+(?:a\s+|an\s+)?(?:root\s+canal|endo(?:dontic)?\w*|rct)/iu,
     /\broot\s+canal\s+(?:is\s+)?(?:required|needed|indicated|recommended)/iu,
-    /\b(?:d[ée]vitaliser|traitement\s+(?:de\s+)?canal(?:aire)?\s+(?:n[ée]cessaire|[àa]\s+faire)|endodontie\s+n[ée]cessaire)/iu),
+    /\b(?:d[ée]vitaliser|traitement\s+(?:de\s+)?canal(?:aire)?\s+(?:n[ée]cessaire|[àa]\s+faire)|endodontie\s+n[ée]cessaire)/iu,
+    /\bd[ée]vitalisation\s+(?:n[ée]cessaire|[àa]\s+(?:faire|pr[ée]voir|r[ée]aliser))/iu),
 
   F('extraction_required', 'TREATMENT_REQUIRED', 'Extraction required',
     /\b(?:needs?|requires?|for|indicated\s+for)\s+(?:an?\s+)?extraction/iu,
@@ -102,7 +104,8 @@ export const FINDINGS: FindingDefinition[] = [
 
   F('scaling_required', 'TREATMENT_REQUIRED', 'Scaling required',
     /\b(?:needs?|requires?)\s+(?:a\s+)?(?:scaling|cleaning|prophylaxis|d[ée]tartrage)/iu,
-    /\b(?:scaling|d[ée]tartrage)\s+(?:is\s+)?(?:required|needed|indicated|n[ée]cessaire)/iu),
+    /\b(?:scaling|d[ée]tartrage)\s+(?:is\s+)?(?:required|needed|indicated|n[ée]cessaire)/iu,
+    /\bd[ée]tartrage\s+[àa]\s+(?:faire|pr[ée]voir|r[ée]aliser)/iu),
 
   F('sealant_required', 'TREATMENT_REQUIRED', 'Sealant required',
     /\b(?:needs?|requires?)\s+(?:a\s+)?sealant/iu,
@@ -136,7 +139,7 @@ export const FINDINGS: FindingDefinition[] = [
     // First, so "fractured crown" is one fracture rather than a fracture plus
     // an assertion that a crown restoration is present.
     /\bfractured?\s+crowns?\b/iu, /\bcouronne\s+fractur[ée]e?\b/iu,
-    /\bfractur\w+/iu, /\bcracked?\b/iu, /\bchipped?\b/iu, /\bbroken\s+(?:tooth|cusp|edge)/iu,
+    /\bfractur\w+/iu, /\bfractur[ée]e?s?\b/iu, /\bcracked?\b/iu, /\bchipped?\b/iu, /\bbroken\s+(?:tooth|cusp|edge)/iu,
     /\bf[êe]l[ée]e?\b/iu, /\bcass[ée]e?\b/iu),
 
   F('crown_defective', 'CONDITION', 'Defective crown',
@@ -303,6 +306,84 @@ export interface ExtractedFinding {
   severity: Severity | null;
   /** The words this came from, shown in the preview so the doctor can check it. */
   matchedText: string;
+  /**
+   * A negation governs this finding — "pas de carie", "sans mobilité", "not
+   * fractured". It is reported rather than dropped so the caller can keep the
+   * dentist's words as a note; it must never be recorded as a finding.
+   */
+  negated: boolean;
+  /** Where in the utterance the words start. */
+  at: number;
+  /** The clause the words sit in, for a note when the finding is negated. */
+  clause: string;
+}
+
+/** Findings the dentist affirmed — the only ones that may be recorded as findings. */
+export function affirmedFindings<T extends { negated: boolean }>(findings: readonly T[]): T[] {
+  return findings.filter(finding => !finding.negated);
+}
+
+// ── "Needs X" is not "has X" ────────────────────────────────────────────
+
+/**
+ * An existing restoration named next to a word that asks for it to be done is
+ * a treatment need, not a fact about the tooth. "Couronne à faire" and "il
+ * faudra une couronne" would otherwise record a crown the tooth does not
+ * have; "composite à refaire" would record a composite as present and say
+ * nothing of it needing work. The lexicon spells out the common phrasings as
+ * patterns of their own; this catches the rest, whatever restoration they
+ * name.
+ */
+const NEED_BEFORE =
+  /\b(?:il\s+(?:faut|faudra|faudrait)|faut|faudra|n[ée]cessite|besoin\s+d|pr[ée]voir|envisager|needs?|requires?|should\s+(?:get|have|receive)|recommend\w*|to\s+(?:do|place|make|redo))\b/iu;
+
+const NEED_AFTER =
+  /\b(?:[àa]\s+(?:faire|refaire|remplacer|changer|reprendre|poser|placer|mettre|r[ée]aliser|pr[ée]voir|envisager)|n[ée]cessaire|indiqu[ée]\w*|recommand[ée]\w*|souhaitable|to\s+(?:be\s+)?(?:done|replaced|redone|made|placed|remade|changed)|(?:is\s+|are\s+)?(?:needed|required|recommended|indicated))\b/iu;
+
+const REPLACEMENT_WORDS = /\b(?:remplac\w*|refai\w*|chang\w*|repris\w*|replac\w*|redo\w*|remad\w*|remak\w*)\b/iu;
+
+/** How many words either side of a restoration count as "next to" it. */
+const NEED_REACH_WORDS = 4;
+
+/** The treatment-required code an existing-restoration code turns into. */
+const REQUIRED_EQUIVALENT: Readonly<Record<string, (replacing: boolean) => string>> = {
+  existing_crown: replacing => (replacing ? 'crown_replacement_required' : 'crown_required'),
+  existing_bridge: () => 'bridge_required',
+  existing_implant: () => 'implant_required',
+  existing_veneer: () => 'veneer_required',
+  existing_root_canal: () => 'root_canal_required',
+  existing_amalgam: () => 'filling_required',
+  existing_composite: () => 'filling_required',
+  existing_filling: () => 'filling_required',
+  existing_sealant: () => 'sealant_required',
+  existing_post: () => 'restoration_required',
+};
+
+function lastWords(text: string, count: number): string {
+  return text.trim().split(/\s+/).filter(Boolean).slice(-count).join(' ');
+}
+
+function firstWords(text: string, count: number): string {
+  return text.trim().split(/\s+/).filter(Boolean).slice(0, count).join(' ');
+}
+
+/** The definition an existing restoration really is, given what is said beside it. */
+function asTreatmentNeed(
+  definition: FindingDefinition,
+  utterance: string,
+  at: number,
+  length: number,
+): FindingDefinition {
+  const equivalent = REQUIRED_EQUIVALENT[definition.code];
+  if (!equivalent) return definition;
+
+  const clause = clauseBounds(utterance, at);
+  const before = lastWords(utterance.slice(clause.start, at), NEED_REACH_WORDS);
+  const after = firstWords(utterance.slice(at + length, clause.end), NEED_REACH_WORDS);
+  if (!unicodeBoundaries(NEED_BEFORE).test(before) && !unicodeBoundaries(NEED_AFTER).test(after)) return definition;
+
+  const replacing = unicodeBoundaries(REPLACEMENT_WORDS).test(`${before} ${after}`);
+  return FINDING_BY_CODE.get(equivalent(replacing)) ?? definition;
 }
 
 /**
@@ -314,44 +395,75 @@ export interface ExtractedFinding {
  * occupy different spans.
  */
 export function extractFindings(utterance: string): ExtractedFinding[] {
+  return scanFindings(utterance, false);
+}
+
+/**
+ * Every occurrence of every finding, not the first of each. "Dent 16 carie,
+ * dent 17 carie" names caries twice, on two teeth; the first-only reading
+ * finds one and leaves the second tooth with nothing to record.
+ */
+export function extractEveryFinding(utterance: string): ExtractedFinding[] {
+  return scanFindings(utterance, true);
+}
+
+function scanFindings(utterance: string, every: boolean): ExtractedFinding[] {
   let remaining = utterance;
-  const found: Array<ExtractedFinding & { at: number }> = [];
+  const found: ExtractedFinding[] = [];
 
   for (const definition of FINDINGS) {
-    for (const pattern of definition.patterns) {
-      const match = unicodeBoundaries(pattern).exec(remaining);
-      if (!match) continue;
+    let again = true;
+    while (again) {
+      again = false;
+      for (const pattern of definition.patterns) {
+        const match = unicodeBoundaries(pattern).exec(remaining);
+        if (!match) continue;
 
-      const matchedText = match[0];
-      const at = match.index;
+        const matchedText = match[0];
+        const at = match.index;
 
-      // Severity and surface are read from the words around the finding, not
-      // from the whole utterance: in "deep caries on 16, mild wear on 17" the
-      // "deep" belongs to the caries and must not leak onto the wear.
-      const contextStart = Math.max(0, at - 30);
-      const context = remaining.slice(contextStart, at + matchedText.length + 30);
+        // Blank the span rather than deleting it, so the indices of everything
+        // still to be matched stay meaningful.
+        const consumed =
+          remaining.slice(0, at) + ' '.repeat(matchedText.length) + remaining.slice(at + matchedText.length);
 
-      found.push({
-        code: definition.code,
-        kind: definition.kind,
-        label: definition.label,
-        surface: detectSurface(context),
-        severity: detectSeverity(context),
-        matchedText: matchedText.trim(),
-        at,
-      });
+        // Severity and surface are read from the words around the finding, not
+        // from the whole utterance: in "deep caries on 16, mild wear on 17" the
+        // "deep" belongs to the caries and must not leak onto the wear.
+        const contextStart = Math.max(0, at - 30);
+        const context = remaining.slice(contextStart, at + matchedText.length + 30);
 
-      // Blank the span rather than deleting it, so the indices of everything
-      // still to be matched stay meaningful.
-      remaining =
-        remaining.slice(0, at) + ' '.repeat(matchedText.length) + remaining.slice(at + matchedText.length);
-      break;
+        const effective = definition.kind === 'EXISTING'
+          ? asTreatmentNeed(definition, utterance, at, matchedText.length)
+          : definition;
+        const negated = isNegatedAt(utterance, at);
+
+        // One code once, unless asked for every occurrence. "composite à
+        // refaire" next to "needs a filling" is a single filling need, not two
+        // identical rows.
+        const duplicate = !every && found.some(f => f.code === effective.code && f.negated === negated);
+        if (!duplicate) {
+          found.push({
+            code: effective.code,
+            kind: effective.kind,
+            label: effective.label,
+            surface: detectSurface(context),
+            severity: detectSeverity(context),
+            matchedText: matchedText.trim(),
+            negated,
+            at,
+            clause: clauseAround(utterance, at),
+          });
+        }
+
+        remaining = consumed;
+        again = every;
+        break;
+      }
     }
   }
 
-  return found
-    .sort((a, b) => a.at - b.at)
-    .map(({ at, ...finding }) => finding);
+  return found.sort((a, b) => a.at - b.at);
 }
 
 /**
@@ -377,4 +489,22 @@ export function assertLexiconMatches(serverCodes: string[]): { ok: boolean; mess
     message: `Voice lexicon drift — ${parts.join('; ')}. `
       + 'Update clinical-lexicon.ts and FindingCatalog.java together.',
   };
+}
+
+/**
+ * The specific findings a general spoken term covers when the dentist takes
+ * something back. "Enlève la carie sur la seize" names "carie", but what was
+ * dictated a moment before was "carie récurrente" — the removal has to find
+ * it, or it silently stages a withdrawal of something the tooth never had.
+ */
+const FINDING_FAMILIES: Readonly<Record<string, readonly string[]>> = {
+  caries: ['caries', 'recurrent_caries', 'deep_caries', 'cavity'],
+  existing_crown: ['existing_crown', 'crown_defective', 'crown_replacement_required', 'crown_required'],
+  existing_filling: ['existing_filling', 'existing_composite', 'existing_amalgam', 'filling_required'],
+  gingival_inflammation: ['gingival_inflammation', 'periodontal_pocket'],
+};
+
+/** True when a spoken finding code refers to a staged one — the same, or its general family. */
+export function spokenFindingCovers(spoken: string, staged: string): boolean {
+  return spoken === staged || (FINDING_FAMILIES[spoken]?.includes(staged) ?? false);
 }

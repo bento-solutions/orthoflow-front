@@ -179,8 +179,11 @@ import { describeFdi } from '../../../core/voice/tooth-lexicon';
             <p class="narrative-unavailable">
               {{ 'VOICE.REVIEW_REPORT_UNAVAILABLE' | translate: { reason: narrativeError() } }}
             </p>
+          } @else if (!narrativeGenerated()) {
+            <p class="narrative-unavailable">{{ 'VOICE.REVIEW_REPORT_STRUCTURED' | translate }}</p>
           }
-          <textarea class="narrative" rows="6" [(ngModel)]="narrativeText"
+          <textarea class="narrative" rows="10" [(ngModel)]="narrativeText"
+                    (ngModelChange)="narrativeEdited = true"
                     [attr.aria-label]="'VOICE.REVIEW_REPORT' | translate"></textarea>
         </section>
       </div>
@@ -313,9 +316,18 @@ export class SessionReviewComponent implements OnInit {
   nextAppointment = this.nextAppointmentSignal.asReadonly();
   outstanding = this.outstandingSignal.asReadonly();
   narrativeError = this.sessions.narrativeError;
+  narrativeGenerated = this.sessions.narrativeGenerated;
   patient = this.patients.currentPatient;
 
   narrativeText = '';
+  /**
+   * Set once the dentist types in the narrative. Until then it follows what
+   * is included — excluding an entry regenerates it, so the report never
+   * describes a finding that will not be saved. After an edit it is theirs,
+   * and only the Regenerate button replaces it.
+   */
+  narrativeEdited = false;
+  private regenerateTimer: ReturnType<typeof setTimeout> | null = null;
 
   included = computed(() =>
     this.entriesSignal().filter(entry => !this.excludedSignal().has(entry.auditId)));
@@ -409,20 +421,38 @@ export class SessionReviewComponent implements OnInit {
       else next.add(auditId);
       return next;
     });
+    if (!this.narrativeEdited) {
+      // Debounced: toggling three entries in a row is one regeneration.
+      if (this.regenerateTimer) clearTimeout(this.regenerateTimer);
+      this.regenerateTimer = setTimeout(() => void this.regenerate(), 600);
+    }
   }
 
   async regenerate(): Promise<void> {
     this.regeneratingSignal.set(true);
     try {
-      await this.sessions.generateNarrative(this.sessionId);
+      const included = this.included().map(entry => entry.auditId);
+      // Nothing included: say so rather than summarising the whole session.
+      if (included.length === 0) {
+        this.narrativeText = '';
+        return;
+      }
+      await this.sessions.generateNarrative(this.sessionId, included);
       const narrative = this.sessions.narrative();
-      if (narrative) this.narrativeText = narrative;
+      if (narrative) {
+        this.narrativeText = narrative;
+        this.narrativeEdited = false;
+      }
     } finally {
       this.regeneratingSignal.set(false);
     }
   }
 
   async save(): Promise<void> {
+    // The button is disabled while saving, but a fast second tap lands before
+    // the view has caught up. Saving the same consultation twice at once is
+    // what the server now refuses; not sending it is kinder.
+    if (this.savingSignal()) return;
     this.savingSignal.set(true);
     this.failuresSignal.set([]);
     try {
@@ -434,7 +464,11 @@ export class SessionReviewComponent implements OnInit {
       const result = await this.sessions.commit(this.sessionId, approved, rejected, this.narrativeText);
 
       if (result.ok) {
-        this.toast.success(`Saved ${result.executed} finding(s) to the dossier.`);
+        // A second Save that only had to confirm an earlier one recorded
+        // nothing new; "Saved 0" would read as though it had lost something.
+        this.toast.success(result.executed > 0
+          ? `Saved ${result.executed} finding(s) to the dossier.`
+          : 'The consultation is saved to the dossier.');
         if (this.patientId) {
           this.clinical.refresh(this.patientId);
         }
@@ -449,9 +483,15 @@ export class SessionReviewComponent implements OnInit {
       // Partial success. Stay open showing what is left, rather than moving
       // on and leaving the dentist to discover the gap.
       this.failuresSignal.set(result.failed);
-      this.toast.error(`${result.failed.length} finding(s) could not be saved.`);
-    } catch {
-      this.toast.error('Nothing was saved — check the connection and try again.');
+      this.toast.error(`${result.failed.length} finding(s) could not be saved. Save again to retry them, or untick them to leave them out.`);
+    } catch (error) {
+      // 409: the server is already saving this consultation (or it changed
+      // under us). Saying "check the connection" would send the dentist to
+      // press Save a third time.
+      const status = (error as { status?: number } | null)?.status;
+      this.toast.error(status === 409
+        ? 'This consultation is already being saved. Wait a moment, then reopen it to check.'
+        : 'Nothing was saved — check the connection and try again.');
     } finally {
       this.savingSignal.set(false);
     }

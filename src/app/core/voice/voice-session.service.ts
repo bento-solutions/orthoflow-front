@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { VoiceApiService, VoiceSessionDto } from './voice-api.service';
+import { CommitAmendmentDto, VoiceApiService, VoiceSessionDto } from './voice-api.service';
 import { SessionBufferService } from './session-buffer.service';
 import { VoiceOrchestratorService } from './voice-orchestrator.service';
 import { VoiceContextService } from './voice-context.service';
@@ -47,8 +47,16 @@ export interface SessionSummary {
 /** What a dossier found waiting for its patient when it opened. */
 export type ResumableState = 'active' | 'review' | null;
 
-/** Sessions abandoned automatically after this period of voice inactivity. */
-const SESSION_TIMEOUT_MS = 45 * 60 * 1000;
+/** An examination with nothing dictated for this long is closed automatically. */
+export const SESSION_TIMEOUT_MS = 45 * 60 * 1000;
+
+/**
+ * The dentist is told this long before it happens. A long procedure is
+ * mostly silence — a root canal is an hour with two sentences in it — and
+ * closing the microphone under someone who cannot look at the screen, without
+ * a word, loses whatever they say next.
+ */
+export const SESSION_WARNING_LEAD_MS = 5 * 60 * 1000;
 
 @Injectable({ providedIn: 'root' })
 export class VoiceSessionService {
@@ -83,10 +91,15 @@ export class VoiceSessionService {
   /** Dictation has ended and the consultation is waiting to be saved. */
   reviewing = computed(() => this.sessionSignal()?.status === 'PENDING_REVIEW');
 
-  /** Timer handle — reset on each voice command, fires on prolonged inactivity. */
+  /** Timer handles — reset on each command, fire on prolonged inactivity. */
   private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+  private warningHandle: ReturnType<typeof setTimeout> | null = null;
 
-  /** Resets the inactivity clock. The orchestrator calls this for every utterance. */
+  /**
+   * Resets the inactivity clock. The orchestrator calls this for every command
+   * it accepts, and for a bare wake word — which is the answer to "say Calypso
+   * to carry on".
+   */
   touchSession(): void {
     if (!this.isActive()) return;
     this.armSessionTimeout();
@@ -94,26 +107,53 @@ export class VoiceSessionService {
 
   private armSessionTimeout(): void {
     this.clearSessionTimeout();
-    this.timeoutHandle = setTimeout(() => {
-      if (this.isActive()) {
-        // Into review rather than abandoned: whatever was dictated is still
-        // worth saving, and discarding it is the dentist's call.
-        console.warn('[VoiceSession] No speech for 45 minutes — ending dictation.');
-        void this.end();
-      }
-    }, SESSION_TIMEOUT_MS);
+    this.warningHandle = setTimeout(() => {
+      if (this.isActive()) this.orchestrator.notify('idleWarning');
+    }, SESSION_TIMEOUT_MS - SESSION_WARNING_LEAD_MS);
+    this.timeoutHandle = setTimeout(() => void this.closeForInactivity(), SESSION_TIMEOUT_MS);
+  }
+
+  private async closeForInactivity(): Promise<void> {
+    if (!this.isActive()) return;
+    // Into review rather than abandoned: whatever was dictated is still worth
+    // saving, and discarding it is the dentist's call.
+    console.warn('[VoiceSession] Nothing dictated for 45 minutes — ending dictation.');
+    try {
+      await this.end();
+    } catch {
+      // The connection is down; the examination stays open on the server and
+      // is offered back when the dossier is opened again.
+      return;
+    }
+    this.orchestrator.notify('idleEnded');
   }
 
   private clearSessionTimeout(): void {
-    if (this.timeoutHandle !== null) {
-      clearTimeout(this.timeoutHandle);
-      this.timeoutHandle = null;
-    }
+    if (this.timeoutHandle !== null) clearTimeout(this.timeoutHandle);
+    if (this.warningHandle !== null) clearTimeout(this.warningHandle);
+    this.timeoutHandle = null;
+    this.warningHandle = null;
   }
 
   async start(): Promise<VoiceSessionDto> {
+    // Saying "begin the examination" twice must not open a second session under
+    // the first — its findings would be staged against an id nothing reviews.
+    const running = this.sessionSignal();
+    if (running && running.status === 'ACTIVE') return running;
+
     const snapshot = this.context.snapshot();
     const session = await firstValueFrom(this.api.startSession(snapshot.patientId, snapshot.locale));
+    await this.adopt(session);
+    return session;
+  }
+
+  /**
+   * Takes over a session the server already created — a recorded consultation
+   * starts its own, so that its examination phase can stage chart findings —
+   * and sets this service up exactly as {@link start} does.
+   */
+  async adopt(session: VoiceSessionDto): Promise<void> {
+    const snapshot = this.context.snapshot();
     this.sessionSignal.set(session);
     this.startedAtSignal.set(Date.now());
     this.summarySignal.set(null);
@@ -132,7 +172,26 @@ export class VoiceSessionService {
       });
     }
     this.armSessionTimeout();
-    return session;
+  }
+
+  // ── Routing the way out ─────────────────────────────────────────────
+  //
+  // A recorded consultation owns the session it adopted, and ending it is the
+  // consultation's business: the review that follows is the consultation's, not
+  // the dictated examination's. Rather than teach every path that ends a
+  // session (the dock, the header, the spoken "fin de la consultation", the
+  // inactivity timeout) about consultations, the consultation takes over `end`
+  // and `abandon` while it is open and calls back with `direct: true`.
+
+  private endOverride: ((options: { waitForClips?: boolean }) => Promise<void>) | null = null;
+  private abandonOverride: (() => Promise<void>) | null = null;
+
+  setRouting(routing: {
+    end: (options: { waitForClips?: boolean }) => Promise<void>;
+    abandon: () => Promise<void>;
+  } | null): void {
+    this.endOverride = routing?.end ?? null;
+    this.abandonOverride = routing?.abandon ?? null;
   }
 
   /**
@@ -140,15 +199,26 @@ export class VoiceSessionService {
    *
    * Nothing is written here. Failing to generate a narrative does not block
    * review — the structured findings are what the record is made of.
+   *
+   * By default the last sentences are waited for: what was said just before
+   * "end" is still being transcribed, and used to be dropped. A spoken "end
+   * examination" passes {@code waitForClips: false} — it is being handled by
+   * the very queue that would be waited on, and what comes after it in that
+   * queue was said after the dentist had finished.
    */
-  async end(): Promise<void> {
+  async end(options: { waitForClips?: boolean; direct?: boolean } = {}): Promise<void> {
+    if (this.endOverride && !options.direct) {
+      await this.endOverride({ waitForClips: options.waitForClips });
+      return;
+    }
     const session = this.sessionSignal();
     if (!session || session.status !== 'ACTIVE') return;
 
     this.clearSessionTimeout();
     this.busySignal.set(true);
     try {
-      this.orchestrator.stopListening();
+      if (options.waitForClips === false) this.orchestrator.stopListening();
+      else await this.orchestrator.finishListening();
       const pending = await firstValueFrom(this.api.completeSession(session.id, {
         status: 'PENDING_REVIEW',
         confirmed: false,
@@ -166,10 +236,16 @@ export class VoiceSessionService {
    *
    * @param includedAuditIds the entries still included at review; omitted,
    *   the narrative covers everything the session staged
+   * @param correctedTeeth teeth the dentist changed at review, by audit id, so
+   *   the narrative describes the tooth that will be saved
    */
-  async generateNarrative(sessionId: string, includedAuditIds?: string[]): Promise<void> {
+  async generateNarrative(
+    sessionId: string,
+    includedAuditIds?: string[],
+    correctedTeeth?: Record<string, string>,
+  ): Promise<void> {
     try {
-      const response = await firstValueFrom(this.api.summarizeSession(sessionId, includedAuditIds));
+      const response = await firstValueFrom(this.api.summarizeSession(sessionId, includedAuditIds, correctedTeeth));
       if (response.error) {
         this.narrativeSignal.set(null);
         this.narrativeErrorSignal.set(response.error);
@@ -196,13 +272,19 @@ export class VoiceSessionService {
     approvedAuditIds: string[],
     rejectedAuditIds: string[],
     summary: string,
-  ): Promise<{ ok: boolean; executed: number; failed: { auditId: string; errorMessage: string }[] }> {
+    amendments: CommitAmendmentDto[] = [],
+  ): Promise<{
+    ok: boolean;
+    executed: number;
+    notReviewed: number;
+    failed: { auditId: string; errorMessage: string }[];
+  }> {
     this.busySignal.set(true);
     try {
       const result = await firstValueFrom(this.api.commitSession(sessionId, {
         approvedAuditIds,
         rejectedAuditIds,
-        amendments: [],
+        amendments,
         summary,
       }));
       this.sessionSignal.set(result.session);
@@ -220,11 +302,29 @@ export class VoiceSessionService {
       return {
         ok: result.failed.length === 0,
         executed: result.executed,
+        notReviewed: result.notReviewed ?? 0,
         failed: result.failed.map(f => ({ auditId: f.auditId, errorMessage: f.errorMessage })),
       };
     } finally {
       this.busySignal.set(false);
     }
+  }
+
+  /**
+   * The session was saved by something other than {@link commit} — a recorded
+   * consultation commits the chart findings together with the rest of the
+   * record. Clears what this service holds for it, as a normal save does.
+   */
+  async finishExternally(): Promise<void> {
+    const session = this.sessionSignal();
+    if (!session) return;
+    this.clearSessionTimeout();
+    await this.buffer.clear(session.id);
+    this.orchestrator.resetBuffer();
+    this.context.setSessionId(null);
+    this.context.clearConversation();
+    this.startedAtSignal.set(null);
+    this.sessionSignal.set({ ...session, status: 'COMPLETED' });
   }
 
   /**
@@ -304,7 +404,11 @@ export class VoiceSessionService {
    * the dictation as not reviewed; the staged audit rows stay PENDING and
    * are never executed.
    */
-  async abandon(): Promise<void> {
+  async abandon(options: { direct?: boolean } = {}): Promise<void> {
+    if (this.abandonOverride && !options.direct) {
+      await this.abandonOverride();
+      return;
+    }
     const session = this.sessionSignal();
     if (!session) return;
     this.clearSessionTimeout();

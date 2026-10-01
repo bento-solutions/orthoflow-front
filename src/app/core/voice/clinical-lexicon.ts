@@ -81,7 +81,11 @@ export const FINDINGS: FindingDefinition[] = [
     /\b(?:needs?|requires?|for|indicated\s+for)\s+(?:an?\s+)?extraction/iu,
     /\b(?:needs?|has)\s+to\s+(?:be\s+(?:extracted|pulled|removed)|come\s+out)/iu,
     /\bextraction\s+(?:is\s+)?(?:required|needed|indicated|recommended)/iu,
-    /\b(?:extraire|[àa]\s+extraire|extraction\s+(?:n[ée]cessaire|indiqu[ée]e?))/iu),
+    /\b(?:extraire|[àa]\s+extraire|extraction\s+(?:n[ée]cessaire|indiqu[ée]e?))/iu,
+    // "Extraction" on its own names a plan, not a fact: the past is "extraite".
+    // Read as required, never as extracted, so a tooth is not recorded as gone
+    // because of a noun; the read-back says "extraction à prévoir".
+    /\bextraction\b/iu),
 
   F('filling_required', 'TREATMENT_REQUIRED', 'Filling required',
     /\b(?:needs?|requires?)\s+(?:a\s+|an\s+)?(?:new\s+)?(?:filling|restoration|composite|amalgam|obturation)/iu,
@@ -130,7 +134,8 @@ export const FINDINGS: FindingDefinition[] = [
     /\bdeep\s+(?:car\w+|cavit\w+|decay)/iu, /\bcarie\s+profonde/iu),
 
   F('caries', 'CONDITION', 'Caries',
-    /\bcaries?\b/iu, /\bcarious\b/iu, /\bdecay(?:ed)?\b/iu, /\bcarie\b/iu, /\btsous\b/iu),
+    /\bcaries?\b/iu, /\bcarious\b/iu, /\bdecay(?:ed)?\b/iu, /\bcarie\b/iu, /\btsous\b/iu,
+    /\bcari[ée]e?s?\b/iu, /\bl[ée]sions?\s+carieuses?\b/iu),
 
   F('cavity', 'CONDITION', 'Cavity',
     /\bcavit(?:y|ies)\b/iu, /\bcavit[ée]\b/iu, /\btrou\b/iu),
@@ -140,7 +145,7 @@ export const FINDINGS: FindingDefinition[] = [
     // an assertion that a crown restoration is present.
     /\bfractured?\s+crowns?\b/iu, /\bcouronne\s+fractur[ée]e?\b/iu,
     /\bfractur\w+/iu, /\bfractur[ée]e?s?\b/iu, /\bcracked?\b/iu, /\bchipped?\b/iu, /\bbroken\s+(?:tooth|cusp|edge)/iu,
-    /\bf[êe]l[ée]e?\b/iu, /\bcass[ée]e?\b/iu),
+    /\bf[êe]l[ée]e?\b/iu, /\bf[êe]lures?\b/iu, /\bcass[ée]e?\b/iu),
 
   F('crown_defective', 'CONDITION', 'Defective crown',
     /\b(?:defective|failing|leaking|broken|loose|cracked)\s+crown/iu,
@@ -149,6 +154,22 @@ export const FINDINGS: FindingDefinition[] = [
 
   F('retained_root', 'CONDITION', 'Retained root',
     /\bretained\s+roots?/iu, /\broot\s+(?:remnant|fragment)/iu, /\bracine\s+r[ée]siduelle/iu),
+
+  F('avulsion', 'CONDITION', 'Avulsion',
+    /\bavuls(?:ion|[ée]e?s?)\b/iu),
+
+  F('extensive_destruction', 'CONDITION', 'Extensive destruction',
+    /\bd[ée]labr(?:[ée]e?s?|ement)\b/iu, /\bbadly\s+(?:broken\s+down|destroyed)\b/iu, /\bextensive(?:ly)?\s+(?:destruction|destroyed|broken\s+down)\b/iu),
+
+  F('pulpitis', 'CONDITION', 'Pulpitis',
+    /\bpulpit(?:is|e)\b/iu),
+
+  F('necrosis', 'CONDITION', 'Pulp necrosis',
+    /\b(?:pulp(?:al)?\s+)?necro(?:sis|tic)\b/iu, /\bn[ée]cros\w+/iu),
+
+  F('periapical_lesion', 'CONDITION', 'Periapical lesion',
+    /\bgranulom\w+/iu, /\bkystes?\b/iu, /\bcysts?\b/iu,
+    /\bl[ée]sions?\s+p[ée]ri[- ]?apicales?\b/iu, /\bperiapical\s+(?:lesion|radiolucency)\b/iu),
 
   F('extracted', 'CONDITION', 'Extracted',
     /\b(?:already\s+)?extracted\b/iu, /\bhas\s+been\s+(?:pulled|removed|extracted)/iu,
@@ -171,7 +192,7 @@ export const FINDINGS: FindingDefinition[] = [
 
   F('sensitivity', 'CONDITION', 'Sensitivity',
     /\bsensitiv\w+/iu, /\bsensible\b/iu, /\bsensibilit[ée]\b/iu,
-    /\bhypersensitiv\w+/iu, /\breacts?\s+to\s+cold\b/iu),
+    /\bhypersensitiv\w+/iu, /\bhypersensibilit[ée]s?\b/iu, /\breacts?\s+to\s+cold\b/iu),
 
   F('pain', 'CONDITION', 'Pain',
     /\bpain(?:ful)?\b/iu, /\baches?\b/iu, /\baching\b/iu, /\bdouleur\w*/iu, /\bdouloureu\w+/iu,
@@ -179,10 +200,11 @@ export const FINDINGS: FindingDefinition[] = [
 
   F('tooth_wear', 'CONDITION', 'Tooth wear',
     /\b(?:tooth\s+)?wear\b/iu, /\battrition\b/iu, /\berosion\b/iu, /\babfraction\b/iu,
-    /\bbruxism\b/iu, /\busure\b/iu, /\b[ée]rosion\b/iu),
+    /\bbruxism\b/iu, /\bbruxisme\b/iu, /\busure\b/iu, /\b[ée]rosion\b/iu),
 
   F('discoloration', 'CONDITION', 'Discoloration',
-    /\bdiscolo\w+/iu, /\bstain(?:ed|ing)?\b/iu, /\bd[ée]color\w+/iu, /\btach[ée]e?\b/iu),
+    /\bdiscolo\w+/iu, /\bstain(?:ed|ing)?\b/iu, /\bd[ée]color\w+/iu, /\btach[ée]e?\b/iu,
+    /\bcolor[ée]e?\b/iu),
 
   F('gingival_inflammation', 'CONDITION', 'Gingival inflammation',
     /\bgingivitis\b/iu, /\bgingival\s+inflammation\b/iu, /\b(?:inflamed|swollen|bleeding)\s+gums?\b/iu,
@@ -194,14 +216,22 @@ export const FINDINGS: FindingDefinition[] = [
     /\bpoche\s+parodontale\b/iu, /\bparodontite\b/iu),
 
   F('gingival_recession', 'CONDITION', 'Gingival recession',
-    /\b(?:gingival\s+|gum\s+)?recession\b/iu, /\br[ée]cession\s+gingivale\b/iu),
+    /\b(?:gingival\s+|gum\s+)?recession\b/iu, /\br[ée]cession(?:\s+gingivale)?\b/iu),
+
+  F('bleeding', 'CONDITION', 'Bleeding',
+    /\bbleeding\b/iu, /\bsaignements?\b/iu, /\bsaigne(?:nt)?\b/iu),
+
+  F('swelling', 'CONDITION', 'Swelling',
+    /\bswell\w+/iu, /\bgonflements?\b/iu, /\bgonfl[ée]e?s?\b/iu, /\btum[ée]faction\b/iu),
 
   F('plaque_calculus', 'CONDITION', 'Plaque / calculus',
     /\bcalculus\b/iu, /\btartar\b/iu, /\bplaque\b/iu, /\btartre\b/iu),
 
   F('malposition', 'CONDITION', 'Malposition',
     /\bmalpositioned?\b/iu, /\bcrowded?\b/iu, /\brotated?\b/iu, /\bmalposition\w*/iu,
-    /\bencombrement\b/iu, /\bversion\b/iu),
+    /\bencombrement\b/iu, /\bversion\b/iu,
+    /\ben\s+rotation\b/iu, /\brotation\b/iu, /\b[ée]gression\b/iu, /\bextrusion\b/iu,
+    /\bectopi\w+/iu, /\b(?:supra|infra)[- ]?(?:position|occlusion)\b/iu),
 
   // ── Existing restorations ───────────────────────────────────────────
   F('existing_crown', 'EXISTING', 'Existing crown',
@@ -220,10 +250,15 @@ export const FINDINGS: FindingDefinition[] = [
   F('existing_root_canal', 'EXISTING', 'Existing root canal',
     /\b(?:previous|old|existing|prior)\s+(?:root\s+canal|endo\w*|rct)/iu,
     /\broot\s+(?:canal|filled|treated)\b/iu, /\bendodontically\s+treated\b/iu,
-    /\bd[ée]vitalis[ée]e?\b/iu, /\btraitement\s+canalaire\s+(?:existant|ant[ée]rieur)/iu),
+    /\bd[ée]vitalis[ée]e?\b/iu, /\bd[ée]vitalisation\b/iu,
+    /\btraitement\s+canalaire\s+(?:existant|ant[ée]rieur)/iu),
 
   F('existing_post', 'EXISTING', 'Existing post',
-    /\b(?:post\s+and\s+core|post\b|pivot\b|inlay[- ]core)/iu, /\btenon\b/iu),
+    /\b(?:post\s+and\s+core|post\b|pivot\b|inlay[- ]core)/iu, /\btenon\b/iu,
+    /\breconstitution\s+corono[- ]?radiculaire\b/iu, /\bfaux[- ]moignon\b/iu, /\brcr\b/iu),
+
+  F('existing_inlay', 'EXISTING', 'Existing inlay / onlay',
+    /\b(?:inlay|onlay)s?\b/iu, /\binlays?[- ]?onlays?\b/iu),
 
   F('existing_amalgam', 'EXISTING', 'Existing amalgam',
     /\bamalgam\w*/iu, /\bsilver\s+filling/iu, /\bamalgame\b/iu),
@@ -241,7 +276,7 @@ export const FINDINGS: FindingDefinition[] = [
   F('existing_filling', 'EXISTING', 'Existing filling',
     /\b(?:old|existing|previous|has\s+an?)\s+(?:filling|restoration|obturation)/iu,
     /\bfilled\b/iu, /\bfillings?\b/iu, /\brestoration\b/iu,
-    /\b(?:ancienne\s+)?obturation\b/iu, /\bplomb\w*/iu),
+    /\b(?:ancienne\s+)?obturation\b/iu, /\bplomb\w*/iu, /\breconstitutions?(?:\s+coronaire)?\b/iu),
 
   // ── Observations ────────────────────────────────────────────────────
   F('monitor', 'OBSERVATION', 'Monitor',
@@ -273,14 +308,19 @@ export function allFindingCodes(): string[] {
 // ── Surfaces and severity ───────────────────────────────────────────────
 
 const SURFACES: Array<{ code: string; pattern: RegExp }> = [
-  { code: 'occlusal', pattern: /\bocclusal\w*|\bbiting\s+surface\b/iu },
-  { code: 'mesial', pattern: /\bm[ée]sial\w*/iu },
-  { code: 'distal', pattern: /\bdistal\w*/iu },
-  { code: 'buccal', pattern: /\bbuccal\w*|\bvestibul\w*|\bfacial\s+surface\b/iu },
-  { code: 'lingual', pattern: /\blingual\w*|\bpalatal\w*|\bpalatin\w*/iu },
-  { code: 'incisal', pattern: /\bincisal\w*/iu },
-  { code: 'cervical', pattern: /\bcervical\w*|\bneck\s+of\s+the\s+tooth\b/iu },
+  // The combining forms ("mésio-occlusale", "occluso-distale") are how a
+  // dentist names a compound surface; each part is a surface of its own.
+  { code: 'mesial', pattern: /\bm[ée]sial\w*|\bm[ée]sio\b/iu },
+  { code: 'occlusal', pattern: /\bocclusal\w*|\bocclus[oa]\b|\bbiting\s+surface\b/iu },
+  { code: 'distal', pattern: /\bdistal\w*|\bdisto\b/iu },
+  { code: 'incisal', pattern: /\bincisal\w*|\bincisio\b/iu },
+  { code: 'buccal', pattern: /\bbuccal\w*|\bvestibul\w*|\bbucco\b|\bfacial\s+surface\b/iu },
+  { code: 'lingual', pattern: /\blingual\w*|\blinguo\b|\bpalatal\w*|\bpalatin\w*|\bpalato\b/iu },
+  { code: 'cervical', pattern: /\bcervical\w*|\bcervico\b|\bneck\s+of\s+the\s+tooth\b/iu },
 ];
+
+/** A compound surface is stored joined — "mesial-occlusal" — in this order, at most this many parts. */
+const MAX_SURFACES = 3;
 
 const SEVERITIES: Array<{ code: Severity; pattern: RegExp }> = [
   { code: 'SEVERE', pattern: /\bsevere\w*|\bdeep\b|\badvanced\b|\bs[ée]v[èe]re\b|\bprofonde?\b|\bavanc[ée]e?\b/iu },
@@ -288,8 +328,114 @@ const SEVERITIES: Array<{ code: Severity; pattern: RegExp }> = [
   { code: 'MILD', pattern: /\bmild\b|\bslight\w*|\bearly\b|\bincipient\b|\bl[ée]g[èe]re?\b|\bd[ée]butante?\b/iu },
 ];
 
+/** Every surface named in `text`, canonical order, as one value; null when none. */
 export function detectSurface(text: string): string | null {
-  return SURFACES.find(s => unicodeBoundaries(s.pattern).test(text))?.code ?? null;
+  const named = SURFACES.filter(s => unicodeBoundaries(s.pattern).test(text)).map(s => s.code);
+  return named.length ? named.slice(0, MAX_SURFACES).join('-') : null;
+}
+
+interface SurfaceMention {
+  code: string;
+  start: number;
+  end: number;
+}
+
+/** Each surface word and where it stands, so it can be given to the finding it describes. */
+function surfaceMentions(utterance: string): SurfaceMention[] {
+  const mentions: SurfaceMention[] = [];
+  for (const surface of SURFACES) {
+    const pattern = unicodeBoundaries(new RegExp(surface.pattern.source, 'giu'));
+    for (const match of utterance.matchAll(pattern)) {
+      if (match.index === undefined) continue;
+      mentions.push({ code: surface.code, start: match.index, end: match.index + match[0].length });
+    }
+  }
+  return mentions;
+}
+
+/** How far, in characters, a surface word may stand from the finding it describes. */
+const SURFACE_REACH = 40;
+
+/**
+ * Gives each surface word to the nearest finding in its clause. Read from
+ * the words around each finding instead, "carie mésio-occlusale et fracture
+ * distale" would hand every surface to both.
+ */
+/**
+ * "Mésio-occlusale" is one thing said as two words, and "mesial occlusal" is
+ * two words said together. Mentions with nothing between them but a hyphen or a
+ * space are one description, given to one finding as a unit; judged one by one
+ * the second half can land on a different finding than the first.
+ */
+function surfaceClusters(utterance: string): Array<{ codes: string[]; start: number; end: number }> {
+  const mentions = surfaceMentions(utterance).sort((a, b) => a.start - b.start);
+  const clusters: Array<{ codes: string[]; start: number; end: number }> = [];
+  for (const mention of mentions) {
+    const last = clusters[clusters.length - 1];
+    if (last && mention.start - last.end <= 1 && /^[-\s]?$/u.test(utterance.slice(last.end, mention.start))) {
+      last.codes.push(mention.code);
+      last.end = mention.end;
+    } else {
+      clusters.push({ codes: [mention.code], start: mention.start, end: mention.end });
+    }
+  }
+  return clusters;
+}
+
+function assignSurfaces(utterance: string, findings: ExtractedFinding[]): void {
+  const owned = new Map<ExtractedFinding, Set<string>>();
+  for (const mention of surfaceClusters(utterance)) {
+    const clause = clauseBounds(utterance, mention.start);
+    let best: ExtractedFinding | null = null;
+    let bestGap = Infinity;
+    for (const finding of findings) {
+      const end = finding.at + finding.matchedText.length;
+      if (clauseBounds(utterance, finding.at).start !== clause.start) continue;
+      const gap = mention.start >= end ? mention.start - end : finding.at >= mention.end ? finding.at - mention.end : 0;
+      if (gap < bestGap) {
+        best = finding;
+        bestGap = gap;
+      }
+    }
+    if (!best || bestGap > SURFACE_REACH) continue;
+    const set = owned.get(best) ?? new Set<string>();
+    mention.codes.forEach(code => set.add(code));
+    owned.set(best, set);
+  }
+  for (const finding of findings) {
+    const codes = owned.get(finding);
+    finding.surface = codes
+      ? SURFACES.map(s => s.code).filter(code => codes.has(code)).slice(0, MAX_SURFACES).join('-')
+      : null;
+  }
+}
+
+const MOBILITY_GRADE =
+  /\b(?:grade|degr[ée]|classe|class|stade|miller)\s*(?:de\s+)?(?:n[°o]\s*)?(1|2|3|i{1,3}|un|une|deux|trois|one|two|three)\b/iu;
+
+const GRADE_NUMBER: Readonly<Record<string, 1 | 2 | 3>> = {
+  '1': 1, i: 1, un: 1, une: 1, one: 1,
+  '2': 2, ii: 2, deux: 2, two: 2,
+  '3': 3, iii: 3, trois: 3, three: 3,
+};
+
+const GRADE_SEVERITY: Readonly<Record<1 | 2 | 3, Severity>> = { 1: 'MILD', 2: 'MODERATE', 3: 'SEVERE' };
+
+/**
+ * "Mobilité grade 2" says how mobile. The grade is recorded — as the finding's
+ * severity and, verbatim, in its note — rather than dropped with the rest of
+ * the words the lexicon has no slot for.
+ */
+function applyMobilityGrade(utterance: string, finding: ExtractedFinding): void {
+  if (finding.code !== 'mobility') return;
+  const clause = clauseBounds(utterance, finding.at);
+  const after = utterance.slice(finding.at + finding.matchedText.length, clause.end);
+  const match = unicodeBoundaries(MOBILITY_GRADE).exec(after);
+  if (!match) return;
+  const grade = GRADE_NUMBER[match[1].toLowerCase()];
+  if (!grade) return;
+  finding.severity = GRADE_SEVERITY[grade];
+  finding.note = `grade ${grade}`;
 }
 
 export function detectSeverity(text: string): Severity | null {
@@ -316,6 +462,8 @@ export interface ExtractedFinding {
   at: number;
   /** The clause the words sit in, for a note when the finding is negated. */
   clause: string;
+  /** A qualifier the lexicon has no slot for but that must not be lost, e.g. "grade 2". */
+  note?: string;
 }
 
 /** Findings the dentist affirmed — the only ones that may be recorded as findings. */
@@ -357,6 +505,7 @@ const REQUIRED_EQUIVALENT: Readonly<Record<string, (replacing: boolean) => strin
   existing_filling: () => 'filling_required',
   existing_sealant: () => 'sealant_required',
   existing_post: () => 'restoration_required',
+  existing_inlay: () => 'restoration_required',
 };
 
 function lastWords(text: string, count: number): string {
@@ -447,7 +596,7 @@ function scanFindings(utterance: string, every: boolean): ExtractedFinding[] {
             code: effective.code,
             kind: effective.kind,
             label: effective.label,
-            surface: detectSurface(context),
+            surface: null,
             severity: detectSeverity(context),
             matchedText: matchedText.trim(),
             negated,
@@ -463,7 +612,10 @@ function scanFindings(utterance: string, every: boolean): ExtractedFinding[] {
     }
   }
 
-  return found.sort((a, b) => a.at - b.at);
+  const ordered = found.sort((a, b) => a.at - b.at);
+  assignSurfaces(utterance, ordered);
+  for (const finding of ordered) applyMobilityGrade(utterance, finding);
+  return ordered;
 }
 
 /**

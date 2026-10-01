@@ -15,6 +15,11 @@ export class AuthApiService {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { email, password });
   }
 
+  /** Swaps a live token for a later one, up to the server's maximum session length. */
+  refresh(): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/refresh`, {});
+  }
+
   register(payload: { email: string; password: string; firstName: string; lastName: string; role: string }): Observable<AuthUser> {
     return this.http.post<AuthUser>(`${this.apiUrl}/register`, payload);
   }

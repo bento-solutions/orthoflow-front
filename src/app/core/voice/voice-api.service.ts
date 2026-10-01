@@ -119,6 +119,8 @@ export interface CommitResultDto {
   executed: number;
   rejected: number;
   amended: number;
+  /** Dictated commands that were on neither list, so were never reviewed or saved. */
+  notReviewed?: number;
   failed: { auditId: string; intent: string; errorMessage: string }[];
 }
 
@@ -238,9 +240,16 @@ export class VoiceApiService {
    * @param auditIds the entries still included at review, so the narrative
    *   never describes one the dentist removed
    */
-  summarizeSession(sessionId: string, auditIds?: string[]): Observable<SessionSummaryDto> {
-    return this.http.post<SessionSummaryDto>(`${this.base}/sessions/${sessionId}/summarize`,
-      auditIds?.length ? { auditIds } : {});
+  summarizeSession(
+    sessionId: string,
+    auditIds?: string[],
+    correctedTeeth?: Record<string, string>,
+  ): Observable<SessionSummaryDto> {
+    const body: { auditIds?: string[]; correctedTeeth?: Record<string, string> } = {};
+    // An empty list is sent as empty: it means "nothing included", not "everything".
+    if (auditIds) body.auditIds = auditIds;
+    if (correctedTeeth && Object.keys(correctedTeeth).length > 0) body.correctedTeeth = correctedTeeth;
+    return this.http.post<SessionSummaryDto>(`${this.base}/sessions/${sessionId}/summarize`, body);
   }
 
   /**

@@ -26,6 +26,7 @@ export function sessionStatusKey(voice: VoiceOrchestratorService, awake: boolean
   if (!voice.examinationMode()) return 'VOICE.STATUS_MIC_OFF';
   if (voice.state() === 'error') return 'VOICE.STATUS_ERROR';
   if (voice.microphoneSuspended()) return 'VOICE.STATUS_SUSPENDED';
+  if (voice.pausedByVoice()) return 'VOICE.STATUS_PAUSED_VOICE';
   if (voice.paused()) return 'VOICE.STATUS_PAUSED';
   if (voice.confirmation()) return 'VOICE.STATUS_CONFIRM';
   if (voice.clarification()) return 'VOICE.STATUS_QUESTION';
@@ -34,7 +35,7 @@ export function sessionStatusKey(voice: VoiceOrchestratorService, awake: boolean
   return awake ? 'VOICE.STATUS_AWAKE' : 'VOICE.STATUS_LISTENING';
 }
 
-type Phase = 'consent' | 'idle' | 'interrupted' | 'live' | 'review' | 'saved';
+type Phase = 'consent' | 'idle' | 'interrupted' | 'live' | 'review' | 'saved' | 'consultation-review';
 
 interface ToothGroup {
   fdi: string;
@@ -109,6 +110,7 @@ interface ToothGroup {
             <span class="material-icons vs-intro-icon" aria-hidden="true">mic</span>
             <h3>{{ 'VOICE.CONSENT_TITLE' | translate }}</h3>
             <p>{{ 'VOICE.CONSENT_BODY' | translate }}</p>
+            <p class="vs-note vs-notice"><span class="material-icons" aria-hidden="true">info</span>{{ 'VOICE.PATIENT_NOTICE' | translate }}</p>
             <ul class="vs-how">
               <li>{{ 'VOICE.HOW_WAKE' | translate }}</li>
               <li>{{ 'VOICE.HOW_DIRECT' | translate }}</li>
@@ -124,6 +126,7 @@ interface ToothGroup {
           <div class="card vs-intro">
             <span class="material-icons vs-intro-icon" aria-hidden="true">mic</span>
             <p>{{ 'VOICE.IDLE_BODY' | translate }}</p>
+            <p class="vs-note vs-notice"><span class="material-icons" aria-hidden="true">info</span>{{ 'VOICE.PATIENT_NOTICE' | translate }}</p>
             <ul class="vs-how">
               <li>{{ 'VOICE.HOW_WAKE' | translate }}</li>
               <li>{{ 'VOICE.HOW_DIRECT' | translate }}</li>
@@ -180,6 +183,11 @@ interface ToothGroup {
               <span class="material-icons" aria-hidden="true">touch_app</span>
               {{ 'VOICE.MIC_SUSPENDED' | translate }}
             </button>
+          }
+          @if (voice.audioWarning() === 'no-voice') {
+            <p class="vs-alert caution" role="status">
+              <span class="material-icons" aria-hidden="true">volume_off</span>{{ 'VOICE.NO_VOICE_WARNING' | translate }}
+            </p>
           }
           @if (voice.transcriptionIssue(); as issue) {
             <p class="vs-alert caution" role="status">
@@ -259,6 +267,10 @@ interface ToothGroup {
               <span class="material-icons" aria-hidden="true">send</span>
             </button>
           </form>
+        }
+
+        @case ('consultation-review') {
+          <ng-container *ngTemplateOutlet="chartCard" />
         }
 
         @case ('review') {
@@ -537,6 +549,7 @@ interface ToothGroup {
     }
     .vs-note { display: flex; gap: .375rem; margin: 0; font-size: .8125rem; color: rgb(var(--ink-600)); line-height: 1.45; }
     .vs-note .material-icons { font-size: 1rem; color: rgb(var(--petrol-600)); flex-shrink: 0; }
+    .vs-notice { font-weight: 500; color: rgb(var(--ink-700)); }
 
     .vs-typed { display: flex; gap: .5rem; }
     .vs-typed input {
@@ -565,6 +578,12 @@ export class VoiceSessionPanelComponent {
   patientId = input('');
   /** The dossier is opening the microphone and creating the session. */
   starting = input(false);
+  /**
+   * A recorded consultation owns this session. Its review is the consultation
+   * panel's, beside this one, so this panel keeps showing the chart instead of
+   * opening the dictated-examination review a second time.
+   */
+  consultation = input(false);
 
   /**
    * Start or resume dictation. Emitted synchronously from the tap, so the
@@ -587,7 +606,7 @@ export class VoiceSessionPanelComponent {
   private language = computed(() => spokenLanguage(this.context.locale()));
 
   phase = computed<Phase>(() => {
-    if (this.session.reviewing()) return 'review';
+    if (this.session.reviewing()) return this.consultation() ? 'consultation-review' : 'review';
     if (this.session.isActive()) return this.voice.examinationMode() ? 'live' : 'interrupted';
     if (this.session.session()?.status === 'COMPLETED') return 'saved';
     return this.voice.needsConsent() ? 'consent' : 'idle';

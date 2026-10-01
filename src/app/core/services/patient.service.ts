@@ -92,6 +92,21 @@ export class PatientService {
     );
   }
 
+  /**
+   * Re-reads one patient from the server and updates both the list and, if it is
+   * the open one, the current patient. For after something other than the edit
+   * form changed them — a consultation that learned a phone number — since
+   * {@link setCurrentPatient} prefers the cached copy.
+   */
+  reload(id: string): Observable<Patient> {
+    return this.api.getPatient(id).pipe(
+      tap(fresh => {
+        this.patientsSignal.update(patients => patients.map(p => (p.id === id ? fresh : p)));
+        if (this.currentPatientSignal()?.id === id) this.currentPatientSignal.set(fresh);
+      })
+    );
+  }
+
   addPatient(patient: Partial<Patient>): Observable<Patient> {
     this.loadingSignal.set(true);
     return this.api.createPatient(patient).pipe(

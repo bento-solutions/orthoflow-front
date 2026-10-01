@@ -61,6 +61,15 @@ export interface SegmenterOptions {
   maxUtteranceMs: number;
   /** RMS below which nothing counts as voice, however quiet the room. */
   minThreshold: number;
+  /**
+   * RMS above which the threshold never climbs, however loud the room. A
+   * machine rejected as steady lifts the noise floor to its own level, and
+   * three times that is louder than an ordinary voice: the dentist would be
+   * unheard for as long as the suction ran. A steady sound is told from speech
+   * by its lack of variation, not by being louder, so the threshold can stay
+   * within a voice's reach.
+   */
+  maxThreshold: number;
   /** How far above the noise floor speech must be. 3× ≈ +9.5 dB. */
   noiseMultiplier: number;
   /**
@@ -85,6 +94,7 @@ export const DEFAULT_SEGMENTER_OPTIONS: Omit<SegmenterOptions, 'sampleRate'> = {
   minVoicedMs: 200,
   maxUtteranceMs: 15_000,
   minThreshold: 0.004,
+  maxThreshold: 0.14,
   noiseMultiplier: 3,
   releaseRatio: 0.5,
   steadyCheckMs: 1200,
@@ -171,6 +181,9 @@ const KEPT_TAIL_MS = 300;
 /** The noise floor never rises above this — a shouting room is not "quiet". */
 const MAX_NOISE_FLOOR = 0.03;
 
+/** Above a running machine's own level by this factor, a frame counts as quiet. */
+const MACHINE_RELEASE_MARGIN = 1.25;
+
 export function rms(frame: Float32Array): number {
   if (frame.length === 0) return 0;
   let sum = 0;
@@ -198,6 +211,13 @@ export class UtteranceSegmenter {
   private voicedTotalMs = 0;
   private silenceRunMs = 0;
   private noiseFloor: number | null = null;
+  /**
+   * The level a rejected machine lifted the floor to, while it keeps running.
+   * Ordinary adaptation is capped well below this, so without it the lifted
+   * floor was undone on the very next frame and the machine opened an
+   * utterance again, over and over.
+   */
+  private machineCeiling = 0;
   /** Speech-band level of each frame of the open utterance. */
   private levels: number[] = [];
   private steadyChecked = false;
@@ -216,10 +236,20 @@ export class UtteranceSegmenter {
     return this.open;
   }
 
+  /**
+   * The level an open utterance falls back below to count as silence. Half the
+   * threshold in a quiet room; above a steady machine's own level when one is
+   * running, or the utterance would never close: the machine is never quiet.
+   */
+  private get releaseLevel(): number {
+    return Math.max(this.threshold * this.options.releaseRatio, (this.noiseFloor ?? 0) * MACHINE_RELEASE_MARGIN);
+  }
+
   /** The RMS a frame must reach to count as voice right now. */
   get threshold(): number {
     const floor = this.noiseFloor ?? this.options.minThreshold;
-    return Math.max(this.options.minThreshold, floor * this.options.noiseMultiplier);
+    const wanted = Math.max(this.options.minThreshold, floor * this.options.noiseMultiplier);
+    return Math.min(Math.max(this.options.minThreshold, this.options.maxThreshold), wanted);
   }
 
   /**
@@ -249,7 +279,7 @@ export class UtteranceSegmenter {
     this.utteranceSamples += frame.length;
     this.levels.push(energy);
 
-    if (energy >= this.threshold * this.options.releaseRatio) {
+    if (energy >= this.releaseLevel) {
       this.voicedTotalMs += frameMs;
       this.silenceRunMs = 0;
     } else {
@@ -295,6 +325,9 @@ export class UtteranceSegmenter {
 
   /** True when the voiced part of an utterance holds one level — a machine, not a voice. */
   private isSteady(levels: number[]): boolean {
+    // Not the silence level: cutting the quiet frames off a speech-over-machine
+    // mix leaves only its peaks, which hold nearly one level, and a voice would
+    // be rejected as the machine under it.
     const floor = this.threshold * this.options.releaseRatio;
     const voiced = levels.filter(level => level >= floor);
     return voiced.length >= MIN_FRAMES_FOR_VARIATION && variation(voiced) < this.options.steadyMaxVariation;
@@ -311,6 +344,7 @@ export class UtteranceSegmenter {
     const mean = voiced.reduce((a, b) => a + b, 0) / Math.max(1, voiced.length);
     this.discard();
     this.noiseFloor = Math.min(MAX_NOISE_FLOOR * 3, Math.max(this.noiseFloor ?? 0, mean));
+    this.machineCeiling = this.noiseFloor;
   }
 
   private keepPreRoll(frame: Float32Array): void {
@@ -348,7 +382,10 @@ export class UtteranceSegmenter {
       return;
     }
     const rate = energy < this.noiseFloor ? 0.2 : 0.01;
-    this.noiseFloor = Math.min(MAX_NOISE_FLOOR, this.noiseFloor + (energy - this.noiseFloor) * rate);
+    const cap = Math.max(MAX_NOISE_FLOOR, this.machineCeiling);
+    this.noiseFloor = Math.min(cap, this.noiseFloor + (energy - this.noiseFloor) * rate);
+    // The machine has stopped: the floor has come back down to ordinary levels.
+    if (this.noiseFloor < MAX_NOISE_FLOOR) this.machineCeiling = 0;
   }
 
   private close(): Float32Array | null {

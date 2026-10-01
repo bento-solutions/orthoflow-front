@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   detectWake,
   FOLLOW_UP_WINDOW_MS,
+  isPausePhrase,
+  isResumePhrase,
   isSelfEvidentDictation,
   isStopPhrase,
   stripWakeWord,
@@ -130,5 +132,34 @@ describe('voice-wake', () => {
       expect(isSelfEvidentDictation("j'ai mal à la dent du fond")).toBe(false);
       expect(isSelfEvidentDictation('dent 16')).toBe(false);
     });
+  });
+});
+
+describe('pausing and resuming by voice', () => {
+  it('recognises the ways a dentist pauses, French first', () => {
+    for (const phrase of ['pause', 'Pause.', 'mets en pause', 'mets-toi en pause', 'mettez-vous en pause',
+      'pause écoute', 'pause dictée', "suspends l'écoute", "arrête d'écouter", 'pause listening', 'hold on']) {
+      expect(isPausePhrase(phrase), phrase).toBe(true);
+    }
+  });
+
+  it('recognises the ways back', () => {
+    for (const phrase of ['reprends', 'Reprends.', 'reprends l\'écoute', 'reprenons', 'on reprend', 'reprise',
+      'réveille-toi', 'continue', 'resume', 'resume listening', 'wake up']) {
+      expect(isResumePhrase(phrase), phrase).toBe(true);
+    }
+  });
+
+  it('does not take a clinical or conversational sentence for either', () => {
+    for (const phrase of ['dent 16 carie', 'faites une pause de dix minutes', 'la pause café', 'continue à ouvrir',
+      'reprends le composite', 'pause numéro 3', '']) {
+      expect(isPausePhrase(phrase), phrase).toBe(false);
+      expect(isResumePhrase(phrase), phrase).toBe(false);
+    }
+  });
+
+  it('never makes "stop" a pause: stopping ends the examination', () => {
+    expect(isPausePhrase('stop')).toBe(false);
+    expect(isPausePhrase("stop l'examen")).toBe(false);
   });
 });

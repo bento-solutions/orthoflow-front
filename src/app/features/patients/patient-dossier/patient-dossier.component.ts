@@ -25,14 +25,16 @@ import { VoiceOrchestratorService } from '../../../core/voice/voice-orchestrator
 import { VoiceSessionService } from '../../../core/voice/voice-session.service';
 import { VoiceSessionPanelComponent } from '../../../shared/components/voice/voice-session-panel.component';
 import { VoiceSessionDockComponent } from '../../../shared/components/voice/voice-session-dock.component';
+import { ConsultationPanelComponent } from '../../../shared/components/consultation/consultation-panel.component';
+import { ConsultationService } from '../../../core/consultation/consultation.service';
 import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clinical-record.model';
 
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent],
+  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent],
   template: `
-    <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive()">
+    <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive()" [class.has-consultation]="consultation.visible()">
       @if (patientService.currentPatient(); as patient) {
       <!-- Dossier Header -->
       <header class="dossier-header">
@@ -65,6 +67,23 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
                 {{ (voiceStarting() ? 'VOICE.STARTING' : 'VOICE.START') | translate }}
               </button>
             }
+            <!-- Next to the voice session: the same microphone, but it keeps the whole
+                 conversation and proposes what it finds for the doctor to validate. -->
+            @if (consultation.available()) {
+              @if (consultation.isOpen() || consultation.intro()) {
+                <button type="button" class="btn btn-record btn-consult live" (click)="activeTab.set('voice')">
+                  <span class="material-icons" aria-hidden="true">forum</span>
+                  {{ 'CONSULTATION.IN_PROGRESS' | translate }}
+                </button>
+              } @else {
+                <button type="button" class="btn btn-record btn-consult" (click)="startConsultation()"
+                        [disabled]="voiceSession.isActive() || voiceSession.reviewing()"
+                        [title]="'CONSULTATION.BUTTON_HINT' | translate">
+                  <span class="material-icons" aria-hidden="true">forum</span>
+                  {{ 'CONSULTATION.BUTTON' | translate }}
+                </button>
+              }
+            }
             <button type="button" class="btn btn-secondary btn-compact" (click)="onPrint()"
                     [attr.aria-label]="'COMMON.PRINT' | translate" [title]="'COMMON.PRINT' | translate">
               <span class="material-icons" aria-hidden="true">print</span>
@@ -87,17 +106,23 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
         <div class="patient-quick-info">
           <div class="info-item">
             <span class="label">{{ 'PATIENTS.DOSSIER.AGE' | translate }}</span>
-            <span class="value">{{ calculateAge(patient.dateOfBirth) }} {{ 'PATIENTS.DOSSIER.YEARS' | translate }}</span>
+            <span class="value">
+              @if (patient.dateOfBirth) { {{ calculateAge(patient.dateOfBirth) }} {{ 'PATIENTS.DOSSIER.YEARS' | translate }} }
+              @else { <span class="value-unknown">—</span> }
+            </span>
           </div>
           <div class="info-divider"></div>
           <div class="info-item">
             <span class="label">{{ 'PATIENTS.DOSSIER.GENDER' | translate }}</span>
-            <span class="value">{{ 'PATIENTS.DOSSIER.GENDER_' + patient.gender | translate }}</span>
+            <span class="value">
+              @if (patient.gender) { {{ 'PATIENTS.DOSSIER.GENDER_' + patient.gender | translate }} }
+              @else { <span class="value-unknown">—</span> }
+            </span>
           </div>
           <div class="info-divider"></div>
           <div class="info-item">
             <span class="label">{{ 'PATIENTS.DOSSIER.PHONE' | translate }}</span>
-            <span class="value">{{ patient.phone }}</span>
+            <span class="value">{{ patient.phone || '—' }}</span>
           </div>
           <div class="info-divider"></div>
           <div class="info-item">
@@ -148,6 +173,7 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
                 [treatments]="patientTreatments()"
                 [patientId]="patient.id"
                 [starting]="voiceStarting()"
+                [consultation]="consultation.isOpen()"
                 (begin)="beginSession()"
                 (saved)="onVoiceSaved()"
               />
@@ -481,9 +507,20 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
                         @for (note of clinicalRecordService.notes(); track note.id) {
                           <div class="clinical-item">
                             <div class="clinical-item-main">
-                              <span class="clinical-item-badge">{{ note.category }}</span>
+                              <span class="clinical-item-badge">{{
+                                note.category === 'CONSULTATION_REPORT' ? ('VOICE.REPORT_BADGE' | translate)
+                                : note.category === 'CONSULTATION_TRANSCRIPT' ? ('CONSULTATION.TRANSCRIPT_BADGE' | translate)
+                                : note.category }}</span>
                               @if (note.fdi) { <span class="clinical-item-badge tooth">#{{ note.fdi }}</span> }
-                              <p class="clinical-item-detail">{{ note.content }}</p>
+                              @if (note.category === 'CONSULTATION_TRANSCRIPT') {
+                                <!-- Everything that was said, as transcribed: long, and for looking things up. -->
+                                <details class="clinical-item-transcript">
+                                  <summary>{{ 'CONSULTATION.TRANSCRIPT_OPEN' | translate }}</summary>
+                                  <p class="clinical-item-detail">{{ note.content }}</p>
+                                </details>
+                              } @else {
+                                <p class="clinical-item-detail">{{ note.content }}</p>
+                              }
                               <span class="clinical-item-meta">{{ note.createdAt | date:'medium' }}</span>
                             </div>
                             <button type="button" class="btn btn-ghost btn-icon" (click)="removeNote(note.id)" title="Delete">
@@ -770,6 +807,10 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
         </div>
       }
 
+      <!-- The consultation: what is heard and what the system catches, beside the
+           dossier while it runs, and the review once it ends. -->
+      <app-consultation-panel class="dossier-consultation" />
+
       <!-- Scoped to the dossier rather than mounted at the app root. A voice
            command like "sixteen, recurrent caries" only has a referent when a
            patient's record is open; showing a live microphone on the billing
@@ -834,6 +875,12 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
     .header-actions {
       display: flex;
       gap: 0.75rem;
+      /* Five actions with the consultation button: wrap instead of running
+         off the edge on a narrow window. */
+      flex: 1 1 auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      min-width: 0;
     }
 
     .patient-quick-info {
@@ -880,6 +927,27 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
     }
     /* Room for the recording dock, so it never covers the last row. */
     .dossier-container.has-voice-dock { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
+    .clinical-item-detail { white-space: pre-line; }
+    .clinical-item-transcript summary { cursor: pointer; font-size: .8125rem; color: rgb(var(--ink-600)); }
+    .value-unknown { color: rgb(var(--ink-400)); }
+
+    /* A consultation puts its panel beside the dossier: the doctor keeps the
+       chart in view while the conversation is read. Below the breakpoint there
+       is no room for two columns, so the panel stacks above the content. */
+    .btn-consult { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-800)); border: 1px solid rgb(var(--petrol-300)); }
+    .btn-consult.live { background: rgb(var(--petrol-600)); color: #fff; }
+    .dossier-container.has-consultation { display: grid; grid-template-columns: minmax(0, 1fr); }
+    .dossier-container.has-consultation > .dossier-consultation { grid-column: 1; grid-row: 2; }
+    .dossier-container.has-consultation > .dossier-content { grid-row: 3; }
+    @media (min-width: 1100px) {
+      .dossier-container.has-consultation { grid-template-columns: minmax(0, 1fr) 27rem; grid-template-rows: auto 1fr; }
+      .dossier-container.has-consultation > .dossier-header { grid-column: 1; grid-row: 1; }
+      .dossier-container.has-consultation > .dossier-content { grid-column: 1; grid-row: 2; }
+      .dossier-container.has-consultation > .dossier-consultation {
+        /* Below the app's own sticky bar (h-16), and no taller than what is left of the viewport. */
+        grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 4rem; height: calc(100vh - 6rem); align-self: start;
+      }
+    }
     .btn-record { background: var(--primary, #2563eb); color: #fff; }
     /* Unmissable while the microphone is live — the dentist is not looking at
        the screen, so the one person who can see this state is whoever else is
@@ -1627,6 +1695,8 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
 
     .clinical-item-detail {
       flex-basis: 100%;
+      /* A consultation report has line breaks and lists; run together it is unreadable. */
+      white-space: pre-line;
       margin: 0.25rem 0 0 0;
       font-size: 0.85rem;
       color: rgb(var(--ink-600));
@@ -1747,6 +1817,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   private toast = inject(ToastService);
   private confirmDialog = inject(ConfirmDialogService);
   voiceSession = inject(VoiceSessionService);
+  consultation = inject(ConsultationService);
   private commandRegistry = inject(CommandRegistryService);
   clinicalRecordService = inject(ClinicalRecordService);
   private voiceContext = inject(VoiceContextService);
@@ -1768,6 +1839,20 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   private readonly voiceToothSync = effect(() => {
     const fdi = this.voiceContext.selectedFdi();
     if (fdi && fdi !== this.selectedToothForTreatments()) this.selectedToothForTreatments.set(fdi);
+  });
+
+  /**
+   * A consultation saved: the chart findings, the patient's details, allergies
+   * and notes it wrote are what the rest of the dossier should now show. The
+   * first run (version 0) is not a save.
+   */
+  private readonly consultationSaved = effect(() => {
+    if (this.consultation.savedVersion() > 0) this.onVoiceSaved();
+  });
+
+  /** While a consultation runs the chart is what the doctor needs in view. */
+  private readonly consultationFocus = effect(() => {
+    if (this.consultation.intro() || this.consultation.isOpen()) this.activeTab.set('voice');
   });
 
   /** The microphone is being opened and the session created. */
@@ -2066,12 +2151,13 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
           this.loadPatientBilling(patient.id);
           this.loadPatientTreatments(patient.id);
           this.clinicalRecordService.refresh(patient.id);
-          void this.restoreVoiceSession(patient.id);
+          void this.restoreConsultationAndVoice(patient.id);
         },
         error: (err) => console.error('Failed to load patient', err)
       });
 
     this.clinicalRecordService.loadCatalogOnce();
+    void this.consultation.loadConfig();
 
     // Load available treatments and stock items for selectors
     this.stockService.getTreatments().subscribe(list => this.availableTreatments.set(list));
@@ -2100,6 +2186,9 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     // session's results are shown, and a live microphone behind another
     // screen is one nobody is watching. The session itself is kept and
     // offered back when this patient's dossier opens again.
+    // A consultation is let go of the same way — kept on the server, offered
+    // back on return — and before the session, whose routing it holds.
+    this.consultation.detach();
     this.voiceSession.detach();
     // A tooth selected by voice on this patient must not follow the doctor to
     // the next one — "that tooth" would silently resolve to the wrong record.
@@ -2280,8 +2369,10 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     }
   }
 
-  calculateAge(dob: string): number {
+  calculateAge(dob: string | null | undefined): number | null {
+    if (!dob) return null;
     const birthDate = new Date(dob);
+    if (Number.isNaN(birthDate.getTime())) return null;
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
@@ -2315,6 +2406,12 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** The header's Consultation button: shows the attestation card, then the tap there starts recording. */
+  startConsultation(): void {
+    this.activeTab.set('voice');
+    this.consultation.openIntro();
+  }
+
   /**
    * The header's voice button. Opens the voice tab; the session starts at
    * once unless consent is still needed, in which case the panel asks for it
@@ -2343,6 +2440,12 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   async beginSession(): Promise<void> {
     const patient = this.patientService.currentPatient();
     if (!patient || this.voiceStarting() || this.voiceSession.busy()) return;
+    // A consultation that lost its microphone comes back the same way a dictated
+    // examination does — one tap — but it must reopen *its* recording.
+    if (this.consultation.isRecording()) {
+      void this.consultation.resumeRecording();
+      return;
+    }
 
     const microphone = this.voice.openMicrophone();
     this.activeTab.set('voice');
@@ -2391,6 +2494,25 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
    * dictating, or waiting in review — and shows it in the voice tab. A
    * session belonging to a different patient is let go first.
    */
+  /**
+   * An unfinished consultation for this patient comes back first: it owns the
+   * dictated session, and restoring that session on its own would show the
+   * dictated-examination review where the consultation's belongs.
+   */
+  private async restoreConsultationAndVoice(patientId: string): Promise<void> {
+    const current = this.consultation.consultation();
+    if (current && current.patientId !== patientId) {
+      this.consultation.detach();
+      this.voiceSession.detach();
+    }
+    await this.consultation.resumeOpen(patientId);
+    await this.restoreVoiceSession(patientId);
+    // Arriving from "add patient and start the consultation".
+    if (this.route.snapshot.queryParamMap.has('consultation') && !this.consultation.isOpen()) {
+      this.startConsultation();
+    }
+  }
+
   private async restoreVoiceSession(patientId: string): Promise<void> {
     const current = this.voiceSession.session();
     if (current && current.patientId !== patientId) this.voiceSession.detach();

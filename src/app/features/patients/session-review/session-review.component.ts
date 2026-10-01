@@ -2,7 +2,7 @@ import { Component, OnInit, computed, inject, input, output, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { VoiceSessionService } from '../../../core/voice/voice-session.service';
 import { VoiceOrchestratorService, BufferedEntry } from '../../../core/voice/voice-orchestrator.service';
@@ -16,7 +16,8 @@ import { ClinicalRecordService } from '../../../core/services/clinical-record.se
 import { InvoiceService } from '../../billing/services/invoice.service';
 import { entityString, stagedFindingCodes } from '../../../core/voice/voice-intent.model';
 import { findingLabel } from '../../../core/voice/clinical-lexicon';
-import { describeFdi } from '../../../core/voice/tooth-lexicon';
+import { describeFdi, isValidFdi } from '../../../core/voice/tooth-lexicon';
+import { CommitAmendmentDto } from '../../../core/voice/voice-api.service';
 
 /**
  * Where a dictated examination becomes part of the record — or doesn't.
@@ -73,7 +74,16 @@ import { describeFdi } from '../../../core/voice/tooth-lexicon';
           <strong>{{ 'VOICE.REVIEW_FAILED' | translate: { count: failures().length } }}</strong>
           <ul>
             @for (failure of failures(); track failure.auditId) {
-              <li>{{ failure.errorMessage }}</li>
+              <li>
+                {{ failure.errorMessage }}
+                <!-- A failed correction, or a command that never finished, is not
+                     on the list above, so unticking cannot leave it out. -->
+                @if (isUnseen(failure.auditId)) {
+                  <button type="button" class="link-btn" (click)="dismissOutstanding(failure.auditId)">
+                    {{ 'VOICE.REVIEW_DISMISS_FAILED' | translate }}
+                  </button>
+                }
+              </li>
             }
           </ul>
         </div>
@@ -110,6 +120,40 @@ import { describeFdi } from '../../../core/voice/tooth-lexicon';
                           <span class="chip">{{ correction.from }} → {{ correction.to }}</span>
                         }
                       </p>
+                    }
+
+                    <!-- The commonest mistake is the wrong tooth. It can be
+                         corrected here, not only unticked and dictated again. -->
+                    @if (canAmend(entry)) {
+                      @if (editingAuditId() === entry.auditId) {
+                        <form class="tooth-edit" (submit)="applyTooth(entry, toothInput.value); $event.preventDefault()">
+                          <label>
+                            {{ 'VOICE.REVIEW_TOOTH_LABEL' | translate }}
+                            <input #toothInput type="text" inputmode="numeric" maxlength="2" autocomplete="off"
+                                   [value]="fdiOf(entry)" [attr.aria-invalid]="toothInvalid()" />
+                          </label>
+                          <button type="submit" class="btn btn-sm">{{ 'VOICE.REVIEW_TOOTH_APPLY' | translate }}</button>
+                          <button type="button" class="btn btn-ghost btn-sm" (click)="stopEditing()">
+                            {{ 'VOICE.REVIEW_TOOTH_CANCEL' | translate }}
+                          </button>
+                          @if (toothInvalid()) {
+                            <span class="tooth-error" role="alert">{{ 'VOICE.REVIEW_TOOTH_INVALID' | translate }}</span>
+                          }
+                        </form>
+                      } @else {
+                        <p class="entry-amend">
+                          @if (amendedFdi()[entry.auditId]; as fdi) {
+                            <span class="chip chip-amended">{{ 'VOICE.REVIEW_AMENDED' | translate: { fdi: fdi } }}</span>
+                            <button type="button" class="link-btn" (click)="resetTooth(entry.auditId)">
+                              {{ 'VOICE.REVIEW_TOOTH_RESET' | translate }}
+                            </button>
+                          }
+                          <button type="button" class="link-btn" (click)="startEditing(entry.auditId)"
+                                  [disabled]="!isIncluded(entry.auditId)">
+                            {{ 'VOICE.REVIEW_CHANGE_TOOTH' | translate }}
+                          </button>
+                        </p>
+                      }
                     }
                   </div>
                   <time class="entry-time">{{ entry.at | date:'HH:mm' }}</time>
@@ -232,6 +276,15 @@ import { describeFdi } from '../../../core/voice/tooth-lexicon';
       font-size: .72rem; padding: .12rem .45rem; border-radius: 999px;
       background: rgb(var(--caution-50)); color: rgb(var(--caution-700)); border: 1px solid rgb(var(--caution-200));
     }
+    .entry-amend { margin: .35rem 0 0; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+    .chip-amended { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-700)); border-color: rgb(var(--petrol-200)); }
+    .link-btn { background: none; border: none; padding: 0; font: inherit; font-size: .82rem; color: rgb(var(--petrol-700)); text-decoration: underline; cursor: pointer; }
+    .link-btn:disabled { opacity: .5; cursor: default; }
+    .tooth-edit { margin: .5rem 0 0; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+    .tooth-edit label { display: flex; gap: .4rem; align-items: center; font-size: .85rem; }
+    .tooth-edit input { width: 3.5rem; min-height: 2.25rem; text-align: center; font: inherit; border: 1px solid rgb(var(--ink-300)); border-radius: 8px; }
+    .tooth-edit input[aria-invalid="true"] { border-color: rgb(var(--critical-500)); }
+    .tooth-error { font-size: .8rem; color: rgb(var(--critical-700)); flex-basis: 100%; }
     .entry-time { font-size: .78rem; color: rgb(var(--ink-500)); white-space: nowrap; }
 
     .tooth-list { list-style: none; margin: 0; padding: 0; }
@@ -281,6 +334,7 @@ export class SessionReviewComponent implements OnInit {
   private treatments = inject(PatientTreatmentService);
   private clinical = inject(ClinicalRecordService);
   private invoices = inject(InvoiceService);
+  private translate = inject(TranslateService);
 
   /** Set when embedded; the route supplies both when standalone. */
   sessionIdInput = input<string | null>(null, { alias: 'sessionId' });
@@ -306,7 +360,22 @@ export class SessionReviewComponent implements OnInit {
   private treatmentsSignal = signal<string[]>([]);
   private nextAppointmentSignal = signal<string | null>(null);
   private outstandingSignal = signal(0);
+  /** Teeth the dentist changed at review, by audit id. */
+  private amendedSignal = signal<Record<string, string>>({});
+  private editingSignal = signal<string | null>(null);
+  private toothInvalidSignal = signal(false);
+  /**
+   * Ids of corrected entries' replacements that failed to write. The dentist
+   * never saw these — the server made them at Save — so the next Save has to
+   * name them to retry them.
+   */
+  private replacementIds = new Set<string>();
+  /** Outstanding commands the dentist chose to leave out; sent as rejected on the next Save. */
+  private dismissedIds = new Set<string>();
 
+  amendedFdi = this.amendedSignal.asReadonly();
+  editingAuditId = this.editingSignal.asReadonly();
+  toothInvalid = this.toothInvalidSignal.asReadonly();
   entries = this.entriesSignal.asReadonly();
   saving = this.savingSignal.asReadonly();
   regenerating = this.regeneratingSignal.asReadonly();
@@ -334,14 +403,14 @@ export class SessionReviewComponent implements OnInit {
 
   /** Included entries' auditIds, so the dossier chart can mark only what will be saved. */
   includedTeeth = computed(() => [...new Set(this.included()
-    .map(entry => entityString(entry.entities, 'fdi'))
+    .map(entry => this.fdiOf(entry) || null)
     .filter((fdi): fdi is string => !!fdi))]);
 
   /** The teeth this examination touched, for the at-a-glance panel. */
   stagedTeeth = computed(() => {
     const byTooth = new Map<string, { fdi: string; description: string; labels: string[] }>();
     for (const entry of this.included()) {
-      const fdi = entityString(entry.entities, 'fdi');
+      const fdi = this.fdiOf(entry) || null;
       if (!fdi) continue;
       const row = byTooth.get(fdi) ?? { fdi, description: describeFdi(fdi), labels: [] };
       for (const code of stagedFindingCodes(entry.entities)) {
@@ -410,6 +479,86 @@ export class SessionReviewComponent implements OnInit {
     this.nextAppointmentSignal.set(next ? new Date(next.dateTime).toLocaleString() : null);
   }
 
+  // ── Correcting a tooth ──────────────────────────────────────────────
+
+  /** Only a set of findings has a tooth to correct. */
+  canAmend(entry: BufferedEntry): boolean {
+    return entry.intent === 'clinical.addFindings' && !!entityString(entry.entities, 'fdi');
+  }
+
+  /** The tooth this entry will be saved on: the corrected one, else the dictated one. */
+  fdiOf(entry: BufferedEntry): string {
+    return this.amendedSignal()[entry.auditId] ?? entityString(entry.entities, 'fdi') ?? '';
+  }
+
+  startEditing(auditId: string): void {
+    this.toothInvalidSignal.set(false);
+    this.editingSignal.set(auditId);
+  }
+
+  stopEditing(): void {
+    this.toothInvalidSignal.set(false);
+    this.editingSignal.set(null);
+  }
+
+  applyTooth(entry: BufferedEntry, raw: string): void {
+    const fdi = raw.trim();
+    // A number no tooth has is refused here, where it can be fixed, rather
+    // than failing the whole commit on the server.
+    if (!isValidFdi(fdi)) {
+      this.toothInvalidSignal.set(true);
+      return;
+    }
+    const dictated = entityString(entry.entities, 'fdi');
+    this.amendedSignal.update(current => {
+      const next = { ...current };
+      if (fdi === dictated) delete next[entry.auditId];
+      else next[entry.auditId] = fdi;
+      return next;
+    });
+    this.stopEditing();
+    this.followNarrative();
+  }
+
+  resetTooth(auditId: string): void {
+    this.amendedSignal.update(current => {
+      const next = { ...current };
+      delete next[auditId];
+      return next;
+    });
+    this.followNarrative();
+  }
+
+  /** The teeth changed at review, for the narrative — only for entries still included. */
+  private correctedTeeth(): Record<string, string> {
+    const amended = this.amendedSignal();
+    const teeth: Record<string, string> = {};
+    for (const entry of this.included()) {
+      if (amended[entry.auditId]) teeth[entry.auditId] = amended[entry.auditId];
+    }
+    return teeth;
+  }
+
+  /** Until the dentist edits it, the narrative follows what will be saved. */
+  private followNarrative(): void {
+    if (this.narrativeEdited) return;
+    // Debounced: toggling three entries in a row is one regeneration.
+    if (this.regenerateTimer) clearTimeout(this.regenerateTimer);
+    this.regenerateTimer = setTimeout(() => void this.regenerate(), 600);
+  }
+
+  /** A failure the dentist has no entry for: made by the server at Save, or never finished. */
+  isUnseen(auditId: string): boolean {
+    return !this.entriesSignal().some(entry => entry.auditId === auditId);
+  }
+
+  /** Leaves an outstanding command out of the examination; takes effect on the next Save. */
+  dismissOutstanding(auditId: string): void {
+    this.dismissedIds.add(auditId);
+    this.replacementIds.delete(auditId);
+    this.failuresSignal.update(failures => failures.filter(failure => failure.auditId !== auditId));
+  }
+
   isIncluded(auditId: string): boolean {
     return !this.excludedSignal().has(auditId);
   }
@@ -421,11 +570,7 @@ export class SessionReviewComponent implements OnInit {
       else next.add(auditId);
       return next;
     });
-    if (!this.narrativeEdited) {
-      // Debounced: toggling three entries in a row is one regeneration.
-      if (this.regenerateTimer) clearTimeout(this.regenerateTimer);
-      this.regenerateTimer = setTimeout(() => void this.regenerate(), 600);
-    }
+    this.followNarrative();
   }
 
   async regenerate(): Promise<void> {
@@ -437,7 +582,7 @@ export class SessionReviewComponent implements OnInit {
         this.narrativeText = '';
         return;
       }
-      await this.sessions.generateNarrative(this.sessionId, included);
+      await this.sessions.generateNarrative(this.sessionId, included, this.correctedTeeth());
       const narrative = this.sessions.narrative();
       if (narrative) {
         this.narrativeText = narrative;
@@ -456,19 +601,40 @@ export class SessionReviewComponent implements OnInit {
     this.savingSignal.set(true);
     this.failuresSignal.set([]);
     try {
-      const approved = this.included().map(entry => entry.auditId);
-      const rejected = this.entriesSignal()
-        .filter(entry => this.excludedSignal().has(entry.auditId))
-        .map(entry => entry.auditId);
+      const amended = this.amendedSignal();
+      const included = this.included();
+      // An entry with a corrected tooth is not approved as dictated: the server
+      // records the correction as its own command and runs that instead.
+      const approved = [
+        ...included.filter(entry => !amended[entry.auditId]).map(entry => entry.auditId),
+        ...[...this.replacementIds].filter(id => !this.dismissedIds.has(id)),
+      ];
+      const amendments: CommitAmendmentDto[] = included
+        .filter(entry => amended[entry.auditId])
+        .map(entry => ({
+          originalAuditId: entry.auditId,
+          intent: entry.intent,
+          entities: JSON.stringify({ ...entry.entities, fdi: amended[entry.auditId] }),
+        }));
+      const rejected = [
+        ...this.entriesSignal()
+          .filter(entry => this.excludedSignal().has(entry.auditId))
+          .map(entry => entry.auditId),
+        ...this.dismissedIds,
+      ];
 
-      const result = await this.sessions.commit(this.sessionId, approved, rejected, this.narrativeText);
+      const result = await this.sessions.commit(this.sessionId, approved, rejected, this.narrativeText, amendments);
 
       if (result.ok) {
         // A second Save that only had to confirm an earlier one recorded
         // nothing new; "Saved 0" would read as though it had lost something.
-        this.toast.success(result.executed > 0
-          ? `Saved ${result.executed} finding(s) to the dossier.`
-          : 'The consultation is saved to the dossier.');
+        this.toast.success(this.translate.instant(result.executed > 0
+          ? 'VOICE.REVIEW_SAVED_N' : 'VOICE.REVIEW_SAVED', { count: result.executed }));
+        if (result.notReviewed > 0) {
+          // Dictated, but never on this list: it was not saved and the dentist
+          // never saw it. Worth a word rather than a silent gap.
+          this.toast.error(this.translate.instant('VOICE.REVIEW_NOT_REVIEWED', { count: result.notReviewed }), 12000);
+        }
         if (this.patientId) {
           this.clinical.refresh(this.patientId);
         }
@@ -483,15 +649,20 @@ export class SessionReviewComponent implements OnInit {
       // Partial success. Stay open showing what is left, rather than moving
       // on and leaving the dentist to discover the gap.
       this.failuresSignal.set(result.failed);
-      this.toast.error(`${result.failed.length} finding(s) could not be saved. Save again to retry them, or untick them to leave them out.`);
+      // A failed correction is a command the server made at Save; the next Save
+      // has to name it to retry it.
+      const known = new Set(this.entriesSignal().map(entry => entry.auditId));
+      for (const failure of result.failed) {
+        if (!known.has(failure.auditId)) this.replacementIds.add(failure.auditId);
+      }
+      this.toast.error(this.translate.instant('VOICE.REVIEW_PARTIAL', { count: result.failed.length }));
     } catch (error) {
       // 409: the server is already saving this consultation (or it changed
       // under us). Saying "check the connection" would send the dentist to
       // press Save a third time.
       const status = (error as { status?: number } | null)?.status;
-      this.toast.error(status === 409
-        ? 'This consultation is already being saved. Wait a moment, then reopen it to check.'
-        : 'Nothing was saved — check the connection and try again.');
+      this.toast.error(this.translate.instant(status === 409
+        ? 'VOICE.REVIEW_ALREADY_SAVING' : 'VOICE.REVIEW_NOT_SAVED'));
     } finally {
       this.savingSignal.set(false);
     }
@@ -499,8 +670,8 @@ export class SessionReviewComponent implements OnInit {
 
   async discardAll(): Promise<void> {
     const confirmed = await this.confirmDialog.confirm(
-      'Discard this examination? Nothing dictated will be saved to the dossier.',
-      { danger: true, confirmLabel: 'Discard' },
+      this.translate.instant('VOICE.REVIEW_DISCARD_CONFIRM'),
+      { danger: true, confirmLabel: this.translate.instant('VOICE.REVIEW_DISCARD_LABEL') },
     );
     if (!confirmed) return;
 

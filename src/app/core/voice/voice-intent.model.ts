@@ -112,6 +112,8 @@ export interface VoiceCommandResult {
    * dentist hears {@link message} in an English voice.
    */
   spokenFr?: string;
+  /** The spoken form for a non-French dentist, when it differs from {@link message}. */
+  spokenText?: string;
   targetType?: string;
   targetId?: string;
   previousValue?: string;

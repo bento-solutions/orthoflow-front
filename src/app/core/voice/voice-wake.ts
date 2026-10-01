@@ -183,6 +183,42 @@ const STOP_PHRASES = [
   /^(?:termine[rz]?|arr[êe]te[rz]?|finis|fin)\s+(?:de\s+)?(?:la\s+|le\s+|l['’]\s*|l\s+)?(?:session|consultation|examen|dict[ée]e)(?![\p{L}\p{N}])/iu,
 ];
 
+/**
+ * Pausing and resuming by voice, both said after the wake word.
+ *
+ * Whole-phrase matches on purpose: a pause the dentist did not ask for
+ * silences the dictation, and "la pause" or "continue à lui parler" is not a
+ * request. Nothing here is a clinical word, so they cannot collide with a
+ * dictated finding; and neither is "stop", which ends the examination.
+ */
+const PAUSE_PHRASES = [
+  /^(?:(?:mets|mettez)[\s-]+(?:toi[\s-]+|vous[\s-]+)?en\s+)?pause(?:\s+(?:l['’]\s*)?(?:[ée]coute|dict[ée]e))?$/iu,
+  /^(?:suspends|suspendez)\s+(?:l['’]\s*)?(?:[ée]coute|dict[ée]e)$/iu,
+  /^(?:arr[êe]te|arr[êe]tez)\s+d['’]\s*[ée]couter$/iu,
+  /^(?:pause|suspend|stop)\s+(?:listening|dictation)$/iu,
+  /^(?:pause|hold\s+on)$/iu,
+];
+
+const RESUME_PHRASES = [
+  /^(?:reprends|reprenez|reprenons|reprise|on\s+reprend|r[ée]veille[\s-]+toi|continue|continuez|continuons)(?:\s+(?:l['’]\s*)?(?:[ée]coute|dict[ée]e))?$/iu,
+  /^(?:resume|continue|wake\s+up|go\s+on)(?:\s+(?:listening|dictation))?$/iu,
+];
+
+function matchesWhole(patterns: RegExp[], transcript: string): boolean {
+  const text = transcript.trim().replace(/[\s,.;:!?]+$/u, '').replace(/^[\s,.;:!?]+/u, '');
+  return patterns.some(pattern => pattern.test(text));
+}
+
+/** "Pause" — said to the system, after the wake word. */
+export function isPausePhrase(transcript: string): boolean {
+  return matchesWhole(PAUSE_PHRASES, transcript);
+}
+
+/** "Reprends" — the only thing a paused system listens for. */
+export function isResumePhrase(transcript: string): boolean {
+  return matchesWhole(RESUME_PHRASES, transcript);
+}
+
 /** A dictated finding is a short sentence; a conversation is not. */
 const DICTATION_MAX_WORDS = 16;
 
@@ -220,4 +256,50 @@ export function isStopPhrase(transcript: string): boolean {
   const stripped = stripWakeWord(bare);
   const candidates = stripped === null ? [bare] : [bare, stripped];
   return candidates.some(text => STOP_PHRASES.some(pattern => pattern.test(text.trim())));
+}
+
+// ── Speech heard during the follow-up window ────────────────────────────
+
+/**
+ * Whether an utterance is a question — to the patient or to the room — rather
+ * than something to record. "Vous avez une infection ?" contains a finding word
+ * and would otherwise stage one on the tooth last dictated.
+ */
+export function looksLikeQuestion(utterance: string): boolean {
+  const text = utterance.trim();
+  if (/\?\s*$/u.test(text)) return true;
+  return new RegExp(
+    '^(?:est[- ]ce|qu[\'’]?(?:est|y|il|elle|on)|qui|quoi|pourquoi|comment|combien|quand|où'
+    + '|avez[- ]vous|as[- ]tu|tu\\s+as|vous\\s+avez|pouvez[- ]vous'
+    + '|do\\s+you|does|did|is\\s+(?:it|there)|are\\s+(?:you|there)|have\\s+you|can\\s+you'
+    + '|what|why|how|when|where|who)(?![\\p{L}\\p{N}])',
+    'iu',
+  ).test(text);
+}
+
+/** Words that may lead a further finding: "et une fracture", "plus, mobilité". */
+const CONTINUATION_LEAD =
+  /^(?:(?:et|puis|plus|aussi|and|also|then)[\s,]+(?:(?:une?|la|le|the|a|an)\s+)?)?/iu;
+
+/** A finding statement, not a sentence that mentions one, is short. */
+const FOLLOW_UP_MAX_WORDS = 8;
+
+/**
+ * A finding said by itself — "carie profonde", "et une fracture" — as opposed
+ * to a sentence that happens to contain one. It has to open with the finding
+ * (or "et …" / "plus …" leading into it), be short, be affirmed, and not be a
+ * question.
+ *
+ * "Oui docteur c'est douloureux", "c'est sensible au froid" and "il faudra une
+ * couronne" all name a finding, and all are somebody talking. What separates
+ * them from dictation is that dictation begins with the finding.
+ */
+export function isBareFindingDictation(utterance: string): boolean {
+  const text = utterance.trim();
+  if (!text || looksLikeQuestion(text)) return false;
+  if (text.split(/\s+/).filter(Boolean).length > FOLLOW_UP_MAX_WORDS) return false;
+
+  const body = text.replace(CONTINUATION_LEAD, '');
+  const [first] = extractFindings(body);
+  return !!first && !first.negated && first.at <= 1;
 }

@@ -196,6 +196,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/voice/transcribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["transcribe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/voice/sessions": {
         parameters: {
             query?: never;
@@ -212,6 +228,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/voice/sessions/{sessionId}/summarize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["summariseSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/voice/sessions/{sessionId}/end": {
         parameters: {
             query?: never;
@@ -222,6 +254,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["endSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/sessions/{sessionId}/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["commitSession"];
         delete?: never;
         options?: never;
         head?: never;
@@ -772,6 +820,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/consultations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put?: never;
+        post: operations["start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/consultations/{id}/extract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["extract"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/consultations/{id}/examination": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["beginExamination"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/consultations/{id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["end"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/consultations/{id}/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["commit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/consultations/{id}/abandon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["abandon"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/reset-password": {
         parameters: {
             query?: never;
@@ -798,6 +942,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["register"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["refresh"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1316,6 +1476,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/consultations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/consultations/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["open"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/consultations/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["config"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/clinical/finding-catalog": {
         parameters: {
             query?: never;
@@ -1741,11 +1949,25 @@ export interface components {
             status?: string;
             notes?: string;
         };
-        Patient: {
+        UpdatePatientRequest: {
+            firstName: string;
+            lastName: string;
+            /** Format: date */
+            dateOfBirth?: string;
+            gender?: string;
+            email?: string;
+            phone?: string;
+            address?: string;
+            cin?: string;
+            guardianName?: string;
+            guardianPhone?: string;
+            insuranceProvider?: string;
+            insuranceNumber?: string;
+            status?: string;
+        };
+        PatientResponse: {
             /** Format: uuid */
             id?: string;
-            /** Format: int64 */
-            version?: number;
             firstName?: string;
             lastName?: string;
             /** Format: date */
@@ -1761,16 +1983,12 @@ export interface components {
             insuranceNumber?: string;
             status?: string;
             /** Format: date-time */
+            consentGivenAt?: string;
+            consentNotes?: string;
+            /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
-            /** Format: date-time */
-            deletedAt?: string;
-            /** Format: uuid */
-            deletedBy?: string;
-            /** Format: date-time */
-            consentGivenAt?: string;
-            consentNotes?: string;
         };
         AppointmentRequest: {
             /** Format: uuid */
@@ -1812,6 +2030,16 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        TranscriptionResponse: {
+            text?: string;
+            normalized?: string;
+            provider?: string;
+            model?: string;
+            language?: string;
+            /** Format: double */
+            durationSeconds?: number;
+            error?: string;
+        };
         StartVoiceSessionRequest: {
             /** Format: uuid */
             patientId?: string;
@@ -1834,10 +2062,56 @@ export interface components {
             /** Format: date-time */
             confirmedAt?: string;
         };
+        SummarizeSessionRequest: {
+            auditIds?: string[];
+            correctedTeeth?: {
+                [key: string]: string;
+            };
+        };
+        SessionSummaryResponse: {
+            summary?: string;
+            provider?: string;
+            model?: string;
+            /** Format: int32 */
+            commandCount?: number;
+            truncated?: boolean;
+            generated?: boolean;
+            error?: string;
+        };
         CompleteVoiceSessionRequest: {
             status?: string;
             summary?: string;
             confirmed?: boolean;
+        };
+        Amendment: {
+            /** Format: uuid */
+            originalAuditId: string;
+            intent: string;
+            entities: string;
+        };
+        CommitVoiceSessionRequest: {
+            approvedAuditIds: string[];
+            rejectedAuditIds: string[];
+            amendments: components["schemas"]["Amendment"][];
+            summary?: string;
+        };
+        CommitVoiceSessionResponse: {
+            session?: components["schemas"]["VoiceSessionResponse"];
+            /** Format: int32 */
+            executed?: number;
+            /** Format: int32 */
+            rejected?: number;
+            /** Format: int32 */
+            amended?: number;
+            /** Format: int32 */
+            notReviewed?: number;
+            failed?: components["schemas"]["FailedCommand"][];
+        };
+        FailedCommand: {
+            /** Format: uuid */
+            auditId?: string;
+            intent?: string;
+            errorMessage?: string;
         };
         IntentDescriptor: {
             id?: string;
@@ -2058,8 +2332,49 @@ export interface components {
         CountSessionCreateRequest: {
             notes?: string;
         };
+        CreatePatientRequest: {
+            firstName: string;
+            lastName: string;
+            /** Format: date */
+            dateOfBirth?: string;
+            gender?: string;
+            email?: string;
+            phone?: string;
+            address?: string;
+            cin?: string;
+            guardianName?: string;
+            guardianPhone?: string;
+            insuranceProvider?: string;
+            insuranceNumber?: string;
+            status?: string;
+        };
         ConsentRequest: {
             notes?: string;
+        };
+        Patient: {
+            /** Format: uuid */
+            id?: string;
+            firstName?: string;
+            lastName?: string;
+            /** Format: date */
+            dateOfBirth?: string;
+            gender?: string;
+            email?: string;
+            phone?: string;
+            address?: string;
+            cin?: string;
+            guardianName?: string;
+            guardianPhone?: string;
+            insuranceProvider?: string;
+            insuranceNumber?: string;
+            status?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: date-time */
+            consentGivenAt?: string;
+            consentNotes?: string;
         };
         AddToothFindingRequest: {
             findingCode: string;
@@ -2224,6 +2539,194 @@ export interface components {
             reference?: string;
             notes?: string;
         };
+        StartConsultationRequest: {
+            /** Format: uuid */
+            patientId: string;
+            locale?: string;
+            patientInformed?: boolean;
+        };
+        ConsultationResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            patientId?: string;
+            /** Format: uuid */
+            actorId?: string;
+            /** Format: uuid */
+            voiceSessionId?: string;
+            status?: string;
+            locale?: string;
+            /** Format: date-time */
+            patientInformedAt?: string;
+            transcript?: string;
+            draft?: components["schemas"]["JsonNode"];
+            reviewed?: components["schemas"]["JsonNode"];
+            report?: string;
+            /** Format: uuid */
+            appointmentId?: string;
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: date-time */
+            examinationStartedAt?: string;
+            /** Format: date-time */
+            endedAt?: string;
+            /** Format: date-time */
+            completedAt?: string;
+        };
+        JsonNode: Record<string, never>;
+        TranscriptRequest: {
+            transcript: string;
+        };
+        ActiveTreatment: {
+            key?: string;
+            label?: string;
+            detail?: string;
+            type?: string;
+            quote?: string;
+        };
+        Allergy: {
+            key?: string;
+            substance?: string;
+            reaction?: string;
+            severity?: string;
+            quote?: string;
+        };
+        ConsultationDraft: {
+            patient?: components["schemas"]["PatientFields"];
+            chiefComplaint?: components["schemas"]["QuotedString"];
+            activeTreatments?: components["schemas"]["ActiveTreatment"][];
+            allergies?: components["schemas"]["Allergy"][];
+            medicalHistory?: components["schemas"]["HistoryEntry"][];
+            treatmentPlan?: components["schemas"]["PlanItem"][];
+            nextAppointment?: components["schemas"]["NextAppointment"];
+            source?: string;
+        };
+        ExtractionResponse: {
+            draft?: components["schemas"]["ConsultationDraft"];
+            error?: string;
+            truncated?: boolean;
+        };
+        HistoryEntry: {
+            key?: string;
+            category?: string;
+            label?: string;
+            detail?: string;
+            quote?: string;
+        };
+        NextAppointment: {
+            date?: string;
+            time?: string;
+            /** Format: int32 */
+            inDays?: number;
+            reason?: string;
+            quote?: string;
+        };
+        PatientFields: {
+            firstName?: components["schemas"]["QuotedString"];
+            lastName?: components["schemas"]["QuotedString"];
+            age?: components["schemas"]["QuotedInteger"];
+            dateOfBirth?: components["schemas"]["QuotedString"];
+            gender?: components["schemas"]["QuotedString"];
+            phone?: components["schemas"]["QuotedString"];
+            cin?: components["schemas"]["QuotedString"];
+            insuranceProvider?: components["schemas"]["QuotedString"];
+            insuranceNumber?: components["schemas"]["QuotedString"];
+        };
+        PlanItem: {
+            key?: string;
+            label?: string;
+            /** Format: uuid */
+            treatmentId?: string;
+            treatmentCode?: string;
+            teeth?: string;
+            price?: number;
+            priceSource?: string;
+            notes?: string;
+            quote?: string;
+        };
+        QuotedInteger: {
+            /** Format: int32 */
+            value?: number;
+            quote?: string;
+        };
+        QuotedString: {
+            value?: string;
+            quote?: string;
+        };
+        ActiveTreatmentItem: {
+            label: string;
+            detail?: string;
+            type?: string;
+        };
+        AllergyItem: {
+            substance: string;
+            reaction?: string;
+            severity?: string;
+        };
+        AppointmentSlot: {
+            /** Format: date-time */
+            dateTime: string;
+            /** Format: int32 */
+            durationMinutes?: number;
+            type?: string;
+            /** Format: uuid */
+            chairId?: string;
+            notes?: string;
+        };
+        CommitConsultationRequest: {
+            patient?: components["schemas"]["PatientChanges"];
+            allergies?: components["schemas"]["AllergyItem"][];
+            medicalHistory?: components["schemas"]["HistoryItem"][];
+            activeTreatments?: components["schemas"]["ActiveTreatmentItem"][];
+            chiefComplaint?: string;
+            treatmentPlan?: components["schemas"]["PlanLine"][];
+            nextAppointment?: components["schemas"]["AppointmentSlot"];
+            report?: string;
+            approvedAuditIds: string[];
+            rejectedAuditIds: string[];
+            amendments: components["schemas"]["Amendment"][];
+        };
+        HistoryItem: {
+            category: string;
+            label: string;
+            detail?: string;
+        };
+        PatientChanges: {
+            firstName?: string;
+            lastName?: string;
+            /** Format: date */
+            dateOfBirth?: string;
+            gender?: string;
+            phone?: string;
+            cin?: string;
+            insuranceProvider?: string;
+            insuranceNumber?: string;
+        };
+        PlanLine: {
+            label: string;
+            /** Format: uuid */
+            treatmentId?: string;
+            teeth?: string;
+            price?: number;
+            /** Format: int32 */
+            quantity?: number;
+            notes?: string;
+        };
+        CommitConsultationResponse: {
+            consultation?: components["schemas"]["ConsultationResponse"];
+            saved?: boolean;
+            /** Format: int32 */
+            executed?: number;
+            /** Format: int32 */
+            rejected?: number;
+            /** Format: int32 */
+            amended?: number;
+            /** Format: int32 */
+            notReviewed?: number;
+            failed?: components["schemas"]["FailedCommand"][];
+            /** Format: uuid */
+            appointmentId?: string;
+        };
         ResetPasswordRequest: {
             token: string;
             newPassword: string;
@@ -2245,13 +2748,13 @@ export interface components {
             /** @enum {string} */
             role?: "ADMIN" | "DOCTOR" | "ASSISTANT";
         };
-        LoginRequest: {
-            email: string;
-            password: string;
-        };
         LoginResponse: {
             token?: string;
             user?: components["schemas"]["UserResponse"];
+        };
+        LoginRequest: {
+            email: string;
+            password: string;
         };
         ForgotPasswordRequest: {
             email: string;
@@ -2275,10 +2778,10 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
             pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StockMovementResponse"][];
@@ -2341,19 +2844,19 @@ export interface components {
             id?: string;
             name?: string;
         };
-        PagePatient: {
+        PagePatientResponse: {
             /** Format: int32 */
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
             pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
+            numberOfElements?: number;
+            /** Format: int32 */
             size?: number;
-            content?: components["schemas"]["Patient"][];
+            content?: components["schemas"]["PatientResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
@@ -2453,6 +2956,9 @@ export interface components {
             appointments?: components["schemas"]["Appointment"][];
             treatments?: components["schemas"]["PatientTreatment"][];
             invoices?: components["schemas"]["Invoice"][];
+            clinicalRecord?: components["schemas"]["PatientClinicalRecordResponse"];
+            voiceSessions?: components["schemas"]["VoiceSessionResponse"][];
+            voiceCommands?: components["schemas"]["VoiceCommandAuditResponse"][];
         };
         PatientTreatment: {
             /** Format: uuid */
@@ -2590,10 +3096,10 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
             pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["InvoiceResponse"][];
@@ -2615,6 +3121,11 @@ export interface components {
             byStatus?: {
                 [key: string]: number;
             };
+        };
+        ConsultationConfigResponse: {
+            enabled?: boolean;
+            modelExtraction?: boolean;
+            retainTranscript?: boolean;
         };
     };
     responses: never;
@@ -3186,7 +3697,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["Patient"];
+                    "*/*": components["schemas"]["PatientResponse"];
                 };
             };
         };
@@ -3202,7 +3713,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Patient"];
+                "application/json": components["schemas"]["UpdatePatientRequest"];
             };
         };
         responses: {
@@ -3212,7 +3723,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["Patient"];
+                    "*/*": components["schemas"]["PatientResponse"];
                 };
             };
         };
@@ -3305,6 +3816,36 @@ export interface operations {
             };
         };
     };
+    transcribe: {
+        parameters: {
+            query?: {
+                language?: string;
+                prompt?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TranscriptionResponse"];
+                };
+            };
+        };
+    };
     listSessions: {
         parameters: {
             query: {
@@ -3351,6 +3892,32 @@ export interface operations {
             };
         };
     };
+    summariseSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SummarizeSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SessionSummaryResponse"];
+                };
+            };
+        };
+    };
     endSession: {
         parameters: {
             query?: never;
@@ -3373,6 +3940,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["VoiceSessionResponse"];
+                };
+            };
+        };
+    };
+    commitSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitVoiceSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CommitVoiceSessionResponse"];
                 };
             };
         };
@@ -4185,7 +4778,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PagePatient"];
+                    "*/*": components["schemas"]["PagePatientResponse"];
                 };
             };
         };
@@ -4199,7 +4792,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Patient"];
+                "application/json": components["schemas"]["CreatePatientRequest"];
             };
         };
         responses: {
@@ -4209,7 +4802,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["Patient"];
+                    "*/*": components["schemas"]["PatientResponse"];
                 };
             };
         };
@@ -4553,6 +5146,174 @@ export interface operations {
             };
         };
     };
+    list: {
+        parameters: {
+            query: {
+                patientId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultationResponse"][];
+                };
+            };
+        };
+    };
+    start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartConsultationRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultationResponse"];
+                };
+            };
+        };
+    };
+    extract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TranscriptRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExtractionResponse"];
+                };
+            };
+        };
+    };
+    beginExamination: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultationResponse"];
+                };
+            };
+        };
+    };
+    end: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TranscriptRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultationResponse"];
+                };
+            };
+        };
+    };
+    commit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitConsultationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CommitConsultationResponse"];
+                };
+            };
+        };
+    };
+    abandon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultationResponse"];
+                };
+            };
+        };
+    };
     resetPassword: {
         parameters: {
             query?: never;
@@ -4595,6 +5356,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
+    refresh: {
+        parameters: {
+            query?: never;
+            header: {
+                Authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LoginResponse"];
                 };
             };
         };
@@ -5387,6 +6170,70 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BillingSummaryResponse"];
+                };
+            };
+        };
+    };
+    get_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultationResponse"];
+                };
+            };
+        };
+    };
+    open: {
+        parameters: {
+            query: {
+                patientId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultationResponse"];
+                };
+            };
+        };
+    };
+    config: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultationConfigResponse"];
                 };
             };
         };

@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { SpeechFeedbackService } from './speech-feedback.service';
-import { toUploadWav, UtteranceSegmenter } from './audio-segmenter';
+import { SpeechBandFilter, toUploadWav, UtteranceSegmenter } from './audio-segmenter';
 
 /**
  * Continuous microphone capture for a voice session, segmented into
@@ -50,6 +50,47 @@ const WORKLET_PATH = 'voice/pcm-capture-worklet.js';
 /** The level meter does not need 47 updates a second. */
 const LEVEL_INTERVAL_MS = 70;
 
+// ── Speaking over the app ───────────────────────────────────────────────
+//
+// While the app reads something back the microphone is deaf, because its own
+// voice is phrased exactly like a command. A dentist who talks over a read-back
+// — correcting a tooth the moment they hear it wrong — used to be lost for the
+// whole of it. The microphone now measures how loudly the app's voice comes
+// back to it, and only when someone is plainly louder than that does the read-
+// back stop and listening resume. Until the first read-back has been measured
+// there is nothing to compare against, and the old behaviour holds.
+
+/** A voice must reach at least this level in the speech band to interrupt a read-back. */
+const BARGE_IN_MIN_ENERGY = 0.05;
+/** ... and this many times the loudest the app's own voice has been heard to be. */
+const BARGE_IN_FACTOR = 3;
+/**
+ * ... for this long, allowing the gaps between words: a cough or a door is not
+ * an interruption. Time above the level counts up; time below it counts down
+ * twice as fast, so a breath between two words does not start the count over.
+ */
+const BARGE_IN_HOLD_MS = 350;
+/** Audio kept while the app speaks, so the start of what interrupts it is not lost. */
+const BARGE_IN_RING_MS = 1000;
+/** The measured level decays by this each read-back, so a loud one does not mute barging for good. */
+const ECHO_DECAY = 0.9;
+/** Frames a read-back must last to say anything about the echo. */
+const ECHO_MIN_FRAMES = 5;
+/** Interruptions that produced nothing, in a row, after which the feature stops for the session. */
+const MAX_FALSE_BARGES = 2;
+/** Same ceiling as the segmenter's threshold: within an ordinary voice's reach. */
+const BARGE_IN_MAX_ENERGY = 0.14;
+
+const BARGE_IN_PREFERENCE_KEY = 'orthoflow_voice_bargein';
+
+function bargeInPreferred(): boolean {
+  try {
+    return localStorage.getItem(BARGE_IN_PREFERENCE_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
 type AudioContextCtor = new (options?: AudioContextOptions) => AudioContext;
 
 function audioContextCtor(): AudioContextCtor | null {
@@ -86,6 +127,21 @@ export class AudioCaptureService {
   private wakeLock: WakeLockSentinel | null = null;
   private starting: Promise<boolean> | null = null;
   private lastLevelAt = 0;
+
+  // Speaking over a read-back. See the constants above.
+  private echoBand: SpeechBandFilter | null = null;
+  /** The loudest the app's own voice has recently been heard to be, or null before the first read-back. */
+  private echoLevel: number | null = null;
+  private playback: { generation: number; peak: number; frames: number; barged: boolean } | null = null;
+  private ring: Array<{ seq: number; frame: Float32Array }> = [];
+  private ringSamples = 0;
+  private ringSeq = 0;
+  private bargeRunMs = 0;
+  /** The first frame of the stretch of speech being counted. */
+  private bargeRunStart: number | null = null;
+  /** An interruption was acted on and no clip has come of it yet. */
+  private bargePending = false;
+  private falseBarges = 0;
 
   private onUtterance: ((clip: Blob) => void) | null = null;
 
@@ -269,15 +325,104 @@ export class AudioCaptureService {
     // Half-duplex. Echo cancellation does not reliably cover speech
     // synthesis, and a spoken confirmation transcribed back is the worst
     // possible false trigger — it is phrased exactly like a command.
-    if (this.pausedSignal() || this.feedback.isAudible()) {
+    if (this.pausedSignal()) {
       segmenter.discard();
       this.publish(0, false);
       return;
     }
+    if (this.feedback.isAudible()) {
+      segmenter.discard();
+      this.publish(0, false);
+      this.duringPlayback(frame);
+      return;
+    }
+    this.finishPlayback();
 
     const clip = segmenter.push(frame);
     this.publish(segmenter.level, segmenter.speaking);
     if (clip) this.emit(clip, this.context.sampleRate);
+  }
+
+  /**
+   * The app is speaking. Measures how loudly its voice reaches the microphone,
+   * and stops it if someone is plainly louder.
+   */
+  private duringPlayback(frame: Float32Array): void {
+    const context = this.context;
+    if (!context) return;
+    // A new read-back is a new measurement.
+    const generation = this.feedback.generation ?? 0;
+    if (this.playback && this.playback.generation !== generation) this.finishPlayback();
+    if (!this.playback) {
+      this.playback = { generation, peak: 0, frames: 0, barged: false };
+      // A filter that last saw the end of the previous read-back — or someone
+      // talking over it — would colour the first frames of this one.
+      this.echoBand = new SpeechBandFilter(context.sampleRate);
+    }
+    const energy = this.echoBand!.rms(frame);
+    this.playback.peak = Math.max(this.playback.peak, energy);
+    this.playback.frames++;
+
+    const frameMs = (frame.length / context.sampleRate) * 1000;
+    const seq = this.ringSeq++;
+    this.ring.push({ seq, frame });
+    this.ringSamples += frame.length;
+    const limit = Math.ceil((BARGE_IN_RING_MS / 1000) * context.sampleRate);
+    while (this.ring.length > 1 && this.ringSamples - this.ring[0].frame.length >= limit) {
+      this.ringSamples -= this.ring.shift()!.frame.length;
+    }
+
+    if (this.echoLevel === null || this.falseBarges >= MAX_FALSE_BARGES || !bargeInPreferred()) return;
+    const needed = Math.min(BARGE_IN_MAX_ENERGY, Math.max(BARGE_IN_MIN_ENERGY, this.echoLevel * BARGE_IN_FACTOR));
+    if (energy < needed) {
+      this.bargeRunMs = Math.max(0, this.bargeRunMs - frameMs * 2);
+      if (this.bargeRunMs === 0) this.bargeRunStart = null;
+      return;
+    }
+    this.bargeRunStart ??= seq;
+    this.bargeRunMs += frameMs;
+    if (this.bargeRunMs >= BARGE_IN_HOLD_MS) this.bargeIn();
+  }
+
+  /** Someone is speaking over the app: it stops, and what they have said so far is kept. */
+  private bargeIn(): void {
+    const segmenter = this.segmenter;
+    const context = this.context;
+    if (!segmenter || !context || !this.playback) return;
+
+    // The previous interruption produced no clip: that was the app hearing
+    // itself. Twice in a row and the feature stands down for the session.
+    if (this.bargePending) this.falseBarges++;
+    this.bargePending = true;
+    this.playback.barged = true;
+
+    // The frames of the interruption, with a little before them.
+    const from = (this.bargeRunStart ?? this.ringSeq) - 2;
+    const kept = this.ring.filter(entry => entry.seq >= from);
+    this.ring = [];
+    this.ringSamples = 0;
+    this.bargeRunMs = 0;
+    this.bargeRunStart = null;
+
+    this.feedback.cancel();
+    for (const { frame } of kept) {
+      const clip = segmenter.push(frame);
+      this.publish(segmenter.level, segmenter.speaking);
+      if (clip) this.emit(clip, context.sampleRate);
+    }
+  }
+
+  /** The app has stopped speaking: what its voice measured becomes the baseline. */
+  private finishPlayback(): void {
+    const playback = this.playback;
+    this.playback = null;
+    this.ring = [];
+    this.ringSamples = 0;
+    this.bargeRunMs = 0;
+    this.bargeRunStart = null;
+    // A read-back someone spoke over says how loud they are, not the app.
+    if (!playback || playback.barged || playback.frames < ECHO_MIN_FRAMES) return;
+    this.echoLevel = Math.max(playback.peak, (this.echoLevel ?? 0) * ECHO_DECAY);
   }
 
   private publish(level: number, speaking: boolean, force = false): void {
@@ -290,6 +435,9 @@ export class AudioCaptureService {
   }
 
   private emit(samples: Float32Array, sampleRate: number): void {
+    // Something came of the last interruption: it was a person.
+    this.bargePending = false;
+    this.falseBarges = 0;
     const wav = toUploadWav(samples, sampleRate);
     this.onUtterance?.(new Blob([wav], { type: 'audio/wav' }));
   }
@@ -356,6 +504,15 @@ export class AudioCaptureService {
     this.sink = null;
     this.segmenter = null;
     this.wakeLock = null;
+    this.echoBand = null;
+    this.echoLevel = null;
+    this.playback = null;
+    this.ring = [];
+    this.ringSamples = 0;
+    this.bargeRunMs = 0;
+    this.bargeRunStart = null;
+    this.bargePending = false;
+    this.falseBarges = 0;
     this.pausedSignal.set(false);
     this.publish(0, false, true);
   }

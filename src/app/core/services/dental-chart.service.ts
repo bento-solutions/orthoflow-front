@@ -35,8 +35,12 @@ export class DentalChartService {
    * Children < 12 years → deciduous (child) chart
    * Adults ≥ 12 years → permanent (adult) chart
    */
-  getChartTypeForAge(dateOfBirth: string): DentalChartType {
+  getChartTypeForAge(dateOfBirth: string | null | undefined): DentalChartType {
+    // A patient registered by name alone has no date of birth yet. Say what the
+    // chart is rather than leaving it to what `new Date(undefined)` happens to do.
+    if (!dateOfBirth) return 'adult';
     const birthDate = new Date(dateOfBirth);
+    if (Number.isNaN(birthDate.getTime())) return 'adult';
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
@@ -69,7 +73,7 @@ export class DentalChartService {
    * fetches the server's record in the background — the authoritative
    * source — updating `currentChart` when it resolves.
    */
-  loadChart(patientId: string, dateOfBirth: string): DentalChartState {
+  loadChart(patientId: string, dateOfBirth: string | null | undefined): DentalChartState {
     const chartType = this.getChartTypeForAge(dateOfBirth);
     let chart = this.chartStore.get(patientId);
     if (!chart) {

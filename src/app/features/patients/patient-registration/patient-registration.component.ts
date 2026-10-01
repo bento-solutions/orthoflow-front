@@ -138,6 +138,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
                   <select id="insuranceProvider" formControlName="insuranceProvider">
                     <option value="">{{ 'PATIENTS.DOSSIER.INSURANCE_NONE' | translate }}</option>
                     <option value="CNOPS">CNOPS</option>
+                    <option value="CNSS">CNSS</option>
                     <option value="CNAM">CNAM</option>
                     <option value="RAMED">RAMED</option>
                     <option value="PRIVATE">{{ 'PATIENTS.DOSSIER.INSURANCE_PRIVATE' | translate }}</option>

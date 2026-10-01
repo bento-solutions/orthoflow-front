@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PatientService } from '../../../core/services/patient.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { ConsultationService } from '../../../core/consultation/consultation.service';
 import { ScheduleService } from '../../../core/services/schedule.service';
 import { Appointment, Patient } from '../../../core/models/patient.model';
 import { TranslateModule } from '@ngx-translate/core';
@@ -29,12 +31,47 @@ import { StatusPillComponent } from '../../../shared/ui/status-pill.component';
           <p class="page-sub">{{ 'PATIENTS.SUBTITLE' | translate }}</p>
         </div>
         <div class="page-actions">
+          <button type="button" class="btn btn-secondary" (click)="quickOpen.set(!quickOpen())"
+                  [attr.aria-expanded]="quickOpen()" aria-controls="quick-add">
+            <app-icon name="user-plus" [size]="16" />
+            {{ 'PATIENTS.QUICK_ADD.BUTTON' | translate }}
+          </button>
           <a class="btn btn-primary" routerLink="register">
             <app-icon name="user-plus" [size]="16" />
             {{ 'PATIENTS.ADD' | translate }}
           </a>
         </div>
       </header>
+
+      <!-- Someone is in the chair and nothing is known but their name. The rest
+           is learned in the consultation, or filled in later. -->
+      @if (quickOpen()) {
+        <form id="quick-add" class="quick-add" (ngSubmit)="quickAdd(false)" #quickForm="ngForm">
+          <p class="quick-add-hint">{{ 'PATIENTS.QUICK_ADD.HINT' | translate }}</p>
+          <div class="quick-add-fields">
+            <label>
+              <span>{{ 'PATIENTS.DOSSIER.FIRST_NAME' | translate }}</span>
+              <input class="input" name="firstName" [(ngModel)]="quickFirst" required maxlength="255"
+                     autocomplete="off" autofocus />
+            </label>
+            <label>
+              <span>{{ 'PATIENTS.DOSSIER.LAST_NAME' | translate }}</span>
+              <input class="input" name="lastName" [(ngModel)]="quickLast" required maxlength="255"
+                     autocomplete="off" />
+            </label>
+          </div>
+          <div class="quick-add-actions">
+            <button type="submit" class="btn btn-secondary" [disabled]="!quickReady() || quickBusy()">
+              {{ 'PATIENTS.QUICK_ADD.SUBMIT' | translate }}
+            </button>
+            @if (consultation.available()) {
+              <button type="button" class="btn btn-primary" (click)="quickAdd(true)" [disabled]="!quickReady() || quickBusy()">
+                {{ 'PATIENTS.QUICK_ADD.SUBMIT_CONSULT' | translate }}
+              </button>
+            }
+          </div>
+        </form>
+      }
 
       <!-- Filters -->
       <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -122,7 +159,7 @@ import { StatusPillComponent } from '../../../shared/ui/status-pill.component';
                   </td>
                   <td [attr.data-label]="'PATIENTS.CONTACT' | translate">
                     <span class="flex flex-col leading-tight">
-                      <span class="text-ink-900">{{ patient.phone }}</span>
+                      <span class="text-ink-900">{{ patient.phone || '—' }}</span>
                       <span class="truncate text-2xs text-ink-500">{{ patient.email }}</span>
                     </span>
                   </td>
@@ -170,6 +207,16 @@ import { StatusPillComponent } from '../../../shared/ui/status-pill.component';
     </div>
   `,
   styles: [`
+    .quick-add {
+      display: flex; flex-direction: column; gap: var(--space-3, .75rem);
+      background: #fff; border: 1px solid rgb(var(--ink-200)); border-radius: 14px;
+      padding: var(--space-4, 1rem); margin-bottom: var(--space-4, 1rem); max-width: 40rem;
+    }
+    .quick-add-hint { margin: 0; font-size: .875rem; color: rgb(var(--ink-600)); }
+    .quick-add-fields { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .quick-add-fields label { display: flex; flex-direction: column; gap: .25rem; font-size: .8125rem; font-weight: 600; color: rgb(var(--ink-700)); }
+    .quick-add-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+    @media (max-width: 520px) { .quick-add-fields { grid-template-columns: 1fr; } }
     /* Below the table breakpoint each row becomes a card. Header cells are
        hidden, so each value carries its own label via data-label. */
     @media (max-width: 767px) {
@@ -211,6 +258,17 @@ export class PatientListComponent {
   readonly patientService = inject(PatientService);
   private readonly scheduleService = inject(ScheduleService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
+  readonly consultation = inject(ConsultationService);
+
+  readonly quickOpen = signal(false);
+  readonly quickBusy = signal(false);
+  quickFirst = '';
+  quickLast = '';
+
+  constructor() {
+    void this.consultation.loadConfig();
+  }
 
   readonly query = signal('');
   readonly statusFilter = signal<'ALL' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED'>('ALL');
@@ -234,6 +292,36 @@ export class PatientListComponent {
         .some((v) => (v ?? '').toString().toLowerCase().includes(q));
     });
   });
+
+  quickReady(): boolean {
+    return this.quickFirst.trim().length > 0 && this.quickLast.trim().length > 0;
+  }
+
+  /**
+   * Registers a patient from a first and last name alone and opens their
+   * dossier, optionally straight into the consultation prompt. Everything else
+   * the registration form asks for is optional on the server; the consultation
+   * is where most of it is learned.
+   */
+  quickAdd(thenConsult: boolean): void {
+    if (!this.quickReady() || this.quickBusy()) return;
+    this.quickBusy.set(true);
+    this.patientService
+      .addPatient({ firstName: this.quickFirst.trim(), lastName: this.quickLast.trim() })
+      .subscribe({
+        next: (patient) => {
+          this.quickBusy.set(false);
+          this.quickFirst = '';
+          this.quickLast = '';
+          this.quickOpen.set(false);
+          void this.router.navigate(['/patients', patient.id], thenConsult ? { queryParams: { consultation: 1 } } : {});
+        },
+        error: (err) => {
+          this.quickBusy.set(false);
+          this.toast.error(err?.error?.detail || err?.error?.message || 'Could not add the patient.');
+        },
+      });
+  }
 
   countFor(value: string): number {
     const all = this.patientService.patients();

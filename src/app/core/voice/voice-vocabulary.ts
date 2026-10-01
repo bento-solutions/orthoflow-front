@@ -59,6 +59,11 @@ export const FINDING_TERMS: Readonly<Record<string, { fr: string[]; en: string[]
   fracture: { fr: ['fracture', 'dent fêlée'], en: ['fracture', 'cracked tooth'] },
   crown_defective: { fr: ['couronne défectueuse', 'couronne descellée'], en: ['defective crown', 'loose crown'] },
   retained_root: { fr: ['racine résiduelle'], en: ['retained root'] },
+  avulsion: { fr: ['avulsion'], en: ['avulsion'] },
+  extensive_destruction: { fr: ['dent délabrée'], en: ['extensive destruction'] },
+  pulpitis: { fr: ['pulpite'], en: ['pulpitis'] },
+  necrosis: { fr: ['nécrose pulpaire'], en: ['pulp necrosis'] },
+  periapical_lesion: { fr: ['granulome', 'lésion périapicale'], en: ['periapical lesion'] },
   extracted: { fr: ['déjà extraite'], en: ['already extracted'] },
   missing: { fr: ['dent absente', 'manquante'], en: ['missing'] },
   impacted: { fr: ['incluse'], en: ['impacted'] },
@@ -72,6 +77,8 @@ export const FINDING_TERMS: Readonly<Record<string, { fr: string[]; en: string[]
   gingival_inflammation: { fr: ['gingivite', 'gencives enflammées'], en: ['gingivitis', 'bleeding gums'] },
   periodontal_pocket: { fr: ['poche parodontale', 'parodontite'], en: ['periodontal pocket', 'periodontitis'] },
   gingival_recession: { fr: ['récession gingivale'], en: ['gingival recession'] },
+  bleeding: { fr: ['saignement'], en: ['bleeding'] },
+  swelling: { fr: ['gonflement'], en: ['swelling'] },
   plaque_calculus: { fr: ['tartre', 'plaque'], en: ['calculus', 'tartar'] },
   malposition: { fr: ['malposition', 'encombrement'], en: ['malpositioned', 'crowded'] },
 
@@ -81,6 +88,7 @@ export const FINDING_TERMS: Readonly<Record<string, { fr: string[]; en: string[]
   existing_veneer: { fr: ['facette'], en: ['existing veneer'] },
   existing_root_canal: { fr: ['dent dévitalisée', 'traitement canalaire existant'], en: ['previous root canal', 'root canal treated'] },
   existing_post: { fr: ['tenon', 'inlay core'], en: ['post and core'] },
+  existing_inlay: { fr: ['inlay', 'onlay'], en: ['inlay', 'onlay'] },
   existing_amalgam: { fr: ['amalgame'], en: ['amalgam'] },
   existing_composite: { fr: ['composite'], en: ['composite'] },
   existing_sealant: { fr: ['scellement de sillons'], en: ['sealant'] },
@@ -101,6 +109,24 @@ const SURFACE_FR: Record<string, string> = {
   occlusal: 'occlusale', mesial: 'mésiale', distal: 'distale', buccal: 'vestibulaire',
   lingual: 'linguale', incisal: 'incisale', cervical: 'cervicale',
 };
+
+/** The combining form a French dentist uses for all but the last of a compound surface. */
+const SURFACE_FR_STEM: Record<string, string> = {
+  occlusal: 'occluso', mesial: 'mésio', distal: 'disto', buccal: 'vestibulo',
+  lingual: 'linguo', incisal: 'incisio', cervical: 'cervico',
+};
+
+/**
+ * A surface as it is spoken: "mesial-occlusal" is "mésio-occlusale", as the
+ * dentist said it, rather than two adjectives strung together.
+ */
+export function spokenSurface(surface: string, language: SpokenLanguage): string {
+  const parts = surface.split('-').filter(Boolean);
+  if (language !== 'fr') return parts.join('-');
+  if (parts.length === 1) return SURFACE_FR[parts[0]] ?? parts[0];
+  const last = parts[parts.length - 1];
+  return [...parts.slice(0, -1).map(part => SURFACE_FR_STEM[part] ?? part), SURFACE_FR[last] ?? last].join('-');
+}
 
 const SEVERITY_FR: Record<string, string> = { MILD: 'légère', MODERATE: 'modérée', SEVERE: 'sévère' };
 
@@ -130,12 +156,17 @@ const VOCABULARY_HINT = [
 
 /**
  * What the recogniser is told to expect for one clip: the wake word, the
- * context that makes names and the current tooth spellable, and the
- * vocabulary. For spelling only — the server's instruction says so.
+ * current tooth and the vocabulary. For spelling only — the server's
+ * instruction says so.
+ *
+ * Deliberately not the patient's name. It went with every clip to up to three
+ * outside recognisers, for no clinical gain: dictation is about teeth and
+ * findings, the patient is already selected, and a name the recogniser
+ * misspells costs nothing because it never reaches the record. Sending less
+ * personal data is the simplest way to meet the data-minimisation duty.
  */
 export function speechHints(snapshot: VoiceContextSnapshot): string {
   const parts = [WAKE_WORD];
-  if (snapshot.patientName) parts.push(`patient ${snapshot.patientName}`);
   if (snapshot.selectedFdi) parts.push(`dent ${snapshot.selectedFdi}`);
   parts.push(VOCABULARY_HINT);
   return parts.join('; ');
@@ -158,7 +189,54 @@ const PHRASES = {
   notStaged: { fr: 'Non enregistré. Répétez.', en: 'Not recorded. Say it again.' },
   discarded: { fr: 'Abandonné.', en: 'Discarded.' },
   corrected: { fr: 'Corrigé.', en: 'Corrected.' },
+  // Said aloud because the dentist is not looking at the screen: a microphone
+  // that stopped hearing them, or a service that lost their words, is
+  // otherwise invisible until the review shows a gap.
+  micLost: {
+    fr: 'Le micro est déconnecté. Je ne vous entends plus.',
+    en: 'The microphone is disconnected. I can no longer hear you.',
+  },
+  micSuspended: {
+    fr: 'Le micro est suspendu. Je ne vous entends plus.',
+    en: 'The microphone is suspended. I can no longer hear you.',
+  },
+  micBack: { fr: 'Micro rétabli.', en: 'Microphone back.' },
+  sttOffline: {
+    fr: 'Pas de connexion. Je n\'ai pas pu vous entendre. Répétez quand elle revient.',
+    en: 'No connection. I could not hear you. Say it again when it is back.',
+  },
+  sttFallback: {
+    fr: 'Reconnaissance vocale du navigateur, moins précise.',
+    en: 'Using the browser\'s speech recognition, which is less accurate.',
+  },
+  idleWarning: {
+    fr: 'Aucune dictée depuis quarante minutes. Dites Calypso pour continuer, sinon l\'examen sera clôturé dans cinq minutes.',
+    en: 'Nothing dictated for forty minutes. Say Calypso to carry on, or the examination will close in five minutes.',
+  },
+  idleEnded: {
+    fr: 'Examen clôturé pour inactivité. Vos constatations sont à relire à l\'écran.',
+    en: 'Examination closed for inactivity. Your findings are waiting for review on screen.',
+  },
+  sessionExpired: {
+    fr: 'Votre connexion a expiré. Reconnectez-vous : votre examen est conservé.',
+    en: 'Your login has expired. Sign in again: your examination is kept.',
+  },
+  lastClipLost: {
+    fr: 'Votre dernière phrase n\'a pas pu être ajoutée. Vérifiez à l\'écran.',
+    en: 'Your last sentence could not be added. Check the screen.',
+  },
   nothingToCorrect: { fr: 'Rien à corriger.', en: 'Nothing to correct.' },
+  questionExpired: { fr: 'Question annulée.', en: 'Question cancelled.' },
+  sttBusy: {
+    fr: 'Trop d\'enregistrements d\'un coup. Attendez un instant, puis répétez.',
+    en: 'Too many recordings at once. Wait a moment, then say it again.',
+  },
+  pausedByVoice: {
+    fr: 'En pause. Dites Calypso, reprends.',
+    en: 'Paused. Say Calypso, resume.',
+  },
+  resumedByVoice: { fr: 'Reprise.', en: 'Resumed.' },
+  nothingStaged: { fr: 'Rien à relire pour l\'instant.', en: 'Nothing to read back yet.' },
   sttDown: {
     fr: 'La reconnaissance vocale ne répond pas. Répétez.',
     en: 'Speech recognition is not responding. Say it again.',
@@ -189,8 +267,29 @@ export function phrase(key: PhraseKey, language: SpokenLanguage): Spoken {
   return { text: PHRASES[key][language], locale: synthesisLocale(language) };
 }
 
+/** The session is about to end and cannot be extended. */
+export function expiryWarning(minutes: number, language: SpokenLanguage): Spoken {
+  const text = language === 'fr'
+    ? `Votre connexion expire dans ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}. `
+      + 'Terminez l\'examen, puis reconnectez-vous.'
+    : `Your login expires in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}. `
+      + 'Finish the examination, then sign in again.';
+  return { text, locale: synthesisLocale(language) };
+}
+
 /** Longer than this and a read-back is a monologue; the words are on screen. */
 const NOTE_READBACK_MAX_CHARS = 90;
+
+/**
+ * While the app speaks, the microphone is deaf to the dentist — about 70 ms a
+ * character. A tooth with many findings is read in full on screen but only
+ * this many aloud, then "and N more", so one read-back does not cost ten
+ * seconds of the dentist's next sentence.
+ */
+const READBACK_MAX_FINDINGS = 4;
+
+/** How many staged entries "read back what we have" speaks, the most recent. */
+const STAGED_LIST_MAX_ENTRIES = 6;
 
 /**
  * The read-back for a staged write, in the resolved values: tooth number and
@@ -215,11 +314,16 @@ export function spokenConfirmation(
         ? findings.map(finding => {
           const parts = [spokenFindingLabel(String(finding.code), language)];
           if (finding.severity) parts.push(fr ? SEVERITY_FR[finding.severity] ?? '' : finding.severity.toLowerCase());
-          if (finding.surface) parts.push(fr ? SURFACE_FR[finding.surface] ?? finding.surface : finding.surface);
+          if (finding.surface) parts.push(spokenSurface(finding.surface, language));
           return parts.filter(Boolean).join(' ');
         })
         : stagedFindingCodes(entities).map(code => spokenFindingLabel(code, language));
-      return { text: fr ? `Dent ${fdi} : ${labels.join(', ')}.` : `Tooth ${fdi}: ${labels.join(', ')}.`, locale };
+      const spoken = labels.length > READBACK_MAX_FINDINGS
+        ? [...labels.slice(0, READBACK_MAX_FINDINGS),
+           fr ? `et ${labels.length - READBACK_MAX_FINDINGS} autre${labels.length - READBACK_MAX_FINDINGS > 1 ? 's' : ''}`
+              : `and ${labels.length - READBACK_MAX_FINDINGS} more`]
+        : labels;
+      return { text: fr ? `Dent ${fdi} : ${spoken.join(', ')}.` : `Tooth ${fdi}: ${spoken.join(', ')}.`, locale };
     }
     case 'clinical.retractFindings': {
       const fdi = entityString(entities, 'fdi') ?? '';
@@ -249,6 +353,27 @@ export function spokenConfirmation(
     default:
       return null;
   }
+}
+
+/**
+ * What has been staged so far, read aloud — the only way to check a dictation
+ * by ear, since nothing is in the clinical tables until review. Each entry is
+ * read exactly as it was read back the moment it was staged. A long session
+ * reads only the latest few, and says how many there are.
+ */
+export function spokenStagedList(
+  entries: ReadonlyArray<{ intent: string; entities: Record<string, unknown>; preview: string }>,
+  language: SpokenLanguage,
+): Spoken {
+  if (entries.length === 0) return phrase('nothingStaged', language);
+  const fr = language === 'fr';
+  const count = entries.length;
+  const shown = entries.slice(-STAGED_LIST_MAX_ENTRIES);
+  const lines = shown.map(entry => spokenConfirmation(entry.intent, entry.entities, language)?.text ?? entry.preview);
+  const head = fr
+    ? `${count} entrée${count > 1 ? 's' : ''}${count > shown.length ? `, les ${shown.length} dernières` : ''}.`
+    : `${count} ${count > 1 ? 'entries' : 'entry'}${count > shown.length ? `, the last ${shown.length}` : ''}.`;
+  return { text: `${head} ${lines.join(' ')}`, locale: synthesisLocale(language) };
 }
 
 /** The grammar's fixed questions, as a French-speaking dentist should hear them. */

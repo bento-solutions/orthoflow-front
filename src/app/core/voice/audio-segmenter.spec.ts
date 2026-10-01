@@ -164,6 +164,56 @@ describe('UtteranceSegmenter', () => {
     expect(clips).toHaveLength(1);
   });
 
+  it('is not deaf for a whole procedure once a loud machine has been rejected', () => {
+    // Whatever point of a syllable the speech happens to start on.
+    for (const start of [0, 7000, 23000, 40000]) {
+      clock = start;
+      const segmenter = new UtteranceSegmenter({ sampleRate: RATE });
+      const clips = feed(segmenter, [
+        ...times(600, () => quiet()),
+        // A loud suction: rejected as a machine, which lifts the floor to its level.
+        ...times(3500, () => steadyTone(0.14)),
+        // The dentist then speaks over it at an ordinary level.
+        ...times(1200, () => sum(steadyTone(0.14), voiced(0.3))),
+        ...times(1500, () => steadyTone(0.14)),
+      ]);
+      // Raising the threshold to three times the machine's level (about 0.3 of
+      // full scale) made an ordinary voice inaudible for as long as it ran; and
+      // with the machine never quiet, an utterance that did open never closed.
+      expect(clips, `speech starting at sample ${start}`).toHaveLength(1);
+    }
+  });
+
+  it('closes after the speech even though the machine is still running', () => {
+    const segmenter = new UtteranceSegmenter({ sampleRate: RATE });
+    feed(segmenter, [
+      ...times(600, () => quiet()),
+      ...times(3500, () => steadyTone(0.14)),
+      ...times(1500, () => sum(steadyTone(0.14), voiced(0.4))),
+    ]);
+    expect(segmenter.speaking).toBe(true);
+
+    feed(segmenter, times(1500, () => steadyTone(0.14)));
+
+    expect(segmenter.speaking).toBe(false);
+  });
+
+  it('lets the threshold fall back once the machine stops', () => {
+    const segmenter = new UtteranceSegmenter({ sampleRate: RATE });
+    feed(segmenter, [...times(600, () => quiet()), ...times(3500, () => steadyTone(0.14))]);
+    expect(segmenter.threshold).toBeGreaterThan(0.1);
+
+    feed(segmenter, times(1500, () => quiet()));
+
+    expect(segmenter.threshold).toBeLessThan(0.02);
+  });
+
+  it('still does not open on the loud machine alone', () => {
+    const segmenter = new UtteranceSegmenter({ sampleRate: RATE });
+    const clips = feed(segmenter, [...times(600, () => quiet()), ...times(8000, () => steadyTone(0.14))]);
+    expect(clips).toHaveLength(0);
+  });
+
   it('drops a click too short to be speech', () => {
     const segmenter = new UtteranceSegmenter({ sampleRate: RATE });
     const clips = feed(segmenter, [

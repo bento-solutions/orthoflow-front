@@ -31,7 +31,10 @@ export type FindingStatus = 'ACTIVE' | 'RESOLVED' | 'RETRACTED';
 export type Severity = 'MILD' | 'MODERATE' | 'SEVERE';
 export type NoteCategory =
   | 'GENERAL' | 'CHIEF_COMPLAINT' | 'OBSERVATION' | 'DENTAL_HISTORY'
-  | 'MEDICAL_HISTORY' | 'DIAGNOSIS' | 'FOLLOW_UP' | 'TREATMENT_PLAN';
+  | 'MEDICAL_HISTORY' | 'DIAGNOSIS' | 'FOLLOW_UP' | 'TREATMENT_PLAN'
+  // Written by saving a dictated examination or a recorded consultation,
+  // never entered by hand.
+  | 'CONSULTATION_REPORT' | 'CONSULTATION_TRANSCRIPT';
 export type MedicalHistoryCategory =
   | 'CONDITION' | 'MEDICATION' | 'SURGERY' | 'DENTAL_HISTORY' | 'FAMILY' | 'LIFESTYLE' | 'OTHER';
 

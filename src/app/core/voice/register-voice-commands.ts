@@ -12,7 +12,7 @@ import { VoiceSessionService } from './voice-session.service';
 import { VoiceOrchestratorService } from './voice-orchestrator.service';
 import { describeFdi } from './tooth-lexicon';
 import { findingLabel } from './clinical-lexicon';
-import { spokenFindingLabel } from './voice-vocabulary';
+import { spokenFindingLabel, spokenStagedList } from './voice-vocabulary';
 import { WAKE_WORD } from './voice-wake';
 import {
   FindingEntity,
@@ -72,7 +72,8 @@ export class VoiceCommandsService {
   private wireSessionHooks(): void {
     this.orchestrator.sessionHooks = {
       start: async () => { await this.sessions.start(); },
-      end: async () => { await this.sessions.end(); },
+      // Spoken, so it is being handled by the queue a wait would wait on.
+      end: async () => { await this.sessions.end({ waitForClips: false }); },
       summary: async () => { await this.sessions.refreshSummary(); },
     };
   }
@@ -106,8 +107,9 @@ export class VoiceCommandsService {
         preview: () => 'End the examination and review it',
         execute: async () => {
           // Nothing has been written yet — everything dictated is staged and
-          // reaches the record only when the dentist saves at review.
-          await this.sessions.end();
+          // reaches the record only when the dentist saves at review. Spoken,
+          // so it is being handled by the queue a wait would wait on.
+          await this.sessions.end({ waitForClips: false });
           return {
             ok: true,
             message: 'Examination ended. Review it on screen before saving.',
@@ -123,6 +125,18 @@ export class VoiceCommandsService {
         examples: ['show me today\'s findings', 'summary'],
         preview: () => 'Show what has been recorded so far',
         execute: async () => {
+          // What was dictated is staged, not in the clinical tables, until the
+          // dentist saves — so the record is empty for a tooth just dictated.
+          // Read what is staged: it is the only way to check by ear.
+          const staged = this.orchestrator.buffered();
+          if (staged.length > 0 && this.sessions.isActive()) {
+            void this.sessions.refreshSummary().catch(() => undefined);
+            return {
+              ok: true,
+              message: spokenStagedList(staged, 'en').text,
+              spokenFr: spokenStagedList(staged, 'fr').text,
+            };
+          }
           const summary = await this.sessions.refreshSummary();
           if (!summary) {
             return {
@@ -341,7 +355,16 @@ export class VoiceCommandsService {
             this.clinical.listToothFindings(context.patientId!, fdi),
           );
           this.context.selectTooth(fdi);
-          if (findings.length === 0) {
+
+          // Dictated during this examination and not yet saved: not on the
+          // record, so without this "read tooth 16" answers "nothing" for the
+          // tooth just dictated.
+          const staged = [...new Set(this.orchestrator.buffered()
+            .filter(entry => entry.intent === 'clinical.addFindings' && entityString(entry.entities, 'fdi') === fdi)
+            .flatMap(entry => stagedFindingCodes(entry.entities)))];
+          const recorded = findings.map(f => f.findingCode).filter(code => !staged.includes(code));
+
+          if (staged.length === 0 && recorded.length === 0) {
             return {
               ok: true,
               message: `Tooth ${fdi} (${describeFdi(fdi)}) has nothing recorded.`,
@@ -349,9 +372,20 @@ export class VoiceCommandsService {
               highlightFdi: fdi,
             };
           }
-          const labels = findings.map(f => findingLabel(f.findingCode)).join(', ');
-          const labelsFr = findings.map(f => spokenFindingLabel(f.findingCode, 'fr')).join(', ');
-          return { ok: true, message: `Tooth ${fdi} — ${labels}.`, spokenFr: `Dent ${fdi} : ${labelsFr}.`, highlightFdi: fdi };
+          const en = (codes: string[]) => codes.map(code => findingLabel(code)).join(', ');
+          const fr = (codes: string[]) => codes.map(code => spokenFindingLabel(code, 'fr')).join(', ');
+          const parts = (join: (codes: string[]) => string, language: 'fr' | 'en') => {
+            const out: string[] = [];
+            if (staged.length) out.push(`${language === 'fr' ? 'à enregistrer' : 'to be saved'} ${join(staged)}`);
+            if (recorded.length) out.push(`${language === 'fr' ? 'au dossier' : 'on record'} ${join(recorded)}`);
+            return out.join(language === 'fr' ? ' ; ' : '; ');
+          };
+          return {
+            ok: true,
+            message: `Tooth ${fdi} — ${parts(en, 'en')}.`,
+            spokenFr: `Dent ${fdi} : ${parts(fr, 'fr')}.`,
+            highlightFdi: fdi,
+          };
         },
       },
     ];
@@ -598,9 +632,14 @@ export class VoiceCommandsService {
             message: outstanding > 0
               ? `Outstanding balance: ${outstanding.toFixed(2)} dirhams.`
               : 'Nothing outstanding — the account is settled.',
+            // Said in front of the patient, so only whether something is owed —
+            // the amount is on screen.
             spokenFr: outstanding > 0
-              ? `Reste à payer : ${outstanding.toFixed(2).replace('.', ',')} dirhams.`
+              ? 'Un solde reste à payer. Le montant est à l\'écran.'
               : 'Rien à payer, le compte est soldé.',
+            spokenText: outstanding > 0
+              ? 'A balance is due. The amount is on screen.'
+              : 'Nothing outstanding — the account is settled.',
           };
         },
       },
@@ -613,13 +652,27 @@ export class VoiceCommandsService {
         examples: ['when is the next appointment'],
         preview: () => 'Read the next appointment',
         execute: async (_entities, context) => {
+          // The calendar loads in the background and covers a bounded window.
+          // An answer of "none" while it is still loading, or after it failed,
+          // is a wrong answer said with confidence.
+          if (this.schedule.loading() || this.schedule.error()) {
+            return {
+              ok: false,
+              message: 'The appointment calendar is not available right now.',
+              spokenFr: 'Le calendrier n\'est pas disponible pour l\'instant.',
+            };
+          }
           const now = Date.now();
           const next = this.schedule.appointments()
             .filter(a => a.patientId === context.patientId && a.status !== 'CANCELLED')
             .filter(a => new Date(a.dateTime).getTime() >= now)
             .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())[0];
           if (!next) {
-            return { ok: true, message: 'No upcoming appointment is booked.', spokenFr: 'Aucun rendez-vous prévu.' };
+            return {
+              ok: true,
+              message: 'No appointment is booked in the next six months.',
+              spokenFr: 'Aucun rendez-vous dans les six prochains mois.',
+            };
           }
           const when = new Date(next.dateTime);
           return {

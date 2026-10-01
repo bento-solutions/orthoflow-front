@@ -443,7 +443,10 @@ describe('several teeth in one utterance — nothing lands on the wrong one', ()
   });
 
   it('does not take a quantity for a second tooth', () => {
-    expect(describeAll('dent 16 carie, contrôle dans 15 jours')).toEqual(['chart.addToothFindings:16:caries+follow_up']);
+    // "15 jours" is a delay, not tooth 15: the finding stays on 16 and the
+    // recall is kept, as a follow-up, instead of being lost as a stray word.
+    expect(describeAll('dent 16 carie, contrôle dans 15 jours'))
+      .toEqual(['chart.addToothFindings:16:caries', 'schedule.followUp::']);
   });
 
   it('refuses a number that is not a tooth rather than use the selected one', () => {
@@ -475,5 +478,237 @@ describe('a treatment need is never recorded as the restoration', () => {
   it('still records a restoration that is simply there', () => {
     expect(describeAll('dent 16 couronne existante')).toEqual(['chart.addToothFindings:16:existing_crown']);
     expect(describeAll('dent 16 composite')).toEqual(['chart.addToothFindings:16:existing_composite']);
+  });
+});
+
+// ── French vocabulary a dentist actually uses ───────────────────────────
+
+describe('French clinical vocabulary', () => {
+  const FINDS: Array<[string, string]> = [
+    ['dent 16 avulsion', 'avulsion'],
+    ['dent 21 avulsée', 'avulsion'],
+    ['dent 18 extraction', 'extraction_required'],
+    ['dent 18 extraction à faire', 'extraction_required'],
+    ['dent 26 pulpite', 'pulpitis'],
+    ['dent 26 nécrose pulpaire', 'necrosis'],
+    ['dent 36 granulome', 'periapical_lesion'],
+    ['dent 16 kyste', 'periapical_lesion'],
+    ['dent 16 lésion périapicale', 'periapical_lesion'],
+    ['dent 11 fêlure', 'fracture'],
+    ['dent 46 délabrée', 'extensive_destruction'],
+    ['dent 46 cariée', 'caries'],
+    ['dent 16 lésion carieuse', 'caries'],
+    ['dent 16 reconstitution', 'existing_filling'],
+    ['dent 16 reconstitution à refaire', 'filling_required'],
+    ['dent 16 inlay', 'existing_inlay'],
+    ['dent 26 onlay', 'existing_inlay'],
+    ['dent 36 dévitalisation', 'existing_root_canal'],
+    ['dent 36 dévitalisation à faire', 'root_canal_required'],
+    ['dent 16 saignement', 'bleeding'],
+    ['dent 36 gonflement', 'swelling'],
+    ['dent 16 hypersensibilité', 'sensitivity'],
+    ['dent 16 récession', 'gingival_recession'],
+    ['dent 12 en rotation', 'malposition'],
+    ['dent 13 ectopique', 'malposition'],
+    ['dent 16 colorée', 'discoloration'],
+    ['dent 16 bruxisme', 'tooth_wear'],
+    ['dent 16 faux moignon', 'existing_post'],
+  ];
+
+  for (const [said, code] of FINDS) {
+    it(`understands "${said}" as ${code}`, () => {
+      const found = expectIntent(said, 'chart.addToothFindings');
+      expect(findingCodes(found.entities)).toEqual([code]);
+    });
+  }
+
+  it('never reads a bare "extraction" as the tooth already being gone', () => {
+    const codes = findingCodes(expectIntent('dent 18 extraction', 'chart.addToothFindings').entities);
+    expect(codes).not.toContain('extracted');
+    expect(codes).not.toContain('missing');
+  });
+
+  it('still reads "extraite" as done', () => {
+    expect(findingCodes(expectIntent('dent 18 extraite', 'chart.addToothFindings').entities)).toEqual(['extracted']);
+  });
+});
+
+describe('the detail a finding is said with', () => {
+  const surfaceOf = (utterance: string, code: string) => {
+    const found = expectIntent(utterance, 'chart.addToothFindings');
+    return ((found.entities['findings'] ?? []) as FindingEntity[]).find(f => f.code === code)?.surface ?? null;
+  };
+
+  it('keeps every face of a compound surface', () => {
+    expect(surfaceOf('dent 16 carie mésio-occlusale', 'caries')).toBe('mesial-occlusal');
+    expect(surfaceOf('dent 16 mésio-occlusale carie', 'caries')).toBe('mesial-occlusal');
+    expect(surfaceOf('dent 26 carie occluso-distale', 'caries')).toBe('occlusal-distal');
+    expect(surfaceOf('dent 16 carie mésio-occluso-distale', 'caries')).toBe('mesial-occlusal-distal');
+    expect(surfaceOf('tooth 16 mesial occlusal caries', 'caries')).toBe('mesial-occlusal');
+  });
+
+  it('gives each surface to the finding it describes, not to both', () => {
+    const utterance = 'dent 16 carie mésio-occlusale et fracture distale';
+    expect(surfaceOf(utterance, 'caries')).toBe('mesial-occlusal');
+    expect(surfaceOf(utterance, 'fracture')).toBe('distal');
+  });
+
+  it('leaves the surface empty when none was said', () => {
+    expect(surfaceOf('dent 16 carie', 'caries')).toBeNull();
+  });
+
+  it('records the grade of a mobility', () => {
+    for (const [said, severity] of [
+      ['dent 26 mobilité grade 1', 'MILD'],
+      ['dent 26 mobilité grade 2', 'MODERATE'],
+      ['dent 26 mobilité de grade deux', 'MODERATE'],
+      ['dent 26 mobilité classe 3', 'SEVERE'],
+      ['dent 26 mobility grade II', 'MODERATE'],
+    ]) {
+      const found = expectIntent(said, 'chart.addToothFindings');
+      const mobility = (found.entities['findings'] as FindingEntity[]).find(f => f.code === 'mobility');
+      expect(mobility?.severity, said).toBe(severity);
+      expect(mobility?.note, said).toMatch(/^grade [123]$/);
+    }
+  });
+
+  it('records a mobility with no grade without inventing one', () => {
+    const found = expectIntent('dent 26 mobile', 'chart.addToothFindings');
+    const mobility = (found.entities['findings'] as FindingEntity[])[0];
+    expect(mobility.severity).toBeNull();
+    expect(mobility.note).toBeUndefined();
+  });
+});
+
+describe('what the dentist says about the patient', () => {
+  const history = (utterance: string) => intentsOf(utterance).map(i =>
+    `${i.intent}:${i.entities['category'] ?? ''}:${String(i.entities['label'] ?? '').toLowerCase()}`);
+
+  it('files a medication as medical history', () => {
+    expect(history('patient sous anticoagulants')).toEqual(['clinical.addMedicalHistory:MEDICATION:anticoagulants']);
+    expect(history('patient is on warfarin')).toEqual(['clinical.addMedicalHistory:MEDICATION:warfarin']);
+  });
+
+  it('files a condition as medical history', () => {
+    expect(history('le patient est diabétique')).toEqual(['clinical.addMedicalHistory:CONDITION:diabétique']);
+    expect(history('patient fumeur')).toEqual(['clinical.addMedicalHistory:CONDITION:fumeur']);
+  });
+
+  it('does not drop the second thing said', () => {
+    expect(history('patient hypertendu et diabétique')).toEqual([
+      'clinical.addMedicalHistory:CONDITION:diabétique',
+      'clinical.addMedicalHistory:CONDITION:hypertendu',
+    ]);
+    expect(history('patient diabétique sous insuline')).toEqual([
+      'clinical.addMedicalHistory:CONDITION:diabétique',
+      'clinical.addMedicalHistory:MEDICATION:insuline',
+    ]);
+    expect(history('le patient est sous aspirine et metformine')).toEqual([
+      'clinical.addMedicalHistory:MEDICATION:aspirine',
+      'clinical.addMedicalHistory:MEDICATION:metformine',
+    ]);
+  });
+
+  it('keeps a denial as a note in the dentist\'s words, never as a condition', () => {
+    const [entry] = intentsOf('le patient n\'est pas diabétique');
+    expect(entry.intent).toBe('clinical.addNote');
+    expect(entry.entities['content']).toBe('le patient n\'est pas diabétique');
+  });
+
+  it('leaves a story to the narrative rule', () => {
+    expect(history('le patient a eu un infarctus il y a deux ans')).toEqual([]);
+  });
+
+  it('does not take "sous la couronne" for a medication', () => {
+    const codes = describeAll('dent 16 carie sous la couronne');
+    expect(codes).toEqual(['chart.addToothFindings:16:recurrent_caries']);
+    expect(history('la dent est sous la couronne')).toEqual([]);
+  });
+});
+
+describe('a recall said in words', () => {
+  it('is a follow-up, however it is phrased', () => {
+    for (const said of ['revoir dans 15 jours', 'revoir dans deux semaines', 'contrôle dans un mois',
+      'rappel dans 6 mois', 'recall in 3 months', 'programme un rendez-vous']) {
+      expectIntent(said, 'schedule.followUp');
+    }
+  });
+
+  it('keeps the findings said with it', () => {
+    expect(describeAll('dent 16 carie, revoir dans 15 jours'))
+      .toEqual(['chart.addToothFindings:16:caries', 'schedule.followUp::']);
+    expect(describeAll('dent 16 carie et dent 17 fracture, contrôle dans un mois')).toEqual([
+      'chart.addToothFindings:16:caries',
+      'chart.addToothFindings:17:fracture',
+      'schedule.followUp::',
+    ]);
+  });
+
+  it('is not a follow-up when it is denied', () => {
+    expect(intentsOf('pas besoin de rendez-vous').map(i => i.intent)).not.toContain('schedule.followUp');
+  });
+});
+
+describe('several teeth described in words', () => {
+  it('gives each tooth its own findings', () => {
+    expect(describeAll('première molaire supérieure droite carie et canine inférieure gauche fracture')).toEqual([
+      'chart.addToothFindings:16:caries',
+      'chart.addToothFindings:33:fracture',
+    ]);
+    expect(describeAll('upper right first molar caries and lower left canine fracture')).toEqual([
+      'chart.addToothFindings:16:caries',
+      'chart.addToothFindings:33:fracture',
+    ]);
+  });
+
+  it('keeps findings that follow one description with that tooth', () => {
+    expect(describeAll('upper right first molar caries and fracture'))
+      .toEqual(['chart.addToothFindings:16:caries+fracture']);
+  });
+
+  it('asks rather than leave a tooth with nothing', () => {
+    expect(resolve('upper right first molar caries, lower left canine').kind).toBe('clarification');
+  });
+
+  it('asks about a description that stops short of one tooth', () => {
+    expect(resolve('lower left molar fracture and upper right canine caries').kind).toBe('clarification');
+  });
+});
+
+describe('removing a finding from several teeth', () => {
+  it('removes it from each tooth named', () => {
+    expect(describeAll('enlève la carie sur la 16 et la 17')).toEqual([
+      'chart.removeFinding:16:caries',
+      'chart.removeFinding:17:caries',
+    ]);
+  });
+
+  it('removes a different finding from each', () => {
+    expect(describeAll('enlève la carie sur la 16 et la fracture sur la 17')).toEqual([
+      'chart.removeFinding:16:caries',
+      'chart.removeFinding:17:fracture',
+    ]);
+  });
+
+  it('still removes from the one tooth named', () => {
+    expect(describeAll('enlève la carie sur la 16')).toEqual(['chart.removeFinding:16:caries']);
+  });
+
+  it('does not fall back to the selected tooth when the one named was not recognised', () => {
+    expect(describeAll('enlève la carie sur la 58 et la 17', { selectedFdi: '16' }))
+      .toEqual(['chart.removeFinding:17:caries']);
+  });
+});
+
+describe('several teeth, finding first', () => {
+  it('pairs "carie sur la 16 et fracture sur la 17" the way it was said', () => {
+    expect(describeAll('carie sur la 16 et fracture sur la 17')).toEqual([
+      'chart.addToothFindings:16:caries',
+      'chart.addToothFindings:17:fracture',
+    ]);
+  });
+
+  it('does not pair by position when nothing ties each tooth to its finding', () => {
+    expect(resolve('carie, dent 16 couronne, dent 17').kind).toBe('clarification');
   });
 });

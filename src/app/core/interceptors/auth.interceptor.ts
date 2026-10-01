@@ -22,7 +22,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       // bad login is a 401 that the login page handles itself.
       const isAuthEndpoint = req.url.includes('/auth/');
       if (err.status === 401 && !isAuthEndpoint) {
-        authService.logout();
+        authService.logout('expired');
         router.navigate(['/login']);
       }
       // Every backend response carries X-Correlation-Id (CorrelationIdFilter);

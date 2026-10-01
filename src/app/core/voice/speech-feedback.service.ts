@@ -81,6 +81,16 @@ export class SpeechFeedbackService {
    * full estimate. Holding the current one prevents that.
    */
   private current: SpeechSynthesisUtterance | null = null;
+  private generationCounter = 0;
+
+  /**
+   * Changes every time something new is spoken. The microphone uses it to tell
+   * one read-back from the next when it measures how loudly the app's own voice
+   * comes back to it.
+   */
+  get generation(): number {
+    return this.generationCounter;
+  }
 
   enabled = this.enabledSignal.asReadonly();
   speaking = this.speakingSignal.asReadonly();
@@ -101,6 +111,30 @@ export class SpeechFeedbackService {
     } catch {
       // Older engines: the list read at speak time is used instead.
     }
+  }
+
+  /**
+   * Whether the machine has a voice for this language: 'unknown' before the
+   * browser has listed its voices (or without speech synthesis at all),
+   * 'missing' when it has voices and none of them speaks the language.
+   *
+   * A PC without the French pack reads "Dent seize, carie" in an English
+   * voice, and the dentist cannot tell whether the confirmation is to be
+   * trusted. The caller warns instead of guessing.
+   */
+  voiceStatus(locale: string): 'ok' | 'missing' | 'unknown' {
+    if (!this.isSupported()) return 'unknown';
+    if (this.voices.length === 0) {
+      try {
+        this.voices = window.speechSynthesis.getVoices();
+      } catch {
+        return 'unknown';
+      }
+    }
+    if (this.voices.length === 0) return 'unknown';
+    const language = locale.toLowerCase().replace('_', '-').split('-')[0];
+    const speaks = this.voices.some(v => v.lang.toLowerCase().replace('_', '-').split('-')[0] === language);
+    return speaks ? 'ok' : 'missing';
   }
 
   /**
@@ -154,7 +188,12 @@ export class SpeechFeedbackService {
       if (voice) utterance.voice = voice;
       utterance.rate = 1.05;
       const finished = () => {
-        if (this.current === utterance) this.current = null;
+        // An utterance that has been replaced — by the next read-back, or by a
+        // cancel — reports its end late. Letting that report set the window
+        // would shorten the one the replacement owns, and unmute the
+        // microphone while the app is still talking.
+        if (this.current !== utterance) return;
+        this.current = null;
         this.speakingSignal.set(false);
         this.audibleUntil = Date.now() + ECHO_TAIL_MS;
       };
@@ -162,6 +201,7 @@ export class SpeechFeedbackService {
       utterance.onend = finished;
       utterance.onerror = finished;
       this.current = utterance;
+      this.generationCounter++;
       // Muted from the moment speech is requested, not from onstart: the
       // engine can take a few hundred milliseconds to begin.
       this.audibleUntil = Date.now()

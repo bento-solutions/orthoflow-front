@@ -93,6 +93,7 @@ function toEntities(findings: ExtractedFinding[]): FindingEntity[] {
     kind: f.kind,
     surface: f.surface,
     severity: f.severity,
+    ...(f.note ? { note: f.note } : {}),
   }));
 }
 
@@ -174,19 +175,22 @@ function recordOnTooth(
  * unambiguous; otherwise ask, because a finding on the wrong tooth reads as an
  * ordinary, correctly spelled record.
  */
-function severalTeeth(
+interface ToothFindingsPlan {
+  fdi: string;
+  findings: ExtractedFinding[];
+}
+
+/**
+ * Which findings belong to which of the several teeth named, or null when the
+ * split is not unambiguous. One plan serves adding findings and removing them:
+ * "carie sur la 16 et la 17" means the same two teeth either way.
+ */
+function planTeeth(
   raw: string,
   findings: ExtractedFinding[],
   mentions: ToothMention[],
-  context: VoiceContextSnapshot,
-): VoiceResolution {
+): ToothFindingsPlan[] | null {
   const teeth = [...new Set(mentions.map(m => m.fdi))];
-
-  // Each has to be a tooth this patient's chart has.
-  for (const fdi of teeth) {
-    const tooth = resolveTooth(`dent ${fdi}`, context.dentition);
-    if (tooth.kind === 'ambiguous') return ask(tooth.question, raw);
-  }
 
   const firstStart = mentions[0].start;
   const lastEnd = mentions[mentions.length - 1].end;
@@ -197,10 +201,7 @@ function severalTeeth(
   // "Dent 16, 17 et 18 : carie" / "carie sur la 16 et la 17" — the teeth are
   // listed together and the findings sit wholly on one side of the list.
   if (between.length === 0 && (leading.length === 0 || trailing.length === 0)) {
-    return {
-      kind: 'sequence',
-      intents: teeth.map(fdi => recordOnTooth(raw, findings, fdi, CONFIDENCE_STRONG, false)),
-    };
+    return teeth.map(fdi => ({ fdi, findings }));
   }
 
   // "Dent 16 carie et dent 17 couronne" — each tooth followed by its own
@@ -220,15 +221,96 @@ function severalTeeth(
       byTooth.set(mention.fdi, [...(byTooth.get(mention.fdi) ?? []), ...own]);
     });
     if ([...byTooth.values()].every(own => own.length > 0)) {
-      const intents: VoiceIntent[] = [];
-      for (const [fdi, own] of byTooth) {
-        intents.push(recordOnTooth(raw, own, fdi, CONFIDENCE_STRONG, false));
-      }
-      return { kind: 'sequence', intents };
+      return [...byTooth].map(([fdi, own]) => ({ fdi, findings: own }));
     }
   }
 
-  return ask(SEVERAL_TEETH_QUESTION, raw);
+  // "Carie sur la 16 et fracture sur la 17" — the finding comes first and the
+  // tooth closes it. Each tooth takes what was said since the previous one.
+  if (trailing.length === 0 && leading.length > 0) {
+    const byTooth = new Map<string, ExtractedFinding[]>();
+    let linked = true;
+    mentions.forEach((mention, index) => {
+      const from = index === 0 ? 0 : mentions[index - 1].end;
+      const own = findings.filter(f => f.at >= from && f.at < mention.end);
+      // Only when the tooth is tied to its finding by a word that does the
+      // tying — "carie SUR la 16". "Carie, dent 16 couronne, dent 17" is
+      // nothing of the kind, and pairing it this way hands each tooth the
+      // finding said about the other.
+      const last = own[own.length - 1];
+      const between = last ? raw.slice(last.at + last.matchedText.length, mention.start) : '';
+      if (!last || !/\b(?:sur|de|du|des|on|at|in|of|pour|dans)\b/iu.test(between) || /[,;.]/.test(between)) linked = false;
+      byTooth.set(mention.fdi, [...(byTooth.get(mention.fdi) ?? []), ...own]);
+    });
+    if (linked && [...byTooth.values()].every(own => own.length > 0)) {
+      return [...byTooth].map(([fdi, own]) => ({ fdi, findings: own }));
+    }
+  }
+
+  return null;
+}
+
+function severalTeeth(
+  raw: string,
+  findings: ExtractedFinding[],
+  mentions: ToothMention[],
+  context: VoiceContextSnapshot,
+): VoiceResolution {
+  const teeth = [...new Set(mentions.map(m => m.fdi))];
+
+  // Each has to be a tooth this patient's chart has.
+  for (const fdi of teeth) {
+    const tooth = resolveTooth(`dent ${fdi}`, context.dentition);
+    if (tooth.kind === 'ambiguous') return ask(tooth.question, raw);
+  }
+
+  const plan = planTeeth(raw, findings, mentions);
+  if (!plan) return ask(SEVERAL_TEETH_QUESTION, raw);
+  return {
+    kind: 'sequence',
+    intents: plan.map(({ fdi, findings: own }) => recordOnTooth(raw, own, fdi, CONFIDENCE_STRONG, false)),
+  };
+}
+
+/**
+ * Several teeth named by description — "molaire supérieure droite carie et
+ * canine inférieure gauche fracture" — where there are no tooth numbers for
+ * {@link planTeeth} to split on. Read as one utterance the resolver takes the
+ * first description and every finding lands on it.
+ *
+ * Split at the conjunctions; a piece that names a tooth opens a group, and a
+ * piece that names only findings carries on the group before it ("…première
+ * molaire carie, fracture"). Fewer than two groups is an ordinary single-tooth
+ * utterance and is left to the normal rule.
+ */
+function describedTeeth(raw: string, context: VoiceContextSnapshot): VoiceResolution | null {
+  const segments = raw.split(/\s*(?:,|;|\bet\b|\band\b|\bpuis\b|\bthen\b)\s*/iu).filter(Boolean);
+  if (segments.length < 2) return null;
+
+  const groups: ToothFindingsPlan[] = [];
+  for (const segment of segments) {
+    const tooth = resolveTooth(segment, context.dentition);
+    const own = extractFindings(segment);
+    if (tooth.kind === 'resolved') {
+      groups.push({ fdi: tooth.fdi, findings: own });
+    } else if (tooth.kind === 'ambiguous' && /\b(?:sup[ée]rieur\w*|inf[ée]rieur\w*|upper|lower|droite?|gauche|right|left)\b/iu.test(segment)) {
+      // A description that stops short of one tooth: ask about it, do not drop it.
+      return ask(tooth.question, raw);
+    } else if (own.length > 0 && groups.length > 0) {
+      groups[groups.length - 1].findings.push(...own);
+    } else if (own.length > 0) {
+      // Findings before any tooth was named belong to no tooth.
+      return null;
+    }
+  }
+
+  if (groups.length < 2) return null;
+  if (groups.some(group => group.findings.length === 0)) return ask(SEVERAL_TEETH_QUESTION, raw);
+  if (new Set(groups.map(group => group.fdi)).size < 2) return null;
+  return {
+    kind: 'sequence',
+    intents: groups.map(({ fdi, findings }) => recordOnTooth(raw, findings, fdi, CONFIDENCE_STRONG, false)),
+  };
 }
 
 const ANAPHORA = /\b(?:that|this|the\s+same|it|same)\s+(?:tooth|one)\b|\bcette\s+dent\b|\bla\s+m[êe]me\s+dent\b/iu;
@@ -325,17 +407,38 @@ const removeFinding: GrammarRule = {
   match: (raw, text, context) => {
     if (!/^(?:remove|delete|retire[rz]?|supprime[rz]?|enl[èe]ve[rz]?)\b/iu.test(text)) return null;
 
-    const tooth = resolveTooth(raw, context.dentition);
-    const fdi = tooth.kind === 'resolved'
-      ? tooth.fdi
-      : (ANAPHORA.test(raw) || tooth.kind === 'none')
-        ? context.selectedFdi ?? context.lastWrite?.fdi ?? null
-        : null;
-
     const findings = extractFindings(raw);
     if (findings.length === 0) {
       return ask('Which finding should I remove?', raw);
     }
+
+    // "Enlève la carie sur la 16 et la 17" names two teeth. Taking the first
+    // and dropping the second leaves a finding on the record the dentist just
+    // said to remove, and nothing says so.
+    const mentions = findToothMentions(raw);
+    if (mentions.some(mention => !mention.valid)) return ask(NO_SUCH_TOOTH_QUESTION, raw);
+    if (new Set(mentions.map(mention => mention.fdi)).size > 1) {
+      const plan = planTeeth(raw, extractEveryFinding(raw), mentions);
+      if (!plan) return ask(SEVERAL_TEETH_QUESTION, raw);
+      return {
+        kind: 'sequence',
+        intents: plan.map(({ fdi, findings: own }) =>
+          makeIntent('chart.removeFinding', { fdi, findings: toEntities(own) }, CONFIDENCE_STRONG, raw)),
+      };
+    }
+
+    const tooth = resolveTooth(raw, context.dentition);
+    // A tooth the resolver missed but the mention scan found — "sur la 58 et
+    // la 17" — is still a named tooth, and must not fall to the selected one.
+    const named = tooth.kind === 'none' && mentions.length === 1 ? mentions[0].fdi : null;
+    const fdi = tooth.kind === 'resolved'
+      ? tooth.fdi
+      : named
+        ? named
+        : (ANAPHORA.test(raw) || tooth.kind === 'none')
+          ? context.selectedFdi ?? context.lastWrite?.fdi ?? null
+          : null;
+
     if (!fdi) {
       return ask('Which tooth should I remove that from?', raw);
     }
@@ -495,6 +598,77 @@ const addMedication: GrammarRule = {
 };
 
 /**
+ * "Patient diabétique", "hypertendu", "sous anticoagulants": what a dentist says
+ * about the patient's health in passing. Filed as medical history, not left as
+ * a note nobody will search, and — the point — never dropped: "diabétique sous
+ * insuline" is two entries, not one with the medication lost.
+ */
+const MEDICAL_CONDITIONS: RegExp[] = [
+  /\bdiab[ée]tiques?\b/iu, /\bdiab[èe]te\b/iu, /\bdiabetic\b/iu, /\bdiabetes\b/iu,
+  /\bhypertendu(?:e|s|es)?\b/iu, /\bhypertension\b/iu, /\bhypertensive\b/iu,
+  /\bcardiaques?\b/iu, /\bcardiopathe\b/iu, /\bcardiopathie\b/iu, /\bheart\s+(?:disease|condition|problems?)\b/iu,
+  /\basthmatiques?\b/iu, /\basthme\b/iu, /\basthma\b/iu,
+  /\b[ée]pileptiques?\b/iu, /\b[ée]pilepsie\b/iu, /\bepilep\w+/iu,
+  /\benceinte\b/iu, /\bpregnan\w+/iu,
+  /\bfumeu(?:r|rs|se|ses)\b/iu, /\bsmoker\b/iu,
+  /\bh[ée]mophile\b/iu, /\bh[ée]mophilie\b/iu, /\bhaemophil\w+/iu, /\bhemophil\w+/iu,
+];
+
+/** "Sous anticoagulants", "traité par metformine" — said of the patient, not of a tooth. */
+const MEDICATION_OF_PATIENT =
+  /\b(?:patiente?\s+(?:est\s+)?sous|(?:il|elle)\s+est\s+sous|patient\s+(?:is\s+)?(?:on|under)|trait[ée]e?\s+par|sous\s+traitement\s+(?:de|par|d['’])?)\s*(.+)$/iu;
+
+const MEDICATION_AFTER = /\bsous\s+(?!(?:la|le|les|l['’]|une?|des|du)\b)(.+)$/iu;
+
+const medicalStatement: GrammarRule = {
+  id: 'grammar.history.statement',
+  match: (raw, text) => {
+    // Said about the patient, never a question, never about a tooth.
+    if (!/\bpatient\w*|\bsous\b|\btrait[ée]e?\s+par\b/iu.test(text)) return null;
+    if (/\?\s*$/.test(raw) || /^(?:what|which|where|est-ce|qu)\b/iu.test(text)) return null;
+    if (findToothMentions(raw).length > 0) return null;
+    // A denial is kept as the words it was said in: "pas diabétique" is a note.
+    if (containsNegation(raw)) return null;
+    // A story — "a eu un infarctus il y a deux ans" — is the narrative rule's.
+    if (/\bhistory\b|\bant[ée]c[ée]dent|\bago\b|\bil\s+y\s+a\b|\bdepuis\b|\bhad\b|\ba\s+eu\b/iu.test(text)) return null;
+
+    const intents: VoiceIntent[] = [];
+    const seen = new Set<string>();
+    for (const pattern of MEDICAL_CONDITIONS) {
+      const match = pattern.exec(raw);
+      if (!match) continue;
+      const label = match[0].charAt(0).toUpperCase() + match[0].slice(1).toLowerCase();
+      if (seen.has(label.toLowerCase())) continue;
+      seen.add(label.toLowerCase());
+      intents.push(makeIntent('clinical.addMedicalHistory', { category: 'CONDITION', label }, CONFIDENCE_MODERATE, raw));
+    }
+
+    // "Patient diabétique sous insuline": the drug follows the condition, so
+    // "sous" on its own counts once the sentence is about the patient — but
+    // not "sous la couronne", which is about a tooth.
+    const medication = MEDICATION_OF_PATIENT.exec(raw)
+      ?? (/\bpatient\w*/iu.test(text) ? MEDICATION_AFTER.exec(raw) : null);
+    if (medication) {
+      const drugs = medication[1]
+        .replace(/[.,;]+$/, '')
+        .split(/\s*(?:,|\bet\b|\band\b)\s*/iu)
+        // Whatever follows the drug that is a condition already claimed above.
+        .map(part => part.trim())
+        .filter(part => part && !MEDICAL_CONDITIONS.some(condition => condition.test(part)) && !startsNegated(part));
+      for (const drug of drugs) {
+        if (seen.has(drug.toLowerCase())) continue;
+        seen.add(drug.toLowerCase());
+        intents.push(makeIntent('clinical.addMedicalHistory', { category: 'MEDICATION', label: drug }, CONFIDENCE_MODERATE, raw));
+      }
+    }
+
+    if (intents.length === 0) return null;
+    if (intents.length === 1) return { kind: 'intent', intent: intents[0] };
+    return { kind: 'sequence', intents };
+  },
+};
+
+/**
  * Dental history. When it names a tooth it is still history, not a finding on
  * the current chart — "previous root canal on the lower left molar" describes
  * what was done before, and filing it as a live finding would misstate the
@@ -553,16 +727,48 @@ const addNote: GrammarRule = {
   },
 };
 
+/** "Schedule a follow-up": an appointment word with a scheduling verb. */
+const SCHEDULE_VERB = /\b(?:schedule|book|set\s+up|programme[rz]?|planifie[rz]?|fixe[rz]?)\b/iu;
+const RECALL_NOUN = /\b(?:follow[- ]?up|appointment|recall|rendez[- ]?vous|contr[ôo]le|rdv|rappel)\b/iu;
+/** "Revoir dans 15 jours": a recall verb with a delay, no scheduling verb needed. */
+const RECALL_VERB = /\b(?:revoir|revoyez|revenir|reconvoquer|rappeler|recheck|review|see\s+(?:him|her|them|the\s+patient)\s+again)\b/iu;
+const DELAY = new RegExp(
+  '\\b(?:dans|in|after|apr[èe]s|d[\'’]ici)\\s+(?:\\d+|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|quinze|vingt|trente|'
+  + 'one|two|three|four|five|seven|eight|nine|ten|fifteen|twenty|thirty|a|an)\\s*'
+  + '(?:jours?|semaines?|mois|ans?|days?|weeks?|months?|years?)\\b', 'iu');
+
 const scheduleFollowUp: GrammarRule = {
   id: 'grammar.schedule.followUp',
-  match: (raw, text) => {
-    if (!/\b(?:schedule|book|set\s+up|programme[rz]?|planifie[rz]?|fixe[rz]?)\b/iu.test(text)) return null;
-    if (!/\b(?:follow[- ]?up|appointment|recall|rendez[- ]?vous|contr[ôo]le|rdv)\b/iu.test(text)) return null;
+  match: (raw, text, context) => {
+    const asked = (SCHEDULE_VERB.test(text) && RECALL_NOUN.test(text))
+      || ((RECALL_VERB.test(text) || RECALL_NOUN.test(text)) && DELAY.test(text));
+    if (!asked) return null;
     // "Pas besoin de rendez-vous" would be filed as a follow-up to book.
     if (containsNegation(raw)) return null;
-    return intent('schedule.followUp', { when: raw.trim() }, CONFIDENCE_MODERATE, raw);
+
+    // "Dent 16 carie, revoir dans 15 jours" is two things. The recall is taken
+    // out and the rest resolved on its own, so neither swallows the other.
+    const recall = followUpIntent(raw);
+    const span = /\b(?:revoir|revoyez|revenir|reconvoquer|rappeler|recheck|review|contr[ôo]le|rappel|follow[- ]?up|recall)\b[^,;.]*?\b(?:jours?|semaines?|mois|ans?|days?|weeks?|months?|years?)\b/iu.exec(raw);
+    if (!span) return { kind: 'intent', intent: recall };
+    const rest = (raw.slice(0, span.index) + ' ' + raw.slice(span.index + span[0].length))
+      .replace(/(?:^|\s)(?:et|puis|and|then)\s*$/iu, ' ')
+      .replace(/[,;.\s]+$/u, '')
+      .replace(/^[,;.\s]+/u, '')
+      .trim();
+    if (rest.split(/\s+/).filter(Boolean).length < 2) return { kind: 'intent', intent: recall };
+
+    const other = resolveWithGrammar(rest, context);
+    if (other.kind === 'intent') return { kind: 'sequence', intents: [other.intent, recall] };
+    if (other.kind === 'sequence') return { kind: 'sequence', intents: [...other.intents, recall] };
+    // The rest named nothing the grammar knows: the recall alone stands.
+    return { kind: 'intent', intent: recall };
   },
 };
+
+function followUpIntent(raw: string): VoiceIntent {
+  return makeIntent('schedule.followUp', { when: raw.trim() }, CONFIDENCE_MODERATE, raw);
+}
 
 // Navigation — to another module, another patient, or another tab of this
 // dossier — is deliberately not in the grammar. Dictation happens inside one
@@ -646,6 +852,11 @@ const toothFindings: GrammarRule = {
     if (new Set(mentions.map(mention => mention.fdi)).size > 1) {
       return severalTeeth(raw, extractEveryFinding(raw), mentions, context);
     }
+    // No numbers, but several teeth described in words.
+    if (mentions.length === 0) {
+      const described = describedTeeth(raw, context);
+      if (described) return described;
+    }
 
     const tooth = resolveTooth(raw, context.dentition);
     const usesAnaphora = ANAPHORA.test(raw);
@@ -719,6 +930,7 @@ export const GRAMMAR_RULES: GrammarRule[] = [
   addMedicalHistory,
   addDentalHistory,
   addMedication,
+  medicalStatement,
   patientNarrative,
   addNote,
   scheduleFollowUp,

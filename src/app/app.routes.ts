@@ -146,6 +146,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent),
       },
       {
+        path: 'communication',
+        canActivate: [permissionGuard('MESSAGING_VIEW')],
+        loadComponent: () => import('./features/communication/communication-layout.component').then(m => m.CommunicationLayoutComponent),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'logs' },
+          { path: 'logs', loadComponent: () => import('./features/communication/message-logs.component').then(m => m.MessageLogsComponent) },
+          { path: 'inbox', loadComponent: () => import('./features/communication/whatsapp-inbox.component').then(m => m.WhatsappInboxComponent) },
+          { path: 'templates', loadComponent: () => import('./features/communication/templates.component').then(m => m.TemplatesComponent) },
+          { path: 'settings', loadComponent: () => import('./features/communication/messaging-settings.component').then(m => m.MessagingSettingsComponent) },
+        ],
+      },
+      {
         path: 'finance',
         canActivate: [permissionGuard('FINANCE_VIEW', 'BILLING_READ')],
         loadComponent: () => import('./features/finance/finance-layout.component').then(m => m.FinanceLayoutComponent),

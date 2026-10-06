@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CATEGORY_KINDS, PAYMENT_METHODS, PLAN_FREQUENCIES, RECURRENCES } from './services/finance-api.service';
+import { MESSAGE_CHANNELS, MESSAGE_PURPOSES, MESSAGE_STATUSES } from './services/messaging-api.service';
 import { ASSIGNEE_ROLES, LAB_ITEM_TYPES, LAB_STATUSES, TASK_PRIORITIES } from './services/operations-api.service';
 import { RECALL_KINDS } from '../features/patients/patient-directory-api.service';
 
@@ -36,6 +37,11 @@ const FAMILIES: Record<string, readonly string[]> = {
   'FIN.TAX.KINDS': ['FEE_NOTE', 'CARE_FORM'],
   'FIN.TAX.LANGS': ['fr', 'en', 'ar'],
   'FIN.DEBT.SORTS': ['balance', 'name', 'lastPayment'],
+  'COM.CHANNELS': MESSAGE_CHANNELS,
+  'COM.STATUSES': MESSAGE_STATUSES,
+  'COM.PURPOSES': MESSAGE_PURPOSES,
+  'COM.TPL.LANGS': ['fr', 'en', 'ar'],
+  'COM.SET.STATE': ['off', 'good', 'bad', 'wait'],
   'LAB.STATUSES': LAB_STATUSES,
   'LAB.MOVE': LAB_STATUSES,
   'LAB.ITEMS': LAB_ITEM_TYPES,

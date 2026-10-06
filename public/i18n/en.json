@@ -1951,5 +1951,119 @@
     "NO_ONE": "No one else on the team.",
     "SUBJECT": "Subject",
     "MESSAGE": "Message"
+  },
+  "COM": {
+    "SUBTITLE": "Messages sent to patients, their WhatsApp replies and the automatic reminders.",
+    "TABS": {
+      "LOGS": "History",
+      "INBOX": "WhatsApp replies",
+      "TEMPLATES": "Templates",
+      "SETTINGS": "Reminders and WhatsApp"
+    },
+    "CHANNELS": {
+      "WHATSAPP": "WhatsApp",
+      "EMAIL": "Email",
+      "IN_APP": "In the app"
+    },
+    "STATUSES": {
+      "QUEUED": "Queued",
+      "SENDING": "Sending",
+      "SENT": "Sent",
+      "DELIVERED": "Delivered",
+      "READ": "Read",
+      "FAILED": "Failed",
+      "CANCELLED": "Cancelled"
+    },
+    "PURPOSES": {
+      "APPOINTMENT_REMINDER": "Appointment reminder",
+      "APPOINTMENT_CONFIRMED": "Appointment confirmed",
+      "APPOINTMENT_CANCELLED": "Appointment cancelled",
+      "INSTALMENT_REMINDER": "Instalment reminder",
+      "RECALL": "Recall",
+      "SURVEY_REQUEST": "Satisfaction survey",
+      "BOOKING_RECEIVED": "Request received",
+      "BOOKING_CONFIRMED": "Request confirmed",
+      "BOOKING_DECLINED": "Request declined",
+      "REGISTRATION_INVITE": "Registration invitation",
+      "STAFF_INVITE": "Team invitation",
+      "PASSWORD_RESET": "Password reset",
+      "LAB_ORDER_RECEIVED": "Lab work received",
+      "CHEQUE_REJECTED": "Cheque rejected",
+      "TASK_ASSIGNED": "Task assigned",
+      "INTERNAL_MESSAGE": "Staff message",
+      "TEST": "Test message",
+      "GENERIC": "Other"
+    },
+    "LOGS": {
+      "CHANNEL": "Channel",
+      "WHEN": "When",
+      "PURPOSE": "Purpose",
+      "RECIPIENT": "Recipient",
+      "PURGED": "Text erased after the retention period",
+      "SHOW": "Show the message",
+      "ATTEMPTS": "{{count}} attempts",
+      "RETRY": "Retry",
+      "EMPTY": "No message for these filters."
+    },
+    "INBOX": {
+      "UNHANDLED_ONLY": "Only those to deal with",
+      "UNKNOWN": "Unknown number",
+      "HANDLED_AT": "handled {{at}}",
+      "MARK_HANDLED": "Mark handled",
+      "EMPTY": "No replies waiting."
+    },
+    "TPL": {
+      "PURPOSE": "Message",
+      "LANGS": {
+        "fr": "French",
+        "en": "English",
+        "ar": "Arabic"
+      },
+      "TEXT": "Text",
+      "CUSTOMISED": "Customised",
+      "OFF": "Off",
+      "OPEN": "Open the template",
+      "EMPTY": "No template for these filters.",
+      "EDIT": "Message template",
+      "SUBJECT": "Subject",
+      "BODY": "Message text",
+      "PLACEHOLDERS": "Insert:",
+      "UNKNOWN": "These variables are unknown and would stay as typed in the message: {{names}}.",
+      "ACTIVE": "Use this template",
+      "PREVIEW": "Preview",
+      "RESET": "Back to the original text",
+      "RESET_CONFIRM": "Go back to the original text? Your version will be deleted.",
+      "RESET_DONE": "Original text restored.",
+      "SAVED": "Template saved."
+    },
+    "SET": {
+      "WHATSAPP": "WhatsApp connection",
+      "STATE": {
+        "off": "Off on this server",
+        "good": "Connected",
+        "bad": "Offline",
+        "wait": "Connecting"
+      },
+      "OFF_HELP": "WhatsApp sending is switched off on this server. It is enabled on the server side; see the runbook.",
+      "BAD_HELP": "The WhatsApp bridge is not answering or the session is closed. Messages wait and go out once it is back.",
+      "LAST_REPORT": "Last state reported by the bridge: {{state}} ({{at}})",
+      "UNHANDLED": "{{count}} patient reply(ies) to deal with.",
+      "TEST": "Test message",
+      "TEST_HINT": "Send yourself a message to check the channel works before turning reminders on.",
+      "TEST_EMAIL": "Email address",
+      "TEST_PHONE": "Phone number",
+      "SEND_TEST": "Send the test",
+      "TEST_QUEUED": "Test message queued. Follow it in the history.",
+      "REMINDERS": "Automatic reminders",
+      "APPT": "Remind patients the day before",
+      "APPT_HINT": "The patient can reply 1 to confirm or 2 to cancel: the appointment updates itself.",
+      "SEND_HOUR": "Send at",
+      "INST": "Remind about payment instalments",
+      "INST_DAYS": "Days before it is due",
+      "SURVEY": "Send a satisfaction survey after the visit",
+      "SURVEY_HINT": "A link to a short form, sent after a completed appointment.",
+      "SURVEY_DELAY": "Hours after the visit",
+      "SAVED": "Settings saved."
+    }
   }
 }

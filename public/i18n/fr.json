@@ -1951,5 +1951,119 @@
     "NO_ONE": "Personne d'autre dans l'équipe.",
     "SUBJECT": "Objet",
     "MESSAGE": "Message"
+  },
+  "COM": {
+    "SUBTITLE": "Les messages envoyés aux patients, leurs réponses WhatsApp et les rappels automatiques.",
+    "TABS": {
+      "LOGS": "Historique",
+      "INBOX": "Réponses WhatsApp",
+      "TEMPLATES": "Modèles",
+      "SETTINGS": "Rappels et WhatsApp"
+    },
+    "CHANNELS": {
+      "WHATSAPP": "WhatsApp",
+      "EMAIL": "E-mail",
+      "IN_APP": "Dans l'application"
+    },
+    "STATUSES": {
+      "QUEUED": "En attente",
+      "SENDING": "Envoi en cours",
+      "SENT": "Envoyé",
+      "DELIVERED": "Remis",
+      "READ": "Lu",
+      "FAILED": "Échec",
+      "CANCELLED": "Annulé"
+    },
+    "PURPOSES": {
+      "APPOINTMENT_REMINDER": "Rappel de rendez-vous",
+      "APPOINTMENT_CONFIRMED": "Rendez-vous confirmé",
+      "APPOINTMENT_CANCELLED": "Rendez-vous annulé",
+      "INSTALMENT_REMINDER": "Rappel d'échéance",
+      "RECALL": "Rappel de suivi",
+      "SURVEY_REQUEST": "Enquête de satisfaction",
+      "BOOKING_RECEIVED": "Demande reçue",
+      "BOOKING_CONFIRMED": "Demande confirmée",
+      "BOOKING_DECLINED": "Demande refusée",
+      "REGISTRATION_INVITE": "Invitation à s'inscrire",
+      "STAFF_INVITE": "Invitation de l'équipe",
+      "PASSWORD_RESET": "Réinitialisation du mot de passe",
+      "LAB_ORDER_RECEIVED": "Travail reçu du labo",
+      "CHEQUE_REJECTED": "Chèque rejeté",
+      "TASK_ASSIGNED": "Tâche attribuée",
+      "INTERNAL_MESSAGE": "Message interne",
+      "TEST": "Message d'essai",
+      "GENERIC": "Autre"
+    },
+    "LOGS": {
+      "CHANNEL": "Canal",
+      "WHEN": "Date",
+      "PURPOSE": "Objet",
+      "RECIPIENT": "Destinataire",
+      "PURGED": "Texte effacé après la durée de conservation",
+      "SHOW": "Voir le message",
+      "ATTEMPTS": "{{count}} tentatives",
+      "RETRY": "Réessayer",
+      "EMPTY": "Aucun message pour ces filtres."
+    },
+    "INBOX": {
+      "UNHANDLED_ONLY": "Seulement ceux à traiter",
+      "UNKNOWN": "Numéro inconnu",
+      "HANDLED_AT": "traité le {{at}}",
+      "MARK_HANDLED": "Marquer traité",
+      "EMPTY": "Aucune réponse en attente."
+    },
+    "TPL": {
+      "PURPOSE": "Message",
+      "LANGS": {
+        "fr": "Français",
+        "en": "Anglais",
+        "ar": "Arabe"
+      },
+      "TEXT": "Texte",
+      "CUSTOMISED": "Personnalisé",
+      "OFF": "Désactivé",
+      "OPEN": "Ouvrir le modèle",
+      "EMPTY": "Aucun modèle pour ces filtres.",
+      "EDIT": "Modèle de message",
+      "SUBJECT": "Objet",
+      "BODY": "Texte du message",
+      "PLACEHOLDERS": "Insérer :",
+      "UNKNOWN": "Ces variables sont inconnues et resteraient telles quelles dans le message : {{names}}.",
+      "ACTIVE": "Utiliser ce modèle",
+      "PREVIEW": "Aperçu",
+      "RESET": "Revenir au texte d'origine",
+      "RESET_CONFIRM": "Revenir au texte d'origine ? Votre version sera supprimée.",
+      "RESET_DONE": "Texte d'origine rétabli.",
+      "SAVED": "Modèle enregistré."
+    },
+    "SET": {
+      "WHATSAPP": "Connexion WhatsApp",
+      "STATE": {
+        "off": "Désactivé sur ce serveur",
+        "good": "Connecté",
+        "bad": "Hors ligne",
+        "wait": "Connexion en cours"
+      },
+      "OFF_HELP": "L'envoi par WhatsApp est désactivé sur ce serveur. L'activation se fait côté serveur, voir le guide d'exploitation.",
+      "BAD_HELP": "Le pont WhatsApp ne répond pas ou la session est fermée. Les messages restent en attente et partiront au retour de la connexion.",
+      "LAST_REPORT": "Dernier état signalé par le pont : {{state}} ({{at}})",
+      "UNHANDLED": "{{count}} réponse(s) de patients à traiter.",
+      "TEST": "Message d'essai",
+      "TEST_HINT": "Envoyez-vous un message pour vérifier que le canal fonctionne avant d'activer les rappels.",
+      "TEST_EMAIL": "Adresse e-mail",
+      "TEST_PHONE": "Numéro de téléphone",
+      "SEND_TEST": "Envoyer l'essai",
+      "TEST_QUEUED": "Message d'essai mis en file. Suivez-le dans l'historique.",
+      "REMINDERS": "Rappels automatiques",
+      "APPT": "Rappeler les rendez-vous la veille",
+      "APPT_HINT": "Le patient peut répondre 1 pour confirmer ou 2 pour annuler : le rendez-vous est mis à jour tout seul.",
+      "SEND_HOUR": "Heure d'envoi",
+      "INST": "Rappeler les échéances de paiement",
+      "INST_DAYS": "Jours avant l'échéance",
+      "SURVEY": "Envoyer une enquête de satisfaction après la visite",
+      "SURVEY_HINT": "Un lien vers un court formulaire, envoyé après un rendez-vous terminé.",
+      "SURVEY_DELAY": "Heures après la visite",
+      "SAVED": "Réglages enregistrés."
+    }
   }
 }

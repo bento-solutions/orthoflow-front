@@ -26,6 +26,11 @@ describe('formatMoney', () => {
   it('formats a negative amount with its sign', () => {
     expect(formatMoney(-250, 'MAD', 'en')).toBe('-MAD\u00a0250.00');
   });
+
+  it('never prints a minus sign in front of zero', () => {
+    expect(formatMoney(-0, 'MAD', 'fr')).toBe('0,00\u00a0MAD');
+    expect(formatMoney(-0.001, 'MAD', 'fr')).toBe('0,00\u00a0MAD');
+  });
 });
 
 describe('numbers and durations', () => {

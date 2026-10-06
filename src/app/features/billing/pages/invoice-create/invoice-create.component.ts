@@ -163,7 +163,7 @@ import { ToastService } from '../../../../core/services/toast.service';
     }
 
     .form-section {
-      background: white;
+      background: var(--surface);
       border-radius: 16px;
       border: 1px solid rgb(var(--ink-200));
       padding: 1.5rem;
@@ -270,7 +270,7 @@ import { ToastService } from '../../../../core/services/toast.service';
     .icon-btn-danger:hover { background: rgb(var(--critical-50)); }
 
     .summary-card {
-      background: white;
+      background: var(--surface);
       border-radius: 16px;
       border: 1px solid rgb(var(--ink-200));
       padding: 1.5rem;

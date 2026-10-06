@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, effect, inject, untracked } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Invoice, InvoiceStatus, Payment, Quote, BillingSummary,
          CreateInvoiceRequest, RecordPaymentRequest } from '../models/billing.model';
@@ -6,6 +6,7 @@ import type { SpringPage } from '../../../core/api/contract';
 import { Observable, BehaviorSubject, map, tap, finalize, switchMap, shareReplay } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,6 +14,7 @@ import { ToastService } from '../../../core/services/toast.service';
 export class InvoiceService {
   private http = inject(HttpClient);
   private toast = inject(ToastService);
+  private auth = inject(AuthService);
   private readonly apiUrl = `${environment.apiUrl}/api/v1/invoices`;
 
   // Signals for UI state
@@ -30,7 +32,21 @@ export class InvoiceService {
   error = computed(() => this.errorSignal());
 
   constructor() {
-    this.refreshInvoices();
+    // The first load waits for a signed-in session: this service is created at start-up (the voice
+    // commands inject it), and asking for invoices before login only produced an error toast on
+    // the sign-in page. A session that ends clears what was loaded.
+    effect(() => {
+      const token = this.auth.token();
+      untracked(() => {
+        if (token) {
+          this.refreshInvoices();
+        } else {
+          this.invoicesSignal.set([]);
+          this.summarySignal.set(null);
+          this.quotesSignal.set([]);
+        }
+      });
+    });
   }
 
   /**

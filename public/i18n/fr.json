@@ -1653,5 +1653,179 @@
       "PAY_DONE": "Échéance encaissée.",
       "OVERDUE": "En retard"
     }
+  },
+  "FIN": {
+    "SUBTITLE": "Encaissements, caisse, créances, chèques, dépenses et documents fiscaux.",
+    "TABS": {
+      "DASHBOARD": "Tableau de bord",
+      "COLLECTIONS": "Encaissements",
+      "CASH": "Clôture de caisse",
+      "DEBTS": "Créances patients",
+      "INSTALMENTS": "Échéances",
+      "CHEQUES": "Chèques",
+      "EXPENSES": "Dépenses",
+      "TAX": "Documents fiscaux"
+    },
+    "DASH": {
+      "PRODUCTION": "Production",
+      "PRODUCTION_HINT": "Facturé sur la période",
+      "COLLECTIONS": "Encaissements",
+      "COLLECTIONS_HINT": "Reçu sur la période",
+      "DEBT": "Créances patients",
+      "DEBT_HINT": "Dû aujourd'hui, toutes périodes",
+      "RESULT": "Résultat",
+      "RESULT_HINT": "Encaissements moins dépenses",
+      "EXPENSES": "Dépenses",
+      "TREND": "Évolution mensuelle",
+      "EQUATION": "Du encaissé au résultat",
+      "EQ": {
+        "COLLECTIONS": "Encaissements",
+        "OPERATING": "Charges d'exploitation",
+        "SALARIES": "Salaires",
+        "SOCIAL": "Charges sociales (CNSS)",
+        "RETROCESSIONS": "Rétrocessions",
+        "RESULT": "Résultat"
+      },
+      "BY_METHOD": "Encaissé par mode",
+      "BY_CATEGORY": "Dépenses par catégorie",
+      "PRODUCTION_BY_DOCTOR": "Production par praticien",
+      "COLLECTIONS_BY_DOCTOR": "Encaissé par praticien"
+    },
+    "COL": {
+      "METHOD": "Mode de paiement",
+      "ALL_METHODS": "Tous les modes",
+      "RECEIVED": "Reçu",
+      "ALLOCATED": "Imputé aux factures",
+      "ALLOCATED_HINT": "Sur les encaissements de la période",
+      "ADVANCES_USED": "Avances utilisées",
+      "ADVANCES_USED_HINT": "Avances d'avant la période, dépensées dans la période",
+      "CREDIT": "Avances disponibles",
+      "CREDIT_HINT": "À ce jour, tous patients",
+      "BY_METHOD": "Par mode de paiement",
+      "EMPTY": "Aucun encaissement sur cette période."
+    },
+    "CASH": {
+      "PREVIOUS_DAY": "Jour précédent",
+      "NEXT_DAY": "Jour suivant",
+      "OPEN": "À clôturer",
+      "CLOSED": "Clôturée",
+      "OPEN_HINT": "Comptez ce qui est en caisse pour chaque mode, puis clôturez la journée.",
+      "CLOSED_AT": "Journée clôturée le {{at}}. Elle ne peut plus être modifiée.",
+      "EXPECTED": "Attendu",
+      "COUNTED": "Compté",
+      "DIFFERENCE": "Écart",
+      "NO_TAKINGS": "Aucun encaissement ce jour-là.",
+      "BALANCED": "La caisse est juste.",
+      "OFF": "Écart de {{amount}} entre le compté et l'attendu.",
+      "CLOSE": "Clôturer la journée",
+      "CONFIRM": "Clôturer cette journée ? Elle ne pourra plus être modifiée.",
+      "CONFIRM_OFF": "La caisse présente un écart de {{amount}}. Clôturer quand même ? La journée ne pourra plus être modifiée.",
+      "DONE": "Journée clôturée."
+    },
+    "DEBT": {
+      "ONLY": "Seulement ceux qui doivent",
+      "SORTS": {
+        "balance": "Reste dû",
+        "name": "Nom",
+        "lastPayment": "Dernier règlement (le plus ancien)"
+      },
+      "PERIOD": "Limiter à une période",
+      "FEES": "Honoraires",
+      "PAID": "Réglé",
+      "OWED": "Reste dû",
+      "PATIENTS_OWING": "{{count}} patient(s) concerné(s)",
+      "CREDIT": "Avances",
+      "LAST_INVOICE": "Dernière facture",
+      "LAST_PAYMENT": "Dernier règlement",
+      "EMPTY": "Aucun patient ne correspond."
+    },
+    "INST": {
+      "UNTIL": "Échéances jusqu'au",
+      "SUMMARY": "{{count}} échéance(s), dont {{overdue}} en retard",
+      "LATE": "{{days}} j de retard",
+      "EMPTY": "Aucune échéance à encaisser."
+    },
+    "CHQ": {
+      "GUARANTEE_ONLY": "Chèques de garantie seulement",
+      "DUE_BY": "Échéance au plus tard le",
+      "NEW": "Chèque de garantie",
+      "NEW_HINT": "Un chèque de garantie est gardé au cabinet sans régler de facture. Pour un chèque remis en paiement, enregistrez un encaissement par chèque dans le compte du patient.",
+      "NUMBER": "N° du chèque",
+      "DRAWER": "Tireur / patient",
+      "POST_DATED": "Postdaté",
+      "GUARANTEE": "Garantie",
+      "DEPOSIT": "Déposer en banque",
+      "CASH": "Encaissé",
+      "REJECT": "Rejeter",
+      "REJECT_TITLE": "Chèque rejeté",
+      "REJECT_HINT": "Si ce chèque réglait une facture, l'encaissement est annulé et la facture redevient due. L'équipe de gestion est prévenue.",
+      "REJECT_REASON": "Motif (optionnel)",
+      "RELEASE": "Rendre",
+      "RELEASE_CONFIRM": "Rendre le chèque n° {{number}} au patient ? Il sera retiré du registre.",
+      "EMPTY": "Aucun chèque."
+    },
+    "EXP": {
+      "NEW": "Nouvelle dépense",
+      "EDIT": "Modifier la dépense",
+      "CATEGORY": "Catégorie",
+      "ALL_CATEGORIES": "Toutes les catégories",
+      "PAYEE": "Bénéficiaire",
+      "DESCRIPTION": "Description",
+      "SEARCH": "Bénéficiaire ou description…",
+      "TOTAL": "Total",
+      "RECURRENCE": "Répétition",
+      "RECURRENCES": {
+        "NONE": "Ponctuelle",
+        "MONTHLY": "Chaque mois",
+        "QUARTERLY": "Chaque trimestre",
+        "YEARLY": "Chaque année"
+      },
+      "MARK_PAID": "Marquer payée",
+      "PAID_ON": "Payée le",
+      "CANCEL_CONFIRM": "Annuler cette dépense ? Elle restera dans la liste, barrée.",
+      "ATTACH": "Joindre un justificatif",
+      "ATTACHED": "Justificatif joint.",
+      "VIEW_RECEIPT": "Voir le justificatif",
+      "EMPTY": "Aucune dépense sur cette période.",
+      "CATEGORIES": "Catégories",
+      "NEW_CATEGORY": "Nouvelle catégorie",
+      "EDIT_CATEGORY": "Modifier la catégorie",
+      "KIND": "Nature",
+      "ORDER": "Ordre d'affichage",
+      "KINDS": {
+        "OPERATING": "Exploitation",
+        "SALARY": "Salaires",
+        "SOCIAL": "Charges sociales",
+        "TAX": "Impôts et taxes",
+        "LAB": "Laboratoire",
+        "SUPPLIES": "Fournitures"
+      }
+    },
+    "TAX": {
+      "KINDS": {
+        "FEE_NOTE": "Note d'honoraires",
+        "CARE_FORM": "Feuille de soins"
+      },
+      "LANGS": {
+        "fr": "Français",
+        "en": "Anglais",
+        "ar": "Arabe"
+      },
+      "ISSUE": "Émettre un document",
+      "INVOICE": "Facture",
+      "LANGUAGE": "Langue du document",
+      "ISSUED": "Émis le",
+      "DELIVERED": "Remis le",
+      "DUPLICATE": "Duplicata",
+      "DUPLICATES_ONLY": "Duplicatas seulement",
+      "VIEW": "Voir le PDF",
+      "MARK_DELIVERED": "Marquer remis",
+      "MAKE_DUPLICATE": "Créer un duplicata",
+      "VOID": "Annuler",
+      "VOID_CONFIRM": "Annuler le document {{number}} ? Il reste dans le registre, marqué annulé.",
+      "ISSUED_DONE": "Document {{number}} émis.",
+      "DUPLICATED": "Duplicata {{number}} créé.",
+      "EMPTY": "Aucun document sur cette période."
+    }
   }
 }

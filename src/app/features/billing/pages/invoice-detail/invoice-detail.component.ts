@@ -228,7 +228,7 @@ import { PatientService } from '../../../../core/services/patient.service';
     }
 
     .back-btn {
-      background: white;
+      background: var(--surface);
       border: 1px solid rgb(var(--ink-200));
       border-radius: 12px;
       padding: 0.5rem;
@@ -273,7 +273,7 @@ import { PatientService } from '../../../../core/services/patient.service';
        match — hardcoded radius, an added margin-bottom) so it doesn't
        shadow the canonical class. */
     .invoice-card {
-      background: white;
+      background: var(--surface);
       border-radius: 16px;
       border: 1px solid rgb(var(--ink-200));
       margin-bottom: 1.5rem;

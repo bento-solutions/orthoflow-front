@@ -103,10 +103,12 @@ export class FinanceApi {
   createCheque(body: ChequeInput): Promise<Cheque> {
     return this.post('/cheques', body);
   }
-  chequeAction(id: string, action: 'deposit' | 'cash' | 'reject'): Promise<Cheque> {
-    return this.post(`/cheques/${id}/${action}`);
+  /** Deposit and cash take an optional `date`; a rejection takes an optional `reason`. */
+  chequeAction(id: string, action: 'deposit' | 'cash' | 'reject', body: { date?: string; reason?: string } = {}): Promise<Cheque> {
+    return this.post(`/cheques/${id}/${action}`, body);
   }
-  deleteCheque(id: string): Promise<void> {
+  /** Hands back a guarantee cheque that was never deposited. */
+  releaseCheque(id: string): Promise<void> {
     return firstValueFrom(this.http.delete<void>(api(`/cheques/${id}`)));
   }
 

@@ -85,7 +85,7 @@ import { CommandRegistryService, Command } from '../../../core/services/command-
       animation: backdrop-in 0.12s ease-out;
     }
     .palette-panel {
-      background: #fff;
+      background: var(--surface);
       border-radius: 16px;
       width: 100%;
       max-width: 34rem;

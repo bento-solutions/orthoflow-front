@@ -32,7 +32,7 @@ export function formatMoney(amount: number | null | undefined, currency: string,
     return '—';
   }
   return tidy(
-    numberFormat(lang, { style: 'currency', currency, currencyDisplay: 'code', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount),
+    numberFormat(lang, { style: 'currency', currency, currencyDisplay: 'code', minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'negative' as Intl.NumberFormatOptions['signDisplay'] }).format(amount),
   );
 }
 

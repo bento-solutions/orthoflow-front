@@ -188,7 +188,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
     }
 
     .back-btn {
-      background: white;
+      background: var(--surface);
       border: 1px solid rgb(var(--ink-200));
       padding: 0.5rem;
       min-width: 44px;
@@ -230,7 +230,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
     }
 
     .form-section {
-      background: white;
+      background: var(--surface);
       padding: 2rem;
       border-radius: 16px;
       border: 1px solid rgb(var(--ink-200));

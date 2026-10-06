@@ -76,7 +76,7 @@ import { InvoiceService } from '../../services/invoice.service';
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
     .header-content { display: flex; align-items: center; gap: 1.5rem; }
     .header-content h1 { margin: 0; font-size: 1.875rem; font-weight: 700; }
-    .back-btn { background: white; border: 1px solid rgb(var(--ink-200)); border-radius: 12px; padding: 0.5rem; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; cursor: pointer; display: flex; color: rgb(var(--ink-500)); }
+    .back-btn { background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: 12px; padding: 0.5rem; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; cursor: pointer; display: flex; color: rgb(var(--ink-500)); }
     .back-btn:focus-visible, .icon-btn:focus-visible, .btn-primary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
     .quote-number { font-weight: 600; color: rgb(var(--petrol-900)); }

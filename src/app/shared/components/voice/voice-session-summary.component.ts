@@ -171,7 +171,7 @@ import { ToastService } from '../../../core/services/toast.service';
       display: flex; align-items: center; justify-content: center; padding: 1rem;
     }
     .summary-panel {
-      background: #fff; border-radius: 16px; width: 100%; max-width: 40rem;
+      background: var(--surface); border-radius: 16px; width: 100%; max-width: 40rem;
       max-height: 88vh; display: flex; flex-direction: column;
       box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.35); color: rgb(var(--ink-900));
     }

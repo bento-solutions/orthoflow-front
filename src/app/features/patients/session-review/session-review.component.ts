@@ -253,7 +253,7 @@ import { CommitAmendmentDto } from '../../../core/voice/voice-api.service';
     .embedded .review-grid { grid-template-columns: 1fr; }
     .span-2 { grid-column: 1 / -1; }
 
-    .panel { background: #fff; border: 1px solid rgb(var(--ink-200)); border-radius: 10px; padding: 1rem; }
+    .panel { background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: 10px; padding: 1rem; }
     .panel h2 { margin: 0 0 .25rem; font-size: 1rem; }
     .panel-head { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
     .panel-hint { margin: 0 0 .75rem; font-size: .82rem; color: rgb(var(--ink-500)); }

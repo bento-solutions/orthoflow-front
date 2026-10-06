@@ -52,7 +52,7 @@ const emptyPlan = () => ({ total: 0, down: 0, count: 6, frequency: 'MONTHLY' as 
       </div>
 
       @if (account.data(); as a) {
-        <section class="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
           <div class="tile p-4"><p class="kpi-label">{{ 'ACC.INVOICED' | translate }}</p><p class="kpi-value">{{ a.totalInvoiced | money }}</p></div>
           <div class="tile p-4"><p class="kpi-label">{{ 'ACC.PAID' | translate }}</p><p class="kpi-value">{{ a.totalPaid | money }}</p></div>
           <div class="tile p-4"><p class="kpi-label">{{ 'ACC.BALANCE' | translate }}</p><p class="kpi-value" [class.text-critical-700]="a.balanceDue > 0">{{ a.balanceDue | money }}</p></div>

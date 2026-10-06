@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { financeHomeGuard } from './features/finance/finance-tabs';
 import { onboardingGuard } from './core/guards/onboarding.guard';
 import { authGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
@@ -129,6 +130,54 @@ export const routes: Routes = [
       {
         path: 'account',
         loadComponent: () => import('./features/settings/pages/account.component').then(m => m.AccountComponent),
+      },
+      {
+        path: 'finance',
+        canActivate: [permissionGuard('FINANCE_VIEW', 'BILLING_READ')],
+        loadComponent: () => import('./features/finance/finance-layout.component').then(m => m.FinanceLayoutComponent),
+        children: [
+          { path: '', pathMatch: 'full', canActivate: [financeHomeGuard], children: [] },
+          {
+            path: 'dashboard',
+            canActivate: [permissionGuard('FINANCE_VIEW')],
+            loadComponent: () => import('./features/finance/pages/finance-dashboard.component').then(m => m.FinanceDashboardComponent),
+          },
+          {
+            path: 'collections',
+            canActivate: [permissionGuard('FINANCE_VIEW')],
+            loadComponent: () => import('./features/finance/pages/collections.component').then(m => m.CollectionsComponent),
+          },
+          {
+            path: 'cash',
+            canActivate: [permissionGuard('FINANCE_VIEW')],
+            loadComponent: () => import('./features/finance/pages/cash-closing.component').then(m => m.CashClosingComponent),
+          },
+          {
+            path: 'debts',
+            canActivate: [permissionGuard('BILLING_READ')],
+            loadComponent: () => import('./features/finance/pages/debts.component').then(m => m.DebtsComponent),
+          },
+          {
+            path: 'instalments',
+            canActivate: [permissionGuard('BILLING_READ')],
+            loadComponent: () => import('./features/finance/pages/instalments.component').then(m => m.InstalmentsComponent),
+          },
+          {
+            path: 'cheques',
+            canActivate: [permissionGuard('BILLING_READ')],
+            loadComponent: () => import('./features/finance/pages/cheques.component').then(m => m.ChequesComponent),
+          },
+          {
+            path: 'expenses',
+            canActivate: [permissionGuard('FINANCE_VIEW')],
+            loadComponent: () => import('./features/finance/pages/expenses.component').then(m => m.ExpensesComponent),
+          },
+          {
+            path: 'tax-documents',
+            canActivate: [permissionGuard('BILLING_READ')],
+            loadComponent: () => import('./features/finance/pages/tax-documents.component').then(m => m.TaxDocumentsComponent),
+          },
+        ],
       },
       {
         path: 'billing',

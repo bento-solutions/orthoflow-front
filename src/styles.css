@@ -496,7 +496,8 @@
     position: relative;
     display: flex;
     align-items: center;
-    flex: 1;
+    flex: 1 1 14rem;
+    min-width: 12rem;
   }
   .search > .input { padding-inline-start: 2.25rem; }
   .search > svg,

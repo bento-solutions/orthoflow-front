@@ -1653,5 +1653,179 @@
       "PAY_DONE": "Instalment paid.",
       "OVERDUE": "Overdue"
     }
+  },
+  "FIN": {
+    "SUBTITLE": "Payments, cash, balances owed, cheques, expenses and tax documents.",
+    "TABS": {
+      "DASHBOARD": "Dashboard",
+      "COLLECTIONS": "Collections",
+      "CASH": "Cash closing",
+      "DEBTS": "Patient balances",
+      "INSTALMENTS": "Instalments",
+      "CHEQUES": "Cheques",
+      "EXPENSES": "Expenses",
+      "TAX": "Tax documents"
+    },
+    "DASH": {
+      "PRODUCTION": "Production",
+      "PRODUCTION_HINT": "Invoiced in the period",
+      "COLLECTIONS": "Collections",
+      "COLLECTIONS_HINT": "Received in the period",
+      "DEBT": "Patient debt",
+      "DEBT_HINT": "Owed today, all time",
+      "RESULT": "Result",
+      "RESULT_HINT": "Collections less outgoings",
+      "EXPENSES": "Expenses",
+      "TREND": "Monthly trend",
+      "EQUATION": "From collected to result",
+      "EQ": {
+        "COLLECTIONS": "Collections",
+        "OPERATING": "Operating expenses",
+        "SALARIES": "Salaries",
+        "SOCIAL": "Social charges (CNSS)",
+        "RETROCESSIONS": "Retrocessions",
+        "RESULT": "Result"
+      },
+      "BY_METHOD": "Collected by method",
+      "BY_CATEGORY": "Expenses by category",
+      "PRODUCTION_BY_DOCTOR": "Production by practitioner",
+      "COLLECTIONS_BY_DOCTOR": "Collected by practitioner"
+    },
+    "COL": {
+      "METHOD": "Payment method",
+      "ALL_METHODS": "All methods",
+      "RECEIVED": "Received",
+      "ALLOCATED": "Applied to invoices",
+      "ALLOCATED_HINT": "From the period's payments",
+      "ADVANCES_USED": "Advances used",
+      "ADVANCES_USED_HINT": "Earlier advances spent in the period",
+      "CREDIT": "Credit available",
+      "CREDIT_HINT": "Today, all patients",
+      "BY_METHOD": "By payment method",
+      "EMPTY": "No payment in this period."
+    },
+    "CASH": {
+      "PREVIOUS_DAY": "Previous day",
+      "NEXT_DAY": "Next day",
+      "OPEN": "Not closed",
+      "CLOSED": "Closed",
+      "OPEN_HINT": "Count what is in the till for each method, then close the day.",
+      "CLOSED_AT": "Day closed on {{at}}. It can no longer be changed.",
+      "EXPECTED": "Expected",
+      "COUNTED": "Counted",
+      "DIFFERENCE": "Difference",
+      "NO_TAKINGS": "No takings on this day.",
+      "BALANCED": "The till balances.",
+      "OFF": "{{amount}} difference between counted and expected.",
+      "CLOSE": "Close the day",
+      "CONFIRM": "Close this day? It cannot be changed afterwards.",
+      "CONFIRM_OFF": "The till is off by {{amount}}. Close anyway? The day cannot be changed afterwards.",
+      "DONE": "Day closed."
+    },
+    "DEBT": {
+      "ONLY": "Only those who owe",
+      "SORTS": {
+        "balance": "Balance",
+        "name": "Name",
+        "lastPayment": "Last payment (oldest first)"
+      },
+      "PERIOD": "Limit to a period",
+      "FEES": "Fees",
+      "PAID": "Paid",
+      "OWED": "Owed",
+      "PATIENTS_OWING": "{{count}} patient(s)",
+      "CREDIT": "Credit",
+      "LAST_INVOICE": "Last invoice",
+      "LAST_PAYMENT": "Last payment",
+      "EMPTY": "No patient matches."
+    },
+    "INST": {
+      "UNTIL": "Instalments due by",
+      "SUMMARY": "{{count}} instalment(s), {{overdue}} overdue",
+      "LATE": "{{days}} d late",
+      "EMPTY": "No instalment to collect."
+    },
+    "CHQ": {
+      "GUARANTEE_ONLY": "Guarantee cheques only",
+      "DUE_BY": "Due by",
+      "NEW": "Guarantee cheque",
+      "NEW_HINT": "A guarantee cheque is held at the clinic without settling any invoice. For a cheque handed over as payment, record a cheque payment in the patient's account.",
+      "NUMBER": "Cheque no.",
+      "DRAWER": "Drawer / patient",
+      "POST_DATED": "Post-dated",
+      "GUARANTEE": "Guarantee",
+      "DEPOSIT": "Deposit",
+      "CASH": "Mark cashed",
+      "REJECT": "Reject",
+      "REJECT_TITLE": "Rejected cheque",
+      "REJECT_HINT": "If this cheque settled an invoice, the payment is voided and the invoice is due again. The people who manage finance are alerted.",
+      "REJECT_REASON": "Reason (optional)",
+      "RELEASE": "Hand back",
+      "RELEASE_CONFIRM": "Hand cheque {{number}} back to the patient? It is removed from the register.",
+      "EMPTY": "No cheques."
+    },
+    "EXP": {
+      "NEW": "New expense",
+      "EDIT": "Edit expense",
+      "CATEGORY": "Category",
+      "ALL_CATEGORIES": "All categories",
+      "PAYEE": "Payee",
+      "DESCRIPTION": "Description",
+      "SEARCH": "Payee or description…",
+      "TOTAL": "Total",
+      "RECURRENCE": "Repeats",
+      "RECURRENCES": {
+        "NONE": "One-off",
+        "MONTHLY": "Monthly",
+        "QUARTERLY": "Quarterly",
+        "YEARLY": "Yearly"
+      },
+      "MARK_PAID": "Mark paid",
+      "PAID_ON": "Paid on",
+      "CANCEL_CONFIRM": "Cancel this expense? It stays in the list, struck through.",
+      "ATTACH": "Attach a receipt",
+      "ATTACHED": "Receipt attached.",
+      "VIEW_RECEIPT": "View the receipt",
+      "EMPTY": "No expense in this period.",
+      "CATEGORIES": "Categories",
+      "NEW_CATEGORY": "New category",
+      "EDIT_CATEGORY": "Edit category",
+      "KIND": "Kind",
+      "ORDER": "Display order",
+      "KINDS": {
+        "OPERATING": "Operating",
+        "SALARY": "Salaries",
+        "SOCIAL": "Social charges",
+        "TAX": "Taxes",
+        "LAB": "Laboratory",
+        "SUPPLIES": "Supplies"
+      }
+    },
+    "TAX": {
+      "KINDS": {
+        "FEE_NOTE": "Fee note",
+        "CARE_FORM": "Care form"
+      },
+      "LANGS": {
+        "fr": "French",
+        "en": "English",
+        "ar": "Arabic"
+      },
+      "ISSUE": "Issue a document",
+      "INVOICE": "Invoice",
+      "LANGUAGE": "Document language",
+      "ISSUED": "Issued",
+      "DELIVERED": "Delivered",
+      "DUPLICATE": "Duplicate",
+      "DUPLICATES_ONLY": "Duplicates only",
+      "VIEW": "View the PDF",
+      "MARK_DELIVERED": "Mark delivered",
+      "MAKE_DUPLICATE": "Make a duplicate",
+      "VOID": "Void",
+      "VOID_CONFIRM": "Void document {{number}}? It stays in the register, marked void.",
+      "ISSUED_DONE": "Document {{number}} issued.",
+      "DUPLICATED": "Duplicate {{number}} created.",
+      "EMPTY": "No document in this period."
+    }
   }
 }

@@ -351,7 +351,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       display: flex;
       flex-direction: column;
       height: calc(100vh - 120px);
-      background: white;
+      background: var(--surface);
       border-radius: 20px;
       border: 1px solid var(--border);
       box-shadow: 0 10px 25px rgba(0,0,0,0.05);
@@ -396,7 +396,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     }
 
     .view-switcher button.active {
-      background: white;
+      background: var(--surface);
       color: var(--action-text);
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
@@ -590,7 +590,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .events-column {
       flex: 1;
       position: relative;
-      background: white;
+      background: var(--surface);
     }
 
     .hour-row {
@@ -604,7 +604,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       position: absolute;
       inset-inline-start: 10px;
       inset-inline-end: 10px;
-      background: white;
+      background: var(--surface);
       border-inline-start: 4px solid var(--action);
       border-radius: 8px;
       padding: 0.5rem 1rem;
@@ -672,7 +672,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .week-day-column {
       position: relative;
       border-inline-end: 1px solid rgb(var(--ink-100));
-      background: white;
+      background: var(--surface);
     }
     .week-day-column.today { background: rgb(var(--petrol-50)); }
     .week-day-column .hour-row {
@@ -705,7 +705,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     }
 
     .modal-content {
-      background: white;
+      background: var(--surface);
       width: 100%;
       max-width: 500px;
       border-radius: 20px;

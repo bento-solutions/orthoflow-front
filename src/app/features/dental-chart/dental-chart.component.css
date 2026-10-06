@@ -11,7 +11,7 @@
   align-items: center;
   gap: 1.25rem;
   padding: 1rem;
-  background: white;
+  background: var(--surface);
   border-radius: 16px;
 }
 
@@ -170,7 +170,7 @@
 }
 
 .status-menu {
-  background: white;
+  background: var(--surface);
   border-radius: 20px;
   box-shadow: 0 20px 50px rgba(0,0,0,0.2);
   padding: 1.5rem;
@@ -248,7 +248,7 @@
   padding: 0.6rem 0.75rem;
   border: 1px solid rgb(var(--ink-200));
   border-radius: 10px;
-  background: white;
+  background: var(--surface);
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 600;
@@ -287,7 +287,7 @@
   padding: 0.75rem;
   border: 1px solid rgb(var(--ink-200));
   border-radius: 10px;
-  background: white;
+  background: var(--surface);
   color: rgb(var(--ink-500));
   font-weight: 700;
   font-size: 0.8rem;
@@ -378,7 +378,7 @@
 .note-textarea:focus {
   outline: none;
   border-color: rgb(var(--petrol-600));
-  background: white;
+  background: var(--surface);
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
@@ -393,7 +393,7 @@
 }
 
 .report-container.open {
-  background: white;
+  background: var(--surface);
   border-color: rgb(var(--ink-200));
   box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
 }
@@ -446,7 +446,7 @@
 }
 
 .btn-export-sm {
-  background: white;
+  background: var(--surface);
   border: 1px solid rgb(var(--ink-200));
   color: rgb(var(--petrol-600));
   padding: 0.25rem;
@@ -502,7 +502,7 @@
 
 .report-item:hover {
   border-color: rgb(var(--petrol-600));
-  background: white;
+  background: var(--surface);
   transform: translateX(4px);
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }

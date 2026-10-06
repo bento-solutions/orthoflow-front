@@ -582,7 +582,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     }
     .cp-head {
       display: flex; align-items: center; justify-content: space-between; gap: .5rem;
-      padding: 1rem 1rem .75rem; background: #fff; border-bottom: 1px solid rgb(var(--ink-200));
+      padding: 1rem 1rem .75rem; background: var(--surface); border-bottom: 1px solid rgb(var(--ink-200));
     }
     .cp-title { display: flex; align-items: center; gap: .5rem; min-width: 0; flex-wrap: wrap; }
     .cp-title h2 { margin: 0; font-size: 1.0625rem; font-weight: 700; color: rgb(var(--ink-900)); }
@@ -599,7 +599,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
 
     .cp-body { flex: 1; min-height: 0; overflow-y: auto; padding: .875rem 1rem 1.5rem; display: flex; flex-direction: column; gap: .875rem; }
 
-    .cp-card { background: #fff; border: 1px solid rgb(var(--ink-200)); border-radius: 14px; padding: 1rem; display: flex; flex-direction: column; gap: .75rem; }
+    .cp-card { background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: 14px; padding: 1rem; display: flex; flex-direction: column; gap: .75rem; }
     .cp-card.center { align-items: center; text-align: center; }
     .cp-card h3, .cp-card p { margin: 0; }
     .cp-hero { font-size: 2rem; color: rgb(var(--petrol-600)); }
@@ -617,7 +617,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: .375rem;
       min-height: 2.5rem; padding: .5rem .875rem; border-radius: 10px; cursor: pointer;
-      border: 1px solid rgb(var(--ink-300)); background: #fff; color: rgb(var(--ink-800)); font-size: .875rem; font-weight: 600;
+      border: 1px solid rgb(var(--ink-300)); background: var(--surface); color: rgb(var(--ink-800)); font-size: .875rem; font-weight: 600;
     }
     .cp-btn:hover:not(:disabled) { background: rgb(var(--ink-100)); }
     .cp-btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -647,7 +647,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-alert.action { border: none; width: 100%; text-align: start; cursor: pointer; }
     .cp-alert .material-icons { font-size: 1.125rem; flex-shrink: 0; }
 
-    .cp-live { display: flex; align-items: center; gap: .625rem; background: #fff; border: 1px solid rgb(var(--ink-200)); border-radius: 12px; padding: .625rem .75rem; }
+    .cp-live { display: flex; align-items: center; gap: .625rem; background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: 12px; padding: .625rem .75rem; }
     .cp-meter { flex: 1; height: .375rem; background: rgb(var(--ink-100)); border-radius: 999px; overflow: hidden; }
     .cp-meter span { display: block; height: 100%; background: rgb(var(--petrol-500)); transform-origin: left center; transition: transform 70ms linear; }
     .cp-live-label { font-size: .8125rem; font-weight: 600; color: rgb(var(--ink-700)); white-space: nowrap; }
@@ -661,7 +661,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-banner.done { background: rgb(var(--positive-50)); color: rgb(var(--positive-700)); }
     .cp-banner strong { display: inline-flex; align-items: center; gap: .375rem; font-size: .875rem; }
 
-    .cp-sec { background: #fff; border: 1px solid rgb(var(--ink-200)); border-radius: 14px; padding: .75rem .875rem; display: flex; flex-direction: column; gap: .5rem; }
+    .cp-sec { background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: 14px; padding: .75rem .875rem; display: flex; flex-direction: column; gap: .5rem; }
     .cp-sec-head { display: flex; align-items: center; gap: .5rem; background: none; border: none; padding: 0; cursor: pointer; text-align: start; width: 100%; }
     .cp-sec-head h3, .cp-sec-title h3, .cp-caught-head h3 { margin: 0; font-size: .8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: rgb(var(--ink-700)); flex: 1; }
     .cp-sec-title { display: flex; align-items: center; gap: .5rem; justify-content: space-between; }
@@ -705,7 +705,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-editor { display: flex; gap: .375rem; align-items: center; }
     .cp-editor.col { flex-direction: column; align-items: stretch; width: 100%; }
     .cp-editor.row { flex-direction: row; flex-wrap: wrap; }
-    .cp-input { min-height: 2.25rem; padding: .375rem .625rem; border: 1px solid rgb(var(--ink-300)); border-radius: 8px; font-size: .875rem; background: #fff; min-width: 0; flex: 1; }
+    .cp-input { min-height: 2.25rem; padding: .375rem .625rem; border: 1px solid rgb(var(--ink-300)); border-radius: 8px; font-size: .875rem; background: var(--surface); min-width: 0; flex: 1; }
     .cp-input.narrow { flex: 0 0 5.5rem; }
 
     .cp-total { display: flex; justify-content: space-between; align-items: center; padding: .5rem .625rem; border-top: 2px solid rgb(var(--ink-300)); font-size: .9375rem; }

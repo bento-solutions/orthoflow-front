@@ -777,7 +777,7 @@ import { PatientAccountComponent } from '../account/patient-account.component';
     }
 
     .dossier-header {
-      background: white;
+      background: var(--surface);
       padding: 1.5rem 2rem 0 2rem;
       border-bottom: 1px solid rgb(var(--ink-200));
       position: sticky;
@@ -972,7 +972,7 @@ import { PatientAccountComponent } from '../account/patient-account.component';
     }
 
     .summary-card {
-      background: white;
+      background: var(--surface);
       padding: 1.5rem;
       border-radius: 16px;
       border: 1px solid rgb(var(--ink-200));
@@ -1094,7 +1094,7 @@ import { PatientAccountComponent } from '../account/patient-account.component';
     }
 
     .chart-sidebar {
-      background: white;
+      background: var(--surface);
       border: 1px solid rgb(var(--ink-200));
       border-radius: 16px;
       padding: 1.5rem;
@@ -1153,7 +1153,7 @@ import { PatientAccountComponent } from '../account/patient-account.component';
     }
 
     .timeline-detail-item {
-      background: white;
+      background: var(--surface);
       border: 1px solid rgb(var(--ink-200));
       border-radius: 8px;
       padding: 0.75rem;
@@ -1170,7 +1170,7 @@ import { PatientAccountComponent } from '../account/patient-account.component';
     }
 
     .treatments-tracker {
-      background: white;
+      background: var(--surface);
       border: 1px solid rgb(var(--ink-200));
       border-radius: 16px;
       padding: 2rem;
@@ -1323,7 +1323,7 @@ import { PatientAccountComponent } from '../account/patient-account.component';
     }
 
     .modal-card {
-      background: white;
+      background: var(--surface);
       border-radius: 20px;
       width: 650px;
       max-width: 90%;
@@ -1398,7 +1398,7 @@ import { PatientAccountComponent } from '../account/patient-account.component';
     }
 
     .dossier-section {
-      background: white;
+      background: var(--surface);
       padding: 2rem;
       border-radius: 16px;
       border: 1px solid rgb(var(--ink-200));
@@ -1435,7 +1435,7 @@ import { PatientAccountComponent } from '../account/patient-account.component';
     }
 
     .note-item {
-      background: white;
+      background: var(--surface);
       padding: 1.5rem;
       border-radius: 12px;
       border: 1px solid rgb(var(--ink-200));
@@ -1457,7 +1457,7 @@ import { PatientAccountComponent } from '../account/patient-account.component';
       gap: 1rem;
     }
     .doc-card {
-      background: white;
+      background: var(--surface);
       border: 1px solid rgb(var(--ink-200));
       border-radius: 12px;
       padding: 1rem;
@@ -1595,7 +1595,7 @@ import { PatientAccountComponent } from '../account/patient-account.component';
       justify-content: space-between;
       align-items: flex-start;
       gap: 0.75rem;
-      background: white;
+      background: var(--surface);
       border: 1px solid rgb(var(--ink-200));
       border-radius: 10px;
       padding: 0.75rem 1rem;

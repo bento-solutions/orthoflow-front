@@ -391,7 +391,7 @@ interface ToothGroup {
     .vs { display: flex; flex-direction: column; gap: .75rem; }
 
     .card {
-      background: #fff; border: 1px solid rgb(var(--ink-200)); border-radius: 14px;
+      background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: 14px;
       padding: .875rem 1rem; min-width: 0;
     }
 
@@ -427,7 +427,7 @@ interface ToothGroup {
     .btn-big {
       display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
       min-height: 3rem; padding: .625rem 1.125rem; border-radius: 12px; font-size: .9375rem; font-weight: 600;
-      border: 1px solid rgb(var(--ink-300)); background: #fff; color: rgb(var(--ink-800)); cursor: pointer;
+      border: 1px solid rgb(var(--ink-300)); background: var(--surface); color: rgb(var(--ink-800)); cursor: pointer;
     }
     .btn-big:disabled { opacity: .6; cursor: default; }
     .btn-big.primary { background: rgb(var(--petrol-600)); border-color: transparent; color: #fff; }
@@ -467,7 +467,7 @@ interface ToothGroup {
     .vs-options { display: flex; flex-wrap: wrap; gap: .5rem; }
     .vs-option {
       min-height: 2.75rem; padding: .5rem .875rem; border-radius: 999px; cursor: pointer;
-      border: 1px solid rgb(var(--petrol-300)); background: #fff; color: rgb(var(--petrol-800)); font-weight: 600;
+      border: 1px solid rgb(var(--petrol-300)); background: var(--surface); color: rgb(var(--petrol-800)); font-weight: 600;
     }
 
     .vs-live { display: flex; flex-direction: column; gap: .375rem; }
@@ -522,7 +522,7 @@ interface ToothGroup {
     .vs-tooth:last-child { border-bottom: none; }
     .vs-fdi {
       min-width: 2.75rem; height: 2.75rem; border-radius: 10px; border: 2px solid #d97706;
-      background: #fffbeb; color: rgb(var(--ink-900)); font-weight: 800; font-size: 1rem; cursor: pointer;
+      background: var(--surface)eb; color: rgb(var(--ink-900)); font-weight: 800; font-size: 1rem; cursor: pointer;
       font-variant-numeric: tabular-nums; flex-shrink: 0;
     }
     .vs-tooth.focus .vs-fdi { border-color: #0e7490; background: rgb(var(--petrol-50)); box-shadow: 0 0 0 3px rgba(14, 116, 144, .18); }
@@ -554,7 +554,7 @@ interface ToothGroup {
     .vs-typed { display: flex; gap: .5rem; }
     .vs-typed input {
       flex: 1; min-width: 0; min-height: 2.75rem; border: 1px solid rgb(var(--ink-300)); border-radius: 12px;
-      padding: .5rem .75rem; font: inherit; font-size: 1rem; color: rgb(var(--ink-900)); background: #fff;
+      padding: .5rem .75rem; font: inherit; font-size: 1rem; color: rgb(var(--ink-900)); background: var(--surface);
     }
     .vs-typed input:focus { outline: 2px solid rgb(var(--petrol-300)); outline-offset: -1px; border-color: rgb(var(--petrol-400)); }
 

@@ -1370,5 +1370,43 @@
       "NAME": "Title",
       "EMPTY": "No closures planned."
     }
+  },
+  "PAT": {
+    "DUPLICATES": "Duplicates",
+    "KPI": {
+      "LABEL": "Patient key figures",
+      "TOTAL": "Patients",
+      "NEW": "New this month",
+      "AGE": "Average age",
+      "GENDER": "Gender split"
+    },
+    "F": "F",
+    "M": "M",
+    "INSURER": "Insurer",
+    "ALL_INSURERS": "All insurers",
+    "GENDER": "Gender",
+    "ANY_GENDER": "Any",
+    "FEMALE": "Female",
+    "MALE": "Male",
+    "DEBT_ONLY": "With a balance due",
+    "SORT": "Sort by",
+    "DIRECTION": "Sort direction",
+    "SORTS": {
+      "name": "Name",
+      "code": "Patient code",
+      "created": "Date added",
+      "age": "Age",
+      "progress": "Progress",
+      "balance": "Balance due",
+      "next": "Next appointment",
+      "last": "Last visit"
+    },
+    "PRACTITIONER": "Practitioner",
+    "PROGRESS": "Progress",
+    "BALANCE": "Balance",
+    "CREDIT": "Credit",
+    "YEARS": "yrs",
+    "PAGES": "Pages",
+    "SHOWING": "{{from}} to {{to}} of {{total}}"
   }
 }

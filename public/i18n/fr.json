@@ -1370,5 +1370,43 @@
       "NAME": "Intitulé",
       "EMPTY": "Aucune fermeture prévue."
     }
+  },
+  "PAT": {
+    "DUPLICATES": "Doublons",
+    "KPI": {
+      "LABEL": "Chiffres clés des patients",
+      "TOTAL": "Patients",
+      "NEW": "Nouveaux ce mois",
+      "AGE": "Âge moyen",
+      "GENDER": "Répartition"
+    },
+    "F": "F",
+    "M": "H",
+    "INSURER": "Assureur",
+    "ALL_INSURERS": "Tous les assureurs",
+    "GENDER": "Sexe",
+    "ANY_GENDER": "Tous",
+    "FEMALE": "Femmes",
+    "MALE": "Hommes",
+    "DEBT_ONLY": "Avec un reste dû",
+    "SORT": "Trier par",
+    "DIRECTION": "Sens du tri",
+    "SORTS": {
+      "name": "Nom",
+      "code": "Code patient",
+      "created": "Date de création",
+      "age": "Âge",
+      "progress": "Avancement",
+      "balance": "Reste dû",
+      "next": "Prochain rendez-vous",
+      "last": "Dernière visite"
+    },
+    "PRACTITIONER": "Praticien",
+    "PROGRESS": "Avancement",
+    "BALANCE": "Solde",
+    "CREDIT": "Avoir",
+    "YEARS": "ans",
+    "PAGES": "Pages",
+    "SHOWING": "{{from}} à {{to}} sur {{total}}"
   }
 }

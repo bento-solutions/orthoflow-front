@@ -27,6 +27,15 @@ export const routes: Routes = [
     canActivate: [onboardingGuard]
   },
   {
+    // Pages a patient opens from a link: no sign-in, no staff navigation. The token in the address is the only authority.
+    path: 'public',
+    children: [
+      { path: 'book/:token', loadComponent: () => import('./features/public/public-booking.component').then(m => m.PublicBookingComponent) },
+      { path: 'register/:token', loadComponent: () => import('./features/public/public-registration.component').then(m => m.PublicRegistrationComponent) },
+      { path: 'survey/:token', loadComponent: () => import('./features/public/public-survey.component').then(m => m.PublicSurveyComponent) },
+    ],
+  },
+  {
     path: '',
     loadComponent: () => import('./layout/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
     // onboardingGuard must run before authGuard: a fresh install has no user

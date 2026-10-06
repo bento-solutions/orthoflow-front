@@ -37,6 +37,7 @@ const FAMILIES: Record<string, readonly string[]> = {
   'FIN.TAX.KINDS': ['FEE_NOTE', 'CARE_FORM'],
   'FIN.TAX.LANGS': ['fr', 'en', 'ar'],
   'FIN.DEBT.SORTS': ['balance', 'name', 'lastPayment'],
+  'PUB.SURVEY.LEVELS': ['1', '2', '3', '4', '5'],
   'COM.CHANNELS': MESSAGE_CHANNELS,
   'COM.STATUSES': MESSAGE_STATUSES,
   'COM.PURPOSES': MESSAGE_PURPOSES,

@@ -4,11 +4,18 @@ import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
+/**
+ * The public forms (online booking, self-registration, satisfaction) are for people with no
+ * account: their only authority is the token in the link. A signed-in member of staff opening such
+ * a link, to try it, must not send their session along or be signed out by an answer.
+ */
+export const isPublicRequest = (url: string): boolean => url.includes('/api/v1/public/');
+
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  const token = authService.token();
+  const token = isPublicRequest(req.url) ? null : authService.token();
   const authedReq = token
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;
@@ -21,7 +28,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       // must NOT log the user out. Never react to a failure on /auth/* — a
       // bad login is a 401 that the login page handles itself.
       const isAuthEndpoint = req.url.includes('/auth/');
-      if (err.status === 401 && !isAuthEndpoint) {
+      if (err.status === 401 && !isAuthEndpoint && !isPublicRequest(req.url)) {
         authService.logout('expired');
         router.navigate(['/login']);
       }

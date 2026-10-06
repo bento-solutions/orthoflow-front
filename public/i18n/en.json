@@ -2201,5 +2201,207 @@
     "SPREAD": "Spread of ratings",
     "CALL_ME": "Wants a call back",
     "EMPTY": "No answer for these filters."
+  },
+  "RETRO": {
+    "SUBTITLE": "What the practice pays each doctor: simulation, validated statements, rules and advances.",
+    "TABS": {
+      "SIMULATION": "Simulation",
+      "STATEMENTS": "Statements",
+      "RULES": "Rules",
+      "ADVANCES": "Advances"
+    },
+    "BASE": "Base",
+    "LAB": "Lab fees",
+    "VARIABLE": "Variable share",
+    "FIXED": "Fixed",
+    "ADJUSTMENT": "Adjustment",
+    "GROSS": "Gross",
+    "ADVANCES_APPLIED": "Advances deducted",
+    "NET": "Net payable",
+    "LINE": {
+      "INVOICE": "Invoice",
+      "LABEL": "Item",
+      "BASE": "Base",
+      "KINDS": {
+        "ITEM": "Procedure",
+        "LAB": "Lab",
+        "FIXED": "Fixed",
+        "ADJUSTMENT": "Adjustment"
+      }
+    },
+    "SIM": {
+      "FILTERS": "Filters on what counts",
+      "METHODS": "Payment methods counted",
+      "STATUSES": "Invoice states counted",
+      "FILTERS_HINT": "With nothing ticked, everything counts. The filters carry over when a statement is validated.",
+      "UNATTRIBUTED": "{{count}} invoice(s) with no doctor, {{amount}} in all, are in nobody's figures.",
+      "UNATTRIBUTED_HINT": "Open each invoice and set the doctor: nothing is guessed.",
+      "VALIDATE": "Validate the statement",
+      "VALIDATE_TITLE": "Validate a statement",
+      "VALIDATE_HINT": "The statement freezes these lines (net: {{amount}}). It can no longer be edited, only voided with a reason.",
+      "VALIDATED": "Statement {{number}} validated.",
+      "ADVANCES_LEFT": "Advances not yet deducted: {{amount}}.",
+      "LINES": "Detail ({{count}} lines)",
+      "EMPTY": "No doctor has a retrocession rule for this period."
+    },
+    "ST": {
+      "INCLUDE_VOIDED": "Show voided statements",
+      "PERIOD": "Period",
+      "STATUSES": {
+        "UNPAID": "Unpaid",
+        "PARTIAL": "Partly paid",
+        "PAID": "Paid",
+        "VOID": "Void"
+      },
+      "EMPTY": "No validated statement.",
+      "PAYOUTS": "Payouts",
+      "NO_PAYOUTS": "No payout yet.",
+      "REMAINING": "Still to pay",
+      "RECORD_PAYOUT": "Record the payout",
+      "PAYOUT_DONE": "Payout recorded.",
+      "VOID": "Void the statement",
+      "VOID_TITLE": "Void a statement",
+      "VOID_HINT": "The statement stays in the history, marked void, and its advances become available again. Validate a new one to correct it.",
+      "VOID_DONE": "Statement voided.",
+      "VOIDED": "Voided {{at}}"
+    },
+    "RULES": {
+      "NEW": "New rule",
+      "EDIT": "Edit rule",
+      "BASIS": "Calculated on",
+      "BASES": {
+        "COLLECTED": "Collected",
+        "PRODUCED": "Produced"
+      },
+      "BASIS_HINT": {
+        "COLLECTED": "Money received, on the day it is applied to the doctor's invoices.",
+        "PRODUCED": "The amount invoiced, whether or not the patient has paid."
+      },
+      "RATE": "Percentage paid out",
+      "FIXED": "Fixed monthly amount (optional)",
+      "FROM": "Applies from",
+      "TO": "Until (optional)",
+      "PERIOD": "Period",
+      "OPEN_ENDED": "open-ended",
+      "DEDUCT_LAB": "Take the lab fees off first",
+      "OVERRIDES": "Percentage by category",
+      "OVERRIDES_HINT": "For a category of treatment paid at another rate (for example “Implantology”).",
+      "CATEGORY": "Category",
+      "ADD_OVERRIDE": "Add a category",
+      "EMPTY": "No rule. Without one, a doctor does not appear in the simulation.",
+      "SAVED": "Rule saved.",
+      "DELETE_CONFIRM": "Delete this rule for {{name}}? Statements already validated do not change.",
+      "PROBLEM": {
+        "DOCTOR": "Choose a doctor.",
+        "START": "Give a start date.",
+        "RATE": "The percentage must be between 0 and 100.",
+        "END": "The end cannot be before the start.",
+        "OVERRIDE": "Each category percentage must be between 0 and 100."
+      }
+    },
+    "ADV": {
+      "NEW": "New advance",
+      "OUTSTANDING": "Still to deduct",
+      "EMPTY": "No advance recorded.",
+      "DELETE_CONFIRM": "Delete this advance for {{name}}?"
+    }
+  },
+  "ANA": {
+    "SUBTITLE": "How the practice is doing: procedures, time spent, income statement and goal.",
+    "TABS": {
+      "PROCEDURES": "Procedures",
+      "TIME": "Chair time",
+      "INCOME": "Income statement",
+      "GOALS": "Goal"
+    },
+    "PROC": {
+      "CATEGORY": "Category",
+      "STATUSES": {
+        "FINALIZED": "Finalised",
+        "DRAFT": "Drafts",
+        "CANCELLED": "Cancelled",
+        "REFUNDED": "Refunded"
+      },
+      "SESSIONS": "Sessions",
+      "REVENUE": "Revenue",
+      "COST": "Material cost",
+      "MARGIN": "Gross margin",
+      "BY_CATEGORY": "Revenue by category",
+      "BY_DOCTOR": "Revenue by practitioner",
+      "TREATMENT": "Treatment",
+      "EMPTY": "No procedure in this period."
+    },
+    "TIME": {
+      "MIN": "Min length (min)",
+      "MAX": "Max length (min)",
+      "HINT": "Measured from seating in the chair to the end of the appointment. Appointments with missing or implausible times are left out and counted below.",
+      "BY_DOCTOR": "By practitioner",
+      "BY_PROCEDURE": "By appointment type",
+      "PROCEDURE": "Appointment type",
+      "APPOINTMENTS": "Appointments",
+      "ACTIVE": "Active time",
+      "AVERAGE": "Average",
+      "MEDIAN": "Median",
+      "PLANNED": "Planned (average)",
+      "WAIT": "Average wait",
+      "EMPTY": "No usable appointment.",
+      "QUALITY": "Data quality",
+      "USABLE": "{{valid}} of {{considered}} appointments usable ({{percent}}%)",
+      "QUALITY_HINT": "For good figures, mark “in the chair” and “finished” on every appointment from the front desk.",
+      "ISSUES": {
+        "missingEnd": "No end time",
+        "missingStart": "No start time",
+        "tooShort": "Too short",
+        "tooLong": "Too long",
+        "invalidOrder": "Times in the wrong order",
+        "completedWithoutTimes": "Completed with no times"
+      }
+    },
+    "INC": {
+      "GROUP": "Group by",
+      "GROUPS": {
+        "DAY": "Day",
+        "WEEK": "Week",
+        "MONTH": "Month",
+        "YEAR": "Year"
+      },
+      "BASIS": "Fees",
+      "COLLECTED": "Collected (cash basis)",
+      "PRODUCED": "Produced (invoiced)",
+      "RETRO": "Include retrocessions",
+      "LINE": "Line"
+    },
+    "GOALS": {
+      "YEAR": "Year",
+      "WIZARD": "Your situation",
+      "USE_SUGGESTIONS": "Use the practice's figures",
+      "SUGGESTION_HINT": "Suggested from the expenses of {{from}} to {{to}}.",
+      "FIXED": "Fixed costs per month",
+      "FIXED_HINT": "Rent, salaries, CNSS, insurance: what is due even with no patients.",
+      "PERSONAL": "Take-home wanted per month",
+      "PERSONAL_HINT": "What you want to pay yourself, before tax.",
+      "VARIABLE": "Variable costs (% of fees)",
+      "VARIABLE_HINT": "Materials, lab, retrocessions: the share of each fee that goes on them.",
+      "DAYS": "Working days per month",
+      "SAVE": "Save the goal",
+      "SAVED": "Goal saved.",
+      "PLAN": "What you need to collect",
+      "BREAK_EVEN": "Break-even",
+      "TARGET": "Monthly target",
+      "DAILY": "Daily target",
+      "YEARLY": "Yearly target",
+      "PER_MONTH": "per month",
+      "PER_DAY": "per working day",
+      "PER_YEAR": "over the year",
+      "TRACKING": "Tracking {{year}}",
+      "YTD": "Since January: {{actual}} collected against {{target}} aimed for",
+      "MONTH": "Month",
+      "TARGET_COL": "Target",
+      "ACTUAL": "Collected",
+      "PROGRESS": "Progress",
+      "VARIANCE": "Difference",
+      "PROJECTED": "Projected",
+      "NOT_SAVED": "Save the goal to follow the year month by month."
+    }
   }
 }

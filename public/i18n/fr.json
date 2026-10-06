@@ -2201,5 +2201,207 @@
     "SPREAD": "Répartition des notes",
     "CALL_ME": "Souhaite être rappelé",
     "EMPTY": "Aucune réponse pour ces filtres."
+  },
+  "RETRO": {
+    "SUBTITLE": "Ce que le cabinet reverse à chaque praticien : simulation, relevés validés, règles et avances.",
+    "TABS": {
+      "SIMULATION": "Simulation",
+      "STATEMENTS": "Relevés",
+      "RULES": "Règles",
+      "ADVANCES": "Avances"
+    },
+    "BASE": "Base",
+    "LAB": "Frais de labo",
+    "VARIABLE": "Part variable",
+    "FIXED": "Fixe",
+    "ADJUSTMENT": "Ajustement",
+    "GROSS": "Brut",
+    "ADVANCES_APPLIED": "Avances déduites",
+    "NET": "Net à payer",
+    "LINE": {
+      "INVOICE": "Facture",
+      "LABEL": "Libellé",
+      "BASE": "Base",
+      "KINDS": {
+        "ITEM": "Acte",
+        "LAB": "Labo",
+        "FIXED": "Fixe",
+        "ADJUSTMENT": "Ajustement"
+      }
+    },
+    "SIM": {
+      "FILTERS": "Filtres de la base de calcul",
+      "METHODS": "Modes de paiement pris en compte",
+      "STATUSES": "États de facture pris en compte",
+      "FILTERS_HINT": "Sans choix, tout est pris en compte. Les filtres suivent le relevé lors de la validation.",
+      "UNATTRIBUTED": "{{count}} facture(s) sans praticien, soit {{amount}}, ne sont dans aucun calcul.",
+      "UNATTRIBUTED_HINT": "Ouvrez chaque facture et indiquez le praticien : rien n'est deviné.",
+      "VALIDATE": "Valider le relevé",
+      "VALIDATE_TITLE": "Valider un relevé",
+      "VALIDATE_HINT": "Le relevé fige ces lignes (net : {{amount}}). Il ne pourra plus être modifié, seulement annulé avec un motif.",
+      "VALIDATED": "Relevé {{number}} validé.",
+      "ADVANCES_LEFT": "Avances non encore déduites : {{amount}}.",
+      "LINES": "Détail ({{count}} lignes)",
+      "EMPTY": "Aucun praticien n'a de règle de rétrocession sur cette période."
+    },
+    "ST": {
+      "INCLUDE_VOIDED": "Afficher les relevés annulés",
+      "PERIOD": "Période",
+      "STATUSES": {
+        "UNPAID": "À payer",
+        "PARTIAL": "Payé en partie",
+        "PAID": "Payé",
+        "VOID": "Annulé"
+      },
+      "EMPTY": "Aucun relevé validé.",
+      "PAYOUTS": "Versements",
+      "NO_PAYOUTS": "Aucun versement pour le moment.",
+      "REMAINING": "Reste à verser",
+      "RECORD_PAYOUT": "Enregistrer le versement",
+      "PAYOUT_DONE": "Versement enregistré.",
+      "VOID": "Annuler le relevé",
+      "VOID_TITLE": "Annuler un relevé",
+      "VOID_HINT": "Le relevé reste dans l'historique, marqué annulé, et ses avances sont rendues disponibles. Validez-en un nouveau pour corriger.",
+      "VOID_DONE": "Relevé annulé.",
+      "VOIDED": "Annulé le {{at}}"
+    },
+    "RULES": {
+      "NEW": "Nouvelle règle",
+      "EDIT": "Modifier la règle",
+      "BASIS": "Calculé sur",
+      "BASES": {
+        "COLLECTED": "Encaissé",
+        "PRODUCED": "Produit"
+      },
+      "BASIS_HINT": {
+        "COLLECTED": "L'argent reçu, au jour où il est imputé sur les factures du praticien.",
+        "PRODUCED": "Le montant facturé, que le patient ait payé ou non."
+      },
+      "RATE": "Pourcentage reversé",
+      "FIXED": "Montant fixe mensuel (optionnel)",
+      "FROM": "Applicable à partir du",
+      "TO": "Jusqu'au (optionnel)",
+      "PERIOD": "Période",
+      "OPEN_ENDED": "sans fin",
+      "DEDUCT_LAB": "Déduire d'abord les frais de laboratoire",
+      "OVERRIDES": "Pourcentage par catégorie",
+      "OVERRIDES_HINT": "Pour une catégorie d'actes payée à un autre taux (par exemple « Implantologie »).",
+      "CATEGORY": "Catégorie",
+      "ADD_OVERRIDE": "Ajouter une catégorie",
+      "EMPTY": "Aucune règle. Sans règle, un praticien n'apparaît pas dans la simulation.",
+      "SAVED": "Règle enregistrée.",
+      "DELETE_CONFIRM": "Supprimer cette règle de {{name}} ? Les relevés déjà validés ne changent pas.",
+      "PROBLEM": {
+        "DOCTOR": "Choisissez un praticien.",
+        "START": "Indiquez la date de début.",
+        "RATE": "Le pourcentage doit être entre 0 et 100.",
+        "END": "La fin ne peut pas précéder le début.",
+        "OVERRIDE": "Chaque pourcentage par catégorie doit être entre 0 et 100."
+      }
+    },
+    "ADV": {
+      "NEW": "Nouvelle avance",
+      "OUTSTANDING": "Reste à déduire",
+      "EMPTY": "Aucune avance enregistrée.",
+      "DELETE_CONFIRM": "Supprimer cette avance de {{name}} ?"
+    }
+  },
+  "ANA": {
+    "SUBTITLE": "Comment va le cabinet : actes, temps passé, compte de résultat et objectif.",
+    "TABS": {
+      "PROCEDURES": "Actes",
+      "TIME": "Temps au fauteuil",
+      "INCOME": "Compte de résultat",
+      "GOALS": "Objectif"
+    },
+    "PROC": {
+      "CATEGORY": "Catégorie",
+      "STATUSES": {
+        "FINALIZED": "Terminés",
+        "DRAFT": "Brouillons",
+        "CANCELLED": "Annulés",
+        "REFUNDED": "Remboursés"
+      },
+      "SESSIONS": "Séances",
+      "REVENUE": "Chiffre d'affaires",
+      "COST": "Coût des matières",
+      "MARGIN": "Marge brute",
+      "BY_CATEGORY": "Chiffre d'affaires par catégorie",
+      "BY_DOCTOR": "Chiffre d'affaires par praticien",
+      "TREATMENT": "Acte",
+      "EMPTY": "Aucun acte sur cette période."
+    },
+    "TIME": {
+      "MIN": "Durée min. (min)",
+      "MAX": "Durée max. (min)",
+      "HINT": "Calculé entre l'installation au fauteuil et la fin du rendez-vous. Les rendez-vous aux heures manquantes ou invraisemblables sont écartés et comptés plus bas.",
+      "BY_DOCTOR": "Par praticien",
+      "BY_PROCEDURE": "Par type de rendez-vous",
+      "PROCEDURE": "Type de rendez-vous",
+      "APPOINTMENTS": "Rendez-vous",
+      "ACTIVE": "Temps actif",
+      "AVERAGE": "Durée moyenne",
+      "MEDIAN": "Durée médiane",
+      "PLANNED": "Prévu (moyenne)",
+      "WAIT": "Attente moyenne",
+      "EMPTY": "Aucun rendez-vous exploitable.",
+      "QUALITY": "Qualité des données",
+      "USABLE": "{{valid}} rendez-vous sur {{considered}} exploitables ({{percent}} %)",
+      "QUALITY_HINT": "Pour de bonnes statistiques, marquez bien « au fauteuil » et « terminé » sur chaque rendez-vous depuis l'accueil.",
+      "ISSUES": {
+        "missingEnd": "Sans heure de fin",
+        "missingStart": "Sans heure d'installation",
+        "tooShort": "Trop courts",
+        "tooLong": "Trop longs",
+        "invalidOrder": "Heures inversées",
+        "completedWithoutTimes": "Terminés sans aucune heure"
+      }
+    },
+    "INC": {
+      "GROUP": "Regrouper par",
+      "GROUPS": {
+        "DAY": "Jour",
+        "WEEK": "Semaine",
+        "MONTH": "Mois",
+        "YEAR": "Année"
+      },
+      "BASIS": "Honoraires",
+      "COLLECTED": "Encaissés (caisse)",
+      "PRODUCED": "Produits (facturés)",
+      "RETRO": "Inclure les rétrocessions",
+      "LINE": "Poste"
+    },
+    "GOALS": {
+      "YEAR": "Année",
+      "WIZARD": "Votre situation",
+      "USE_SUGGESTIONS": "Reprendre les chiffres du cabinet",
+      "SUGGESTION_HINT": "Proposé d'après les dépenses du {{from}} au {{to}}.",
+      "FIXED": "Charges fixes par mois",
+      "FIXED_HINT": "Loyer, salaires, CNSS, assurances : ce qui est dû même sans patient.",
+      "PERSONAL": "Revenu souhaité par mois",
+      "PERSONAL_HINT": "Ce que vous voulez vous verser, avant impôt.",
+      "VARIABLE": "Charges variables (% des honoraires)",
+      "VARIABLE_HINT": "Matériel, laboratoire, rétrocessions : la part de chaque honoraire qui y passe.",
+      "DAYS": "Jours travaillés par mois",
+      "SAVE": "Enregistrer l'objectif",
+      "SAVED": "Objectif enregistré.",
+      "PLAN": "Ce qu'il faut encaisser",
+      "BREAK_EVEN": "Seuil de rentabilité",
+      "TARGET": "Objectif mensuel",
+      "DAILY": "Objectif journalier",
+      "YEARLY": "Objectif annuel",
+      "PER_MONTH": "par mois",
+      "PER_DAY": "par jour travaillé",
+      "PER_YEAR": "sur l'année",
+      "TRACKING": "Suivi {{year}}",
+      "YTD": "Depuis janvier : {{actual}} encaissés pour {{target}} visés",
+      "MONTH": "Mois",
+      "TARGET_COL": "Objectif",
+      "ACTUAL": "Encaissé",
+      "PROGRESS": "Avancement",
+      "VARIANCE": "Écart",
+      "PROJECTED": "Projection",
+      "NOT_SAVED": "Enregistrez l'objectif pour suivre l'année mois par mois."
+    }
   }
 }

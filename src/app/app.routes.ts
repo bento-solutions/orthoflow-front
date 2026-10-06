@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { financeHomeGuard } from './features/finance/finance-tabs';
+import { analyticsHomeGuard } from './features/analytics/analytics-tabs';
 import { onboardingGuard } from './core/guards/onboarding.guard';
 import { authGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
@@ -180,6 +181,30 @@ export const routes: Routes = [
         path: 'surveys',
         canActivate: [permissionGuard('SURVEYS_VIEW')],
         loadComponent: () => import('./features/intake/surveys.component').then(m => m.SurveysComponent),
+      },
+      {
+        path: 'retrocessions',
+        canActivate: [permissionGuard('RETROCESSION_VIEW')],
+        loadComponent: () => import('./features/retrocessions/retrocessions-layout.component').then(m => m.RetrocessionsLayoutComponent),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'simulation' },
+          { path: 'simulation', loadComponent: () => import('./features/retrocessions/retro-simulation.component').then(m => m.RetroSimulationComponent) },
+          { path: 'statements', loadComponent: () => import('./features/retrocessions/retro-statements.component').then(m => m.RetroStatementsComponent) },
+          { path: 'rules', loadComponent: () => import('./features/retrocessions/retro-rules.component').then(m => m.RetroRulesComponent) },
+          { path: 'advances', loadComponent: () => import('./features/retrocessions/retro-advances.component').then(m => m.RetroAdvancesComponent) },
+        ],
+      },
+      {
+        path: 'analytics',
+        canActivate: [permissionGuard('ANALYTICS_VIEW', 'FINANCE_VIEW')],
+        loadComponent: () => import('./features/analytics/analytics-layout.component').then(m => m.AnalyticsLayoutComponent),
+        children: [
+          { path: '', pathMatch: 'full', canActivate: [analyticsHomeGuard], children: [] },
+          { path: 'procedures', canActivate: [permissionGuard('ANALYTICS_VIEW')], loadComponent: () => import('./features/analytics/procedures.component').then(m => m.ProceduresComponent) },
+          { path: 'time', canActivate: [permissionGuard('ANALYTICS_VIEW')], loadComponent: () => import('./features/analytics/doctor-time.component').then(m => m.DoctorTimeComponent) },
+          { path: 'income', canActivate: [permissionGuard('FINANCE_VIEW')], loadComponent: () => import('./features/analytics/income-statement.component').then(m => m.IncomeStatementComponent) },
+          { path: 'goals', canActivate: [permissionGuard('FINANCE_VIEW')], loadComponent: () => import('./features/analytics/goals.component').then(m => m.GoalsComponent) },
+        ],
       },
       {
         path: 'finance',

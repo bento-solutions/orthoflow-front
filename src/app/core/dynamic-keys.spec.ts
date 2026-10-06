@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CATEGORY_KINDS, PAYMENT_METHODS, PLAN_FREQUENCIES, RECURRENCES } from './services/finance-api.service';
+import { INCOME_GROUPS } from './services/analytics-api.service';
 import { BOOKING_STATUSES } from './services/intake-api.service';
 import { MESSAGE_CHANNELS, MESSAGE_PURPOSES, MESSAGE_STATUSES } from './services/messaging-api.service';
 import { ASSIGNEE_ROLES, LAB_ITEM_TYPES, LAB_STATUSES, TASK_PRIORITIES } from './services/operations-api.service';
@@ -39,6 +40,13 @@ const FAMILIES: Record<string, readonly string[]> = {
   'FIN.TAX.LANGS': ['fr', 'en', 'ar'],
   'FIN.DEBT.SORTS': ['balance', 'name', 'lastPayment'],
   'INT.BOOK.STATUSES': BOOKING_STATUSES,
+  'RETRO.LINE.KINDS': ['ITEM', 'LAB', 'FIXED', 'ADJUSTMENT'],
+  'RETRO.RULES.BASES': ['COLLECTED', 'PRODUCED'],
+  'RETRO.RULES.BASIS_HINT': ['COLLECTED', 'PRODUCED'],
+  'RETRO.ST.STATUSES': ['UNPAID', 'PARTIAL', 'PAID', 'VOID'],
+  'ANA.PROC.STATUSES': ['FINALIZED', 'DRAFT', 'CANCELLED', 'REFUNDED'],
+  'ANA.INC.GROUPS': INCOME_GROUPS,
+  'ANA.TIME.ISSUES': ['missingEnd', 'missingStart', 'tooShort', 'tooLong', 'invalidOrder', 'completedWithoutTimes'],
   'PUB.SURVEY.LEVELS': ['1', '2', '3', '4', '5'],
   'COM.CHANNELS': MESSAGE_CHANNELS,
   'COM.STATUSES': MESSAGE_STATUSES,

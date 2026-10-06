@@ -132,6 +132,20 @@ export const routes: Routes = [
         loadComponent: () => import('./features/settings/pages/account.component').then(m => m.AccountComponent),
       },
       {
+        path: 'lab-orders',
+        canActivate: [permissionGuard('LAB_ORDERS_MANAGE')],
+        loadComponent: () => import('./features/lab/lab-orders.component').then(m => m.LabOrdersComponent),
+      },
+      {
+        path: 'tasks',
+        canActivate: [permissionGuard('TASKS_MANAGE')],
+        loadComponent: () => import('./features/tasks/tasks.component').then(m => m.TasksComponent),
+      },
+      {
+        path: 'messages',
+        loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent),
+      },
+      {
         path: 'finance',
         canActivate: [permissionGuard('FINANCE_VIEW', 'BILLING_READ')],
         loadComponent: () => import('./features/finance/finance-layout.component').then(m => m.FinanceLayoutComponent),

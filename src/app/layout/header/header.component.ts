@@ -9,6 +9,8 @@ import { IconComponent } from '../../shared/ui/icon.component';
 import { HelpPanelService } from '../../core/services/help-panel.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { NotificationBellComponent } from './notification-bell.component';
+import { CanDirective } from '../../shared/directives/can.directive';
+import { NavCounts } from '../../core/services/nav-counts.service';
 
 /* Route prefix → section label. Longest prefix wins, so `/patients/12`
    still resolves to Patients. */
@@ -48,7 +50,7 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [TranslateModule, IconComponent, NotificationBellComponent, RouterLink],
+  imports: [TranslateModule, IconComponent, NotificationBellComponent, RouterLink, CanDirective],
   template: `
     <header
       class="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-ink-100 bg-surface/85 px-4 backdrop-blur-md md:px-6"
@@ -101,6 +103,14 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
           data-tour="help">
           <app-icon name="help-circle" [size]="18" />
         </button>
+        <a *appCan="'TASKS_MANAGE'" routerLink="/tasks" class="btn btn-ghost btn-icon relative" [title]="'NAV.TASKS' | translate"
+          [attr.aria-label]="('NAV.TASKS' | translate) + (counts.tasksDue() ? ' (' + counts.tasksDue() + ')' : '')">
+          <app-icon name="clipboard" [size]="18" />
+          @if (counts.tasksDue() > 0) {
+            <span class="absolute end-1 top-1 grid min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold leading-4 text-white"
+              [class.bg-critical-500]="counts.tasks().overdue > 0" [class.bg-petrol-600]="counts.tasks().overdue === 0">{{ counts.tasksDue() > 9 ? '9+' : counts.tasksDue() }}</span>
+          }
+        </a>
         <app-notification-bell />
 
         <div class="mx-1 hidden h-6 w-px bg-ink-200 sm:block"></div>
@@ -144,6 +154,7 @@ export class HeaderComponent {
   readonly commandRegistry = inject(CommandRegistryService);
   readonly theme = inject(ThemeService);
   readonly help = inject(HelpPanelService);
+  readonly counts = inject(NavCounts);
 
   /** Current section, tracked from the router rather than passed in. */
   readonly sectionTitle = toSignal(

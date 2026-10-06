@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CATEGORY_KINDS, PAYMENT_METHODS, PLAN_FREQUENCIES, RECURRENCES } from './services/finance-api.service';
+import { ASSIGNEE_ROLES, LAB_ITEM_TYPES, LAB_STATUSES, TASK_PRIORITIES } from './services/operations-api.service';
 import { RECALL_KINDS } from '../features/patients/patient-directory-api.service';
 
 /**
@@ -35,6 +36,14 @@ const FAMILIES: Record<string, readonly string[]> = {
   'FIN.TAX.KINDS': ['FEE_NOTE', 'CARE_FORM'],
   'FIN.TAX.LANGS': ['fr', 'en', 'ar'],
   'FIN.DEBT.SORTS': ['balance', 'name', 'lastPayment'],
+  'LAB.STATUSES': LAB_STATUSES,
+  'LAB.MOVE': LAB_STATUSES,
+  'LAB.ITEMS': LAB_ITEM_TYPES,
+  'LAB.WARNINGS': ['OVERDUE', 'FITTING_BEFORE_DUE', 'NOT_RECEIVED_BEFORE_FITTING'],
+  'TASK.GROUPS': ['overdue', 'today', 'upcoming', 'doneToday'],
+  'TASK.STATUSES': ['OPEN', 'DONE', 'CANCELLED'],
+  'TASK.PRIORITIES': TASK_PRIORITIES,
+  'TASK.ROLES': ASSIGNEE_ROLES,
   'PAT.DUP.MERGE.FIELDS': [
     'email', 'phone', 'cin', 'address', 'dateOfBirth', 'gender', 'guardianName', 'guardianPhone', 'insuranceProvider', 'insuranceNumber',
     'occupation', 'referralSource', 'insurerId', 'primaryPractitionerId', 'photoFileId',

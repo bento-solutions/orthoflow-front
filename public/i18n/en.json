@@ -1827,5 +1827,129 @@
       "DUPLICATED": "Duplicate {{number}} created.",
       "EMPTY": "No document in this period."
     }
+  },
+  "LAB": {
+    "TITLE": "Lab orders",
+    "SUBTITLE": "Work sent to the laboratory, from dispatch to fitting.",
+    "NEW": "New order",
+    "EDIT": "Edit order",
+    "STATUSES": {
+      "SENT": "Sent",
+      "IN_PROGRESS": "In progress",
+      "RECEIVED": "Received",
+      "FITTED": "Fitted",
+      "REMAKE": "Remake"
+    },
+    "MOVE": {
+      "SENT": "Send back",
+      "IN_PROGRESS": "In progress",
+      "RECEIVED": "Mark received",
+      "FITTED": "Mark fitted",
+      "REMAKE": "Remake"
+    },
+    "ITEMS": {
+      "ALIGNER": "Aligners",
+      "RETAINER": "Retainer",
+      "EXPANDER": "Expander",
+      "MODEL": "Model",
+      "CROWN": "Crown",
+      "BRIDGE": "Bridge",
+      "DENTURE": "Denture",
+      "NIGHTGUARD": "Night guard",
+      "OTHER": "Other"
+    },
+    "WARNINGS": {
+      "OVERDUE": "Overdue",
+      "FITTING_BEFORE_DUE": "Fitting before it is due back",
+      "NOT_RECEIVED_BEFORE_FITTING": "Fitting soon, not received yet"
+    },
+    "URGENT": "Urgent",
+    "URGENT_ONLY": "Urgent only",
+    "OVERDUE_ONLY": "Overdue only",
+    "SEARCH": "Patient, lab, description…",
+    "LAB": "Laboratory",
+    "ALL_LABS": "All labs",
+    "DUE_FROM": "Due from",
+    "DUE_TO": "Due to",
+    "UPDATED_FROM": "Updated from",
+    "UPDATED_TO": "Updated to",
+    "ITEM": "Item",
+    "DUE": "Due back",
+    "FITTING": "Fitting",
+    "SENT": "Sent on",
+    "COST": "Lab fee",
+    "FITTING_APPOINTMENT": "Fitting appointment",
+    "NO_FITTING": "No appointment yet",
+    "DESCRIPTION": "Description",
+    "PRINT": "Print the order form",
+    "NO_MATCH": "No order matches these filters.",
+    "EMPTY": "No lab order yet. Add the first one.",
+    "NO_LABS": "No laboratory yet. Add one below, or mark a supplier as a laboratory in stock.",
+    "NEW_LAB": "Add a laboratory",
+    "MOVE_TITLE": "Change the order's state",
+    "MOVE_DATE": "Date",
+    "RECEIVED_HINT": "Receiving books the lab fee as an expense and tells the team.",
+    "REMAKE_HINT": "The piece goes back to the lab: its received and fitted dates are cleared.",
+    "MOVED": "Order updated."
+  },
+  "TASK": {
+    "TITLE": "Tasks",
+    "SUBTITLE": "What needs doing at the clinic, by person or by role.",
+    "NEW": "New task",
+    "EDIT": "Edit task",
+    "MINE": "My tasks",
+    "ALL": "All tasks",
+    "GROUPS": {
+      "overdue": "Overdue",
+      "today": "Today",
+      "upcoming": "Upcoming",
+      "doneToday": "Done today"
+    },
+    "EMPTY_TITLE": "No tasks",
+    "EMPTY_TEXT": "Nothing to do right now.",
+    "STATUSES": {
+      "OPEN": "Open",
+      "DONE": "Done",
+      "CANCELLED": "Cancelled"
+    },
+    "ASSIGNEE": "Assigned to",
+    "EVERYONE": "Everyone",
+    "DONE_LABEL": "Mark as done:",
+    "PRIORITIES": {
+      "LOW": "Low",
+      "NORMAL": "Normal",
+      "HIGH": "High",
+      "URGENT": "Urgent"
+    },
+    "ROLES": {
+      "ADMIN": "Administration",
+      "DOCTOR": "Doctors",
+      "ASSISTANT": "Front desk and assistants"
+    },
+    "WHAT": "What",
+    "DETAILS": "Details",
+    "ME": "Me",
+    "ROLE_GROUP": "A role (whoever gets to it)",
+    "PEOPLE_GROUP": "A person",
+    "DUE": "Due",
+    "PRIORITY": "Priority",
+    "PATIENT": "Patient concerned",
+    "DELETE_CONFIRM": "Delete the task “{{title}}”?"
+  },
+  "MSG": {
+    "TITLE": "Staff messages",
+    "SUBTITLE": "Conversations between team members. Patients never see them.",
+    "NEW": "New message",
+    "THREADS": "Conversations",
+    "EMPTY": "No conversations.",
+    "CONVERSATION": "Open conversation",
+    "YOU": "You",
+    "REPLY": "Your reply…",
+    "SEND": "Send",
+    "PICK": "Pick a conversation, or write a new message.",
+    "TO": "To",
+    "NO_ONE": "No one else on the team.",
+    "SUBJECT": "Subject",
+    "MESSAGE": "Message"
   }
 }

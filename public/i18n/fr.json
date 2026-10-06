@@ -1827,5 +1827,129 @@
       "DUPLICATED": "Duplicata {{number}} créé.",
       "EMPTY": "Aucun document sur cette période."
     }
+  },
+  "LAB": {
+    "TITLE": "Commandes de laboratoire",
+    "SUBTITLE": "Les pièces envoyées au laboratoire, de l'envoi à la pose.",
+    "NEW": "Nouvelle commande",
+    "EDIT": "Modifier la commande",
+    "STATUSES": {
+      "SENT": "Envoyée",
+      "IN_PROGRESS": "En fabrication",
+      "RECEIVED": "Reçue",
+      "FITTED": "Posée",
+      "REMAKE": "À refaire"
+    },
+    "MOVE": {
+      "SENT": "Renvoyer au labo",
+      "IN_PROGRESS": "En fabrication",
+      "RECEIVED": "Marquer reçue",
+      "FITTED": "Marquer posée",
+      "REMAKE": "À refaire"
+    },
+    "ITEMS": {
+      "ALIGNER": "Gouttières d'alignement",
+      "RETAINER": "Contention",
+      "EXPANDER": "Disjoncteur",
+      "MODEL": "Modèle",
+      "CROWN": "Couronne",
+      "BRIDGE": "Bridge",
+      "DENTURE": "Prothèse amovible",
+      "NIGHTGUARD": "Gouttière de nuit",
+      "OTHER": "Autre"
+    },
+    "WARNINGS": {
+      "OVERDUE": "En retard",
+      "FITTING_BEFORE_DUE": "Pose avant la date de retour",
+      "NOT_RECEIVED_BEFORE_FITTING": "Pose proche, pièce non reçue"
+    },
+    "URGENT": "Urgent",
+    "URGENT_ONLY": "Urgentes seulement",
+    "OVERDUE_ONLY": "En retard seulement",
+    "SEARCH": "Patient, labo, description…",
+    "LAB": "Laboratoire",
+    "ALL_LABS": "Tous les labos",
+    "DUE_FROM": "Retour du",
+    "DUE_TO": "Retour au",
+    "UPDATED_FROM": "Modifiée du",
+    "UPDATED_TO": "Modifiée au",
+    "ITEM": "Pièce",
+    "DUE": "Retour prévu",
+    "FITTING": "Pose",
+    "SENT": "Envoyée le",
+    "COST": "Coût du labo",
+    "FITTING_APPOINTMENT": "Rendez-vous de pose",
+    "NO_FITTING": "Pas encore de rendez-vous",
+    "DESCRIPTION": "Description",
+    "PRINT": "Imprimer le bon de commande",
+    "NO_MATCH": "Aucune commande ne correspond à ces filtres.",
+    "EMPTY": "Aucune commande de laboratoire. Ajoutez la première.",
+    "NO_LABS": "Aucun laboratoire enregistré. Ajoutez-en un ci-dessous, ou marquez un fournisseur comme laboratoire dans le stock.",
+    "NEW_LAB": "Ajouter un laboratoire",
+    "MOVE_TITLE": "Changer l'état de la commande",
+    "MOVE_DATE": "Date",
+    "RECEIVED_HINT": "La réception enregistre le coût du laboratoire en dépense et prévient l'équipe.",
+    "REMAKE_HINT": "La pièce repart au laboratoire : les dates de réception et de pose sont effacées.",
+    "MOVED": "État de la commande mis à jour."
+  },
+  "TASK": {
+    "TITLE": "Tâches",
+    "SUBTITLE": "Ce qu'il y a à faire au cabinet, par personne ou par rôle.",
+    "NEW": "Nouvelle tâche",
+    "EDIT": "Modifier la tâche",
+    "MINE": "Mes tâches",
+    "ALL": "Toutes les tâches",
+    "GROUPS": {
+      "overdue": "En retard",
+      "today": "Aujourd'hui",
+      "upcoming": "À venir",
+      "doneToday": "Faites aujourd'hui"
+    },
+    "EMPTY_TITLE": "Aucune tâche",
+    "EMPTY_TEXT": "Rien à faire pour le moment.",
+    "STATUSES": {
+      "OPEN": "À faire",
+      "DONE": "Faite",
+      "CANCELLED": "Annulée"
+    },
+    "ASSIGNEE": "Pour",
+    "EVERYONE": "Tout le monde",
+    "DONE_LABEL": "Marquer comme faite :",
+    "PRIORITIES": {
+      "LOW": "Basse",
+      "NORMAL": "Normale",
+      "HIGH": "Haute",
+      "URGENT": "Urgente"
+    },
+    "ROLES": {
+      "ADMIN": "Administration",
+      "DOCTOR": "Praticiens",
+      "ASSISTANT": "Accueil et assistants"
+    },
+    "WHAT": "Quoi",
+    "DETAILS": "Détails",
+    "ME": "Moi",
+    "ROLE_GROUP": "Un rôle (le premier qui s'en occupe)",
+    "PEOPLE_GROUP": "Une personne",
+    "DUE": "Pour le",
+    "PRIORITY": "Priorité",
+    "PATIENT": "Patient concerné",
+    "DELETE_CONFIRM": "Supprimer la tâche « {{title}} » ?"
+  },
+  "MSG": {
+    "TITLE": "Messages internes",
+    "SUBTITLE": "Échanges entre les membres de l'équipe. Les patients n'y ont pas accès.",
+    "NEW": "Nouveau message",
+    "THREADS": "Conversations",
+    "EMPTY": "Aucune conversation.",
+    "CONVERSATION": "Conversation ouverte",
+    "YOU": "Vous",
+    "REPLY": "Votre réponse…",
+    "SEND": "Envoyer",
+    "PICK": "Choisissez une conversation, ou écrivez un nouveau message.",
+    "TO": "À",
+    "NO_ONE": "Personne d'autre dans l'équipe.",
+    "SUBJECT": "Objet",
+    "MESSAGE": "Message"
   }
 }

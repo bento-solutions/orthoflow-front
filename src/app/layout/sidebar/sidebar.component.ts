@@ -5,6 +5,7 @@ import { CabinetService } from '../../core/services/cabinet.service';
 import { IconComponent, IconName } from '../../shared/ui/icon.component';
 import { Permission } from '../../core/models/permission';
 import { PermissionService } from '../../core/services/permission.service';
+import { NavCounts } from '../../core/services/nav-counts.service';
 
 interface NavItem {
   key: string;
@@ -13,6 +14,8 @@ interface NavItem {
   exact?: boolean;
   /** Shown only to someone holding at least one of these. No list means everyone. */
   permission?: Permission[];
+  /** Which small count to show beside the label. */
+  badge?: 'tasks' | 'messages';
 }
 
 /**
@@ -86,6 +89,9 @@ interface NavItem {
                     [class.opacity-0]="isCollapsed()"
                     [class.-translate-x-2]="isCollapsed()"
                   >{{ item.key | translate }}</span>
+                  @if (count(item.badge); as n) {
+                    <span class="nav-badge" [attr.aria-label]="n + ''">{{ n > 99 ? '99+' : n }}</span>
+                  }
                 </a>
               </li>
             }
@@ -117,6 +123,11 @@ export class SidebarComponent {
   readonly isCollapsed = signal(false);
   readonly cabinet = inject(CabinetService);
   private readonly permissions = inject(PermissionService);
+  private readonly counts = inject(NavCounts);
+
+  protected count(badge: NavItem['badge']): number {
+    return badge === 'tasks' ? this.counts.tasksDue() : badge === 'messages' ? this.counts.messages() : 0;
+  }
 
   readonly initial = computed(() => {
     const name = this.cabinet.cabinetInfo()?.name?.trim();
@@ -135,7 +146,7 @@ export class SidebarComponent {
         { key: 'COMMON.TREATMENTS', path: '/treatments', icon: 'activity' },
         { key: 'NAV.LAB_ORDERS', path: '/lab-orders', icon: 'flask', permission: ['LAB_ORDERS_MANAGE'] },
         { key: 'NAV.STERILIZATION', path: '/sterilization', icon: 'shield', permission: ['STERILIZATION_MANAGE'] },
-        { key: 'NAV.TASKS', path: '/tasks', icon: 'clipboard', permission: ['TASKS_MANAGE'] },
+        { key: 'NAV.TASKS', path: '/tasks', icon: 'clipboard', permission: ['TASKS_MANAGE'], badge: 'tasks' },
       ],
     },
     {
@@ -151,7 +162,7 @@ export class SidebarComponent {
     {
       key: 'NAV.COMMUNICATION',
       items: [
-        { key: 'NAV.MESSAGES', path: '/messages', icon: 'message' },
+        { key: 'NAV.MESSAGES', path: '/messages', icon: 'message', badge: 'messages' },
         { key: 'NAV.COMMUNICATION', path: '/communication', icon: 'send', permission: ['MESSAGING_VIEW'] },
         { key: 'NAV.BOOKING', path: '/booking', icon: 'inbox', permission: ['BOOKING_REVIEW'] },
         { key: 'NAV.SURVEYS', path: '/surveys', icon: 'check-circle', permission: ['SURVEYS_VIEW'] },

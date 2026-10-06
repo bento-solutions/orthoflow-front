@@ -2589,5 +2589,73 @@
       "MAX_USES": "Max uses",
       "NO_MODELS": "No model. Add one below."
     }
+  },
+  "HELP": {
+    "TITLE": "Help",
+    "NO_NOTE": "No help note for this screen. Pick a topic below, or ask your question.",
+    "PAGE_TOUR": "Tour of this screen",
+    "WELCOME_TOUR": "Welcome tour",
+    "ASK": "Ask OrthoFlow",
+    "QUESTION": "How do I…?",
+    "PRIVACY": "Do not write any patient name or data: only the question is sent.",
+    "SEND": "Ask",
+    "ASKING": "Looking…",
+    "AI_USED": "Answer written by the assistant from the help notes",
+    "FROM_NOTES": "Answer taken from the help notes",
+    "SOURCES": "See:",
+    "TOPICS": "All topics"
+  },
+  "TOUR": {
+    "NEXT": "Next",
+    "PREVIOUS": "Previous",
+    "DONE": "Done",
+    "WELCOME": {
+      "NAV": {
+        "TITLE": "The menu",
+        "TEXT": "Every part of the practice is here, grouped by activity. Red badges show what is waiting: tasks, messages, online requests."
+      },
+      "SEARCH": {
+        "TITLE": "Search",
+        "TEXT": "Type a patient's or a page's name to go straight there. Shortcut: ⌘K (or Ctrl K)."
+      },
+      "BELL": {
+        "TITLE": "Notifications",
+        "TEXT": "Lab work arrived, a cheque bounced, an appointment request: the system tells you here."
+      },
+      "THEME": {
+        "TITLE": "Light or dark",
+        "TEXT": "Change the look to suit the room's light. Your choice is remembered."
+      },
+      "HELP": {
+        "TITLE": "Help",
+        "TEXT": "A note for each screen, guided tours, and an assistant for your questions."
+      }
+    },
+    "PATIENTS": {
+      "SEARCH": {
+        "TITLE": "Find a patient",
+        "TEXT": "By name, phone or code. The list updates as you type."
+      },
+      "ADD": {
+        "TITLE": "New patient",
+        "TEXT": "The full form. To be quick, “Quick add” only asks for the name."
+      },
+      "DUPLICATES": {
+        "TITLE": "Duplicates",
+        "TEXT": "Two records for the same person? Merge them here: history and payments are brought together."
+      }
+    },
+    "FINANCE": {
+      "TABS": {
+        "TITLE": "The finance screens",
+        "TEXT": "From the dashboard to cash closing, cheques, expenses and tax documents. You only see what your permissions allow."
+      }
+    },
+    "STER": {
+      "TABS": {
+        "TITLE": "Sterilization",
+        "TEXT": "Scan a label to use, clean or load an item. Each cycle keeps its control and the list of patients involved."
+      }
+    }
   }
 }

@@ -2589,5 +2589,73 @@
       "MAX_USES": "Utilisations max.",
       "NO_MODELS": "Aucun modèle. Ajoutez-en un ci-dessous."
     }
+  },
+  "HELP": {
+    "TITLE": "Aide",
+    "NO_NOTE": "Pas de note d'aide pour cet écran. Choisissez un sujet plus bas, ou posez votre question.",
+    "PAGE_TOUR": "Visite guidée de cet écran",
+    "WELCOME_TOUR": "Visite de bienvenue",
+    "ASK": "Demander à OrthoFlow",
+    "QUESTION": "Comment faire pour… ?",
+    "PRIVACY": "N'écrivez aucun nom ni donnée de patient : seule la question est envoyée.",
+    "SEND": "Poser la question",
+    "ASKING": "Recherche…",
+    "AI_USED": "Réponse rédigée par l'assistant à partir des notes d'aide",
+    "FROM_NOTES": "Réponse tirée des notes d'aide",
+    "SOURCES": "Voir :",
+    "TOPICS": "Tous les sujets"
+  },
+  "TOUR": {
+    "NEXT": "Suivant",
+    "PREVIOUS": "Précédent",
+    "DONE": "Terminer",
+    "WELCOME": {
+      "NAV": {
+        "TITLE": "Le menu",
+        "TEXT": "Toutes les parties du cabinet sont ici, rangées par activité. Les pastilles rouges indiquent ce qui attend : tâches, messages, demandes en ligne."
+      },
+      "SEARCH": {
+        "TITLE": "La recherche",
+        "TEXT": "Tapez le nom d'un patient ou d'une page pour y aller directement. Raccourci : ⌘K (ou Ctrl K)."
+      },
+      "BELL": {
+        "TITLE": "Les notifications",
+        "TEXT": "Un travail de labo arrivé, un chèque rejeté, une demande de rendez-vous : le système vous prévient ici."
+      },
+      "THEME": {
+        "TITLE": "Clair ou sombre",
+        "TEXT": "Changez l'apparence selon la lumière de la salle. Le choix est gardé pour vous."
+      },
+      "HELP": {
+        "TITLE": "L'aide",
+        "TEXT": "Une note par écran, des visites guidées, et un assistant pour vos questions."
+      }
+    },
+    "PATIENTS": {
+      "SEARCH": {
+        "TITLE": "Chercher un patient",
+        "TEXT": "Par nom, téléphone ou code. La liste se met à jour pendant la frappe."
+      },
+      "ADD": {
+        "TITLE": "Nouveau patient",
+        "TEXT": "La fiche complète. Pour aller vite, « Ajout rapide » ne demande que le nom."
+      },
+      "DUPLICATES": {
+        "TITLE": "Les doublons",
+        "TEXT": "Deux fiches pour la même personne ? Fusionnez-les ici : l'historique et les paiements sont regroupés."
+      }
+    },
+    "FINANCE": {
+      "TABS": {
+        "TITLE": "Les écrans de la finance",
+        "TEXT": "Du tableau de bord à la clôture de caisse, aux chèques, aux dépenses et aux documents fiscaux. Vous ne voyez que ce que vos droits permettent."
+      }
+    },
+    "STER": {
+      "TABS": {
+        "TITLE": "La stérilisation",
+        "TEXT": "Scannez une étiquette pour utiliser, nettoyer ou mettre en cycle un instrument. Chaque cycle garde son contrôle et la liste des patients concernés."
+      }
+    }
   }
 }

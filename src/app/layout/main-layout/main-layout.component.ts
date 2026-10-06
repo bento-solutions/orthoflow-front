@@ -3,11 +3,12 @@ import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { HeaderComponent } from '../header/header.component';
 import { TranslateModule } from '@ngx-translate/core';
+import { HelpPanelComponent } from '../help-panel/help-panel.component';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, HeaderComponent, TranslateModule],
+  imports: [RouterOutlet, SidebarComponent, HeaderComponent, HelpPanelComponent, TranslateModule],
   template: `
     <a href="#main-content" class="skip-link">{{ 'COMMON.SKIP_TO_CONTENT' | translate }}</a>
 
@@ -31,6 +32,7 @@ import { TranslateModule } from '@ngx-translate/core';
         </main>
       </div>
     </div>
+    <app-help-panel class="no-print" />
   `,
   styles: [`
     :host ::ng-deep .mobile-open {

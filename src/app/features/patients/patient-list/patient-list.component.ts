@@ -40,7 +40,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
         </div>
         <div class="page-actions">
           @if (canMerge()) {
-            <a class="btn btn-secondary" routerLink="duplicates">
+            <a class="btn btn-secondary" routerLink="duplicates" data-tour="patients-duplicates">
               {{ 'PAT.DUPLICATES' | translate }}
               @if (duplicateCount() > 0) { <span class="pill pill-attention pill-nodot ms-1">{{ duplicateCount() }}</span> }
             </a>
@@ -49,7 +49,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
             <app-icon name="user-plus" [size]="16" />
             {{ 'PATIENTS.QUICK_ADD.BUTTON' | translate }}
           </button>
-          <a class="btn btn-primary" routerLink="register">
+          <a class="btn btn-primary" routerLink="register" data-tour="patients-add">
             <app-icon name="user-plus" [size]="16" />
             {{ 'PATIENTS.ADD' | translate }}
           </a>
@@ -91,7 +91,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
 
       <!-- Filters -->
       <div class="mb-4 flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
-        <label class="search">
+        <label class="search" data-tour="patients-search">
           <span class="sr-only">{{ 'COMMON.SEARCH' | translate }}</span>
           <app-icon name="search" [size]="16" />
           <input class="input" type="search" [placeholder]="'PATIENTS.SEARCH_PLACEHOLDER' | translate" [ngModel]="searchInput()" (ngModelChange)="searchInput.set($event)" />

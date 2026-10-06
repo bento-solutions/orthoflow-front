@@ -79,6 +79,7 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
         <button
           type="button"
           (click)="commandRegistry.open()"
+          data-tour="search"
           class="hidden items-center gap-2 rounded-md border border-ink-200 bg-app-bg px-2.5 py-1.5 text-sm text-ink-500 transition-colors duration-1 ease-out hover:border-ink-300 hover:text-ink-900 lg:flex"
           [attr.aria-label]="'COMMON.OPEN_SEARCH' | translate"
         >
@@ -96,7 +97,7 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
           <app-icon name="search" [size]="18" />
         </button>
 
-        <button type="button" class="btn btn-ghost btn-icon" (click)="theme.toggle()" [attr.aria-label]="'COMMON.TOGGLE_THEME' | translate" [title]="'COMMON.TOGGLE_THEME' | translate">
+        <button type="button" class="btn btn-ghost btn-icon" data-tour="theme" (click)="theme.toggle()" [attr.aria-label]="'COMMON.TOGGLE_THEME' | translate" [title]="'COMMON.TOGGLE_THEME' | translate">
           <app-icon [name]="theme.effective() === 'dark' ? 'sun' : 'moon'" [size]="18" />
         </button>
         <button type="button" class="btn btn-ghost btn-icon" (click)="help.toggle()" [attr.aria-label]="'COMMON.HELP' | translate" [title]="'COMMON.HELP' | translate"
@@ -111,7 +112,7 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
               [class.bg-critical-500]="counts.tasks().overdue > 0" [class.bg-petrol-600]="counts.tasks().overdue === 0">{{ counts.tasksDue() > 9 ? '9+' : counts.tasksDue() }}</span>
           }
         </a>
-        <app-notification-bell />
+        <app-notification-bell data-tour="bell" />
 
         <div class="mx-1 hidden h-6 w-px bg-ink-200 sm:block"></div>
 

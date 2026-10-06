@@ -14,7 +14,7 @@ import { TranslateModule } from '@ngx-translate/core';
         <p class="page-sub">{{ 'STER.SUBTITLE' | translate }}</p>
       </div>
     </div>
-    <nav class="tabs mb-6 overflow-x-auto" role="tablist" [attr.aria-label]="'NAV.STERILIZATION' | translate">
+    <nav class="tabs mb-6 overflow-x-auto" data-tour="ster-tabs" role="tablist" [attr.aria-label]="'NAV.STERILIZATION' | translate">
       @for (tab of tabs; track tab.path) {
         <a class="tab whitespace-nowrap" role="tab" [routerLink]="tab.path" routerLinkActive="is-active" #rla="routerLinkActive" [attr.aria-selected]="rla.isActive">{{ tab.key | translate }}</a>
       }

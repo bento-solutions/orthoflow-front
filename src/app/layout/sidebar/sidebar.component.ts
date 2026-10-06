@@ -69,6 +69,7 @@ interface NavItem {
       <!-- Navigation -->
       <nav
         class="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3"
+        data-tour="nav"
         [attr.aria-label]="'NAV.MAIN' | translate"
       >
         @for (group of visibleGroups(); track group.key) {

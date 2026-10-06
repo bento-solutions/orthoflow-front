@@ -167,6 +167,21 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'booking',
+        canActivate: [permissionGuard('BOOKING_REVIEW')],
+        loadComponent: () => import('./features/intake/intake-layout.component').then(m => m.IntakeLayoutComponent),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'requests' },
+          { path: 'requests', loadComponent: () => import('./features/intake/booking-requests.component').then(m => m.BookingRequestsComponent) },
+          { path: 'registrations', loadComponent: () => import('./features/intake/registrations.component').then(m => m.RegistrationsComponent) },
+        ],
+      },
+      {
+        path: 'surveys',
+        canActivate: [permissionGuard('SURVEYS_VIEW')],
+        loadComponent: () => import('./features/intake/surveys.component').then(m => m.SurveysComponent),
+      },
+      {
         path: 'finance',
         canActivate: [permissionGuard('FINANCE_VIEW', 'BILLING_READ')],
         loadComponent: () => import('./features/finance/finance-layout.component').then(m => m.FinanceLayoutComponent),

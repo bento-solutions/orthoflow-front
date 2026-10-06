@@ -2143,5 +2143,63 @@
       "DONE_TEXT": "Il aide le cabinet à s'améliorer.",
       "USED": "Cet avis a déjà été envoyé, ou le lien a expiré."
     }
+  },
+  "INT": {
+    "SUBTITLE": "Les demandes venues de l'extérieur : prise de rendez-vous en ligne et fiches remplies par les patients.",
+    "TABS": {
+      "REQUESTS": "Demandes de rendez-vous",
+      "REGISTRATIONS": "Nouvelles fiches patients"
+    },
+    "BOOK": {
+      "STATUSES": {
+        "PENDING": "À traiter",
+        "CONFIRMED": "Confirmées",
+        "DECLINED": "Refusées",
+        "EXPIRED": "Expirées"
+      },
+      "RECEIVED": "Reçue le {{at}}",
+      "SLOT_TAKEN": "Cet horaire n'est plus libre : choisissez-en un autre en confirmant.",
+      "DECLINE": "Refuser",
+      "CONFIRM": "Confirmer",
+      "REASON": "Motif",
+      "OPEN_PATIENT": "Ouvrir le dossier du patient",
+      "EMPTY": "Aucune demande dans cette liste.",
+      "CONFIRM_TITLE": "Confirmer le rendez-vous",
+      "WHO": "Patient",
+      "NEW_PATIENT": "Créer un nouveau patient avec ces informations",
+      "ANY_FREE": "Le premier praticien libre",
+      "IGNORE_BLOCKS": "Réserver même si l'horaire est bloqué (absence, évènement)",
+      "CONFIRMED": "Rendez-vous confirmé. Le patient est prévenu.",
+      "DECLINE_TITLE": "Refuser la demande",
+      "DECLINE_HINT": "Le patient en est informé. Le motif l'aide à choisir un autre horaire.",
+      "DECLINED": "Demande refusée."
+    },
+    "REG": {
+      "INVITED": "Invité(e) par le cabinet",
+      "POSSIBLE": "Ce patient existe peut-être déjà :",
+      "MERGE_INTO": "C'est lui : compléter son dossier",
+      "REJECT": "Rejeter",
+      "APPROVE_NEW": "Créer le patient",
+      "EMPTY": "Aucune fiche en attente",
+      "EMPTY_TEXT": "Les fiches remplies par les patients depuis le lien d'inscription arrivent ici.",
+      "MERGED": "Dossier existant complété.",
+      "APPROVED": "Patient créé.",
+      "REJECT_CONFIRM": "Rejeter la fiche de {{name}} ? Elle sera supprimée.",
+      "REJECTED": "Fiche rejetée."
+    }
+  },
+  "SURV": {
+    "SUBTITLE": "Ce que disent les patients après leur visite.",
+    "MAX_RATING": "Note",
+    "ANY": "Toutes",
+    "UP_TO": "{{rating}} ou moins",
+    "CALL_ME_ONLY": "Demandes de rappel",
+    "UNHANDLED_ONLY": "Non traités",
+    "RESPONSES": "Réponses",
+    "AVERAGE": "Note moyenne",
+    "CALLBACKS": "Rappels à faire",
+    "SPREAD": "Répartition des notes",
+    "CALL_ME": "Souhaite être rappelé",
+    "EMPTY": "Aucune réponse pour ces filtres."
   }
 }

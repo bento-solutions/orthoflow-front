@@ -2143,5 +2143,63 @@
       "DONE_TEXT": "It helps the clinic improve.",
       "USED": "This feedback was already sent, or the link has expired."
     }
+  },
+  "INT": {
+    "SUBTITLE": "Requests from outside the clinic: online booking and forms patients filled in themselves.",
+    "TABS": {
+      "REQUESTS": "Appointment requests",
+      "REGISTRATIONS": "New patient forms"
+    },
+    "BOOK": {
+      "STATUSES": {
+        "PENDING": "To review",
+        "CONFIRMED": "Confirmed",
+        "DECLINED": "Declined",
+        "EXPIRED": "Expired"
+      },
+      "RECEIVED": "Received {{at}}",
+      "SLOT_TAKEN": "That time is no longer free: pick another when confirming.",
+      "DECLINE": "Decline",
+      "CONFIRM": "Confirm",
+      "REASON": "Reason",
+      "OPEN_PATIENT": "Open the patient's record",
+      "EMPTY": "No request in this list.",
+      "CONFIRM_TITLE": "Confirm the appointment",
+      "WHO": "Patient",
+      "NEW_PATIENT": "Create a new patient from these details",
+      "ANY_FREE": "The first free practitioner",
+      "IGNORE_BLOCKS": "Book even if the time is blocked (absence, event)",
+      "CONFIRMED": "Appointment confirmed. The patient is told.",
+      "DECLINE_TITLE": "Decline the request",
+      "DECLINE_HINT": "The patient is told. A reason helps them pick another time.",
+      "DECLINED": "Request declined."
+    },
+    "REG": {
+      "INVITED": "Invited by the clinic",
+      "POSSIBLE": "This patient may already exist:",
+      "MERGE_INTO": "That's them: update their record",
+      "REJECT": "Reject",
+      "APPROVE_NEW": "Create the patient",
+      "EMPTY": "No form waiting",
+      "EMPTY_TEXT": "Forms patients fill in from the registration link arrive here.",
+      "MERGED": "Existing record updated.",
+      "APPROVED": "Patient created.",
+      "REJECT_CONFIRM": "Reject {{name}}'s form? It will be deleted.",
+      "REJECTED": "Form rejected."
+    }
+  },
+  "SURV": {
+    "SUBTITLE": "What patients say after their visit.",
+    "MAX_RATING": "Rating",
+    "ANY": "Any",
+    "UP_TO": "{{rating}} or lower",
+    "CALL_ME_ONLY": "Call-back requests",
+    "UNHANDLED_ONLY": "Not dealt with",
+    "RESPONSES": "Responses",
+    "AVERAGE": "Average rating",
+    "CALLBACKS": "Call-backs to make",
+    "SPREAD": "Spread of ratings",
+    "CALL_ME": "Wants a call back",
+    "EMPTY": "No answer for these filters."
   }
 }

@@ -1,4 +1,5 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { IntakeApi } from './intake-api.service';
 import { MessagingApi } from './messaging-api.service';
 import { OperationsApi, TaskCount } from './operations-api.service';
 import { AuthService } from './auth.service';
@@ -16,6 +17,7 @@ const NO_TASKS: TaskCount = { open: 0, overdue: 0, dueToday: 0 };
 export class NavCounts {
   private readonly api = inject(OperationsApi);
   private readonly messaging = inject(MessagingApi);
+  private readonly intake = inject(IntakeApi);
   private readonly auth = inject(AuthService);
   private readonly permissions = inject(PermissionService);
   private readonly live = inject(LiveEventsService);
@@ -24,6 +26,10 @@ export class NavCounts {
   readonly messages = signal(0);
   /** WhatsApp replies from patients that nobody has dealt with yet. */
   readonly inbox = signal(0);
+  /** Online booking requests and self-registrations waiting for the front desk to decide. */
+  readonly bookingRequests = signal(0);
+  readonly registrations = signal(0);
+  readonly intakeTotal = computed(() => this.bookingRequests() + this.registrations());
 
   /** What needs attention among the tasks: the late ones and those due today. */
   readonly tasksDue = computed(() => this.tasks().overdue + this.tasks().dueToday);
@@ -38,17 +44,20 @@ export class NavCounts {
           this.tasks.set(NO_TASKS);
           this.messages.set(0);
           this.inbox.set(0);
+          this.bookingRequests.set(0);
+          this.registrations.set(0);
         }
       });
     });
     this.live.of('task').subscribe(() => void this.refreshTasks());
     this.live.of('staff-message').subscribe(() => void this.refreshMessages());
     this.live.of('whatsapp-inbox').subscribe(() => void this.refreshInbox());
+    this.live.of('booking-request', 'registration').subscribe(() => void this.refreshIntake());
   }
 
   async refreshAll(): Promise<void> {
     await this.permissions.ready();
-    await Promise.all([this.refreshTasks(), this.refreshMessages(), this.refreshInbox()]);
+    await Promise.all([this.refreshTasks(), this.refreshMessages(), this.refreshInbox(), this.refreshIntake()]);
   }
 
   async refreshTasks(): Promise<void> {
@@ -81,6 +90,19 @@ export class NavCounts {
       this.inbox.set(Number((await this.messaging.whatsappStatus()).unhandledReplies ?? 0));
     } catch {
       /* keep the last number */
+    }
+  }
+
+  async refreshIntake(): Promise<void> {
+    if (!this.auth.token() || !this.permissions.can('BOOKING_REVIEW')) {
+      return;
+    }
+    try {
+      const [requests, registrations] = await Promise.all([this.intake.bookingCount(), this.intake.registrationCount()]);
+      this.bookingRequests.set(requests.pending ?? 0);
+      this.registrations.set(registrations.pending ?? 0);
+    } catch {
+      /* keep the last numbers */
     }
   }
 }

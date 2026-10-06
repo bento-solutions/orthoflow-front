@@ -15,7 +15,7 @@ interface NavItem {
   /** Shown only to someone holding at least one of these. No list means everyone. */
   permission?: Permission[];
   /** Which small count to show beside the label. */
-  badge?: 'tasks' | 'messages' | 'inbox';
+  badge?: 'tasks' | 'messages' | 'inbox' | 'intake';
 }
 
 /**
@@ -126,7 +126,7 @@ export class SidebarComponent {
   private readonly counts = inject(NavCounts);
 
   protected count(badge: NavItem['badge']): number {
-    return badge === 'tasks' ? this.counts.tasksDue() : badge === 'messages' ? this.counts.messages() : badge === 'inbox' ? this.counts.inbox() : 0;
+    return badge === 'tasks' ? this.counts.tasksDue() : badge === 'messages' ? this.counts.messages() : badge === 'inbox' ? this.counts.inbox() : badge === 'intake' ? this.counts.intakeTotal() : 0;
   }
 
   readonly initial = computed(() => {
@@ -164,7 +164,7 @@ export class SidebarComponent {
       items: [
         { key: 'NAV.MESSAGES', path: '/messages', icon: 'message', badge: 'messages' },
         { key: 'NAV.COMMUNICATION', path: '/communication', icon: 'send', permission: ['MESSAGING_VIEW'], badge: 'inbox' },
-        { key: 'NAV.BOOKING', path: '/booking', icon: 'inbox', permission: ['BOOKING_REVIEW'] },
+        { key: 'NAV.BOOKING', path: '/booking', icon: 'inbox', permission: ['BOOKING_REVIEW'], badge: 'intake' },
         { key: 'NAV.SURVEYS', path: '/surveys', icon: 'check-circle', permission: ['SURVEYS_VIEW'] },
       ],
     },

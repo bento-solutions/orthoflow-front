@@ -48,7 +48,8 @@ export class IntakeApi {
   declineBooking(id: string, reason: string): Promise<void> {
     return this.post(`/booking/requests/${id}/decline`, { reason });
   }
-  bookingCount(): Promise<Record<string, number>> {
+  /** `{ pending }`: how many requests wait for a decision. */
+  bookingCount(): Promise<{ pending: number }> {
     return this.get('/booking/requests/count');
   }
 
@@ -62,7 +63,7 @@ export class IntakeApi {
   rejectRegistration(id: string): Promise<void> {
     return this.post(`/registrations/${id}/reject`);
   }
-  registrationCount(): Promise<Record<string, number>> {
+  registrationCount(): Promise<{ pending: number }> {
     return this.get('/registrations/count');
   }
   inviteToRegister(patientId: string): Promise<Wire<'RegistrationInvite'>> {

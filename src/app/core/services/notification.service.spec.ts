@@ -13,7 +13,7 @@ describe('notificationLink', () => {
   });
 
   it('opens the very cycle a failed sterilization control is about', () => {
-    expect(notificationLink('STERILIZATION_CYCLE', 'c-9')).toBe('/sterilization/cycles/c-9');
+    expect(notificationLink('STERILIZATION_CYCLE', 'c-9')).toBe('/sterilization/cycles?open=c-9');
     expect(notificationLink('STERILIZATION_CYCLE', null)).toBe('/sterilization');
   });
 

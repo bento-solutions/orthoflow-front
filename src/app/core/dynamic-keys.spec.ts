@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CATEGORY_KINDS, PAYMENT_METHODS, PLAN_FREQUENCIES, RECURRENCES } from './services/finance-api.service';
+import { CONTROL_TYPES, ITEM_KINDS, ITEM_STATES } from './services/sterilization-api.service';
 import { INCOME_GROUPS } from './services/analytics-api.service';
 import { BOOKING_STATUSES } from './services/intake-api.service';
 import { MESSAGE_CHANNELS, MESSAGE_PURPOSES, MESSAGE_STATUSES } from './services/messaging-api.service';
@@ -40,6 +41,13 @@ const FAMILIES: Record<string, readonly string[]> = {
   'FIN.TAX.LANGS': ['fr', 'en', 'ar'],
   'FIN.DEBT.SORTS': ['balance', 'name', 'lastPayment'],
   'INT.BOOK.STATUSES': BOOKING_STATUSES,
+  'STER.STATES': ITEM_STATES,
+  'STER.KINDS': ITEM_KINDS,
+  'STER.RESULTS': ['PENDING', 'PASSED', 'FAILED'],
+  'STER.CONTROL_TYPES': CONTROL_TYPES,
+  'STER.ACTION_NAMES': ['REGISTERED', 'USED', 'DIRTY', 'PROCESSED', 'RELEASED', 'RECALLED', 'LUBRICATED', 'RETIRED'],
+  'STER.ACTIONS': ['USE', 'CLEAN', 'LUBRICATE', 'ADD_TO_CYCLE'],
+  'STER.ENDO.WEARS': ['OK', 'NEAR', 'LIMIT'],
   'RETRO.LINE.KINDS': ['ITEM', 'LAB', 'FIXED', 'ADJUSTMENT'],
   'RETRO.RULES.BASES': ['COLLECTED', 'PRODUCED'],
   'RETRO.RULES.BASIS_HINT': ['COLLECTED', 'PRODUCED'],

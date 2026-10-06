@@ -2403,5 +2403,191 @@
       "PROJECTED": "Projection",
       "NOT_SAVED": "Enregistrez l'objectif pour suivre l'année mois par mois."
     }
+  },
+  "STER": {
+    "SUBTITLE": "Instruments, plateaux et pièces à main : où ils en sont, sur qui ils ont servi, et le résultat de chaque cycle d'autoclave.",
+    "TABS": {
+      "DASHBOARD": "Aujourd'hui",
+      "SCAN": "Scanner",
+      "ITEMS": "Instruments",
+      "CYCLES": "Cycles",
+      "TRACE": "Traçabilité",
+      "ENDO": "Limes endo"
+    },
+    "STATES": {
+      "READY": "Stérile, prêt",
+      "USED": "Utilisé",
+      "DIRTY": "À stériliser",
+      "PROCESSED": "En cycle"
+    },
+    "KINDS": {
+      "TRAY": "Plateau",
+      "INSTRUMENT": "Instrument",
+      "HANDPIECE": "Pièce à main",
+      "ENDO_KIT": "Kit d'endodontie"
+    },
+    "RESULTS": {
+      "PENDING": "Contrôle en attente",
+      "PASSED": "Conforme",
+      "FAILED": "Non conforme"
+    },
+    "CONTROL_TYPES": {
+      "CHEMICAL": "Chimique",
+      "BIOLOGICAL": "Biologique",
+      "PHYSICAL": "Physique"
+    },
+    "ACTION_NAMES": {
+      "REGISTERED": "Enregistré",
+      "USED": "Utilisé sur un patient",
+      "DIRTY": "Envoyé au nettoyage",
+      "PROCESSED": "Mis en cycle",
+      "RELEASED": "Libéré (stérile)",
+      "RECALLED": "Rappelé (contrôle non conforme)",
+      "LUBRICATED": "Lubrifié",
+      "RETIRED": "Retiré du service"
+    },
+    "ACTIONS": {
+      "USE": "Utiliser sur un patient",
+      "CLEAN": "Envoyer au nettoyage",
+      "LUBRICATE": "Lubrifier",
+      "ADD_TO_CYCLE": "Mettre en cycle"
+    },
+    "USED": "{{code}} utilisé : l'utilisation est enregistrée.",
+    "CLEANED": "{{code}} envoyé au nettoyage.",
+    "LUBRICATED": "{{code}} lubrifié.",
+    "USE": {
+      "TITLE": "Utiliser sur un patient",
+      "APPOINTMENT": "Rendez-vous du jour"
+    },
+    "LUB": {
+      "TITLE": "Lubrifier la pièce à main",
+      "PRODUCT": "Produit utilisé (optionnel)"
+    },
+    "DASH": {
+      "COUNTS": "Répartition des instruments",
+      "ALL_GOOD": "Rien à signaler",
+      "PENDING_CONTROLS": "Cycles dont le contrôle est attendu",
+      "RECORD_CONTROL": "Saisir le contrôle",
+      "SHELF_LIFE": "Stériles depuis plus de {{days}} jours",
+      "LUBRICATION": "Pièces à main à lubrifier",
+      "NEVER": "jamais",
+      "ENDO": "Limes endo en fin de vie"
+    },
+    "SCAN": {
+      "TITLE": "Scanner un instrument",
+      "CODE": "Code ou étiquette",
+      "FIND": "Chercher",
+      "START_CAMERA": "Activer la caméra",
+      "STOP_CAMERA": "Arrêter la caméra",
+      "CAMERA": "Aperçu de la caméra",
+      "DENIED": "L'accès à la caméra a été refusé. Autorisez-le dans le navigateur, ou tapez le code ci-dessus.",
+      "NO_CAMERA": "Aucune caméra utilisable. Tapez le code ci-dessus ou utilisez une douchette.",
+      "HINT": "Une douchette USB tape le code dans le champ ci-dessus : appuyez sur Entrée.",
+      "BASKET": "Instruments scannés",
+      "CLEAR": "Vider la liste",
+      "START_CYCLE": "Lancer un cycle avec {{count}} instrument(s)",
+      "RETIRED": "Cet instrument a été retiré du service.",
+      "LUBRICATION_DUE": "À lubrifier avant le prochain cycle.",
+      "EMPTY": "Scannez une étiquette pour commencer."
+    },
+    "ITEMS": {
+      "SEARCH": "Code, nom ou n° de série…",
+      "KIND": "Type",
+      "INCLUDE_RETIRED": "Avec les retirés",
+      "PRINT_LABELS": "Imprimer les étiquettes",
+      "NEW": "Nouvel instrument",
+      "EDIT": "Modifier l'instrument",
+      "CODE": "Code",
+      "CODE_HINT": "Celui qui est écrit sur l'étiquette.",
+      "SERIAL": "N° de série",
+      "LAST_USED": "Dernier usage",
+      "SELECT": "Sélectionner",
+      "RETIRED": "Retiré",
+      "LUBRICATE": "À lubrifier",
+      "HISTORY": "Historique",
+      "RETIRE": "Retirer du service",
+      "RETIRE_HINT": "L'instrument ne pourra plus être utilisé ni mis en cycle. Son historique est conservé.",
+      "ALREADY_STERILE": "Déjà stérile",
+      "ALREADY_STERILE_HINT": "À cocher une seule fois, pour un instrument dont vous savez qu'il est stérile. Sinon il commence « à stériliser ».",
+      "CREATED": "Instrument ajouté. Imprimez son étiquette.",
+      "EMPTY": "Aucun instrument."
+    },
+    "CYCLES": {
+      "AUTOCLAVE": "Autoclave",
+      "AUTOCLAVES": "Autoclaves",
+      "CONTROL": "Contrôle",
+      "CONTROL_TYPE": "Type de contrôle",
+      "CONTROL_HINT": "Un contrôle conforme libère les instruments. Un contrôle non conforme les rappelle et liste les patients concernés.",
+      "CONTROL_NOTE": "Remarque",
+      "PASSED": "Contrôle conforme",
+      "FAILED": "Contrôle non conforme",
+      "FAIL_CONFIRM": "Déclarer ce contrôle non conforme ? Les instruments du cycle seront rappelés et les patients concernés listés.",
+      "PASSED_DONE": "Contrôle conforme : instruments libérés.",
+      "FAILED_DONE": "Contrôle non conforme : instruments rappelés.",
+      "EXPOSED": "Patients concernés",
+      "EXPOSED_HINT": "Chaque instrument de ce cycle déjà utilisé sur un patient depuis sa libération.",
+      "NOBODY_EXPOSED": "Aucun instrument de ce cycle n'a servi sur un patient.",
+      "CYCLE": "Cycle",
+      "NEW": "Nouveau cycle",
+      "PROGRAM": "Programme",
+      "STARTED": "Début",
+      "FINISHED": "Fin",
+      "OPERATOR": "Opérateur",
+      "ITEMS": "Pièces",
+      "LOAD": "Chargement",
+      "LOADED": "Chargé dans le cycle",
+      "NOTHING_TO_LOAD": "Aucun instrument « à stériliser ». Envoyez d'abord les instruments utilisés au nettoyage.",
+      "START": "Lancer le cycle",
+      "CREATED": "Cycle n° {{number}} enregistré.",
+      "RECORD_CONTROL": "Saisir le contrôle",
+      "MODEL": "Modèle",
+      "NO_AUTOCLAVE": "Aucun autoclave. Ajoutez le premier ci-dessous.",
+      "EMPTY": "Aucun cycle sur cette période.",
+      "LATE_HINT": "Le résultat d'un indicateur biologique arrive un à deux jours plus tard. S'il est positif, déclarez le cycle non conforme : le matériel est rappelé et les patients concernés sont listés.",
+      "LATE_FAILED": "Déclarer le cycle non conforme"
+    },
+    "WARNINGS": {
+      "NOT_LUBRICATED": "La pièce à main {{code}} n'a pas été lubrifiée depuis sa dernière utilisation."
+    },
+    "TRACE": {
+      "BY_PATIENT": "Par patient",
+      "BY_ITEM": "Par instrument",
+      "ITEM": "Instrument",
+      "PICK_PATIENT": "Choisissez un patient pour voir les instruments utilisés sur lui, et d'où ils venaient.",
+      "PICK_ITEM": "Choisissez un instrument pour voir son parcours.",
+      "CYCLE": "Cycle",
+      "ON_PATIENT": "sur",
+      "EMPTY": "Rien d'enregistré."
+    },
+    "ENDO": {
+      "HINT": "Chaque lime a un nombre d'utilisations maximal. À la limite, elle est jetée et remplacée.",
+      "MODELS": "Modèles de limes",
+      "REPLACE": "À remplacer",
+      "ADD_FILES": "Ajouter des limes",
+      "MODEL": "Modèle",
+      "QUANTITY": "Quantité",
+      "USES": "Utilisations",
+      "WEAR": "Usure",
+      "WEARS": {
+        "OK": "{{remaining}} restantes",
+        "NEAR": "Dernière utilisation",
+        "LIMIT": "Limite atteinte : à jeter"
+      },
+      "DISCARD": "Jeter",
+      "DISCARD_HINT": "retirée du kit, définitivement.",
+      "DISCARD_CONFIRM": "Jeter la lime « {{name}} » ? Elle sera retirée du kit.",
+      "DISCARDED": "Lime retirée du kit.",
+      "REASONS": {
+        "LIMIT": "Nombre d'utilisations atteint",
+        "BROKEN": "Cassée ou déformée"
+      },
+      "NO_FILES": "Aucune lime dans ce kit.",
+      "EMPTY": "Aucun kit d'endodontie",
+      "EMPTY_TEXT": "Ajoutez un instrument de type « Kit d'endodontie » dans l'onglet Instruments.",
+      "BRAND": "Marque",
+      "SIZE_TAPER": "Taille / conicité",
+      "MAX_USES": "Utilisations max.",
+      "NO_MODELS": "Aucun modèle. Ajoutez-en un ci-dessous."
+    }
   }
 }

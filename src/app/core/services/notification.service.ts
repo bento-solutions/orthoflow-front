@@ -16,7 +16,7 @@ export function notificationLink(relatedType: string | null | undefined, related
     case 'LAB_ORDER':
       return '/lab-orders';
     case 'STERILIZATION_CYCLE':
-      return relatedId ? `/sterilization/cycles/${relatedId}` : '/sterilization';
+      return relatedId ? `/sterilization/cycles?open=${relatedId}` : '/sterilization';
     case 'BOOKING_REQUEST':
     case 'PENDING_PATIENT':
       return '/booking';

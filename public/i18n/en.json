@@ -2403,5 +2403,191 @@
       "PROJECTED": "Projected",
       "NOT_SAVED": "Save the goal to follow the year month by month."
     }
+  },
+  "STER": {
+    "SUBTITLE": "Instruments, trays and handpieces: where each stands, who it was used on, and how each autoclave cycle came out.",
+    "TABS": {
+      "DASHBOARD": "Today",
+      "SCAN": "Scan",
+      "ITEMS": "Items",
+      "CYCLES": "Cycles",
+      "TRACE": "Traceability",
+      "ENDO": "Endo files"
+    },
+    "STATES": {
+      "READY": "Sterile, ready",
+      "USED": "Used",
+      "DIRTY": "To sterilise",
+      "PROCESSED": "In a cycle"
+    },
+    "KINDS": {
+      "TRAY": "Tray",
+      "INSTRUMENT": "Instrument",
+      "HANDPIECE": "Handpiece",
+      "ENDO_KIT": "Endo kit"
+    },
+    "RESULTS": {
+      "PENDING": "Control pending",
+      "PASSED": "Passed",
+      "FAILED": "Failed"
+    },
+    "CONTROL_TYPES": {
+      "CHEMICAL": "Chemical",
+      "BIOLOGICAL": "Biological",
+      "PHYSICAL": "Physical"
+    },
+    "ACTION_NAMES": {
+      "REGISTERED": "Registered",
+      "USED": "Used on a patient",
+      "DIRTY": "Sent to cleaning",
+      "PROCESSED": "Loaded in a cycle",
+      "RELEASED": "Released (sterile)",
+      "RECALLED": "Recalled (control failed)",
+      "LUBRICATED": "Lubricated",
+      "RETIRED": "Retired"
+    },
+    "ACTIONS": {
+      "USE": "Use on a patient",
+      "CLEAN": "Send to cleaning",
+      "LUBRICATE": "Lubricate",
+      "ADD_TO_CYCLE": "Add to a cycle"
+    },
+    "USED": "{{code}} used: the use is recorded.",
+    "CLEANED": "{{code}} sent to cleaning.",
+    "LUBRICATED": "{{code}} lubricated.",
+    "USE": {
+      "TITLE": "Use on a patient",
+      "APPOINTMENT": "Today's appointment"
+    },
+    "LUB": {
+      "TITLE": "Lubricate the handpiece",
+      "PRODUCT": "Product used (optional)"
+    },
+    "DASH": {
+      "COUNTS": "Items by state",
+      "ALL_GOOD": "Nothing to flag",
+      "PENDING_CONTROLS": "Cycles waiting for their control",
+      "RECORD_CONTROL": "Record the control",
+      "SHELF_LIFE": "Sterile for more than {{days}} days",
+      "LUBRICATION": "Handpieces to lubricate",
+      "NEVER": "never",
+      "ENDO": "Endo files at their limit"
+    },
+    "SCAN": {
+      "TITLE": "Scan an item",
+      "CODE": "Code or label",
+      "FIND": "Find",
+      "START_CAMERA": "Turn the camera on",
+      "STOP_CAMERA": "Turn the camera off",
+      "CAMERA": "Camera preview",
+      "DENIED": "Camera access was refused. Allow it in the browser, or type the code above.",
+      "NO_CAMERA": "No usable camera. Type the code above or use a barcode reader.",
+      "HINT": "A USB barcode reader types the code into the field above: press Enter.",
+      "BASKET": "Scanned items",
+      "CLEAR": "Clear the list",
+      "START_CYCLE": "Start a cycle with {{count}} item(s)",
+      "RETIRED": "This item has been retired.",
+      "LUBRICATION_DUE": "To lubricate before the next cycle.",
+      "EMPTY": "Scan a label to begin."
+    },
+    "ITEMS": {
+      "SEARCH": "Code, name or serial number…",
+      "KIND": "Kind",
+      "INCLUDE_RETIRED": "Include retired",
+      "PRINT_LABELS": "Print labels",
+      "NEW": "New item",
+      "EDIT": "Edit item",
+      "CODE": "Code",
+      "CODE_HINT": "The one written on the label.",
+      "SERIAL": "Serial number",
+      "LAST_USED": "Last used",
+      "SELECT": "Select",
+      "RETIRED": "Retired",
+      "LUBRICATE": "Lubricate",
+      "HISTORY": "History",
+      "RETIRE": "Retire",
+      "RETIRE_HINT": "The item can no longer be used or loaded. Its history is kept.",
+      "ALREADY_STERILE": "Already sterile",
+      "ALREADY_STERILE_HINT": "Tick once for an item you know is sterile. Otherwise it starts as “to sterilise”.",
+      "CREATED": "Item added. Print its label.",
+      "EMPTY": "No item."
+    },
+    "CYCLES": {
+      "AUTOCLAVE": "Autoclave",
+      "AUTOCLAVES": "Autoclaves",
+      "CONTROL": "Control",
+      "CONTROL_TYPE": "Control type",
+      "CONTROL_HINT": "A passed control releases the items. A failed one recalls them and lists the patients involved.",
+      "CONTROL_NOTE": "Note",
+      "PASSED": "Control passed",
+      "FAILED": "Control failed",
+      "FAIL_CONFIRM": "Declare this control failed? The cycle's items will be recalled and the patients involved listed.",
+      "PASSED_DONE": "Control passed: items released.",
+      "FAILED_DONE": "Control failed: items recalled.",
+      "EXPOSED": "Patients involved",
+      "EXPOSED_HINT": "Every item from this cycle already used on a patient since it was released.",
+      "NOBODY_EXPOSED": "No item from this cycle was used on a patient.",
+      "CYCLE": "Cycle",
+      "NEW": "New cycle",
+      "PROGRAM": "Programme",
+      "STARTED": "Started",
+      "FINISHED": "Finished",
+      "OPERATOR": "Operator",
+      "ITEMS": "Items",
+      "LOAD": "Load",
+      "LOADED": "Loaded in the cycle",
+      "NOTHING_TO_LOAD": "No item “to sterilise”. Send used items to cleaning first.",
+      "START": "Start the cycle",
+      "CREATED": "Cycle no. {{number}} recorded.",
+      "RECORD_CONTROL": "Record the control",
+      "MODEL": "Model",
+      "NO_AUTOCLAVE": "No autoclave. Add the first one below.",
+      "EMPTY": "No cycle in this period.",
+      "LATE_HINT": "A biological indicator is read a day or two later. If it is positive, declare the cycle failed: the items are recalled and the patients involved are listed.",
+      "LATE_FAILED": "Declare the cycle failed"
+    },
+    "WARNINGS": {
+      "NOT_LUBRICATED": "Handpiece {{code}} has not been lubricated since it was last used."
+    },
+    "TRACE": {
+      "BY_PATIENT": "By patient",
+      "BY_ITEM": "By item",
+      "ITEM": "Item",
+      "PICK_PATIENT": "Pick a patient to see the items used on them, and where they came from.",
+      "PICK_ITEM": "Pick an item to see its path.",
+      "CYCLE": "Cycle",
+      "ON_PATIENT": "on",
+      "EMPTY": "Nothing recorded."
+    },
+    "ENDO": {
+      "HINT": "Each file has a maximum number of uses. At the limit it is thrown away and replaced.",
+      "MODELS": "File models",
+      "REPLACE": "Replace",
+      "ADD_FILES": "Add files",
+      "MODEL": "Model",
+      "QUANTITY": "Quantity",
+      "USES": "Uses",
+      "WEAR": "Wear",
+      "WEARS": {
+        "OK": "{{remaining}} left",
+        "NEAR": "Last use",
+        "LIMIT": "At the limit: discard"
+      },
+      "DISCARD": "Discard",
+      "DISCARD_HINT": "removed from the kit for good.",
+      "DISCARD_CONFIRM": "Discard the “{{name}}” file? It is removed from the kit.",
+      "DISCARDED": "File removed from the kit.",
+      "REASONS": {
+        "LIMIT": "Use limit reached",
+        "BROKEN": "Broken or deformed"
+      },
+      "NO_FILES": "No file in this kit.",
+      "EMPTY": "No endo kit",
+      "EMPTY_TEXT": "Add an item of kind “Endo kit” in the Items tab.",
+      "BRAND": "Brand",
+      "SIZE_TAPER": "Size / taper",
+      "MAX_USES": "Max uses",
+      "NO_MODELS": "No model. Add one below."
+    }
   }
 }

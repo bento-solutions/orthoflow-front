@@ -207,6 +207,20 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'sterilization',
+        canActivate: [permissionGuard('STERILIZATION_MANAGE')],
+        loadComponent: () => import('./features/sterilization/sterilization-layout.component').then(m => m.SterilizationLayoutComponent),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+          { path: 'dashboard', loadComponent: () => import('./features/sterilization/sterilization-dashboard.component').then(m => m.SterilizationDashboardComponent) },
+          { path: 'scan', loadComponent: () => import('./features/sterilization/scan.component').then(m => m.ScanComponent) },
+          { path: 'items', loadComponent: () => import('./features/sterilization/sterilization-items.component').then(m => m.SterilizationItemsComponent) },
+          { path: 'cycles', loadComponent: () => import('./features/sterilization/sterilization-cycles.component').then(m => m.SterilizationCyclesComponent) },
+          { path: 'trace', loadComponent: () => import('./features/sterilization/sterilization-trace.component').then(m => m.SterilizationTraceComponent) },
+          { path: 'endo', loadComponent: () => import('./features/sterilization/sterilization-endo.component').then(m => m.SterilizationEndoComponent) },
+        ],
+      },
+      {
         path: 'finance',
         canActivate: [permissionGuard('FINANCE_VIEW', 'BILLING_READ')],
         loadComponent: () => import('./features/finance/finance-layout.component').then(m => m.FinanceLayoutComponent),

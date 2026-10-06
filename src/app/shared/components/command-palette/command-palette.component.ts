@@ -1,13 +1,17 @@
-import { Component, inject, signal, computed, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CommandRegistryService, Command } from '../../../core/services/command-registry.service';
+import { LanguageService } from '../../../core/services/language.service';
+import { PermissionService } from '../../../core/services/permission.service';
+import { PatientDirectoryApi } from '../../../features/patients/patient-directory-api.service';
 
 @Component({
   selector: 'app-command-palette',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslateModule],
   template: `
     @if (registry.isOpen()) {
       <div class="palette-backdrop" (click)="close()">
@@ -15,7 +19,7 @@ import { CommandRegistryService, Command } from '../../../core/services/command-
           class="palette-panel"
           role="dialog"
           aria-modal="true"
-          aria-label="Command palette"
+          [attr.aria-label]="'CMD.TITLE' | translate"
           (click)="$event.stopPropagation()"
         >
           <div class="palette-input-row">
@@ -24,18 +28,18 @@ import { CommandRegistryService, Command } from '../../../core/services/command-
               #inputEl
               type="text"
               class="palette-input"
-              placeholder="Search actions, patients, pages..."
+              [placeholder]="'CMD.PLACEHOLDER' | translate"
               [ngModel]="query()"
               (ngModelChange)="onQueryChange($event)"
               (keydown)="onKeydown($event)"
               autocomplete="off"
-              aria-label="Search commands"
+              [attr.aria-label]="'CMD.TITLE' | translate"
             />
             <kbd class="palette-esc">Esc</kbd>
           </div>
 
           @if (grouped().length === 0) {
-            <div class="palette-empty">No matching commands.</div>
+            <div class="palette-empty">{{ 'CMD.EMPTY' | translate }}</div>
           } @else {
             <div class="palette-results" role="listbox">
               @for (group of grouped(); track group.category) {
@@ -52,7 +56,7 @@ import { CommandRegistryService, Command } from '../../../core/services/command-
                   >
                     <span class="material-icons item-icon" aria-hidden="true">{{ cmd.icon }}</span>
                     <span class="item-text">
-                      <span class="item-label">{{ cmd.label }}</span>
+                      <span class="item-label">{{ labelOf(cmd) }}</span>
                       @if (cmd.description) {
                         <span class="item-desc">{{ cmd.description }}</span>
                       }
@@ -64,9 +68,9 @@ import { CommandRegistryService, Command } from '../../../core/services/command-
           }
 
           <div class="palette-footer">
-            <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-            <span><kbd>Enter</kbd> select</span>
-            <span><kbd>Esc</kbd> close</span>
+            <span><kbd>↑</kbd><kbd>↓</kbd> {{ 'CMD.NAVIGATE' | translate }}</span>
+            <span><kbd>Enter</kbd> {{ 'CMD.SELECT' | translate }}</span>
+            <span><kbd>Esc</kbd> {{ 'CMD.CLOSE' | translate }}</span>
           </div>
         </div>
       </div>
@@ -182,12 +186,59 @@ import { CommandRegistryService, Command } from '../../../core/services/command-
 export class CommandPaletteComponent implements AfterViewChecked {
   registry = inject(CommandRegistryService);
   private router = inject(Router);
+  private readonly translate = inject(TranslateService);
+  private readonly language = inject(LanguageService);
+  private readonly permissions = inject(PermissionService);
+  private readonly patientsApi = inject(PatientDirectoryApi);
 
   @ViewChild('inputEl') inputEl?: ElementRef<HTMLInputElement>;
+
+  constructor() {
+    let pause: ReturnType<typeof setTimeout> | undefined;
+    effect(onCleanup => {
+      const q = this.query().trim();
+      const open = this.registry.isOpen();
+      untracked(() => {
+        if (!open || q.length < 2 || !this.permissions.can('PATIENT_READ')) {
+          this.patientHits.set([]);
+          return;
+        }
+        pause = setTimeout(() => void this.searchPatients(q), 250);
+      });
+      onCleanup(() => clearTimeout(pause));
+    });
+  }
+
+  private async searchPatients(q: string): Promise<void> {
+    try {
+      const page = await this.patientsApi.list({ search: q, size: 5 });
+      if (this.query().trim() === q) {
+        this.patientHits.set(page.content.map(p => ({
+          id: `patient.${p.id}`,
+          label: `${p.firstName} ${p.lastName}`.trim(),
+          description: [p.patientCode, p.phone].filter(Boolean).join(' · '),
+          category: 'patient',
+          icon: 'person',
+          execute: () => void this.router.navigate(['/patients', p.id]),
+        })));
+      }
+    } catch {
+      this.patientHits.set([]);
+    }
+  }
 
   query = signal('');
   activeIndex = signal(0);
   private focusedOnce = false;
+
+  /** Patients whose name, phone or code matches what is typed, found on the server a moment after typing stops. */
+  private readonly patientHits = signal<Command[]>([]);
+
+  /** A label in the language of the screen: a translation key is translated, a plain label is shown as written. */
+  labelOf(cmd: Command): string {
+    this.language.currentLang();
+    return this.translate.instant(cmd.label);
+  }
 
   filtered = computed<Command[]>(() => {
     // registry.isOpen() is read here purely so this recomputes fresh every
@@ -196,30 +247,29 @@ export class CommandPaletteComponent implements AfterViewChecked {
     // could go stale if you open the palette on a different page without
     // ever touching the search box.
     this.registry.isOpen();
+    this.language.currentLang();
     const path = this.router.url;
     const available = this.registry.availableFor(path);
     const q = this.query().trim().toLowerCase();
     if (!q) return available;
-    return available.filter(c => {
-      const haystack = [c.label, c.description ?? '', ...(c.keywords ?? [])].join(' ').toLowerCase();
+    const matching = available.filter(c => {
+      const haystack = [this.translate.instant(c.label), c.description ?? '', ...(c.keywords ?? [])].join(' ').toLowerCase();
       return q.split(/\s+/).every(term => haystack.includes(term));
     });
+    return [...this.patientHits(), ...matching];
   });
 
   grouped = computed(() => {
     const items = this.filtered();
-    const order: Command['category'][] = ['action', 'navigation', 'read'];
+    const order: Command['category'][] = ['patient', 'action', 'navigation', 'read'];
     return order
       .map(category => ({ category, commands: items.filter(c => c.category === category) }))
       .filter(g => g.commands.length > 0);
   });
 
   categoryLabel(category: Command['category']): string {
-    switch (category) {
-      case 'action': return 'Actions';
-      case 'navigation': return 'Go to';
-      case 'read': return 'Info';
-    }
+    this.language.currentLang();
+    return this.translate.instant(`CMD.GROUPS.${category.toUpperCase()}`);
   }
 
   flatIndex(cmd: Command): number {
@@ -257,6 +307,7 @@ export class CommandPaletteComponent implements AfterViewChecked {
   close(): void {
     this.registry.close();
     this.query.set('');
+    this.patientHits.set([]);
     this.activeIndex.set(0);
     this.focusedOnce = false;
   }

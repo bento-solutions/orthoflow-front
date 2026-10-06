@@ -1,6 +1,8 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { Permission } from '../models/permission';
+import { PermissionService } from './permission.service';
 
-export type CommandCategory = 'navigation' | 'action' | 'read';
+export type CommandCategory = 'navigation' | 'action' | 'read' | 'patient';
 
 export interface Command {
   id: string;
@@ -18,6 +20,8 @@ export interface Command {
    * Undefined means available everywhere.
    */
   routeScope?: string;
+  /** Shown only to someone holding at least one of these. None means everyone. The palette is a shortcut, not a way around the menu: what the menu hides it hides too. */
+  permission?: Permission[];
   /** Executes the command. Receives nothing — closures capture what they need. */
   execute: () => void;
   /** True for destructive/typed-confirm-only actions that must never appear in quick search alone. */
@@ -38,6 +42,7 @@ export interface Command {
   providedIn: 'root'
 })
 export class CommandRegistryService {
+  private readonly permissions = inject(PermissionService);
   private commandsSignal = signal<Map<string, Command>>(new Map());
   private isOpenSignal = signal(false);
 
@@ -70,7 +75,7 @@ export class CommandRegistryService {
   /** Returns commands available for the given current route path. */
   availableFor(currentPath: string): Command[] {
     return Array.from(this.commandsSignal().values()).filter(
-      c => !c.routeScope || currentPath.startsWith(c.routeScope)
+      c => (!c.routeScope || currentPath.startsWith(c.routeScope)) && (!c.permission || this.permissions.can(...c.permission))
     );
   }
 

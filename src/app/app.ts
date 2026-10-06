@@ -6,6 +6,8 @@ import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confi
 import { CommandPaletteComponent } from './shared/components/command-palette/command-palette.component';
 import { CommandRegistryService } from './core/services/command-registry.service';
 import { registerAppCommands } from './core/services/register-app-commands';
+import { HelpPanelService } from './core/services/help-panel.service';
+import { ThemeService } from './core/services/theme.service';
 import { VoiceCommandsService } from './core/voice/register-voice-commands';
 import { VoiceOrchestratorService } from './core/voice/voice-orchestrator.service';
 import { VoiceApiService } from './core/voice/voice-api.service';
@@ -40,8 +42,10 @@ export class App {
     private languageService: LanguageService,
     private commandRegistry: CommandRegistryService,
     private router: Router,
+    help: HelpPanelService,
+    theme: ThemeService,
   ) {
-    registerAppCommands(this.commandRegistry, this.router);
+    registerAppCommands(this.commandRegistry, this.router, help, theme);
     this.voiceCommands.registerAll();
     this.verifyLexicon();
   }

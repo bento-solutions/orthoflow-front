@@ -87,7 +87,11 @@
     "NOTIFICATIONS": "Notifications",
     "NO_NOTIFICATIONS": "Aucune notification.",
     "MARK_ALL_READ": "Tout marquer comme lu",
-    "CONFIRM_TITLE": "Veuillez confirmer"
+    "CONFIRM_TITLE": "Veuillez confirmer",
+    "TIME": "Heure",
+    "PATIENT": "Patient",
+    "SEARCH_PATIENT": "Rechercher un patient (nom, téléphone, code)…",
+    "NOTHING_FOUND": "Aucun résultat."
   },
   "DASHBOARD": {
     "TODAYS_VISITS": "Visites du jour",
@@ -393,19 +397,25 @@
       "SUCCESS_DELETE": "Rendez-vous annulé avec succès",
       "CHAIR": "Fauteuil",
       "NO_CHAIR": "Aucun fauteuil",
-      "DURATION_MINUTES": "Durée (minutes)"
+      "DURATION_MINUTES": "Durée (minutes)",
+      "NO_PRACTITIONER": "Sans praticien"
     },
     "STATUS": {
       "SCHEDULED": "Programmé",
       "COMPLETED": "Terminé",
       "CANCELLED": "Annulé",
-      "NO_SHOW": "Non venu"
+      "NO_SHOW": "Non venu",
+      "CONFIRMED": "Confirmé",
+      "LATE": "En retard",
+      "ARRIVED": "Arrivé",
+      "IN_CHAIR": "Au fauteuil"
     },
     "PREVIOUS": "Précédent",
     "NEXT": "Suivant",
     "ADD_APPOINTMENT_ON": "Ajouter un rendez-vous le {{date}}",
     "VIEW_APPOINTMENT": "Voir le rendez-vous de {{patient}} à {{time}}",
-    "CLOSE": "Fermer"
+    "CLOSE": "Fermer",
+    "SCHEDULE_ANYWAY": "Planifier quand même"
   },
   "ONBOARDING": {
     "WELCOME_TITLE": "Personnalisons OrthoFlow",
@@ -1282,6 +1292,83 @@
       "NOTE_BODY": "Texte",
       "BODY_HINT": "Texte simple ; une ligne vide sépare les paragraphes.",
       "RESTORE": "Rétablir le texte d'origine"
+    }
+  },
+  "FD": {
+    "TITLE": "Accueil",
+    "SUBTITLE": "Qui est là, qui est le prochain, qui est dans quel fauteuil, et qui est encore attendu.",
+    "OFFLINE": "Mises à jour en direct interrompues",
+    "WALK_IN": "Patient sans rendez-vous",
+    "WALK_IN_TAG": "sans RDV",
+    "WALK_IN_NEW_HINT": "Cherchez un patient existant, ou laissez vide et saisissez son nom pour créer sa fiche.",
+    "ADD_TO_WAITING": "Ajouter à la salle d'attente",
+    "TAB_TODAY": "Aujourd'hui",
+    "TAB_LIST": "Liste d'attente",
+    "TAB_ABSENCES": "Absences et fermetures",
+    "KPIS": "Indicateurs du jour",
+    "KPI": {
+      "WAITING": "En attente",
+      "IN_TREATMENT": "En soin",
+      "ARRIVED": "Arrivés",
+      "AVG_WAIT": "Attente moyenne",
+      "LONGEST": "Plus longue attente",
+      "CHAIRS": "Fauteuils occupés"
+    },
+    "WAITING_ROOM": "Salle d'attente",
+    "WAITING_SINCE": "Temps d'attente",
+    "MOVE_UP": "Avancer",
+    "MOVE_DOWN": "Reculer",
+    "CHAIR": "Fauteuil",
+    "CHOOSE_CHAIR": "Fauteuil…",
+    "SEAT": "Installer",
+    "NOBODY_WAITING": "Personne n'attend.",
+    "CHAIRS": "Fauteuils",
+    "FREE": "Libre",
+    "BACK_TO_WAITING": "Remettre en attente",
+    "FINISH": "Terminer",
+    "EXPECTED": "Attendus aujourd'hui",
+    "CHECK_IN": "Arrivé(e)",
+    "NOBODY_EXPECTED": "Plus personne n'est attendu.",
+    "LIST": {
+      "TITLE": "Liste d'attente",
+      "HINT": "Les patients qui veulent un créneau plus tôt ou qui n'ont pas pu en avoir un. Quand une place se libère, proposez-la au plus urgent dont les préférences conviennent.",
+      "ADD": "Ajouter à la liste",
+      "URGENCY": "Urgence",
+      "PREFERENCES": "Préférences",
+      "SCHEDULE": "Planifier",
+      "EMPTY": "La liste d'attente est vide.",
+      "ANY": "Peu importe",
+      "WEEKDAYS": "Jours qui conviennent",
+      "WEEKDAYS_HINT": "Ne rien cocher signifie tous les jours.",
+      "FROM_TIME": "Pas avant",
+      "TO_TIME": "Pas après",
+      "REMOVE_CONFIRM": "Retirer {{name}} de la liste d'attente ?",
+      "URGENCIES": {
+        "LOW": "Faible",
+        "NORMAL": "Normale",
+        "HIGH": "Élevée",
+        "URGENT": "Urgente"
+      }
+    },
+    "ABS": {
+      "TITLE": "Absences des praticiens",
+      "HINT": "Un créneau pendant une absence est bloqué dans l'agenda et sur la réservation en ligne.",
+      "ADD": "Ajouter une absence",
+      "EMPTY": "Aucune absence prévue.",
+      "REASONS": {
+        "LEAVE": "Congé",
+        "SICK": "Maladie",
+        "TRAINING": "Formation",
+        "CONFERENCE": "Congrès",
+        "OTHER": "Autre"
+      }
+    },
+    "EVENTS": {
+      "TITLE": "Fermetures et événements du cabinet",
+      "HINT": "Jours fériés, travaux, réunions : le cabinet n'accepte pas de rendez-vous pendant ces périodes.",
+      "ADD": "Ajouter une fermeture",
+      "NAME": "Intitulé",
+      "EMPTY": "Aucune fermeture prévue."
     }
   }
 }

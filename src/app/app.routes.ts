@@ -69,6 +69,11 @@ export const routes: Routes = [
         ]
       },
       {
+        path: 'front-desk',
+        canActivate: [permissionGuard('AGENDA_VIEW', 'WAITING_ROOM_MANAGE')],
+        loadComponent: () => import('./features/front-desk/front-desk.component').then(m => m.FrontDeskComponent),
+      },
+      {
         path: 'schedule',
         loadComponent: () => import('./features/schedule/schedule.component').then(m => m.ScheduleComponent),
       },

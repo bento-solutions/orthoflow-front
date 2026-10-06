@@ -87,7 +87,11 @@
     "NOTIFICATIONS": "Notifications",
     "NO_NOTIFICATIONS": "No notifications.",
     "MARK_ALL_READ": "Mark all as read",
-    "CONFIRM_TITLE": "Please confirm"
+    "CONFIRM_TITLE": "Please confirm",
+    "TIME": "Time",
+    "PATIENT": "Patient",
+    "SEARCH_PATIENT": "Search a patient (name, phone, code)…",
+    "NOTHING_FOUND": "No results."
   },
   "DASHBOARD": {
     "TODAYS_VISITS": "Today's Visits",
@@ -393,19 +397,25 @@
       "SUCCESS_DELETE": "Appointment cancelled successfully",
       "CHAIR": "Chair",
       "NO_CHAIR": "No chair",
-      "DURATION_MINUTES": "Duration (minutes)"
+      "DURATION_MINUTES": "Duration (minutes)",
+      "NO_PRACTITIONER": "No practitioner"
     },
     "STATUS": {
       "SCHEDULED": "Scheduled",
       "COMPLETED": "Completed",
       "CANCELLED": "Cancelled",
-      "NO_SHOW": "No Show"
+      "NO_SHOW": "No Show",
+      "CONFIRMED": "Confirmed",
+      "LATE": "Late",
+      "ARRIVED": "Arrived",
+      "IN_CHAIR": "In chair"
     },
     "PREVIOUS": "Previous",
     "NEXT": "Next",
     "ADD_APPOINTMENT_ON": "Add appointment on {{date}}",
     "VIEW_APPOINTMENT": "View appointment for {{patient}} at {{time}}",
-    "CLOSE": "Close"
+    "CLOSE": "Close",
+    "SCHEDULE_ANYWAY": "Schedule anyway"
   },
   "ONBOARDING": {
     "WELCOME_TITLE": "Let's personalize OrthoFlow",
@@ -1282,6 +1292,83 @@
       "NOTE_BODY": "Text",
       "BODY_HINT": "Plain text; a blank line separates paragraphs.",
       "RESTORE": "Restore the original text"
+    }
+  },
+  "FD": {
+    "TITLE": "Front desk",
+    "SUBTITLE": "Who is here, who is next, who is in which chair, and who is still expected.",
+    "OFFLINE": "Live updates paused",
+    "WALK_IN": "Walk-in",
+    "WALK_IN_TAG": "walk-in",
+    "WALK_IN_NEW_HINT": "Find an existing patient, or leave empty and type a name to create their file.",
+    "ADD_TO_WAITING": "Add to waiting room",
+    "TAB_TODAY": "Today",
+    "TAB_LIST": "Waiting list",
+    "TAB_ABSENCES": "Absences and closures",
+    "KPIS": "Today's figures",
+    "KPI": {
+      "WAITING": "Waiting",
+      "IN_TREATMENT": "In treatment",
+      "ARRIVED": "Arrived",
+      "AVG_WAIT": "Average wait",
+      "LONGEST": "Longest wait",
+      "CHAIRS": "Chairs in use"
+    },
+    "WAITING_ROOM": "Waiting room",
+    "WAITING_SINCE": "Time waiting",
+    "MOVE_UP": "Move up",
+    "MOVE_DOWN": "Move down",
+    "CHAIR": "Chair",
+    "CHOOSE_CHAIR": "Chair…",
+    "SEAT": "Seat",
+    "NOBODY_WAITING": "Nobody is waiting.",
+    "CHAIRS": "Chairs",
+    "FREE": "Free",
+    "BACK_TO_WAITING": "Back to waiting",
+    "FINISH": "Finish",
+    "EXPECTED": "Expected today",
+    "CHECK_IN": "Arrived",
+    "NOBODY_EXPECTED": "Nobody else is expected.",
+    "LIST": {
+      "TITLE": "Waiting list",
+      "HINT": "Patients who want an earlier slot or could not get one. When a slot opens, offer it to the most urgent whose preferences fit.",
+      "ADD": "Add to the list",
+      "URGENCY": "Urgency",
+      "PREFERENCES": "Preferences",
+      "SCHEDULE": "Schedule",
+      "EMPTY": "The waiting list is empty.",
+      "ANY": "Any",
+      "WEEKDAYS": "Days that suit",
+      "WEEKDAYS_HINT": "Leave all unticked for any day.",
+      "FROM_TIME": "Not before",
+      "TO_TIME": "Not after",
+      "REMOVE_CONFIRM": "Remove {{name}} from the waiting list?",
+      "URGENCIES": {
+        "LOW": "Low",
+        "NORMAL": "Normal",
+        "HIGH": "High",
+        "URGENT": "Urgent"
+      }
+    },
+    "ABS": {
+      "TITLE": "Practitioner absences",
+      "HINT": "A slot during an absence is blocked in the agenda and on online booking.",
+      "ADD": "Add an absence",
+      "EMPTY": "No absences planned.",
+      "REASONS": {
+        "LEAVE": "Leave",
+        "SICK": "Sick",
+        "TRAINING": "Training",
+        "CONFERENCE": "Conference",
+        "OTHER": "Other"
+      }
+    },
+    "EVENTS": {
+      "TITLE": "Clinic closures and events",
+      "HINT": "Public holidays, works, meetings: no appointments are accepted in these periods.",
+      "ADD": "Add a closure",
+      "NAME": "Title",
+      "EMPTY": "No closures planned."
     }
   }
 }

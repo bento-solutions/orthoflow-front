@@ -9,6 +9,11 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { PracticeSettingsService } from '../../core/services/practice-settings.service';
+import { PractitionerService } from '../../core/services/practitioner.service';
+import { PermissionService } from '../../core/services/permission.service';
+import { AgendaConfigService, APPOINTMENT_STATUSES, AppointmentType } from '../../core/services/agenda-config.service';
+import { LiveEventsService } from '../../core/services/live-events.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 type CalendarView = 'day' | 'week' | 'month' | 'year';
 
@@ -41,6 +46,12 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
             <button type="button" class="btn-schedule-ghost" (click)="goToToday()">{{ 'SCHEDULE.TODAY' | translate }}</button>
           </div>
           <div class="filters">
+            <select class="filter-select" [attr.aria-label]="'COMMON.PRACTITIONER' | translate" [value]="practitionerFilter()" (change)="practitionerFilter.set($any($event.target).value)">
+              <option value="">{{ 'COMMON.ALL_PRACTITIONERS' | translate }}</option>
+              @for (p of practitioners.active(); track p.id) {
+                <option [value]="p.id">{{ p.displayName }}</option>
+              }
+            </select>
             <div class="search-box">
               <span class="material-icons">search</span>
               <input type="text" [placeholder]="'SCHEDULE.FILTER_PLACEHOLDER' | translate" (input)="onPatientFilter($event)" />
@@ -89,6 +100,8 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                           type="button"
                           class="event-pill"
                           [class]="'event-pill ' + event.type.toLowerCase()"
+                          [style.box-shadow]="barShadow(event)"
+                          [attr.title]="eventTitle(event)"
                           [attr.aria-label]="('SCHEDULE.VIEW_APPOINTMENT' | translate: { patient: getPatientName(event.patientId), time: formatTime(event.dateTime) })"
                           (click)="openEditModal(event); $event.stopPropagation()"
                         >
@@ -134,6 +147,8 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                         class="day-event-card"
                         [style.top.px]="getEventTop(event)"
                         [style.height.px]="52"
+                        [style.box-shadow]="barShadow(event)"
+                        [attr.title]="eventTitle(event)"
                         [class]="event.type.toLowerCase()"
                         [class.dragging]="draggingId() === event.id"
                         draggable="true"
@@ -178,6 +193,8 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                     class="day-event-card"
                     [style.top.px]="getEventTop(event)"
                     [style.height.px]="60"
+                    [style.box-shadow]="barShadow(event)"
+                    [attr.title]="eventTitle(event)"
                     [class]="event.type.toLowerCase()"
                     [class.dragging]="draggingId() === event.id"
                     draggable="true"
@@ -253,10 +270,11 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                   <input type="datetime-local" formControlName="dateTime">
                 </div>
                 <div class="form-group">
-                  <label>{{ 'SCHEDULE.FORM.TYPE' | translate }}</label>
-                  <select formControlName="type">
-                    @for (type of appointmentTypes; track type) {
-                      <option [value]="type">{{ 'SCHEDULE.TYPES.' + type.toUpperCase() | translate }}</option>
+                  <label>{{ 'COMMON.PRACTITIONER' | translate }}</label>
+                  <select formControlName="practitionerId">
+                    <option value="">{{ 'SCHEDULE.FORM.NO_PRACTITIONER' | translate }}</option>
+                    @for (p of practitioners.active(); track p.id) {
+                      <option [value]="p.id">{{ p.displayName }}</option>
                     }
                   </select>
                 </div>
@@ -264,16 +282,21 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
 
               <div class="form-row">
                 <div class="form-group">
-                  <label>{{ 'SCHEDULE.FORM.STATUS' | translate }}</label>
-                  <select formControlName="status">
-                    @for (status of appointmentStatuses; track status) {
-                      <option [value]="status">{{ 'SCHEDULE.STATUS.' + status.toUpperCase() | translate }}</option>
+                  <label>{{ 'SCHEDULE.FORM.TYPE' | translate }}</label>
+                  <select formControlName="appointmentTypeId" (change)="onTypeChange()">
+                    <option value="">—</option>
+                    @for (type of config.types(); track type.id) {
+                      <option [value]="type.id">{{ config.label(type) }}</option>
                     }
                   </select>
                 </div>
                 <div class="form-group">
-                  <label>{{ 'SCHEDULE.FORM.APPLIANCE_STEP' | translate }}</label>
-                  <input type="number" formControlName="applianceStep">
+                  <label>{{ 'SCHEDULE.FORM.STATUS' | translate }}</label>
+                  <select formControlName="status">
+                    @for (status of appointmentStatuses; track status) {
+                      <option [value]="status">{{ 'SCHEDULE.STATUS.' + status | translate }}</option>
+                    }
+                  </select>
                 </div>
               </div>
 
@@ -291,6 +314,11 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                   <label>{{ 'SCHEDULE.FORM.DURATION_MINUTES' | translate }}</label>
                   <input type="number" min="5" step="5" formControlName="durationMinutes">
                 </div>
+              </div>
+
+              <div class="form-group">
+                <label>{{ 'SCHEDULE.FORM.APPLIANCE_STEP' | translate }}</label>
+                <input type="number" formControlName="applianceStep">
               </div>
 
               <div class="form-group">
@@ -396,6 +424,16 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .filters {
       display: flex;
       gap: 1rem;
+    }
+
+    .filter-select {
+      background: rgb(var(--ink-50));
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.9rem;
+      color: var(--text);
+      max-width: 12rem;
     }
 
     .search-box {
@@ -785,6 +823,11 @@ export class ScheduleComponent {
   private confirmDialog = inject(ConfirmDialogService);
   private practiceSettings = inject(PracticeSettingsService);
   patientService = inject(PatientService);
+  practitioners = inject(PractitionerService);
+  config = inject(AgendaConfigService);
+  private permissions = inject(PermissionService);
+  private live = inject(LiveEventsService);
+  practitionerFilter = signal('');
   translate = inject(TranslateService);
   fb = inject(FormBuilder);
 
@@ -796,8 +839,7 @@ export class ScheduleComponent {
   patientFilterTerm = signal('');
 
   appointmentForm: FormGroup;
-  appointmentTypes = ['Checkup', 'Initial', 'Emergency', 'Consultation', 'Braces_Fit', 'Aligner_Fit', 'Retainer'];
-  appointmentStatuses = ['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'];
+  appointmentStatuses = APPOINTMENT_STATUSES;
 
   weekdays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   // Configurable per-clinic (audit VIII.6/P2#29) via Settings > Scheduling;
@@ -812,6 +854,8 @@ export class ScheduleComponent {
       patientId: ['', Validators.required],
       dateTime: ['', Validators.required],
       chairId: [''],
+      practitionerId: [''],
+      appointmentTypeId: [''],
       durationMinutes: [30, [Validators.min(5)]],
       type: ['Checkup', Validators.required],
       status: ['SCHEDULED', Validators.required],
@@ -822,6 +866,9 @@ export class ScheduleComponent {
     this.practiceSettings.load().subscribe({
       error: () => {} // keep the hardcoded default hours; not worth a toast for a background preference load
     });
+
+    // Someone at the front desk checking a patient in changes this screen too.
+    this.live.of('appointment').pipe(takeUntilDestroyed()).subscribe(() => this.scheduleService.refreshAppointments());
   }
 
   yearMonths = Array.from({ length: 12 }, (_, i) => {
@@ -837,7 +884,8 @@ export class ScheduleComponent {
   /** Appointments filtered by the patient search box — shared by every view. */
   filteredAppointments = computed(() => {
     const term = this.patientFilterTerm().trim().toLowerCase();
-    const all = this.scheduleService.appointments();
+    const doctor = this.practitionerFilter();
+    const all = this.scheduleService.appointments().filter(app => !doctor || app.practitionerId === doctor);
     if (!term) return all;
     return all.filter(app => this.getPatientName(app.patientId).toLowerCase().includes(term));
   });
@@ -939,6 +987,27 @@ export class ScheduleComponent {
     this.currentDate.set(new Date());
   }
 
+  /** A bar on the leading edge in the practitioner's colour, so a column of mixed doctors reads at a glance. */
+  barShadow(event: Appointment): string {
+    const color = event.practitionerColor || event.typeColor;
+    if (!color) return '';
+    return `inset ${this.translate.currentLang === 'ar' ? '-' : ''}4px 0 0 ${color}`;
+  }
+
+  eventTitle(event: Appointment): string {
+    return [event.practitionerName, event.type].filter(Boolean).join(' · ');
+  }
+
+  /** Picking a type brings its usual length, but never overwrites one the person set for an existing visit. */
+  onTypeChange(): void {
+    const type = this.config.types().find(t => t.id === this.appointmentForm.value.appointmentTypeId) as AppointmentType | undefined;
+    if (!type) return;
+    this.appointmentForm.patchValue({ type: type.nameFr });
+    if (!this.editingAppointment()) {
+      this.appointmentForm.patchValue({ durationMinutes: type.defaultDurationMinutes });
+    }
+  }
+
   getPatientName(id: string) {
     const p = this.patientService.patients().find(p => p.id === id);
     return p ? `${p.firstName} ${p.lastName}` : (this.translate.instant('SCHEDULE.UNKNOWN_PATIENT'));
@@ -974,6 +1043,8 @@ export class ScheduleComponent {
       patientId: '',
       dateTime: this.formatDateForInput(date || new Date()),
       chairId: '',
+      practitionerId: this.practitionerFilter() || this.permissions.practitionerId() || '',
+      appointmentTypeId: '',
       durationMinutes: 30,
       type: 'Checkup',
       status: 'SCHEDULED',
@@ -1068,6 +1139,8 @@ export class ScheduleComponent {
       patientId: appointment.patientId,
       dateTime: this.formatDateForInput(new Date(appointment.dateTime)),
       chairId: appointment.chairId || '',
+      practitionerId: appointment.practitionerId || '',
+      appointmentTypeId: appointment.appointmentTypeId || '',
       durationMinutes: appointment.durationMinutes ?? 30,
       type: appointment.type,
       status: appointment.status,
@@ -1092,7 +1165,9 @@ export class ScheduleComponent {
     const data = {
       ...this.appointmentForm.value,
       dateTime: new Date(this.appointmentForm.value.dateTime).toISOString(),
-      chairId: this.appointmentForm.value.chairId || null
+      chairId: this.appointmentForm.value.chairId || null,
+      practitionerId: this.appointmentForm.value.practitionerId || null,
+      appointmentTypeId: this.appointmentForm.value.appointmentTypeId || null
     };
     const editing = this.editingAppointment();
 
@@ -1114,9 +1189,23 @@ export class ScheduleComponent {
         this.toast.success(editing ? 'Appointment updated.' : 'Appointment scheduled.');
         this.closeModal();
       },
-      error: (err) => {
+      error: async (err) => {
         console.error('Error saving appointment', err);
-        this.toast.error(err.error?.detail || err.error?.message || 'Could not save the appointment. Please try again.');
+        const detail: string = err.error?.detail || err.error?.message || '';
+        // A blocked slot (a doctor's leave, a closure) is a warning, not a wall: the person may know better.
+        if (err.status === 409 && detail.startsWith('This slot is blocked') && !data.ignoreBlocks) {
+          if (await this.confirmDialog.confirm(detail, { confirmLabel: this.translate.instant('SCHEDULE.SCHEDULE_ANYWAY') })) {
+            const retry = editing
+              ? this.scheduleService.updateAppointment(editing.id, { ...data, ignoreBlocks: true })
+              : this.scheduleService.addAppointment({ ...data, ignoreBlocks: true });
+            retry.subscribe({
+              next: () => { this.toast.success(editing ? 'Appointment updated.' : 'Appointment scheduled.'); this.closeModal(); },
+              error: (e) => this.toast.error(e.error?.detail || 'Could not save the appointment. Please try again.')
+            });
+          }
+          return;
+        }
+        this.toast.error(detail || 'Could not save the appointment. Please try again.');
       }
     });
   }

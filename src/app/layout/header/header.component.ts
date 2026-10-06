@@ -1,22 +1,37 @@
 import { Component, Output, EventEmitter, inject, computed } from '@angular/core';
-import { Router, NavigationEnd } from '@angular/router';
+import { Router, NavigationEnd, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
 import { CommandRegistryService } from '../../core/services/command-registry.service';
 import { IconComponent } from '../../shared/ui/icon.component';
+import { HelpPanelService } from '../../core/services/help-panel.service';
+import { ThemeService } from '../../core/services/theme.service';
+import { NotificationBellComponent } from './notification-bell.component';
 
 /* Route prefix → section label. Longest prefix wins, so `/patients/12`
    still resolves to Patients. */
 const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
   ['/patients', 'COMMON.PATIENTS'],
+  ['/recalls', 'NAV.RECALLS'],
   ['/schedule', 'COMMON.SCHEDULE'],
+  ['/front-desk', 'NAV.FRONT_DESK'],
   ['/billing', 'COMMON.BILLING'],
+  ['/finance', 'NAV.FINANCE'],
+  ['/retrocessions', 'NAV.RETROCESSIONS'],
+  ['/lab-orders', 'NAV.LAB_ORDERS'],
+  ['/sterilization', 'NAV.STERILIZATION'],
+  ['/tasks', 'NAV.TASKS'],
+  ['/messages', 'NAV.MESSAGES'],
+  ['/communication', 'NAV.COMMUNICATION'],
+  ['/booking', 'NAV.BOOKING'],
+  ['/surveys', 'NAV.SURVEYS'],
   ['/stock', 'COMMON.STOCK'],
   ['/treatments', 'COMMON.TREATMENTS'],
   ['/analytics', 'COMMON.ANALYTICS'],
   ['/settings', 'COMMON.SETTINGS'],
+  ['/account', 'NAV.ACCOUNT'],
 ];
 
 /**
@@ -33,7 +48,7 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [TranslateModule, IconComponent],
+  imports: [TranslateModule, IconComponent, NotificationBellComponent, RouterLink],
   template: `
     <header
       class="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-ink-100 bg-surface/85 px-4 backdrop-blur-md md:px-6"
@@ -79,10 +94,19 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
           <app-icon name="search" [size]="18" />
         </button>
 
+        <button type="button" class="btn btn-ghost btn-icon" (click)="theme.toggle()" [attr.aria-label]="'COMMON.TOGGLE_THEME' | translate" [title]="'COMMON.TOGGLE_THEME' | translate">
+          <app-icon [name]="theme.effective() === 'dark' ? 'sun' : 'moon'" [size]="18" />
+        </button>
+        <button type="button" class="btn btn-ghost btn-icon" (click)="help.toggle()" [attr.aria-label]="'COMMON.HELP' | translate" [title]="'COMMON.HELP' | translate"
+          data-tour="help">
+          <app-icon name="help-circle" [size]="18" />
+        </button>
+        <app-notification-bell />
+
         <div class="mx-1 hidden h-6 w-px bg-ink-200 sm:block"></div>
 
         <!-- Account -->
-        <div class="flex items-center gap-2.5">
+        <a routerLink="/account" class="flex items-center gap-2.5 rounded-md py-0.5 pe-1 hover:bg-ink-50" [attr.aria-label]="'NAV.ACCOUNT' | translate">
           <div
             class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-petrol-100 text-xs font-bold text-petrol-700"
             aria-hidden="true"
@@ -95,6 +119,8 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
               <p class="truncate text-2xs font-semibold uppercase tracking-wider text-ink-500">{{ role }}</p>
             }
           </div>
+        </a>
+        <div class="flex items-center">
           <button
             type="button"
             (click)="logout()"
@@ -116,6 +142,8 @@ export class HeaderComponent {
   private router = inject(Router);
   private translate = inject(TranslateService);
   readonly commandRegistry = inject(CommandRegistryService);
+  readonly theme = inject(ThemeService);
+  readonly help = inject(HelpPanelService);
 
   /** Current section, tracked from the router rather than passed in. */
   readonly sectionTitle = toSignal(

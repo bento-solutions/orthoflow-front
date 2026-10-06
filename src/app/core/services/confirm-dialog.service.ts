@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 
 export interface ConfirmRequest {
   id: number;
@@ -32,6 +33,7 @@ let nextId = 1;
   providedIn: 'root'
 })
 export class ConfirmDialogService {
+  private readonly translate = inject(TranslateService);
   private requestSignal = signal<ConfirmRequest | null>(null);
   request = this.requestSignal.asReadonly();
 
@@ -39,10 +41,10 @@ export class ConfirmDialogService {
     return new Promise<boolean>(resolve => {
       this.requestSignal.set({
         id: nextId++,
-        title: options.title ?? 'Please confirm',
+        title: options.title ?? this.translate.instant('COMMON.CONFIRM_TITLE'),
         message,
-        confirmLabel: options.confirmLabel ?? 'Confirm',
-        cancelLabel: options.cancelLabel ?? 'Cancel',
+        confirmLabel: options.confirmLabel ?? this.translate.instant('COMMON.CONFIRM'),
+        cancelLabel: options.cancelLabel ?? this.translate.instant('COMMON.CANCEL'),
         danger: options.danger ?? false,
         resolve,
       });

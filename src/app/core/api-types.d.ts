@@ -5092,24 +5092,34 @@ export interface components {
             /** Format: uuid */
             logoFileId?: string;
         };
-        LocalTime: {
-            /** Format: int32 */
-            hour?: number;
-            /** Format: int32 */
-            minute?: number;
-            /** Format: int32 */
-            second?: number;
-            /** Format: int32 */
-            nano?: number;
-        };
         OpeningDay: {
             /** Format: int32 */
             weekday?: number;
             closed?: boolean;
-            openTime: components["schemas"]["LocalTime"];
-            closeTime: components["schemas"]["LocalTime"];
-            breakStart?: components["schemas"]["LocalTime"];
-            breakEnd?: components["schemas"]["LocalTime"];
+            /**
+             * Format: time
+             * @description A time of day, HH:mm or HH:mm:ss
+             * @example 08:00:00
+             */
+            openTime: string;
+            /**
+             * Format: time
+             * @description A time of day, HH:mm or HH:mm:ss
+             * @example 08:00:00
+             */
+            closeTime: string;
+            /**
+             * Format: time
+             * @description A time of day, HH:mm or HH:mm:ss
+             * @example 08:00:00
+             */
+            breakStart?: string;
+            /**
+             * Format: time
+             * @description A time of day, HH:mm or HH:mm:ss
+             * @example 08:00:00
+             */
+            breakEnd?: string;
         };
         Week: {
             days: components["schemas"]["OpeningDay"][];
@@ -5149,8 +5159,18 @@ export interface components {
             /** Format: int32 */
             durationMinutes?: number;
             preferredWeekdays?: string;
-            preferredFrom?: components["schemas"]["LocalTime"];
-            preferredTo?: components["schemas"]["LocalTime"];
+            /**
+             * Format: time
+             * @description A time of day, HH:mm or HH:mm:ss
+             * @example 08:00:00
+             */
+            preferredFrom?: string;
+            /**
+             * Format: time
+             * @description A time of day, HH:mm or HH:mm:ss
+             * @example 08:00:00
+             */
+            preferredTo?: string;
             /** @enum {string} */
             urgency?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
             notes?: string;
@@ -5172,8 +5192,18 @@ export interface components {
             /** Format: int32 */
             durationMinutes?: number;
             preferredWeekdays?: string;
-            preferredFrom?: components["schemas"]["LocalTime"];
-            preferredTo?: components["schemas"]["LocalTime"];
+            /**
+             * Format: time
+             * @description A time of day, HH:mm or HH:mm:ss
+             * @example 08:00:00
+             */
+            preferredFrom?: string;
+            /**
+             * Format: time
+             * @description A time of day, HH:mm or HH:mm:ss
+             * @example 08:00:00
+             */
+            preferredTo?: string;
             /** @enum {string} */
             urgency?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
             notes?: string;
@@ -7392,29 +7422,29 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StockMovementResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
             empty?: boolean;
         };
         PageableObject: {
+            /** Format: int64 */
+            offset?: number;
+            sort?: components["schemas"]["SortObject"][];
             paged?: boolean;
             unpaged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
             /** Format: int32 */
             pageSize?: number;
-            /** Format: int64 */
-            offset?: number;
-            sort?: components["schemas"]["SortObject"][];
         };
         SortObject: {
             direction?: string;
@@ -7714,17 +7744,17 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
             empty?: boolean;
         };
         PatientMergePreview: {
@@ -8025,17 +8055,17 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientDirectoryRow"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
             empty?: boolean;
         };
         PatientDirectoryRow: {
@@ -8132,17 +8162,17 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LogRow"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
             empty?: boolean;
         };
         InboxRow: {
@@ -8192,17 +8222,17 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["InvoiceResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
             empty?: boolean;
         };
         BillingSummaryResponse: {

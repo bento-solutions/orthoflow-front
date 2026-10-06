@@ -116,6 +116,10 @@
      action button). Unlike --white, which is the *surface* and turns dark in
      the dark theme, this stays white in both. */
   --on-inverse: 255 255 255;
+  /* Secondary text on the sidebar. The same value as petrol-200 in the light theme, but fixed:
+     petrol-200 becomes a dark tint in the dark theme, which is right for a pill border and
+     invisible as sidebar text. */
+  --on-inverse-muted: 184 225 231;
 
   /* ---------------------------------------------------------------------
      Semantic aliases — what components actually reference.

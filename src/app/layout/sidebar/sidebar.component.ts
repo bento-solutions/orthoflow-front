@@ -3,12 +3,16 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { CabinetService } from '../../core/services/cabinet.service';
 import { IconComponent, IconName } from '../../shared/ui/icon.component';
+import { Permission } from '../../core/models/permission';
+import { PermissionService } from '../../core/services/permission.service';
 
 interface NavItem {
   key: string;
   path: string;
   icon: IconName;
   exact?: boolean;
+  /** Shown only to someone holding at least one of these. No list means everyone. */
+  permission?: Permission[];
 }
 
 /**
@@ -64,7 +68,7 @@ interface NavItem {
         class="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3"
         [attr.aria-label]="'NAV.MAIN' | translate"
       >
-        @for (group of navGroups; track group.key) {
+        @for (group of visibleGroups(); track group.key) {
           <p class="nav-section" [class.sr-only]="isCollapsed()">{{ group.key | translate }}</p>
           <ul class="space-y-0.5">
             @for (item of group.items; track item.path) {
@@ -112,6 +116,7 @@ interface NavItem {
 export class SidebarComponent {
   readonly isCollapsed = signal(false);
   readonly cabinet = inject(CabinetService);
+  private readonly permissions = inject(PermissionService);
 
   readonly initial = computed(() => {
     const name = this.cabinet.cabinetInfo()?.name?.trim();
@@ -123,24 +128,50 @@ export class SidebarComponent {
       key: 'NAV.CLINICAL',
       items: [
         { key: 'COMMON.OVERVIEW', path: '/', icon: 'grid', exact: true },
-        { key: 'COMMON.PATIENTS', path: '/patients', icon: 'users' },
-        { key: 'COMMON.SCHEDULE', path: '/schedule', icon: 'calendar' },
+        { key: 'COMMON.PATIENTS', path: '/patients', icon: 'users', permission: ['PATIENT_READ'] },
+        { key: 'COMMON.SCHEDULE', path: '/schedule', icon: 'calendar', permission: ['AGENDA_VIEW'] },
+        { key: 'NAV.FRONT_DESK', path: '/front-desk', icon: 'clock', permission: ['AGENDA_VIEW', 'WAITING_ROOM_MANAGE'] },
+        { key: 'NAV.RECALLS', path: '/recalls', icon: 'phone', permission: ['PATIENT_READ'] },
         { key: 'COMMON.TREATMENTS', path: '/treatments', icon: 'activity' },
+        { key: 'NAV.LAB_ORDERS', path: '/lab-orders', icon: 'flask', permission: ['LAB_ORDERS_MANAGE'] },
+        { key: 'NAV.STERILIZATION', path: '/sterilization', icon: 'shield', permission: ['STERILIZATION_MANAGE'] },
+        { key: 'NAV.TASKS', path: '/tasks', icon: 'clipboard', permission: ['TASKS_MANAGE'] },
       ],
     },
     {
       key: 'NAV.PRACTICE',
       items: [
-        { key: 'COMMON.BILLING', path: '/billing', icon: 'receipt' },
-        { key: 'COMMON.STOCK', path: '/stock', icon: 'box' },
-        { key: 'COMMON.ANALYTICS', path: '/analytics', icon: 'chart' },
+        { key: 'COMMON.BILLING', path: '/billing', icon: 'receipt', permission: ['BILLING_READ'] },
+        { key: 'NAV.FINANCE', path: '/finance', icon: 'wallet', permission: ['FINANCE_VIEW', 'BILLING_READ'] },
+        { key: 'NAV.RETROCESSIONS', path: '/retrocessions', icon: 'percent', permission: ['RETROCESSION_VIEW'] },
+        { key: 'COMMON.STOCK', path: '/stock', icon: 'box', permission: ['STOCK_READ'] },
+        { key: 'COMMON.ANALYTICS', path: '/analytics', icon: 'chart', permission: ['ANALYTICS_VIEW', 'FINANCE_VIEW'] },
+      ],
+    },
+    {
+      key: 'NAV.COMMUNICATION',
+      items: [
+        { key: 'NAV.MESSAGES', path: '/messages', icon: 'message' },
+        { key: 'NAV.COMMUNICATION', path: '/communication', icon: 'send', permission: ['MESSAGING_VIEW'] },
+        { key: 'NAV.BOOKING', path: '/booking', icon: 'inbox', permission: ['BOOKING_REVIEW'] },
+        { key: 'NAV.SURVEYS', path: '/surveys', icon: 'check-circle', permission: ['SURVEYS_VIEW'] },
       ],
     },
     {
       key: 'NAV.SYSTEM',
-      items: [{ key: 'COMMON.SETTINGS', path: '/settings', icon: 'settings' }],
+      items: [
+        { key: 'COMMON.SETTINGS', path: '/settings', icon: 'settings', permission: ['SETTINGS_MANAGE', 'USERS_MANAGE'] },
+        { key: 'NAV.ACCOUNT', path: '/account', icon: 'user' },
+      ],
     },
   ];
+
+  /** The groups this person may see, with empty ones dropped so no heading hangs over nothing. */
+  readonly visibleGroups = computed(() =>
+    this.navGroups
+      .map(group => ({ ...group, items: group.items.filter(item => this.permissions.can(...(item.permission ?? []))) }))
+      .filter(group => group.items.length > 0),
+  );
 
   toggleCollapse(): void {
     this.isCollapsed.set(!this.isCollapsed());

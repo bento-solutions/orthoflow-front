@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { onboardingGuard } from './core/guards/onboarding.guard';
 import { authGuard } from './core/guards/auth.guard';
+import { permissionGuard } from './core/guards/permission.guard';
 
 export const routes: Routes = [
   {
@@ -73,7 +74,45 @@ export const routes: Routes = [
       },
       {
         path: 'settings',
-        loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),
+        loadComponent: () => import('./features/settings/settings-layout.component').then(m => m.SettingsLayoutComponent),
+        canActivate: [permissionGuard('SETTINGS_MANAGE', 'USERS_MANAGE')],
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'practice' },
+          {
+            path: 'practice',
+            canActivate: [permissionGuard('SETTINGS_MANAGE')],
+            loadComponent: () => import('./features/settings/pages/practice-profile.component').then(m => m.PracticeProfileComponent),
+          },
+          {
+            path: 'hours',
+            canActivate: [permissionGuard('SETTINGS_MANAGE')],
+            loadComponent: () => import('./features/settings/pages/opening-hours.component').then(m => m.OpeningHoursComponent),
+          },
+          {
+            path: 'team',
+            canActivate: [permissionGuard('SETTINGS_MANAGE')],
+            loadComponent: () => import('./features/settings/pages/team-settings.component').then(m => m.TeamSettingsComponent),
+          },
+          {
+            path: 'users',
+            canActivate: [permissionGuard('USERS_MANAGE')],
+            loadComponent: () => import('./features/settings/pages/users-settings.component').then(m => m.UsersSettingsComponent),
+          },
+          {
+            path: 'booking',
+            canActivate: [permissionGuard('SETTINGS_MANAGE')],
+            loadComponent: () => import('./features/settings/pages/booking-settings.component').then(m => m.BookingSettingsComponent),
+          },
+          {
+            path: 'help-notes',
+            canActivate: [permissionGuard('SETTINGS_MANAGE')],
+            loadComponent: () => import('./features/settings/pages/help-notes-settings.component').then(m => m.HelpNotesSettingsComponent),
+          },
+        ],
+      },
+      {
+        path: 'account',
+        loadComponent: () => import('./features/settings/pages/account.component').then(m => m.AccountComponent),
       },
       {
         path: 'billing',

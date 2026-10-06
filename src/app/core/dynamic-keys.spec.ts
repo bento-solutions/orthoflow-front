@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { PAYMENT_METHODS, PLAN_FREQUENCIES } from './services/finance-api.service';
 import { RECALL_KINDS } from '../features/patients/patient-directory-api.service';
 
 /**
@@ -26,6 +27,9 @@ const FAMILIES: Record<string, readonly string[]> = {
   'REC.KIND_HINTS': RECALL_KINDS,
   'REC.SORTS': ['last', 'remaining', 'name'],
   'PAT.DUP.REASONS': ['CIN', 'PHONE', 'NAME'],
+  'ACC.FORM': ['AUTO', 'CHOOSE', 'ADVANCE'],
+  'ACC.PLAN.FREQUENCIES': PLAN_FREQUENCIES,
+  'BILLING.METHODS': PAYMENT_METHODS,
   'PAT.DUP.MERGE.FIELDS': [
     'email', 'phone', 'cin', 'address', 'dateOfBirth', 'gender', 'guardianName', 'guardianPhone', 'insuranceProvider', 'insuranceNumber',
     'occupation', 'referralSource', 'insurerId', 'primaryPractitionerId', 'photoFileId',

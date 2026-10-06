@@ -41,6 +41,8 @@ const TONE_BY_STATUS: Readonly<Record<string, StatusTone>> = {
   CONFIRMED: 'active',
   OPEN: 'active',
   IN_STOCK: 'active',
+  DEPOSITED: 'active',
+  ISSUED: 'active',
 
   // settled
   COMPLETED: 'done',
@@ -53,6 +55,7 @@ const TONE_BY_STATUS: Readonly<Record<string, StatusTone>> = {
   INVOICED: 'done',
   DELIVERED: 'done',
   CLOSED: 'done',
+  CASHED: 'done',
 
   // needs a human
   PENDING: 'attention',
@@ -78,6 +81,7 @@ const TONE_BY_STATUS: Readonly<Record<string, StatusTone>> = {
   CANCELED: 'idle',
   ARCHIVED: 'idle',
   INACTIVE: 'idle',
+  VOID: 'idle',
 };
 
 @Component({

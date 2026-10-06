@@ -8,7 +8,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { ConsultationService } from '../../../core/consultation/consultation.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { PractitionerService } from '../../../core/services/practitioner.service';
-import { LiveEventsService } from '../../../core/services/live-events.service';
+import { refreshOnLive } from '../../../core/services/live-refresh';
 import { loadable } from '../../../core/utils/loadable';
 import { MoneyPipe, NumPipe } from '../../../shared/pipes/money.pipe';
 import { IconComponent } from '../../../shared/ui/icon.component';
@@ -354,7 +354,7 @@ export class PatientListComponent {
       untracked(() => void this.directory.load(() => this.directoryApi.list(query)));
     });
     // A patient created or changed from another screen (the front desk, an online registration) appears without a refresh.
-    inject(LiveEventsService).of('patient', 'registration').subscribe(() => void this.directory.load(() => this.directoryApi.list(this.query())));
+    refreshOnLive(['patient', 'registration'], () => void this.directory.load(() => this.directoryApi.list(this.query())));
   }
 
   protected setStatus(value: string): void {

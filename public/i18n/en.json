@@ -246,7 +246,8 @@
       "CASH": "Cash",
       "CARD": "Card",
       "BANK_TRANSFER": "Bank Transfer",
-      "CHEQUE": "Cheque"
+      "CHEQUE": "Cheque",
+      "INSURANCE": "Insurance"
     },
     "QUOTES_TITLE": "Quotes (Devis)",
     "QUOTES_SUBTITLE": "Manage patient treatment quotes",
@@ -828,7 +829,11 @@
     "CANCELED": "Cancelled",
     "ARCHIVED": "Archived",
     "INACTIVE": "Inactive",
-    "UNKNOWN": "Unknown"
+    "UNKNOWN": "Unknown",
+    "DEPOSITED": "Deposited",
+    "CASHED": "Cashed",
+    "VOID": "Void",
+    "ISSUED": "Issued"
   },
   "VOICE": {
     "TAB": "Voice session",
@@ -1547,6 +1552,106 @@
       "last": "Last visit (oldest first)",
       "remaining": "Work remaining",
       "name": "Name"
+    }
+  },
+  "ACC": {
+    "TITLE": "Patient account",
+    "INVOICED": "Invoiced",
+    "PAID": "Paid",
+    "BALANCE": "Balance due",
+    "CREDIT": "Credit available",
+    "NEW_INVOICE": "New invoice",
+    "RECORD": "Take a payment",
+    "APPLY_CREDIT": "Use credit",
+    "INVOICES": "Invoices",
+    "NO_INVOICES": "No invoices for this patient.",
+    "RECEIPTS": "Payments received",
+    "NO_RECEIPTS": "No payment recorded yet.",
+    "PLANS": "Payment plans",
+    "NO_PLANS": "No payment plan. Offer one to spread a long treatment.",
+    "COL": {
+      "NUMBER": "No.",
+      "DATE": "Date",
+      "TOTAL": "Total",
+      "PAID": "Paid",
+      "BALANCE": "Balance",
+      "AMOUNT": "Amount",
+      "METHOD": "Method",
+      "REFERENCE": "Reference",
+      "USED": "Applied",
+      "AVAILABLE": "As credit"
+    },
+    "PAY_INVOICE": "Pay invoice {{number}}",
+    "VOIDED": "Voided",
+    "VOID": "Void this payment",
+    "VOID_TITLE": "Void a payment",
+    "VOID_HINT": "The payment stays in the history, marked void. The invoices it settled become due again.",
+    "VOID_REASON": "Reason for voiding",
+    "VOID_CONFIRM": "Void the payment",
+    "VOID_DONE": "Payment voided.",
+    "FORM": {
+      "TITLE": "Take a payment",
+      "AMOUNT": "Amount received",
+      "METHOD": "Payment method",
+      "DATE": "Date",
+      "PRACTITIONER": "Practitioner",
+      "REFERENCE": "Reference (optional)",
+      "NOTES": "Notes (optional)",
+      "SETTLE": "Apply to",
+      "AUTO": "Oldest invoices first",
+      "CHOOSE": "Choose invoices",
+      "ADVANCE": "Keep as an advance (no invoice)",
+      "ALLOCATED": "Applied: {{allocated}} of {{amount}}",
+      "LEFTOVER": "The remaining {{amount}} stays as credit for this patient.",
+      "OVER": "The amounts applied exceed what was received.",
+      "NO_OPEN": "No invoice to settle: the amount will be kept as credit.",
+      "FILL": "Full balance",
+      "CHEQUE_NUMBER": "Cheque number",
+      "CHEQUE_BANK": "Bank",
+      "CHEQUE_DRAWER": "Drawer (if not the patient)",
+      "CHEQUE_DUE": "Due date",
+      "SUBMIT": "Record the payment",
+      "DONE": "Payment recorded."
+    },
+    "CREDIT_FORM": {
+      "TITLE": "Use the patient's credit",
+      "INVOICE": "Invoice to settle",
+      "AMOUNT": "Amount (at most {{max}})",
+      "SUBMIT": "Use the credit",
+      "DONE": "Credit applied."
+    },
+    "PLAN": {
+      "NEW": "New payment plan",
+      "TOTAL": "Total amount",
+      "DOWN": "Down payment",
+      "COUNT": "Number of instalments",
+      "FREQUENCY": "Frequency",
+      "START": "First due date",
+      "INVOICE": "Linked invoice (optional)",
+      "NOTES": "Notes",
+      "PREVIEW": "{{count}} instalments of {{amount}}",
+      "SUBMIT": "Create the plan",
+      "DONE": "Payment plan created.",
+      "CANCEL": "Cancel the plan",
+      "CANCEL_CONFIRM": "Cancel this plan? Unpaid instalments will no longer be expected.",
+      "CANCELLED": "Plan cancelled.",
+      "PROGRESS": "{{paid}} paid, {{remaining}} remaining",
+      "FREQUENCIES": {
+        "WEEKLY": "Weekly",
+        "BIWEEKLY": "Every 2 weeks",
+        "MONTHLY": "Monthly",
+        "QUARTERLY": "Quarterly"
+      },
+      "COL": {
+        "SEQ": "No.",
+        "DUE": "Due",
+        "AMOUNT": "Amount",
+        "PAID": "Paid"
+      },
+      "PAY": "Take payment",
+      "PAY_TITLE": "Take instalment {{seq}}",
+      "PAY_DONE": "Instalment paid.",
+      "OVERDUE": "Overdue"
     }
   }
 }

@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../../core/services/api-error.service';
-import { LiveEventsService } from '../../../core/services/live-events.service';
+import { refreshOnLive } from '../../../core/services/live-refresh';
 import { PractitionerService } from '../../../core/services/practitioner.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { loadable } from '../../../core/utils/loadable';
@@ -213,7 +213,7 @@ export class PatientDuplicatesComponent {
     void this.reload();
     this.api.insurers().then(i => this.insurers.set(i)).catch(() => undefined);
     // Someone else merged or registered a patient: the list is no longer what was loaded.
-    inject(LiveEventsService).of('patient').subscribe(() => {
+    refreshOnLive(['patient'], () => {
       if (!this.pending()) {
         void this.reload();
       }

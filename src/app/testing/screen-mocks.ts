@@ -1,5 +1,5 @@
 import { Provider, signal } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Subject, filter } from 'rxjs';
 import { vi } from 'vitest';
 import { Permission } from '../core/models/permission';
 import { ApiErrors } from '../core/services/api-error.service';
@@ -20,7 +20,7 @@ export function screenMocks(options: { can?: true | Permission[]; practitioners?
   const granted = options.can ?? true;
 
   const providers: Provider[] = [
-    { provide: LiveEventsService, useValue: { of: (...types: string[]) => ({ subscribe: (fn: (c: LiveChange) => void) => live.subscribe(c => types.includes(c.type) && fn(c)) }), changes$: live.asObservable(), connected: signal(true) } },
+    { provide: LiveEventsService, useValue: { of: (...types: string[]) => live.pipe(filter(c => types.includes(c.type))), changes$: live.asObservable(), connected: signal(true) } },
     { provide: PermissionService, useValue: { can: (...needed: Permission[]) => granted === true || needed.length === 0 || needed.some(p => granted.includes(p)), isAdmin: signal(false), practitionerId: signal(null), me: signal(null) } },
     { provide: PractitionerService, useValue: { active: signal(options.practitioners ?? []), refresh: vi.fn() } },
     { provide: ApiErrors, useValue: { report: (e: unknown) => errors.push(e), message: () => 'error' } },

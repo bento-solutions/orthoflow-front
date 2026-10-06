@@ -246,7 +246,8 @@
       "CASH": "Espèces",
       "CARD": "Carte",
       "BANK_TRANSFER": "Virement bancaire",
-      "CHEQUE": "Chèque"
+      "CHEQUE": "Chèque",
+      "INSURANCE": "Mutuelle / assurance"
     },
     "QUOTES_TITLE": "Devis",
     "QUOTES_SUBTITLE": "Gérez les devis de traitement des patients",
@@ -828,7 +829,11 @@
     "CANCELED": "Annulé",
     "ARCHIVED": "Archivé",
     "INACTIVE": "Inactif",
-    "UNKNOWN": "Inconnu"
+    "UNKNOWN": "Inconnu",
+    "DEPOSITED": "Remis en banque",
+    "CASHED": "Encaissé",
+    "VOID": "Annulé",
+    "ISSUED": "Émis"
   },
   "VOICE": {
     "TAB": "Dictée vocale",
@@ -1547,6 +1552,106 @@
       "last": "Dernière visite (la plus ancienne d'abord)",
       "remaining": "Reste à faire",
       "name": "Nom"
+    }
+  },
+  "ACC": {
+    "TITLE": "Compte patient",
+    "INVOICED": "Facturé",
+    "PAID": "Réglé",
+    "BALANCE": "Reste dû",
+    "CREDIT": "Avance disponible",
+    "NEW_INVOICE": "Nouvelle facture",
+    "RECORD": "Encaisser",
+    "APPLY_CREDIT": "Utiliser l'avance",
+    "INVOICES": "Factures",
+    "NO_INVOICES": "Aucune facture pour ce patient.",
+    "RECEIPTS": "Encaissements",
+    "NO_RECEIPTS": "Aucun encaissement enregistré.",
+    "PLANS": "Échéanciers",
+    "NO_PLANS": "Aucun échéancier. Proposez-en un pour étaler un traitement long.",
+    "COL": {
+      "NUMBER": "N°",
+      "DATE": "Date",
+      "TOTAL": "Total",
+      "PAID": "Réglé",
+      "BALANCE": "Reste",
+      "AMOUNT": "Montant",
+      "METHOD": "Mode",
+      "REFERENCE": "Référence",
+      "USED": "Imputé",
+      "AVAILABLE": "En avance"
+    },
+    "PAY_INVOICE": "Régler la facture {{number}}",
+    "VOIDED": "Annulé",
+    "VOID": "Annuler l'encaissement",
+    "VOID_TITLE": "Annuler un encaissement",
+    "VOID_HINT": "L'encaissement reste dans l'historique, marqué annulé. Les factures qu'il réglait redeviennent dues.",
+    "VOID_REASON": "Motif de l'annulation",
+    "VOID_CONFIRM": "Annuler l'encaissement",
+    "VOID_DONE": "Encaissement annulé.",
+    "FORM": {
+      "TITLE": "Encaisser un règlement",
+      "AMOUNT": "Montant reçu",
+      "METHOD": "Mode de paiement",
+      "DATE": "Date",
+      "PRACTITIONER": "Praticien",
+      "REFERENCE": "Référence (optionnel)",
+      "NOTES": "Notes (optionnel)",
+      "SETTLE": "Imputer sur",
+      "AUTO": "Les factures les plus anciennes d'abord",
+      "CHOOSE": "Choisir les factures",
+      "ADVANCE": "Garder en avance (aucune facture)",
+      "ALLOCATED": "Imputé : {{allocated}} sur {{amount}}",
+      "LEFTOVER": "Le reste, {{amount}}, restera en avance pour ce patient.",
+      "OVER": "Les montants imputés dépassent le montant reçu.",
+      "NO_OPEN": "Aucune facture à régler : le montant sera gardé en avance.",
+      "FILL": "Tout le reste",
+      "CHEQUE_NUMBER": "N° du chèque",
+      "CHEQUE_BANK": "Banque",
+      "CHEQUE_DRAWER": "Tireur (si ce n'est pas le patient)",
+      "CHEQUE_DUE": "Date d'échéance",
+      "SUBMIT": "Enregistrer l'encaissement",
+      "DONE": "Encaissement enregistré."
+    },
+    "CREDIT_FORM": {
+      "TITLE": "Utiliser l'avance du patient",
+      "INVOICE": "Facture à régler",
+      "AMOUNT": "Montant (au plus {{max}})",
+      "SUBMIT": "Utiliser l'avance",
+      "DONE": "Avance utilisée."
+    },
+    "PLAN": {
+      "NEW": "Nouvel échéancier",
+      "TOTAL": "Montant total",
+      "DOWN": "Acompte",
+      "COUNT": "Nombre d'échéances",
+      "FREQUENCY": "Rythme",
+      "START": "Première échéance",
+      "INVOICE": "Facture liée (optionnel)",
+      "NOTES": "Notes",
+      "PREVIEW": "{{count}} échéances de {{amount}}",
+      "SUBMIT": "Créer l'échéancier",
+      "DONE": "Échéancier créé.",
+      "CANCEL": "Annuler l'échéancier",
+      "CANCEL_CONFIRM": "Annuler cet échéancier ? Les échéances non réglées ne seront plus attendues.",
+      "CANCELLED": "Échéancier annulé.",
+      "PROGRESS": "{{paid}} réglés, {{remaining}} restants",
+      "FREQUENCIES": {
+        "WEEKLY": "Chaque semaine",
+        "BIWEEKLY": "Toutes les 2 semaines",
+        "MONTHLY": "Chaque mois",
+        "QUARTERLY": "Chaque trimestre"
+      },
+      "COL": {
+        "SEQ": "Éch.",
+        "DUE": "Échéance",
+        "AMOUNT": "Montant",
+        "PAID": "Réglé"
+      },
+      "PAY": "Encaisser",
+      "PAY_TITLE": "Encaisser l'échéance {{seq}}",
+      "PAY_DONE": "Échéance encaissée.",
+      "OVERDUE": "En retard"
     }
   }
 }

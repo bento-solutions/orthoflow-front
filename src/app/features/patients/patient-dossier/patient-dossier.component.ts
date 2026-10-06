@@ -28,11 +28,13 @@ import { VoiceSessionDockComponent } from '../../../shared/components/voice/voic
 import { ConsultationPanelComponent } from '../../../shared/components/consultation/consultation-panel.component';
 import { ConsultationService } from '../../../core/consultation/consultation.service';
 import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clinical-record.model';
+import { PermissionService } from '../../../core/services/permission.service';
+import { PatientAccountComponent } from '../account/patient-account.component';
 
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent],
+  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, PatientAccountComponent],
   template: `
     <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive()" [class.has-consultation]="consultation.visible()">
       @if (patientService.currentPatient(); as patient) {
@@ -742,61 +744,7 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
           }
           @case ('financial') {
             <div class="tab-pane" role="tabpanel" id="dossier-panel-financial" aria-labelledby="dossier-tab-financial" tabindex="0">
-              <div class="billing-header">
-                <h2>{{ 'BILLING.TITLE' | translate }}</h2>
-                <button type="button" class="btn btn-primary" [routerLink]="['/billing/invoices/create']" [queryParams]="{ patientId: patient.id }">
-                  <span class="material-icons">add</span>
-                  {{ 'BILLING.NEW_INVOICE' | translate }}
-                </button>
-              </div>
-
-              <div class="billing-summary-mini">
-                <div class="mini-stat">
-                  <span class="label">{{ 'BILLING.TOTAL_INVOICED' | translate }}</span>
-                  <span class="value">{{ totalInvoicedForPatient() | number:'1.2-2' }} MAD</span>
-                </div>
-                <div class="mini-stat">
-                  <span class="label">{{ 'BILLING.OUTSTANDING' | translate }}</span>
-                  <span class="value warning">{{ balanceDueForPatient() | number:'1.2-2' }} MAD</span>
-                </div>
-              </div>
-
-              <div class="table-wrap">
-                <div class="table-scroll">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th>{{ 'BILLING.INVOICE_NUMBER' | translate }}</th>
-                        <th>{{ 'COMMON.STATUS' | translate }}</th>
-                        <th>{{ 'COMMON.DATE' | translate }}</th>
-                        <th>{{ 'COMMON.AMOUNT' | translate }}</th>
-                        <th>{{ 'COMMON.ACTIONS' | translate }}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (invoice of patientInvoices(); track invoice.id) {
-                        <tr>
-                          <td><span class="invoice-link" [routerLink]="['/billing/invoices', invoice.id]">{{ invoice.invoiceNumber }}</span></td>
-                          <td>
-                            <span class="status-badge" [class]="invoice.status.toLowerCase().replace('_', '-')">
-                              {{ 'BILLING.STATUS.' + invoice.status | translate }}
-                            </span>
-                          </td>
-                          <td>{{ invoice.issueDate | date:'mediumDate' }}</td>
-                          <td>{{ invoice.total | number:'1.2-2' }} {{ invoice.currency }}</td>
-                          <td>
-                            <button type="button" class="icon-btn" [title]="'PATIENTS.DOSSIER.DOWNLOAD_PDF' | translate" [attr.aria-label]="'PATIENTS.DOSSIER.DOWNLOAD_PDF' | translate"><span class="material-icons" aria-hidden="true">download</span></button>
-                          </td>
-                        </tr>
-                      } @empty {
-                        <tr>
-                          <td colspan="5" class="empty">{{ 'PATIENTS.DOSSIER.NO_INVOICES' | translate }}</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <app-patient-account [patientId]="patient.id" />
             </div>
           }
         }
@@ -1991,10 +1939,15 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   ];
 
   /** The voice tab exists while a session does, or while one is being started. */
+  private readonly permissions = inject(PermissionService);
+
+  /** The money tab is for those who may see billing: a clinical assistant never sees what a patient owes. */
+  private readonly visibleTabs = computed(() => this.tabs.filter(t => t.id !== 'financial' || this.permissions.can('BILLING_READ')));
+
   navTabs = computed(() =>
     this.voiceSession.isActive() || this.voiceSession.reviewing() || this.activeTab() === 'voice'
-      ? [{ id: 'voice', key: 'VOICE.TAB', icon: 'mic' }, ...this.tabs]
-      : this.tabs);
+      ? [{ id: 'voice', key: 'VOICE.TAB', icon: 'mic' }, ...this.visibleTabs()]
+      : this.visibleTabs());
 
   clinicalSubTabs = [
     { id: 'treatments', key: 'COMMON.TREATMENTS', icon: 'healing' },

@@ -349,7 +349,7 @@ import { PatientService } from '../../../../core/services/patient.service';
       color: rgb(var(--ink-700));
     }
 
-    .text-right { text-align: right; }
+    .text-right { text-align: end; }
     .font-bold { font-weight: 600; }
 
     .totals-section {

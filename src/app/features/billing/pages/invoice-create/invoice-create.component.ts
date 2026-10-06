@@ -239,7 +239,7 @@ import { ToastService } from '../../../../core/services/toast.service';
     .col-total {
       font-weight: 600;
       color: rgb(var(--ink-900));
-      text-align: right;
+      text-align: end;
     }
 
     .btn-text {

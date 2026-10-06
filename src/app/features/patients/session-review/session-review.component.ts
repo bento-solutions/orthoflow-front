@@ -247,7 +247,7 @@ import { CommitAmendmentDto } from '../../../core/voice/voice-api.service';
 
     .banner { padding: .875rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: .9rem; }
     .banner-error { background: rgb(var(--critical-50)); border: 1px solid rgb(var(--critical-200)); color: rgb(var(--critical-700)); }
-    .banner ul { margin: .5rem 0 0; padding-left: 1.25rem; }
+    .banner ul { margin: .5rem 0 0; padding-inline-start: 1.25rem; }
 
     .review-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
     .embedded .review-grid { grid-template-columns: 1fr; }

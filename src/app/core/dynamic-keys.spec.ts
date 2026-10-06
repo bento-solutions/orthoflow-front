@@ -8,6 +8,7 @@ import { BOOKING_STATUSES } from './services/intake-api.service';
 import { MESSAGE_CHANNELS, MESSAGE_PURPOSES, MESSAGE_STATUSES } from './services/messaging-api.service';
 import { ASSIGNEE_ROLES, LAB_ITEM_TYPES, LAB_STATUSES, TASK_PRIORITIES } from './services/operations-api.service';
 import { RECALL_KINDS } from '../features/patients/patient-directory-api.service';
+import { APPOINTMENT_STATUSES } from './services/agenda-config.service';
 
 /**
  * Templates build some keys at run time (`'REC.KINDS.' + kind`), which the static scan in
@@ -42,6 +43,8 @@ const FAMILIES: Record<string, readonly string[]> = {
   'FIN.DEBT.SORTS': ['balance', 'name', 'lastPayment'],
   'INT.BOOK.STATUSES': BOOKING_STATUSES,
   'SET.AGENDA.GROUPS': ['ANY', 'ORTHODONTICS', 'GENERAL'],
+  // The status pill translates STATUS.<status> for whatever an appointment is in.
+  'STATUS': APPOINTMENT_STATUSES,
   'STER.STATES': ITEM_STATES,
   'STER.KINDS': ITEM_KINDS,
   'STER.RESULTS': ['PENDING', 'PASSED', 'FAILED'],

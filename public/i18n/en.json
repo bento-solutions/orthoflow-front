@@ -833,7 +833,10 @@
     "DEPOSITED": "Deposited",
     "CASHED": "Cashed",
     "VOID": "Void",
-    "ISSUED": "Issued"
+    "ISSUED": "Issued",
+    "LATE": "Late",
+    "ARRIVED": "Arrived",
+    "IN_CHAIR": "In the chair"
   },
   "VOICE": {
     "TAB": "Voice session",

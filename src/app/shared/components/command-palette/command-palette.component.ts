@@ -146,7 +146,7 @@ import { PatientDirectoryApi } from '../../../features/patients/patient-director
       align-items: center;
       gap: 0.75rem;
       width: 100%;
-      text-align: left;
+      text-align: start;
       padding: 0.6rem 0.75rem;
       border: none;
       background: transparent;
@@ -174,7 +174,7 @@ import { PatientDirectoryApi } from '../../../features/patients/patient-director
       border: 1px solid rgb(var(--ink-200));
       border-radius: 4px;
       padding: 0 0.3rem;
-      margin-right: 0.2rem;
+      margin-inline-end: 0.2rem;
     }
     @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
     @keyframes panel-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }

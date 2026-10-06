@@ -833,7 +833,10 @@
     "DEPOSITED": "Remis en banque",
     "CASHED": "Encaissé",
     "VOID": "Annulé",
-    "ISSUED": "Émis"
+    "ISSUED": "Émis",
+    "LATE": "En retard",
+    "ARRIVED": "Arrivé",
+    "IN_CHAIR": "Au fauteuil"
   },
   "VOICE": {
     "TAB": "Dictée vocale",

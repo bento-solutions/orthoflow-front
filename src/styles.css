@@ -657,12 +657,12 @@
       color var(--dur-1) var(--ease-out);
   }
   .nav-link:hover {
-    background: rgb(var(--white) / 0.07);
-    color: rgb(var(--white));
+    background: rgb(var(--on-inverse) / 0.07);
+    color: rgb(var(--on-inverse));
   }
   .nav-link-active {
-    background: rgb(var(--white) / 0.12);
-    color: rgb(var(--white));
+    background: rgb(var(--on-inverse) / 0.12);
+    color: rgb(var(--on-inverse));
   }
   /* The rail marks the current section. It grows from the centre so
      navigating between items reads as the marker moving, not blinking. */
@@ -936,3 +936,15 @@
 /* Utilities last: a screen must always be able to override a component
    class with a utility (`.btn-primary w-full`). */
 @tailwind utilities;
+
+/* ── Dark theme: older utilities that name a fixed colour ──────────────────
+   Tokens re-theme everything written against them (tokens.css). A few
+   hundred templates predate the tokens and say `bg-white` or `text-black`,
+   which Tailwind compiles to a fixed colour. Rather than rewrite them, the
+   dark theme maps those few utilities onto the surface and text tokens.
+   `text-white` is left alone on purpose: it sits on solid action colours,
+   which are dark in both themes. */
+:root[data-theme='dark'] .bg-white { background-color: rgb(var(--white)); }
+:root[data-theme='dark'] [class*='bg-white/'] { background-color: rgb(var(--white) / 0.88); }
+:root[data-theme='dark'] .border-white { border-color: rgb(var(--ink-200)); }
+:root[data-theme='dark'] .text-black { color: rgb(var(--ink-900)); }

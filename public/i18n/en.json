@@ -44,7 +44,8 @@
     "USER_MENU": "Account menu",
     "TODAY": "Today",
     "ALL": "All",
-    "CLEAR_FILTERS": "Clear filters"
+    "CLEAR_FILTERS": "Clear filters",
+    "DELETE_CONFIRM": "Are you sure you want to delete this?"
   },
   "DASHBOARD": {
     "TODAYS_VISITS": "Today's Visits",
@@ -154,7 +155,8 @@
       "CONSENT_TITLE": "Data Processing Consent",
       "CONSENT_TEXT": "The patient (or their guardian, for a minor) has consented to their health data being collected and processed for the purpose of orthodontic care.",
       "CONSENT_HINT": "Required to comply with data protection law. If left unchecked, you can record consent later from the patient's dossier.",
-      "NO_APPOINTMENTS": "No appointments recorded for this patient."
+      "NO_APPOINTMENTS": "No appointments recorded for this patient.",
+      "TITLE": "Patient file"
     },
     "ADD": "New patient",
     "SEARCH_PLACEHOLDER": "Search by name, phone or email…",
@@ -214,7 +216,8 @@
     "NO_MATCHES": "No invoices match",
     "NO_MATCHES_HINT": "Try a different search term or status.",
     "EMPTY_TITLE": "No invoices yet",
-    "EMPTY_TEXT": "Create your first invoice to start tracking what the practice is owed."
+    "EMPTY_TEXT": "Create your first invoice to start tracking what the practice is owed.",
+    "DOWNLOAD_PDF": "Download PDF"
   },
   "AUTH": {
     "SIGN_IN_TITLE": "Sign in to OrthoFlow",

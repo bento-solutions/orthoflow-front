@@ -16,7 +16,7 @@ import { TranslateModule } from '@ngx-translate/core';
 
       @if (isMobileMenuOpen()) {
         <div
-          class="animate-fade fixed inset-0 z-30 bg-ink-950/50 backdrop-blur-[2px] md:hidden"
+          class="animate-fade fixed inset-0 z-30 bg-black/50 backdrop-blur-[2px] md:hidden"
           (click)="toggleMobileMenu()"
           aria-hidden="true"
         ></div>

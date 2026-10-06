@@ -44,7 +44,8 @@
     "USER_MENU": "Menu du compte",
     "TODAY": "Aujourd'hui",
     "ALL": "Tous",
-    "CLEAR_FILTERS": "Réinitialiser les filtres"
+    "CLEAR_FILTERS": "Réinitialiser les filtres",
+    "DELETE_CONFIRM": "Voulez-vous vraiment supprimer cet élément ?"
   },
   "DASHBOARD": {
     "TODAYS_VISITS": "Visites du jour",
@@ -154,7 +155,8 @@
       "CONSENT_TITLE": "Consentement au Traitement des Données",
       "CONSENT_TEXT": "Le patient (ou son tuteur légal, pour un mineur) a consenti à ce que ses données de santé soient collectées et traitées dans le cadre des soins orthodontiques.",
       "CONSENT_HINT": "Requis pour se conformer à la loi sur la protection des données. Si non coché, vous pourrez enregistrer le consentement plus tard depuis le dossier du patient.",
-      "NO_APPOINTMENTS": "Aucun rendez-vous enregistré pour ce patient."
+      "NO_APPOINTMENTS": "Aucun rendez-vous enregistré pour ce patient.",
+      "TITLE": "Dossier patient"
     },
     "ADD": "Nouveau patient",
     "SEARCH_PLACEHOLDER": "Rechercher par nom, téléphone ou e-mail…",
@@ -214,7 +216,8 @@
     "NO_MATCHES": "Aucune facture correspondante",
     "NO_MATCHES_HINT": "Essayez un autre terme ou un autre statut.",
     "EMPTY_TITLE": "Aucune facture pour le moment",
-    "EMPTY_TEXT": "Créez votre première facture pour suivre les sommes dues au cabinet."
+    "EMPTY_TEXT": "Créez votre première facture pour suivre les sommes dues au cabinet.",
+    "DOWNLOAD_PDF": "Télécharger le PDF"
   },
   "AUTH": {
     "SIGN_IN_TITLE": "Connectez-vous à OrthoFlow",

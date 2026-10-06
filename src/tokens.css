@@ -112,6 +112,11 @@
 
   --white: 255 255 255;
 
+  /* Text and hover washes that sit on dark chrome (the sidebar, a solid
+     action button). Unlike --white, which is the *surface* and turns dark in
+     the dark theme, this stays white in both. */
+  --on-inverse: 255 255 255;
+
   /* ---------------------------------------------------------------------
      Semantic aliases — what components actually reference.
      Never use a primitive directly in a component; use the alias, so the
@@ -140,7 +145,7 @@
      anything sitting on a tint uses this instead (5.63:1). */
   --text-muted-on-tint: rgb(var(--ink-600));
   --text-subtle:      rgb(var(--ink-400));   /* non-text / icons only     */
-  --text-inverse:     rgb(var(--white));
+  --text-inverse:     rgb(var(--on-inverse));
 
   /* Action */
   --action:           rgb(var(--petrol-600));
@@ -273,4 +278,84 @@
   --z-overlay: 40;
   --z-modal: 50;
   --z-toast: 60;
+}
+
+/* =========================================================================
+   Dark theme
+   =========================================================================
+
+   Applied with `data-theme="dark"` on <html> (ThemeService). Because every
+   colour in the product is one of the primitive channels above, re-theming is
+   a matter of redefining them — no template changes.
+
+   What changes, and what deliberately does not:
+
+   - INK is inverted: ink-50 becomes the deepest ground and ink-900 the text.
+     `--white` is the *surface* in this system, so it becomes a dark surface one
+     step above the app background. `--on-inverse` stays white: it is the text
+     on the sidebar and on solid action buttons, which stay dark in both themes.
+   - The TINT steps (50–200) of every ramp become dark washes, and the TEXT
+     steps (700–800) become light, so a status pill is still a quiet ground
+     with a legible label. The SOLID steps (300–600: dots, buttons, focus
+     rings, chart series) are kept: they were chosen to read on either ground.
+   - The action hover and pressed shades are lightened rather than darkened,
+     since "darker" than a dark button is invisible.
+   - Shadows become black; the light theme tints them with the ink hue, which
+     inverted would read as a glow.
+
+   Contrast targets are the light theme's: body and muted text ≥ 4.5:1 on
+   surface and app background, status labels ≥ 4.5:1 on their tint.
+   ========================================================================= */
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ink-50:  14 20 23;
+  --ink-100: 19 27 31;
+  --ink-200: 44 58 63;
+  --ink-300: 70 86 92;
+  --ink-400: 120 137 143;
+  --ink-500: 152 168 173;
+  --ink-600: 172 186 190;
+  --ink-700: 196 208 212;
+  --ink-800: 218 227 229;
+  --ink-900: 236 242 243;
+  --ink-950: 246 249 250;
+
+  --white: 23 32 36;
+
+  --petrol-50:  20 42 48;
+  --petrol-100: 24 52 60;
+  --petrol-200: 30 68 79;
+  --petrol-700: 150 214 224;
+  --petrol-800: 184 225 231;
+
+  --positive-50:  17 40 30;
+  --positive-100: 21 52 38;
+  --positive-200: 28 72 52;
+  --positive-700: 140 225 175;
+  --positive-800: 175 238 200;
+
+  --caution-50:  48 36 14;
+  --caution-100: 62 46 14;
+  --caution-200: 88 64 16;
+  --caution-700: 252 211 130;
+  --caution-800: 255 226 170;
+
+  --critical-50:  52 22 24;
+  --critical-100: 68 28 30;
+  --critical-200: 96 38 40;
+  --critical-700: 250 170 170;
+  --critical-800: 253 200 200;
+
+  /* A hover or pressed state is lighter than the button, not darker. */
+  --action-hover:  rgb(var(--petrol-500));
+  --action-active: rgb(var(--petrol-400));
+  --danger-hover:  rgb(var(--critical-500));
+
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.30);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.30), 0 2px 6px rgb(0 0 0 / 0.28);
+  --shadow-md: 0 2px 4px rgb(0 0 0 / 0.30), 0 6px 16px rgb(0 0 0 / 0.34);
+  --shadow-lg: 0 4px 8px rgb(0 0 0 / 0.32), 0 16px 32px rgb(0 0 0 / 0.42);
+  --shadow-xl: 0 8px 16px rgb(0 0 0 / 0.34), 0 28px 56px rgb(0 0 0 / 0.52);
 }

@@ -14,6 +14,7 @@ import { describeFdi } from './tooth-lexicon';
 import { findingLabel } from './clinical-lexicon';
 import { spokenFindingLabel, spokenStagedList } from './voice-vocabulary';
 import { WAKE_WORD } from './voice-wake';
+import { isoDate } from '../utils/format';
 import {
   FindingEntity,
   VoiceCommand,
@@ -605,6 +606,50 @@ export class VoiceCommandsService {
                 await firstValueFrom(this.clinical.deleteNote(context.patientId!, audit.targetId!));
               }
             : undefined,
+        }),
+      },
+      {
+        id: 'tasks.create',
+        description: 'Create a task for the team (reception, the doctor, the administrator), with an optional day',
+        risk: 'CONFIRM',
+        requiresPatient: true,
+        // Staged with the consultation and made when the doctor saves it, like every other write said
+        // aloud: nothing reaches the team before the doctor has reviewed it.
+        serverIntent: 'tasks.create',
+        args: {
+          title: 'what is to be done, in the doctor\'s own words',
+          assigneeRole: 'ASSISTANT (reception) | DOCTOR | ADMIN; omitted when the task is the doctor\'s own',
+          dueDay: 'today | tomorrow, when said',
+          priority: 'URGENT when said to be urgent',
+        },
+        examples: [
+          'create a task for reception: call the patient back tomorrow',
+          'crée une tâche pour l\'accueil : commander des gants',
+        ],
+        preview: (entities) => {
+          const who = { ASSISTANT: ' for reception', DOCTOR: ' for the doctor', ADMIN: ' for the administrator' }[
+            String(entities['assigneeRole'] ?? '')] ?? '';
+          const day = entities['dueDay'] === 'tomorrow' ? ', due tomorrow' : entities['dueDay'] === 'today' ? ', due today' : '';
+          const urgent = entities['priority'] === 'URGENT' ? ', urgent' : '';
+          return `Task${who}${day}${urgent}: "${entities['title']}"`;
+        },
+        toServerEntities: (entities) => {
+          const due = new Date();
+          if (entities['dueDay'] === 'tomorrow') due.setDate(due.getDate() + 1);
+          return {
+            title: String(entities['title'] ?? '').trim(),
+            assigneeRole: entities['assigneeRole'] ? String(entities['assigneeRole']) : undefined,
+            dueDate: entities['dueDay'] ? isoDate(due) : undefined,
+            dueDay: entities['dueDay'] ? String(entities['dueDay']) : undefined,
+            priority: entities['priority'] ? String(entities['priority']) : undefined,
+            linkPatient: entities['linkPatient'] === true ? true : undefined,
+          };
+        },
+        onServerExecuted: (audit) => ({
+          ok: true,
+          message: 'Task created.',
+          targetType: 'task',
+          targetId: audit.targetId ?? undefined,
         }),
       },
     ];

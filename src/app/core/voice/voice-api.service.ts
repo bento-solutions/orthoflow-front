@@ -68,7 +68,8 @@ export type ServerIntent =
   | 'clinical.retractFindings'
   | 'clinical.addNote'
   | 'clinical.addAllergy'
-  | 'clinical.addMedicalHistory';
+  | 'clinical.addMedicalHistory'
+  | 'tasks.create';
 
 export interface TranscriptionDto {
   text: string;

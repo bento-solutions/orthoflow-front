@@ -727,6 +727,76 @@ const addNote: GrammarRule = {
   },
 };
 
+/**
+ * "Crée une tâche pour l'accueil : rappeler le patient demain" — a job for the team, said while
+ * examining. Matched only on the word for a task, so it cannot be mistaken for a note or a recall
+ * (the sentence it carries often has "rappeler" or "rendez-vous" in it). The task's words are kept
+ * as the doctor said them, case included; who it is for and when are read off the front of it.
+ */
+const TASK_START = /^\s*(?:(?:cr[ée]e[rz]?|ajoute[rz]?|nouvelle|new|create|add|make)\s+)?(?:une?\s+|a\s+)?(?:t[âa]che|task|to-?do)(?![\p{L}\d])\s*(.*)$/isu;
+const TASK_FOR = new RegExp(
+  '^(?:pour|for|[àa]|to)\\s+(?:l[ae]\\s+|l[\'’]\\s*|le\\s+|the\\s+|mon\\s+|ma\\s+)?'
+  + '(r[ée]ception|accueil|secr[ée]taire|assistante?|moi|me|docteur|dentiste|doctor|dentist|admin\\p{L}*|direction)(?![\\p{L}])\\s*', 'iu');
+const TASK_DAY = /^(?:(?:pour|for|d['’]ici|by)\s+)?(demain|aujourd['’]hui|tomorrow|today)(?![\p{L}])\s*/iu;
+const TASK_URGENT = /^(?:(?:c['’]est\s+|et\s+)?urgent(?:e)?|urgently|asap)(?![\p{L}])\s*/iu;
+const TASK_ABOUT_PATIENT = /\b(?:le|ce|cette|la)\s+patient(?:e)?\b|\b(?:the|this)\s+patient\b/iu;
+
+const TASK_ROLES: Array<[RegExp, 'ASSISTANT' | 'DOCTOR' | 'ADMIN' | null]> = [
+  [/^(?:r[ée]ception|accueil|secr[ée]taire|assistante?)$/iu, 'ASSISTANT'],
+  [/^(?:docteur|dentiste|doctor|dentist)$/iu, 'DOCTOR'],
+  [/^(?:admin\p{L}*|direction)$/iu, 'ADMIN'],
+  [/^(?:moi|me)$/iu, null],
+];
+
+const createTask: GrammarRule = {
+  id: 'grammar.task.create',
+  match: (raw, _text, context) => {
+    const start = TASK_START.exec(raw);
+    if (!start) return null;
+    // "Pas de tâche à faire" is the opposite of a task.
+    if (startsNegated(raw)) return null;
+
+    let rest = start[1].trim();
+    const entities: Record<string, unknown> = {};
+
+    // The three little phrases may come in any order: "pour l'accueil, demain, urgent : …".
+    for (let i = 0; i < 3; i++) {
+      rest = rest.replace(/^[,\s]+/u, '');
+      const who = TASK_FOR.exec(rest);
+      if (who && entities['assigneeRole'] === undefined) {
+        entities['assigneeRole'] = TASK_ROLES.find(([re]) => re.test(who[1]))?.[1] ?? null;
+        rest = rest.slice(who[0].length);
+        continue;
+      }
+      const day = TASK_DAY.exec(rest);
+      if (day && entities['dueDay'] === undefined) {
+        entities['dueDay'] = /^(?:demain|tomorrow)$/iu.test(day[1]) ? 'tomorrow' : 'today';
+        rest = rest.slice(day[0].length);
+        continue;
+      }
+      const urgent = TASK_URGENT.exec(rest);
+      if (urgent && entities['priority'] === undefined) {
+        entities['priority'] = 'URGENT';
+        rest = rest.slice(urgent[0].length);
+        continue;
+      }
+      break;
+    }
+    // "Pour moi" names no one: the task is the doctor's own.
+    if (entities['assigneeRole'] === null) delete entities['assigneeRole'];
+
+    const title = rest.replace(/^[\s:,\-–—]+/u, '').replace(/[.!\s]+$/u, '').trim();
+    if (!title) {
+      return ask('What should the task say?', raw, [], { intent: 'tasks.create', entities, awaiting: 'title' });
+    }
+    entities['title'] = title.charAt(0).toUpperCase() + title.slice(1);
+    // Only a task about the patient in front of the doctor is filed against them; "commander des
+    // gants" is not, even though a patient happens to be open.
+    if (context.patientId && TASK_ABOUT_PATIENT.test(title)) entities['linkPatient'] = true;
+    return intent('tasks.create', entities, CONFIDENCE_STRONG, raw);
+  },
+};
+
 /** "Schedule a follow-up": an appointment word with a scheduling verb. */
 const SCHEDULE_VERB = /\b(?:schedule|book|set\s+up|programme[rz]?|planifie[rz]?|fixe[rz]?)\b/iu;
 const RECALL_NOUN = /\b(?:follow[- ]?up|appointment|recall|rendez[- ]?vous|contr[ôo]le|rdv|rappel)\b/iu;
@@ -921,6 +991,7 @@ function pendingForTooth(
 export const GRAMMAR_RULES: GrammarRule[] = [
   startExamination,
   endExamination,
+  createTask,
   showFindings,
   undoLast,
   correctLast,

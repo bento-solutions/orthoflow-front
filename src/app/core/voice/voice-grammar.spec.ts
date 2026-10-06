@@ -712,3 +712,61 @@ describe('several teeth, finding first', () => {
     expect(resolve('carie, dent 16 couronne, dent 17').kind).toBe('clarification');
   });
 });
+
+describe('a task for the team', () => {
+  const task = (utterance: string, overrides: Partial<VoiceContextSnapshot> = {}) =>
+    expectIntent(utterance, 'tasks.create', overrides).entities;
+
+  it('reads who it is for, the day and the words, as said', () => {
+    expect(task('Crée une tâche pour l\'accueil : commander des gants demain')).toMatchObject({
+      assigneeRole: 'ASSISTANT',
+      title: 'Commander des gants demain',
+    });
+    expect(task('create a task for reception, tomorrow: Order gloves')).toMatchObject({
+      assigneeRole: 'ASSISTANT',
+      dueDay: 'tomorrow',
+      title: 'Order gloves',
+    });
+  });
+
+  it('takes the phrases in any order, and urgency', () => {
+    expect(task('tâche urgente pour la réception demain : appeler le laboratoire')).toMatchObject({
+      assigneeRole: 'ASSISTANT',
+      dueDay: 'tomorrow',
+      priority: 'URGENT',
+      title: 'Appeler le laboratoire',
+    });
+  });
+
+  it('is the doctor\'s own when it is for no one else', () => {
+    const own = task('nouvelle tâche pour moi : relire le devis');
+    expect(own['assigneeRole']).toBeUndefined();
+    expect(own['title']).toBe('Relire le devis');
+    expect(task('add a task: relire le devis')['assigneeRole']).toBeUndefined();
+  });
+
+  it('is not mistaken for a recall or a note, whatever the words say', () => {
+    expect(task('crée une tâche pour l\'accueil : fixer un rendez-vous de contrôle')['title'])
+      .toBe('Fixer un rendez-vous de contrôle');
+    expect(task('tâche pour l\'accueil : rappeler le patient dans 15 jours')['assigneeRole']).toBe('ASSISTANT');
+  });
+
+  it('is filed against the patient only when the words are about them', () => {
+    expect(task('crée une tâche pour l\'accueil : rappeler le patient')['linkPatient']).toBe(true);
+    expect(task('crée une tâche pour l\'accueil : commander des gants')['linkPatient']).toBeUndefined();
+    expect(task('create a task for reception: call the patient', { patientId: null })['linkPatient']).toBeUndefined();
+  });
+
+  it('asks what it should say when nothing follows', () => {
+    const result = resolve('crée une tâche pour l\'accueil');
+    expect(result.kind).toBe('clarification');
+    if (result.kind !== 'clarification') throw new Error('unreachable');
+    expect(result.clarification.pendingIntent).toBe('tasks.create');
+    expect(result.clarification.awaiting).toBe('title');
+    expect(result.clarification.pendingEntities).toMatchObject({ assigneeRole: 'ASSISTANT' });
+  });
+
+  it('is not a task when it is denied', () => {
+    expect(resolve('pas de tâche pour l\'accueil').kind).not.toBe('intent');
+  });
+});

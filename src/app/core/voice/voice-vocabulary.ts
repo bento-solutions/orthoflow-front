@@ -141,6 +141,7 @@ export const COMMAND_EXAMPLES: ReadonlyArray<{ intent: string; fr: string; en: s
   { intent: 'chart.replaceLastFinding', fr: 'non, en fait couronne à remplacer', en: 'no, actually crown replacement' },
   { intent: 'voice.correction.undo', fr: 'annule', en: 'undo' },
   { intent: 'clinical.addNote', fr: 'note : patient anxieux', en: 'add a note: patient anxious' },
+  { intent: 'tasks.create', fr: 'crée une tâche pour l\'accueil : rappeler le patient', en: 'create a task for reception: call the patient back' },
   { intent: 'clinical.addAllergy', fr: 'allergie à la pénicilline', en: 'allergy to penicillin' },
   { intent: 'clinical.addMedicalHistory', fr: 'antécédents médicaux : diabète', en: 'medical history: diabetes' },
   { intent: 'chart.readTooth', fr: 'lis la dent 16', en: 'what is on tooth 16' },
@@ -345,6 +346,18 @@ export function spokenConfirmation(
         return { text: fr ? `Note${where} : ${content}.` : `Note${where}: ${content}.`, locale };
       }
       return { text: fr ? 'Note ajoutée.' : 'Note added.', locale };
+    }
+    case 'tasks.create': {
+      const title = entityString(entities, 'title') ?? '';
+      const role = entityString(entities, 'assigneeRole');
+      const who = role === 'ASSISTANT' ? (fr ? 'pour l\'accueil' : 'for reception')
+        : role === 'DOCTOR' ? (fr ? 'pour le docteur' : 'for the doctor')
+        : role === 'ADMIN' ? (fr ? 'pour l\'administration' : 'for the administrator')
+        : (fr ? 'pour vous' : 'for you');
+      const day = entityString(entities, 'dueDay');
+      const when = day === 'tomorrow' ? (fr ? ', pour demain' : ', due tomorrow')
+        : day === 'today' ? (fr ? ', pour aujourd\'hui' : ', due today') : '';
+      return { text: fr ? `Tâche ${who}${when} : ${title}.` : `Task ${who}${when}: ${title}.`, locale };
     }
     case 'clinical.addAllergy':
       return { text: fr ? `Allergie : ${entities['substance']}.` : `Allergy: ${entities['substance']}.`, locale };

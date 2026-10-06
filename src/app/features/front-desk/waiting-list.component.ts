@@ -38,7 +38,7 @@ export function formatWeekdays(days: Iterable<number>): string | undefined {
 @Component({
   selector: 'app-waiting-list',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent, PatientPickerComponent],
+  imports: [FormsModule, TranslateModule, IconComponent, ModalComponent, PatientPickerComponent],
   template: `
     <section class="card">
       <div class="card-head">

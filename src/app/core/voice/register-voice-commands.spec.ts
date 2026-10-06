@@ -194,3 +194,54 @@ describe('VoiceCommandsService — reading back', () => {
     expect(result.spokenFr).toContain(new Date(soon).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }));
   });
 });
+
+describe('VoiceCommandsService — a task for the team', () => {
+  let registry: VoiceCommandRegistryService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: ClinicalRecordService, useValue: {} },
+        { provide: DentalChartService, useValue: {} },
+        { provide: PatientService, useValue: { currentPatient: signal(null) } },
+        { provide: ScheduleService, useValue: {} },
+        { provide: InvoiceService, useValue: {} },
+        { provide: VoiceContextService, useValue: {} },
+        { provide: VoiceSessionService, useValue: {} },
+        { provide: VoiceOrchestratorService, useValue: { buffered: () => [], sessionHooks: null } },
+      ],
+    });
+    registry = TestBed.inject(VoiceCommandRegistryService);
+    TestBed.inject(VoiceCommandsService).registerAll();
+  });
+
+  it('is a staged write that the server makes, never one the browser performs', () => {
+    const command = registry.get('tasks.create')!;
+    expect(command.risk).toBe('CONFIRM');
+    expect(command.serverIntent).toBe('tasks.create');
+    expect(command.execute).toBeUndefined();
+  });
+
+  it('shows who, when and what before it is staged', () => {
+    const command = registry.get('tasks.create')!;
+    expect(command.preview({ title: 'Order gloves', assigneeRole: 'ASSISTANT', dueDay: 'tomorrow', priority: 'URGENT' }, snapshot))
+      .toBe('Task for reception, due tomorrow, urgent: "Order gloves"');
+    expect(command.preview({ title: 'Relire le devis' }, snapshot)).toBe('Task: "Relire le devis"');
+  });
+
+  it('sends the server a calendar day, not the word for it', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 6, 23, 50));
+    try {
+      const sent = registry.get('tasks.create')!.toServerEntities!(
+        { title: ' Order gloves ', assigneeRole: 'ASSISTANT', dueDay: 'tomorrow', linkPatient: true }, snapshot);
+      expect(sent).toMatchObject({ title: 'Order gloves', assigneeRole: 'ASSISTANT', dueDate: '2026-10-07', linkPatient: true });
+      const own = registry.get('tasks.create')!.toServerEntities!({ title: 'x' }, snapshot);
+      expect(own['dueDate']).toBeUndefined();
+      expect(own['assigneeRole']).toBeUndefined();
+      expect(own['linkPatient']).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

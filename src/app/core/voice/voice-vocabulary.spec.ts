@@ -174,3 +174,11 @@ describe('a compound surface read back as it was said', () => {
     expect(spoken?.text).toBe('Dent 16 : carie mésio-occlusale.');
   });
 });
+
+describe('spokenConfirmation of a task', () => {
+  it('reads who, when and what, in the language of the doctor', () => {
+    expect(spokenConfirmation('tasks.create', { title: 'Commander des gants', assigneeRole: 'ASSISTANT', dueDay: 'tomorrow' }, 'fr')?.text)
+      .toBe('Tâche pour l\'accueil, pour demain : Commander des gants.');
+    expect(spokenConfirmation('tasks.create', { title: 'Order gloves' }, 'en')?.text).toBe('Task for you: Order gloves.');
+  });
+});

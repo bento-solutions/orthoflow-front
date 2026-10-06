@@ -131,7 +131,7 @@ export class SidebarComponent {
         { key: 'COMMON.PATIENTS', path: '/patients', icon: 'users', permission: ['PATIENT_READ'] },
         { key: 'COMMON.SCHEDULE', path: '/schedule', icon: 'calendar', permission: ['AGENDA_VIEW'] },
         { key: 'NAV.FRONT_DESK', path: '/front-desk', icon: 'clock', permission: ['AGENDA_VIEW', 'WAITING_ROOM_MANAGE'] },
-        { key: 'NAV.RECALLS', path: '/recalls', icon: 'phone', permission: ['PATIENT_READ'] },
+        { key: 'NAV.RECALLS', path: '/recalls', icon: 'phone', permission: ['AGENDA_VIEW'] },
         { key: 'COMMON.TREATMENTS', path: '/treatments', icon: 'activity' },
         { key: 'NAV.LAB_ORDERS', path: '/lab-orders', icon: 'flask', permission: ['LAB_ORDERS_MANAGE'] },
         { key: 'NAV.STERILIZATION', path: '/sterilization', icon: 'shield', permission: ['STERILIZATION_MANAGE'] },

@@ -51,6 +51,12 @@ export const routes: Routes = [
             loadComponent: () => import('./features/patients/patient-registration/patient-registration.component').then(m => m.PatientRegistrationComponent),
           },
           {
+            // Before ':id', which would otherwise take "duplicates" for a patient.
+            path: 'duplicates',
+            canActivate: [permissionGuard('PATIENT_MERGE')],
+            loadComponent: () => import('./features/patients/duplicates/patient-duplicates.component').then(m => m.PatientDuplicatesComponent),
+          },
+          {
             path: ':id',
             loadComponent: () => import('./features/patients/patient-dossier/patient-dossier.component').then(m => m.PatientDossierComponent),
           },
@@ -67,6 +73,11 @@ export const routes: Routes = [
             loadComponent: () => import('./features/patients/session-review/session-review.component').then(m => m.SessionReviewComponent),
           }
         ]
+      },
+      {
+        path: 'recalls',
+        canActivate: [permissionGuard('AGENDA_VIEW')],
+        loadComponent: () => import('./features/patients/recalls/recalls.component').then(m => m.RecallsComponent),
       },
       {
         path: 'front-desk',

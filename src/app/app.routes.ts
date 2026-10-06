@@ -126,6 +126,11 @@ export const routes: Routes = [
             loadComponent: () => import('./features/settings/pages/users-settings.component').then(m => m.UsersSettingsComponent),
           },
           {
+            path: 'agenda',
+            canActivate: [permissionGuard('SETTINGS_MANAGE')],
+            loadComponent: () => import('./features/settings/pages/agenda-settings.component').then(m => m.AgendaSettingsComponent),
+          },
+          {
             path: 'booking',
             canActivate: [permissionGuard('SETTINGS_MANAGE')],
             loadComponent: () => import('./features/settings/pages/booking-settings.component').then(m => m.BookingSettingsComponent),

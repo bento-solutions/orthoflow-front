@@ -1103,7 +1103,8 @@
       "TEAM": "Care team",
       "USERS": "Users and permissions",
       "BOOKING": "Online booking",
-      "HELP": "Help texts"
+      "HELP": "Help texts",
+      "AGENDA": "Agenda"
     },
     "TEAM": {
       "TITLE": "Care team",
@@ -1300,6 +1301,39 @@
       "NOTE_BODY": "Text",
       "BODY_HINT": "Plain text; a blank line separates paragraphs.",
       "RESTORE": "Restore the original text"
+    },
+    "AGENDA": {
+      "TYPES": "Appointment types",
+      "TYPES_HINT": "Each type has its colour and usual length. Those marked “online” are offered to patients on the booking page.",
+      "NEW_TYPE": "New type",
+      "EDIT_TYPE": "Edit type",
+      "DURATION": "Length",
+      "GROUP": "Specialty",
+      "GROUPS": {
+        "ANY": "Any",
+        "ORTHODONTICS": "Orthodontics",
+        "GENERAL": "General dentistry"
+      },
+      "ONLINE": "Bookable online",
+      "CODE": "Code",
+      "CODE_HINT": "Capitals, digits and _. Left empty, it is made from the name.",
+      "COLOR": "Colour",
+      "ORDER": "Display order",
+      "PROBLEM": {
+        "NAMES": "The name is needed in all three languages.",
+        "DURATION": "The length must be between 5 and 480 minutes.",
+        "COLOR": "Pick a colour."
+      },
+      "CHAIRS": "Chairs",
+      "CHAIR": "Chair",
+      "NO_CHAIRS": "No chair.",
+      "ROOMS": "Waiting rooms",
+      "ROOM": "Waiting room",
+      "NO_ROOMS": "No waiting room.",
+      "COLORS": "Colour of each status",
+      "COLORS_HINT": "The status is always written out beside the colour: the colour helps, it never carries the meaning alone.",
+      "RESET": "Default",
+      "COLORS_SAVED": "Colours saved."
     }
   },
   "FD": {
@@ -1501,6 +1535,16 @@
           "waiting_list_entries": "Waiting list"
         }
       }
+    },
+    "INVITE": {
+      "BUTTON": "Registration link",
+      "TITLE": "Personal registration link",
+      "HINT": "Send this link to {{name}}: they fill in their own file (identity, contact, insurance, consent) from their phone.",
+      "LINK": "Link",
+      "COPY": "Copy",
+      "COPIED": "Copied",
+      "COPY_MANUALLY": "Could not copy: select the link and copy it by hand.",
+      "ONCE": "The link works once. What the person sends back appears under “Online requests”, where you check it before it touches the file."
     }
   },
   "REC": {

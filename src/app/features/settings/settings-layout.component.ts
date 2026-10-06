@@ -15,6 +15,7 @@ const TABS: Tab[] = [
   { path: 'hours', key: 'SET.TABS.HOURS', permission: ['SETTINGS_MANAGE'] },
   { path: 'team', key: 'SET.TABS.TEAM', permission: ['SETTINGS_MANAGE'] },
   { path: 'users', key: 'SET.TABS.USERS', permission: ['USERS_MANAGE'] },
+  { path: 'agenda', key: 'SET.TABS.AGENDA', permission: ['SETTINGS_MANAGE'] },
   { path: 'booking', key: 'SET.TABS.BOOKING', permission: ['SETTINGS_MANAGE'] },
   { path: 'help-notes', key: 'SET.TABS.HELP', permission: ['SETTINGS_MANAGE'] },
 ];

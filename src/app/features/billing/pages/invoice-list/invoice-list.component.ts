@@ -33,10 +33,7 @@ import { PatientService } from '../../../../core/services/patient.service';
           <p class="page-sub">{{ 'BILLING.SUBTITLE' | translate }}</p>
         </div>
         <div class="page-actions">
-          <a class="btn btn-secondary" routerLink="/billing/quotes">
-            <app-icon name="file-text" [size]="16" />
-            {{ 'BILLING.QUOTES' | translate }}
-          </a>
+          <!-- No link to quotes: that page is a mock-up with no backend behind it (see billing.routes.ts). -->
           <a class="btn btn-primary" routerLink="create">
             <app-icon name="plus" [size]="16" />
             {{ 'BILLING.NEW_INVOICE' | translate }}

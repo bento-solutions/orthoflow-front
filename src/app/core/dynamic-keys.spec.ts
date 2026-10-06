@@ -41,6 +41,7 @@ const FAMILIES: Record<string, readonly string[]> = {
   'FIN.TAX.LANGS': ['fr', 'en', 'ar'],
   'FIN.DEBT.SORTS': ['balance', 'name', 'lastPayment'],
   'INT.BOOK.STATUSES': BOOKING_STATUSES,
+  'SET.AGENDA.GROUPS': ['ANY', 'ORTHODONTICS', 'GENERAL'],
   'STER.STATES': ITEM_STATES,
   'STER.KINDS': ITEM_KINDS,
   'STER.RESULTS': ['PENDING', 'PASSED', 'FAILED'],

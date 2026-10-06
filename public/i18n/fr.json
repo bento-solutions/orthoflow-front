@@ -1103,7 +1103,8 @@
       "TEAM": "Équipe soignante",
       "USERS": "Utilisateurs et droits",
       "BOOKING": "Réservation en ligne",
-      "HELP": "Textes d'aide"
+      "HELP": "Textes d'aide",
+      "AGENDA": "Agenda"
     },
     "TEAM": {
       "TITLE": "Équipe soignante",
@@ -1300,6 +1301,39 @@
       "NOTE_BODY": "Texte",
       "BODY_HINT": "Texte simple ; une ligne vide sépare les paragraphes.",
       "RESTORE": "Rétablir le texte d'origine"
+    },
+    "AGENDA": {
+      "TYPES": "Types de rendez-vous",
+      "TYPES_HINT": "Chaque type a sa couleur et sa durée habituelle. Ceux marqués « en ligne » sont proposés aux patients sur la page de réservation.",
+      "NEW_TYPE": "Nouveau type",
+      "EDIT_TYPE": "Modifier le type",
+      "DURATION": "Durée",
+      "GROUP": "Spécialité",
+      "GROUPS": {
+        "ANY": "Toutes",
+        "ORTHODONTICS": "Orthodontie",
+        "GENERAL": "Dentisterie générale"
+      },
+      "ONLINE": "Réservable en ligne",
+      "CODE": "Code",
+      "CODE_HINT": "Capitales, chiffres et _. Laissé vide, il est tiré du nom.",
+      "COLOR": "Couleur",
+      "ORDER": "Ordre d'affichage",
+      "PROBLEM": {
+        "NAMES": "Le nom est à donner dans les trois langues.",
+        "DURATION": "La durée doit être entre 5 et 480 minutes.",
+        "COLOR": "Choisissez une couleur."
+      },
+      "CHAIRS": "Fauteuils",
+      "CHAIR": "Fauteuil",
+      "NO_CHAIRS": "Aucun fauteuil.",
+      "ROOMS": "Salles d'attente",
+      "ROOM": "Salle d'attente",
+      "NO_ROOMS": "Aucune salle d'attente.",
+      "COLORS": "Couleur de chaque statut",
+      "COLORS_HINT": "Le statut est toujours écrit en toutes lettres à côté de la couleur : celle-ci aide, elle ne porte pas seule le sens.",
+      "RESET": "Défaut",
+      "COLORS_SAVED": "Couleurs enregistrées."
     }
   },
   "FD": {
@@ -1501,6 +1535,16 @@
           "waiting_list_entries": "Liste d'attente"
         }
       }
+    },
+    "INVITE": {
+      "BUTTON": "Lien d'inscription",
+      "TITLE": "Lien d'inscription personnel",
+      "HINT": "Envoyez ce lien à {{name}} : il ou elle remplit sa fiche (identité, contact, assurance, consentements) depuis son téléphone.",
+      "LINK": "Lien",
+      "COPY": "Copier",
+      "COPIED": "Copié",
+      "COPY_MANUALLY": "Copie impossible : sélectionnez le lien et copiez-le à la main.",
+      "ONCE": "Le lien ne sert qu'une fois. Ce que la personne renvoie apparaît dans « Demandes en ligne », où vous le vérifiez avant qu'il ne touche le dossier."
     }
   },
   "REC": {

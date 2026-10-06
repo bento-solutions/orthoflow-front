@@ -30,11 +30,12 @@ import { ConsultationService } from '../../../core/consultation/consultation.ser
 import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clinical-record.model';
 import { PermissionService } from '../../../core/services/permission.service';
 import { PatientAccountComponent } from '../account/patient-account.component';
+import { RegistrationInviteComponent } from '../registration-invite.component';
 
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, PatientAccountComponent],
+  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, PatientAccountComponent, RegistrationInviteComponent],
   template: `
     <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive()" [class.has-consultation]="consultation.visible()">
       @if (patientService.currentPatient(); as patient) {
@@ -86,6 +87,7 @@ import { PatientAccountComponent } from '../account/patient-account.component';
                 </button>
               }
             }
+            <app-registration-invite [patientId]="patient.id" [name]="patient.firstName + ' ' + patient.lastName" />
             <button type="button" class="btn btn-secondary btn-compact" (click)="onPrint()"
                     [attr.aria-label]="'COMMON.PRINT' | translate" [title]="'COMMON.PRINT' | translate">
               <span class="material-icons" aria-hidden="true">print</span>

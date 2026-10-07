@@ -15,6 +15,7 @@ export const ANALYTICS_TABS: AnalyticsTab[] = [
   { path: 'time', key: 'ANA.TABS.TIME', permission: ['ANALYTICS_VIEW'] },
   { path: 'income', key: 'ANA.TABS.INCOME', permission: ['FINANCE_VIEW'] },
   { path: 'goals', key: 'ANA.TABS.GOALS', permission: ['FINANCE_VIEW'] },
+  { path: 'tax', key: 'ANA.TABS.TAX', permission: ['FINANCE_VIEW'] },
 ];
 
 /** `/analytics` opens on the first report this person may see (decided after their permissions are known, so not with a plain redirect). */

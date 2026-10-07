@@ -2362,7 +2362,8 @@
       "PROCEDURES": "Actes",
       "TIME": "Temps au fauteuil",
       "INCOME": "Compte de résultat",
-      "GOALS": "Objectif"
+      "GOALS": "Objectif",
+      "TAX": "Simulateur IR"
     },
     "PROC": {
       "CATEGORY": "Catégorie",
@@ -2452,6 +2453,49 @@
       "VARIANCE": "Écart",
       "PROJECTED": "Projection",
       "NOT_SAVED": "Enregistrez l'objectif pour suivre l'année mois par mois."
+    },
+    "TAX": {
+      "DISCLAIMER": "Simulation, pas un conseil fiscal. Aucun taux n'est intégré à l'application : saisissez le barème de la loi pour l'année concernée et indiquez sa source. Faites valider le résultat par votre comptable.",
+      "DISCLAIMER_SHORT": "Simulation, pas un conseil fiscal.",
+      "YEAR": "Année d'imposition",
+      "SCHEDULE": "Barème {{year}}",
+      "NO_RATES_BUILT_IN": "Chaque tranche est imposée à son taux sur la part du revenu qu'elle couvre. Les taux varient selon l'année et le contribuable : ils viennent de vous.",
+      "SOURCE": "Source",
+      "SOURCE_HINT": "Le texte de loi et son année, par exemple l'article et la loi de finances. Affiché à côté de chaque résultat.",
+      "BANDS": "Tranches",
+      "BAND": "Tranche",
+      "RATE": "Taux",
+      "UP_TO": "Jusqu'à",
+      "ABOVE": "Au-delà",
+      "NO_LIMIT": "Sans limite",
+      "ADD_BAND": "Ajouter une tranche",
+      "REMOVE_BAND": "Retirer la tranche",
+      "ABOVE_AMOUNT": "Au-delà de {{from}}",
+      "BETWEEN": "De {{from}} à {{to}}",
+      "PROBLEM": {
+        "EMPTY": "Saisissez au moins une tranche.",
+        "ORDER": "Chaque limite doit être supérieure à la précédente.",
+        "RATE": "Un taux doit être compris entre 0 et 100."
+      },
+      "DEPENDENT_DEDUCTION": "Déduction par personne à charge",
+      "MAX_DEPENDENTS": "Personnes à charge prises en compte (au plus)",
+      "DEPENDENT_LINE": "Déduction de {{amount}} par personne à charge, {{max}} au plus.",
+      "SAVE": "Enregistrer le barème",
+      "SAVED": "Barème enregistré.",
+      "NOT_ENTERED": "Aucun barème n'a été saisi pour {{year}}. Demandez à une personne habilitée à gérer la finance de le saisir.",
+      "ENTER_FIRST": "Saisissez d'abord le barème de l'année pour lancer une simulation.",
+      "SIMULATION": "Simulation",
+      "INCOME": "Revenu imposable",
+      "INCOME_HINT": "Le revenu net imposable de l'année, après les déductions que votre comptable retient.",
+      "START_FROM_RESULT": "Partir du résultat {{year}} du cabinet",
+      "DEPENDENTS": "Personnes à charge",
+      "RESULT": "Résultat de la simulation {{year}}",
+      "GROSS": "Impôt avant déductions",
+      "RELIEF": "Déduction pour charges de famille",
+      "TAX": "Impôt estimé",
+      "EFFECTIVE": "Taux effectif",
+      "AFTER_TAX": "Revenu après impôt",
+      "IN_BAND": "Part du revenu"
     }
   },
   "STER": {
@@ -2768,6 +2812,7 @@
     "USERS": "Utilisateurs et droits",
     "ACCOUNT": "Mon compte",
     "HELP": "Ouvrir l'aide",
-    "THEME": "Basculer clair / sombre"
+    "THEME": "Basculer clair / sombre",
+    "TAX_SIMULATION": "Simulateur d'impôt sur le revenu"
   }
 }

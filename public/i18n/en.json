@@ -2362,7 +2362,8 @@
       "PROCEDURES": "Procedures",
       "TIME": "Chair time",
       "INCOME": "Income statement",
-      "GOALS": "Goal"
+      "GOALS": "Goal",
+      "TAX": "Income tax"
     },
     "PROC": {
       "CATEGORY": "Category",
@@ -2452,6 +2453,49 @@
       "VARIANCE": "Difference",
       "PROJECTED": "Projected",
       "NOT_SAVED": "Save the goal to follow the year month by month."
+    },
+    "TAX": {
+      "DISCLAIMER": "A simulation, not tax advice. No rates are built into the application: enter the schedule from the law for the year and say where it comes from. Have your accountant confirm the result.",
+      "DISCLAIMER_SHORT": "A simulation, not tax advice.",
+      "YEAR": "Tax year",
+      "SCHEDULE": "Schedule for {{year}}",
+      "NO_RATES_BUILT_IN": "Each band is taxed at its rate on the part of the income it covers. Rates differ by year and taxpayer: they come from you.",
+      "SOURCE": "Source",
+      "SOURCE_HINT": "The text of law and its year, for example the article and the finance act. Shown beside every result.",
+      "BANDS": "Bands",
+      "BAND": "Band",
+      "RATE": "Rate",
+      "UP_TO": "Up to",
+      "ABOVE": "Above",
+      "NO_LIMIT": "No limit",
+      "ADD_BAND": "Add a band",
+      "REMOVE_BAND": "Remove the band",
+      "ABOVE_AMOUNT": "Above {{from}}",
+      "BETWEEN": "{{from}} to {{to}}",
+      "PROBLEM": {
+        "EMPTY": "Enter at least one band.",
+        "ORDER": "Each limit must be above the one before.",
+        "RATE": "A rate must be between 0 and 100."
+      },
+      "DEPENDENT_DEDUCTION": "Deduction per dependent",
+      "MAX_DEPENDENTS": "Dependents counted (at most)",
+      "DEPENDENT_LINE": "{{amount}} off the tax per dependent, up to {{max}}.",
+      "SAVE": "Save the schedule",
+      "SAVED": "Schedule saved.",
+      "NOT_ENTERED": "No schedule has been entered for {{year}}. Ask someone who can manage finance to enter it.",
+      "ENTER_FIRST": "Enter the year's schedule first to run a simulation.",
+      "SIMULATION": "Simulation",
+      "INCOME": "Taxable income",
+      "INCOME_HINT": "The year's net taxable income, after the deductions your accountant applies.",
+      "START_FROM_RESULT": "Start from the practice's {{year}} result",
+      "DEPENDENTS": "Dependents",
+      "RESULT": "Simulation result for {{year}}",
+      "GROSS": "Tax before relief",
+      "RELIEF": "Relief for dependents",
+      "TAX": "Estimated tax",
+      "EFFECTIVE": "Effective rate",
+      "AFTER_TAX": "Income after tax",
+      "IN_BAND": "Income in band"
     }
   },
   "STER": {
@@ -2768,6 +2812,7 @@
     "USERS": "Users and permissions",
     "ACCOUNT": "My account",
     "HELP": "Open help",
-    "THEME": "Switch light / dark"
+    "THEME": "Switch light / dark",
+    "TAX_SIMULATION": "Income tax simulator"
   }
 }

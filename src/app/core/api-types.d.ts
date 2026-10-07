@@ -676,6 +676,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/analytics/tax-schedule/{year}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["taxSchedule"];
+        put: operations["saveTaxSchedule"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/analytics/goals/{year}": {
         parameters: {
             query?: never;
@@ -2894,6 +2910,22 @@ export interface paths {
         get: operations["getAllAppointments"];
         put?: never;
         post: operations["createAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/analytics/tax-simulation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["taxSimulation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5868,6 +5900,27 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        SaveTaxSchedule: {
+            source?: string;
+            brackets?: components["schemas"]["TaxBracket"][];
+            dependentDeduction?: number;
+            /** Format: int32 */
+            maxDependents?: number;
+        };
+        TaxBracket: {
+            upTo?: number;
+            ratePercent?: number;
+        };
+        TaxSchedule: {
+            /** Format: int32 */
+            year?: number;
+            configured?: boolean;
+            source?: string;
+            brackets?: components["schemas"]["TaxBracket"][];
+            dependentDeduction?: number;
+            /** Format: int32 */
+            maxDependents?: number;
+        };
         GoalInputs: {
             fixedCosts?: number;
             personalNeeds?: number;
@@ -7341,6 +7394,34 @@ export interface components {
         ForgotPasswordRequest: {
             email: string;
         };
+        TaxSimulationInput: {
+            /** Format: int32 */
+            year?: number;
+            taxableIncome?: number;
+            /** Format: int32 */
+            dependents?: number;
+        };
+        TaxBand: {
+            from?: number;
+            upTo?: number;
+            ratePercent?: number;
+            amountInBand?: number;
+            tax?: number;
+        };
+        TaxSimulation: {
+            /** Format: int32 */
+            year?: number;
+            source?: string;
+            taxableIncome?: number;
+            /** Format: int32 */
+            dependents?: number;
+            bands?: components["schemas"]["TaxBand"][];
+            grossTax?: number;
+            dependentRelief?: number;
+            tax?: number;
+            effectiveRatePercent?: number;
+            incomeAfterTax?: number;
+        };
         GoalPlan: {
             inputs?: components["schemas"]["GoalInputs"];
             breakEvenMonthly?: number;
@@ -7423,10 +7504,10 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StockMovementResponse"][];
@@ -7440,8 +7521,8 @@ export interface components {
             pageNumber?: number;
             /** Format: int32 */
             pageSize?: number;
-            paged?: boolean;
             unpaged?: boolean;
+            paged?: boolean;
             /** Format: int64 */
             offset?: number;
             sort?: components["schemas"]["SortObject"][];
@@ -7746,10 +7827,10 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientResponse"][];
@@ -8057,10 +8138,10 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientDirectoryRow"][];
@@ -8164,10 +8245,10 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LogRow"][];
@@ -8224,10 +8305,10 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["InvoiceResponse"][];
@@ -10412,6 +10493,54 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    taxSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TaxSchedule"];
+                };
+            };
+        };
+    };
+    saveTaxSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveTaxSchedule"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TaxSchedule"];
+                };
             };
         };
     };
@@ -14927,6 +15056,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AppointmentResponse"];
+                };
+            };
+        };
+    };
+    taxSimulation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxSimulationInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TaxSimulation"];
                 };
             };
         };

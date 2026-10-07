@@ -24,6 +24,10 @@ export type GoalInputs = Req<'GoalInputs'>;
 export type GoalPlan = Wire<'GoalPlan'>;
 export type GoalSuggestions = Wire<'GoalSuggestions'>;
 export type GoalTracking = Wire<'GoalTracking'>;
+export type TaxSchedule = Wire<'TaxSchedule'>;
+export type TaxScheduleInput = Req<'SaveTaxSchedule'>;
+export type TaxBracket = Wire<'TaxBracket'>;
+export type TaxSimulation = Wire<'TaxSimulation'>;
 
 export type InvoiceStatus = 'DRAFT' | 'SENT' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED';
 export const INVOICE_STATUSES: readonly InvoiceStatus[] = ['DRAFT', 'SENT', 'PARTIALLY_PAID', 'PAID', 'CANCELLED'];
@@ -112,6 +116,15 @@ export class AnalyticsApi {
   }
   goalTracking(year: number): Promise<GoalTracking> {
     return this.get(`/analytics/goals/${year}`);
+  }
+  taxSchedule(year: number): Promise<TaxSchedule> {
+    return this.get(`/analytics/tax-schedule/${year}`);
+  }
+  saveTaxSchedule(year: number, body: TaxScheduleInput): Promise<TaxSchedule> {
+    return firstValueFrom(this.http.put<TaxSchedule>(api(`/analytics/tax-schedule/${year}`), body));
+  }
+  taxSimulation(year: number, taxableIncome: number, dependents: number): Promise<TaxSimulation> {
+    return this.post('/analytics/tax-simulation', { year, taxableIncome, dependents });
   }
   saveGoal(year: number, body: { basis?: string; inputs: GoalInputs }): Promise<GoalTracking> {
     return firstValueFrom(this.http.put<GoalTracking>(api(`/analytics/goals/${year}`), body));

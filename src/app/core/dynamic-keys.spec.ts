@@ -57,6 +57,7 @@ const FAMILIES: Record<string, readonly string[]> = {
   'RETRO.RULES.BASIS_HINT': ['COLLECTED', 'PRODUCED'],
   'RETRO.ST.STATUSES': ['UNPAID', 'PARTIAL', 'PAID', 'VOID'],
   'ANA.PROC.STATUSES': ['FINALIZED', 'DRAFT', 'CANCELLED', 'REFUNDED'],
+  'ANA.TAX.PROBLEM': ['EMPTY', 'ORDER', 'RATE'],
   'ANA.INC.GROUPS': INCOME_GROUPS,
   'ANA.TIME.ISSUES': ['missingEnd', 'missingStart', 'tooShort', 'tooLong', 'invalidOrder', 'completedWithoutTimes'],
   'PUB.SURVEY.LEVELS': ['1', '2', '3', '4', '5'],

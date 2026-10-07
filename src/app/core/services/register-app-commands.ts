@@ -58,6 +58,7 @@ export function registerAppCommands(registry: CommandRegistryService, router: Ro
     nav('nav.analytics', 'CMD.ANALYTICS', '/analytics', 'insights', ['reports', 'statistics', 'analytique', 'statistiques', 'rapports', 'التحليلات'], ['ANALYTICS_VIEW', 'FINANCE_VIEW']),
     nav('nav.analytics.income', 'CMD.INCOME_STATEMENT', '/analytics/income', 'balance', ['cpc', 'income statement', 'compte de résultat', 'حساب النتائج'], ['FINANCE_VIEW']),
     nav('nav.analytics.goals', 'CMD.GOALS', '/analytics/goals', 'flag', ['target', 'objective', 'objectif', 'الهدف'], ['FINANCE_VIEW']),
+    nav('nav.analytics.tax', 'CMD.TAX_SIMULATION', '/analytics/tax', 'calculate', ['ir', 'income tax', 'impôt', 'impot sur le revenu', 'simulation', 'الضريبة على الدخل'], ['FINANCE_VIEW']),
 
     // ── Stock ──────────────────────────────────────────────────────────
     nav('nav.stock', 'CMD.STOCK', '/stock', 'inventory_2', ['inventory', 'catalog', 'stock', 'inventaire', 'المخزون'], ['STOCK_READ']),

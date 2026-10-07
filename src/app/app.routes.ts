@@ -209,6 +209,7 @@ export const routes: Routes = [
           { path: 'time', canActivate: [permissionGuard('ANALYTICS_VIEW')], loadComponent: () => import('./features/analytics/doctor-time.component').then(m => m.DoctorTimeComponent) },
           { path: 'income', canActivate: [permissionGuard('FINANCE_VIEW')], loadComponent: () => import('./features/analytics/income-statement.component').then(m => m.IncomeStatementComponent) },
           { path: 'goals', canActivate: [permissionGuard('FINANCE_VIEW')], loadComponent: () => import('./features/analytics/goals.component').then(m => m.GoalsComponent) },
+          { path: 'tax', canActivate: [permissionGuard('FINANCE_VIEW')], loadComponent: () => import('./features/analytics/tax-simulation.component').then(m => m.TaxSimulationComponent) },
         ],
       },
       {

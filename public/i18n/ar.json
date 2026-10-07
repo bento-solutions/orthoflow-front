@@ -701,7 +701,10 @@
     "DISCOUNT_LABEL": "الخصم",
     "SAVE_SESSION_DRAFT": "حفظ مسودة الجلسة",
     "FINALIZE_DEDUCT_STOCK": "إنهاء وخصم من المخزون",
-    "SELECT_ITEM_PLACEHOLDER": "اختر صنفًا..."
+    "SELECT_ITEM_PLACEHOLDER": "اختر صنفًا...",
+    "ACT_CODE": "رمز العمل (التأمين)",
+    "ACT_COEFFICIENT": "المعامل",
+    "ACT_HINT": "تُطبع على أوراق العلاج للتأمين. اتركها فارغة إلى حين تأكيد ترميز NGAP لهذه الأعمال: الرمز الخاطئ أسوأ من عدم وجود رمز."
   },
   "SETTINGS": {
     "TITLE": "الإعدادات",

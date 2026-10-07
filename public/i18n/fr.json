@@ -701,7 +701,10 @@
     "DISCOUNT_LABEL": "Remise",
     "SAVE_SESSION_DRAFT": "Enregistrer le brouillon de session",
     "FINALIZE_DEDUCT_STOCK": "Finaliser et déduire du stock",
-    "SELECT_ITEM_PLACEHOLDER": "Sélectionner un article..."
+    "SELECT_ITEM_PLACEHOLDER": "Sélectionner un article...",
+    "ACT_CODE": "Code acte (assurance)",
+    "ACT_COEFFICIENT": "Coefficient",
+    "ACT_HINT": "Imprimés sur les feuilles de soins. À laisser vides tant que la cotation NGAP de vos actes n'est pas confirmée : un code faux est pire que pas de code."
   },
   "SETTINGS": {
     "TITLE": "Paramètres",

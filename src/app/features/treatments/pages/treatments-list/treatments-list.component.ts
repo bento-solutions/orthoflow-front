@@ -48,6 +48,9 @@ import { ToastService } from '../../../../core/services/toast.service';
 
               <h3 class="font-bold text-lg text-ink-900 tracking-tight leading-tight">{{ t.name }}</h3>
               
+              @if (t.actCode) {
+                <p class="text-xs text-ink-500 font-semibold">{{ "TREATMENTS.ACT_CODE" | translate }}: <span class="font-mono text-ink-700">{{ t.actCode }}</span>@if (t.actCoefficient != null) { · {{ "TREATMENTS.ACT_COEFFICIENT" | translate }} <span class="text-ink-700">{{ t.actCoefficient }}</span> }</p>
+              }
               <div class="flex items-baseline gap-1.5 pt-1">
                 <span class="text-xs text-ink-500 font-semibold uppercase tracking-wide">{{ "TREATMENTS.BASE_PRICE" | translate }}:</span>
                 <span class="text-lg font-extrabold text-ink-900">{{ t.basePrice | number:'1.2-2' }} DH</span>
@@ -113,6 +116,20 @@ import { ToastService } from '../../../../core/services/toast.service';
               <div>
                 <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "TREATMENTS.PROCEDURE_NAME" | translate }} *</label>
                 <input type="text" [(ngModel)]="form.name" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+              </div>
+
+              <div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1" for="act-code">{{ "TREATMENTS.ACT_CODE" | translate }}</label>
+                    <input id="act-code" type="text" maxlength="30" [(ngModel)]="form.actCode" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition font-mono bg-white" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1" for="act-coefficient">{{ "TREATMENTS.ACT_COEFFICIENT" | translate }}</label>
+                    <input id="act-coefficient" type="number" min="0" step="any" [(ngModel)]="form.actCoefficient" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                  </div>
+                </div>
+                <p class="mt-1.5 text-xs text-ink-500">{{ "TREATMENTS.ACT_HINT" | translate }}</p>
               </div>
 
               <!-- Consumables Configurator -->
@@ -261,6 +278,10 @@ export class TreatmentsListComponent implements OnInit {
     if (!this.form.code || !this.form.name || !this.form.basePrice) {
       return;
     }
+
+    // A blank box means "not set", which the server stores as no code and no coefficient.
+    this.form.actCode = this.form.actCode?.trim() || undefined;
+    if (this.form.actCoefficient == null || (this.form.actCoefficient as unknown) === '') this.form.actCoefficient = undefined;
 
     // Attach mapped lines
     this.form.consumables = this.formConsumables

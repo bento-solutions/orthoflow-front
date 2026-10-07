@@ -701,7 +701,10 @@
     "DISCOUNT_LABEL": "Discount",
     "SAVE_SESSION_DRAFT": "Save Session Draft",
     "FINALIZE_DEDUCT_STOCK": "Finalize & Deduct Stock",
-    "SELECT_ITEM_PLACEHOLDER": "Select item..."
+    "SELECT_ITEM_PLACEHOLDER": "Select item...",
+    "ACT_CODE": "Act code (insurance)",
+    "ACT_COEFFICIENT": "Coefficient",
+    "ACT_HINT": "Printed on the insurance care forms. Leave blank until your NGAP coding for these acts is confirmed: a wrong code is worse than none."
   },
   "SETTINGS": {
     "TITLE": "Settings",

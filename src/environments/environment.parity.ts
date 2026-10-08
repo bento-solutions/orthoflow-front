@@ -3,5 +3,5 @@
 // is baked in at build time, so it needs its own build configuration.
 export const environment = {
   production: true,
-  apiUrl: 'https://apiorthoflow.crmbento.com'
+  apiUrl: 'https://apiorthoflow.bento212.com'
 };

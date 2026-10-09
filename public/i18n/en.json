@@ -702,9 +702,15 @@
     "SAVE_SESSION_DRAFT": "Save Session Draft",
     "FINALIZE_DEDUCT_STOCK": "Finalize & Deduct Stock",
     "SELECT_ITEM_PLACEHOLDER": "Select item...",
-    "ACT_CODE": "Act code (insurance)",
+    "ACT_CODE": "NGAP act (insurance)",
     "ACT_COEFFICIENT": "Coefficient",
-    "ACT_HINT": "Printed on the insurance care forms. Leave blank until your NGAP coding for these acts is confirmed: a wrong code is worse than none."
+    "ACT_HINT": "Printed on the insurance care forms. Pick the act from the NGAP (order no. 177-06): its coefficient is filled in. Change it only for a rule of the text (e.g. +50% for a permanent tooth of a child under 13).",
+    "NGAP_SEARCH": "Code or label (e.g. D708, détartrage)",
+    "NGAP_NO_MATCH": "No NGAP act matches.",
+    "NGAP_REMOVE": "Remove",
+    "NGAP_COTATION": "Rating",
+    "NGAP_ANESTHESIA": "Anaesthesia",
+    "NGAP_PRIOR_AGREEMENT": "Prior agreement"
   },
   "SETTINGS": {
     "TITLE": "Settings",

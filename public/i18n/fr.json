@@ -702,9 +702,15 @@
     "SAVE_SESSION_DRAFT": "Enregistrer le brouillon de session",
     "FINALIZE_DEDUCT_STOCK": "Finaliser et déduire du stock",
     "SELECT_ITEM_PLACEHOLDER": "Sélectionner un article...",
-    "ACT_CODE": "Code acte (assurance)",
+    "ACT_CODE": "Acte NGAP (assurance)",
     "ACT_COEFFICIENT": "Coefficient",
-    "ACT_HINT": "Imprimés sur les feuilles de soins. À laisser vides tant que la cotation NGAP de vos actes n'est pas confirmée : un code faux est pire que pas de code."
+    "ACT_HINT": "Imprimés sur les feuilles de soins. Choisissez l'acte dans la NGAP (arrêté n° 177-06) : son coefficient est repris. Ne le modifiez que pour une règle du texte (par ex. +50 % pour une dent permanente chez un enfant de moins de 13 ans).",
+    "NGAP_SEARCH": "Code ou libellé (ex. D708, détartrage)",
+    "NGAP_NO_MATCH": "Aucun acte de la NGAP ne correspond.",
+    "NGAP_REMOVE": "Retirer",
+    "NGAP_COTATION": "Cotation",
+    "NGAP_ANESTHESIA": "Anesthésie",
+    "NGAP_PRIOR_AGREEMENT": "Accord préalable"
   },
   "SETTINGS": {
     "TITLE": "Paramètres",

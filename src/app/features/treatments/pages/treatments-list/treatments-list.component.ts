@@ -6,6 +6,7 @@ import { StockService } from '../../../../core/services/stock.service';
 import { Treatment, TreatmentConsumable, StockItem } from '../../../../core/models/stock.model';
 import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { NgapAct, NgapService, cotation, plainText } from '../../../../core/services/ngap.service';
 
 @Component({
   selector: 'app-treatments-list',
@@ -49,7 +50,7 @@ import { ToastService } from '../../../../core/services/toast.service';
               <h3 class="font-bold text-lg text-ink-900 tracking-tight leading-tight">{{ t.name }}</h3>
               
               @if (t.actCode) {
-                <p class="text-xs text-ink-500 font-semibold">{{ "TREATMENTS.ACT_CODE" | translate }}: <span class="font-mono text-ink-700">{{ t.actCode }}</span>@if (t.actCoefficient != null) { · {{ "TREATMENTS.ACT_COEFFICIENT" | translate }} <span class="text-ink-700">{{ t.actCoefficient }}</span> }</p>
+                <p class="text-xs text-ink-500 font-semibold">{{ "TREATMENTS.ACT_CODE" | translate }}: <span class="font-mono text-ink-700">{{ t.actCode }}</span>@if (cotationOf(t); as c) { · {{ "TREATMENTS.NGAP_COTATION" | translate }} <span class="font-mono text-ink-700">{{ c }}</span> } @else if (t.actCoefficient != null) { · {{ "TREATMENTS.ACT_COEFFICIENT" | translate }} <span class="text-ink-700">{{ t.actCoefficient }}</span> }</p>
               }
               <div class="flex items-baseline gap-1.5 pt-1">
                 <span class="text-xs text-ink-500 font-semibold uppercase tracking-wide">{{ "TREATMENTS.BASE_PRICE" | translate }}:</span>
@@ -120,15 +121,50 @@ import { ToastService } from '../../../../core/services/toast.service';
 
               <div>
                 <div class="grid grid-cols-2 gap-4">
-                  <div>
+                  <div class="relative">
                     <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1" for="act-code">{{ "TREATMENTS.ACT_CODE" | translate }}</label>
-                    <input id="act-code" type="text" maxlength="30" [(ngModel)]="form.actCode" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition font-mono bg-white" />
+                    @if (selectedAct(); as act) {
+                      <div class="flex items-center gap-2 px-3 py-2 border border-ortho-navy/10 rounded-xl bg-white">
+                        <span class="font-mono text-sm text-ink-900">{{ act.code }}</span>
+                        <button type="button" (click)="clearAct()" class="ms-auto text-xs font-semibold text-ink-500 hover:text-red-600" [attr.aria-label]="'TREATMENTS.NGAP_REMOVE' | translate">{{ "TREATMENTS.NGAP_REMOVE" | translate }}</button>
+                      </div>
+                    } @else {
+                      <input id="act-code" type="search" autocomplete="off" [ngModel]="ngapQuery()" (ngModelChange)="ngapQuery.set($event)"
+                        [placeholder]="'TREATMENTS.NGAP_SEARCH' | translate" role="combobox" [attr.aria-expanded]="ngapMatches().length > 0" aria-controls="ngap-matches"
+                        class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                      @if (ngapQuery().trim()) {
+                        <ul id="ngap-matches" role="listbox" class="absolute z-20 mt-1 w-[min(32rem,calc(100vw-3rem))] max-h-64 overflow-y-auto bg-white border border-ortho-navy/10 rounded-xl shadow-lg">
+                          @for (a of ngapMatches(); track a.code) {
+                            <li role="option" aria-selected="false">
+                              <button type="button" (click)="pickAct(a)" class="w-full text-start px-3 py-2 hover:bg-petrol-50 transition">
+                                <span class="font-mono text-xs text-ink-900">{{ a.code }}</span>
+                                @if (cotationFor(a); as c) { <span class="font-mono text-xs text-petrol-700 ms-2">{{ c }}</span> }
+                                <span class="block text-xs text-ink-600 leading-snug">{{ a.label }}</span>
+                              </button>
+                            </li>
+                          } @empty {
+                            <li class="px-3 py-2 text-xs text-ink-500">{{ "TREATMENTS.NGAP_NO_MATCH" | translate }}</li>
+                          }
+                        </ul>
+                      }
+                    }
                   </div>
                   <div>
                     <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1" for="act-coefficient">{{ "TREATMENTS.ACT_COEFFICIENT" | translate }}</label>
                     <input id="act-coefficient" type="number" min="0" step="any" [(ngModel)]="form.actCoefficient" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
                   </div>
                 </div>
+                @if (selectedAct(); as act) {
+                  <div class="mt-2 p-3 rounded-xl bg-petrol-50 border border-ortho-navy/10 space-y-1">
+                    <p class="text-xs text-ink-800 leading-snug">{{ act.label }}</p>
+                    <p class="text-xs text-ink-500">
+                      @if (cotationFor(act, form.actCoefficient); as c) { {{ "TREATMENTS.NGAP_COTATION" | translate }} <span class="font-mono text-ink-800">{{ c }}</span> }
+                      @if (act.anesthesiaCoefficient != null) { · {{ "TREATMENTS.NGAP_ANESTHESIA" | translate }} {{ act.anesthesiaCoefficient }} }
+                      @if (act.priorAgreement) { · <span class="font-semibold text-amber-600">{{ "TREATMENTS.NGAP_PRIOR_AGREEMENT" | translate }}</span> }
+                    </p>
+                    @if (act.notes) { <p class="text-xs text-ink-500 leading-snug">{{ act.notes }}</p> }
+                  </div>
+                }
                 <p class="mt-1.5 text-xs text-ink-500">{{ "TREATMENTS.ACT_HINT" | translate }}</p>
               </div>
 
@@ -203,9 +239,26 @@ export class TreatmentsListComponent implements OnInit {
   private stockService = inject(StockService);
   private confirmDialog = inject(ConfirmDialogService);
   private toast = inject(ToastService);
+  private ngap = inject(NgapService);
 
   readonly treatments = signal<Treatment[]>([]);
   readonly catalogItems = signal<StockItem[]>([]);
+
+  // NGAP picker: the whole nomenclature is small, so it is searched here.
+  readonly ngapActs = signal<NgapAct[]>([]);
+  readonly ngapQuery = signal('');
+  readonly ngapMatches = computed(() => {
+    const q = plainText(this.ngapQuery().trim());
+    if (!q) return [];
+    return this.ngapActs().filter(a => a.code.toLowerCase().startsWith(q) || plainText(a.label).includes(q)).slice(0, 12);
+  });
+  /** Bumped when the form's act changes, so selectedAct() is recomputed (form itself is not a signal). */
+  private readonly actRevision = signal(0);
+  readonly selectedAct = computed(() => {
+    this.actRevision();
+    const code = this.form.actCode?.trim().toUpperCase();
+    return code ? this.ngapActs().find(a => a.code === code) ?? null : null;
+  });
 
   // Modal controls
   readonly showModal = signal(false);
@@ -226,6 +279,7 @@ export class TreatmentsListComponent implements OnInit {
   }
 
   loadAllData() {
+    this.ngap.acts().subscribe({ next: acts => this.ngapActs.set(acts), error: () => this.ngapActs.set([]) });
     this.stockService.getTreatments().subscribe(data => this.treatments.set(data));
     this.stockService.getStockItems().subscribe(data => this.catalogItems.set(data));
   }
@@ -242,14 +296,42 @@ export class TreatmentsListComponent implements OnInit {
       name: '',
       basePrice: 0
     };
+    this.ngapQuery.set('');
+    this.actRevision.update(n => n + 1);
     this.formConsumables = [];
     this.addConsumableLine();
     this.showModal.set(true);
   }
 
+  /** Picks an NGAP act: its code, and the nomenclature's coefficient (which the clinic may then adjust). */
+  pickAct(act: NgapAct) {
+    this.form.actCode = act.code;
+    this.form.actCoefficient = act.coefficient ?? undefined;
+    this.ngapQuery.set('');
+    this.actRevision.update(n => n + 1);
+  }
+
+  clearAct() {
+    this.form.actCode = undefined;
+    this.form.actCoefficient = undefined;
+    this.actRevision.update(n => n + 1);
+  }
+
+  cotationFor(act: NgapAct, coefficient?: number | null): string | null {
+    return cotation(act, coefficient);
+  }
+
+  /** The catalogue card's "D 12", when the treatment is coded against the NGAP. */
+  cotationOf(t: Treatment): string | null {
+    const act = t.actCode ? this.ngapActs().find(a => a.code === t.actCode) : undefined;
+    return act ? cotation(act, t.actCoefficient) : null;
+  }
+
   openEditModal(t: Treatment) {
     this.editMode.set(true);
     this.form = { ...t };
+    this.ngapQuery.set('');
+    this.actRevision.update(n => n + 1);
     // Clone lines so edits don't affect original data instantly
     this.formConsumables = t.consumables ? t.consumables.map(c => ({ ...c })) : [];
     this.showModal.set(true);

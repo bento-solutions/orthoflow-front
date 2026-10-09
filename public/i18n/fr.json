@@ -2117,6 +2117,8 @@
       "APPT": "Rappeler les rendez-vous la veille",
       "APPT_HINT": "Le patient peut répondre 1 pour confirmer ou 2 pour annuler : le rendez-vous est mis à jour tout seul.",
       "SEND_HOUR": "Heure d'envoi",
+      "APPT_DAYS": "Envoyer le rappel (jours avant le rendez-vous)",
+      "APPT_DAYS_HINT": "0 = le matin même, 1 = la veille",
       "INST": "Rappeler les échéances de paiement",
       "INST_DAYS": "Jours avant l'échéance",
       "SURVEY": "Envoyer une enquête de satisfaction après la visite",

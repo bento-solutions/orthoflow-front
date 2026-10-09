@@ -254,7 +254,7 @@ describe('communication screens', () => {
   describe('settings', () => {
     beforeEach(() => {
       api['whatsappStatus'] = vi.fn(async () => ({ enabled: true, sessionState: 'open', lastReportedState: 'open', lastReportedAt: '2026-10-06T09:00:00Z', unhandledReplies: 2 }));
-      api['settings'] = vi.fn(async () => ({ appointmentReminders: false, reminderSendHour: 17, instalmentReminders: false, instalmentDaysBefore: 2, surveyEnabled: false, surveyDelayHours: 3 }));
+      api['settings'] = vi.fn(async () => ({ appointmentReminders: false, reminderSendHour: 17, instalmentReminders: false, instalmentDaysBefore: 2, surveyEnabled: false, surveyDelayHours: 3, appointmentReminderDaysBefore: 1 }));
       api['saveSettings'] = vi.fn(async (s: unknown) => s);
       api['sendTest'] = vi.fn(async () => ({}));
     });
@@ -275,8 +275,23 @@ describe('communication screens', () => {
       expect(save().disabled).toBe(false);
       save().click();
       await settleUi(fixture);
-      expect(api['saveSettings']).toHaveBeenCalledWith({ appointmentReminders: true, reminderSendHour: 17, instalmentReminders: false, instalmentDaysBefore: 2, surveyEnabled: false, surveyDelayHours: 3 });
+      expect(api['saveSettings']).toHaveBeenCalledWith({ appointmentReminders: true, reminderSendHour: 17, instalmentReminders: false, instalmentDaysBefore: 2, surveyEnabled: false, surveyDelayHours: 3, appointmentReminderDaysBefore: 1 });
       expect(save().disabled).toBe(true);
+    });
+
+    it('lets the clinic choose how many days before the visit the reminder goes out', async () => {
+      setup(MessagingSettingsComponent);
+      const fixture = await mount(MessagingSettingsComponent);
+      (document.querySelector('input[name=appt]') as HTMLInputElement).click();
+      await settleUi(fixture);
+      const days = document.querySelector('input[name=apptDays]') as HTMLInputElement;
+      expect(days.value).toBe('1');
+      days.value = '3';
+      days.dispatchEvent(new Event('input'));
+      await settleUi(fixture);
+      ([...document.querySelectorAll('button[type=submit]')].find(b => b.textContent?.includes('COMMON.SAVE')) as HTMLButtonElement).click();
+      await settleUi(fixture);
+      expect(api['saveSettings']).toHaveBeenCalledWith(expect.objectContaining({ appointmentReminders: true, appointmentReminderDaysBefore: 3 }));
     });
 
     it('sends a test message to the number typed', async () => {

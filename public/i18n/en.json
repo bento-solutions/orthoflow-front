@@ -2117,6 +2117,8 @@
       "APPT": "Remind patients the day before",
       "APPT_HINT": "The patient can reply 1 to confirm or 2 to cancel: the appointment updates itself.",
       "SEND_HOUR": "Send at",
+      "APPT_DAYS": "Send the reminder (days before the visit)",
+      "APPT_DAYS_HINT": "0 = the morning of the visit, 1 = the day before",
       "INST": "Remind about payment instalments",
       "INST_DAYS": "Days before it is due",
       "SURVEY": "Send a satisfaction survey after the visit",

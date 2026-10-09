@@ -82,6 +82,9 @@ export const SEND_HOURS = Array.from({ length: 24 }, (_, h) => h);
                 <select class="select" name="hour" [disabled]="!form.value().appointmentReminders" [ngModel]="form.value().reminderSendHour" (ngModelChange)="form.set('reminderSendHour', +$event)">
                   @for (h of hours; track h) { <option [ngValue]="h">{{ h < 10 ? '0' + h : h }}:00</option> }
                 </select></label>
+              <label class="field ps-6 sm:max-w-xs"><span class="label">{{ 'COM.SET.APPT_DAYS' | translate }}</span>
+                <input class="input" type="number" min="0" max="14" name="apptDays" [disabled]="!form.value().appointmentReminders" [ngModel]="form.value().appointmentReminderDaysBefore" (ngModelChange)="form.set('appointmentReminderDaysBefore', +$event || 0)" />
+                <span class="text-xs text-ink-600">{{ 'COM.SET.APPT_DAYS_HINT' | translate }}</span></label>
             </div>
             <div class="space-y-2">
               <label class="flex items-center gap-2 text-sm font-semibold text-ink-900"><input type="checkbox" name="inst" [ngModel]="form.value().instalmentReminders" (ngModelChange)="form.set('instalmentReminders', $event)" /> {{ 'COM.SET.INST' | translate }}</label>
@@ -118,6 +121,7 @@ export class MessagingSettingsComponent {
 
   protected readonly form = formState<MessagingSettings>({
     appointmentReminders: false, reminderSendHour: 17, instalmentReminders: false, instalmentDaysBefore: 2, surveyEnabled: false, surveyDelayHours: 3,
+    appointmentReminderDaysBefore: 1,
   });
   private readonly saved = signal<MessagingSettings | null>(null);
   protected readonly dirty = computed(() => JSON.stringify(this.form.value()) !== JSON.stringify(this.saved()));

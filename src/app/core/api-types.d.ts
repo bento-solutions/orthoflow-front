@@ -5214,6 +5214,8 @@ export interface components {
             surveyEnabled?: boolean;
             /** Format: int32 */
             surveyDelayHours?: number;
+            /** Format: int32 */
+            appointmentReminderDaysBefore?: number;
         };
         RoomRequest: {
             name: string;

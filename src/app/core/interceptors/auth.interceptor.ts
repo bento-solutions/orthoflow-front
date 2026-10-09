@@ -26,9 +26,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       // — the backend now returns a real 401 for all three, audit H1/H2).
       // Clear it and bounce to /login. A 403 is "logged in, wrong role" and
       // must NOT log the user out. Never react to a failure on /auth/* — a
-      // bad login is a 401 that the login page handles itself.
+      // bad login is a 401 that the login page handles itself. And only when
+      // the request actually carried a session: the app root fires a few
+      // requests at boot, so on a signed-out page (reset-password link,
+      // forgot-password) their 401s used to bounce a person away from the very
+      // page they came to use. With no session there is nothing to expire;
+      // authGuard already sends signed-out visitors away from protected pages.
       const isAuthEndpoint = req.url.includes('/auth/');
-      if (err.status === 401 && !isAuthEndpoint && !isPublicRequest(req.url)) {
+      if (err.status === 401 && token && !isAuthEndpoint && !isPublicRequest(req.url)) {
         authService.logout('expired');
         router.navigate(['/login']);
       }

@@ -13,15 +13,17 @@ describe('authInterceptor', () => {
   let controller: HttpTestingController;
   let logout: ReturnType<typeof vi.fn>;
   let navigate: ReturnType<typeof vi.fn>;
+  const session = signal<string | null>('staff-jwt');
 
   beforeEach(() => {
     logout = vi.fn();
     navigate = vi.fn();
+    session.set('staff-jwt');
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
-        { provide: AuthService, useValue: { token: signal('staff-jwt'), logout } },
+        { provide: AuthService, useValue: { token: session, logout } },
         { provide: Router, useValue: { navigate } },
       ],
     });
@@ -55,5 +57,13 @@ describe('authInterceptor', () => {
     http.get('http://localhost:8080/api/v1/public/survey/x').subscribe({ error: () => undefined });
     controller.expectOne('http://localhost:8080/api/v1/public/survey/x').flush('', { status: 401, statusText: 'Unauthorized' });
     expect(logout).not.toHaveBeenCalled();
+  });
+
+  it('leaves a signed-out visitor on the page they opened, e.g. a reset-password link', () => {
+    session.set(null);
+    http.get('http://localhost:8080/api/v1/voice/lexicon').subscribe({ error: () => undefined });
+    controller.expectOne('http://localhost:8080/api/v1/voice/lexicon').flush('', { status: 401, statusText: 'Unauthorized' });
+    expect(logout).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

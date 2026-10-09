@@ -142,18 +142,27 @@ describe('communication screens', () => {
   });
 
   describe('WhatsApp replies', () => {
-    const reply = (over: Partial<InboxMessage> = {}): InboxMessage => ({ id: 'r1', fromPhone: '+212661000000', body: 'Je voudrais décaler', patientId: 'p1', patientName: 'Sara Alami', occurredAt: '2026-10-06T10:00:00Z', handledAt: '', ...over });
+    const reply = (over: Partial<InboxMessage> = {}): InboxMessage => ({ id: 'r1', fromPhone: '+212661000000', body: 'Je voudrais décaler', patientId: 'p1', patientName: 'Sara Alami', occurredAt: '2026-10-06T10:00:00Z', handledAt: '', fromLandingPage: false, ...over });
 
     beforeEach(() => {
-      api['inbox'] = vi.fn(async () => [reply(), reply({ id: 'r2', patientId: '', patientName: '', body: 'Bonjour ?' })]);
+      api['inbox'] = vi.fn(async () => [reply(), reply({ id: 'r2', patientId: '', patientName: '', body: 'Bonjour ?', fromLandingPage: true })]);
       api['markHandled'] = vi.fn(async () => undefined);
       setup(WhatsappInboxComponent);
     });
 
     it('asks only for replies still to deal with, and names an unknown sender as such', async () => {
       await mount(WhatsappInboxComponent);
-      expect(api['inbox']).toHaveBeenCalledWith(true);
+      expect(api['inbox']).toHaveBeenCalledWith(true, 100, false);
       expect(document.body.textContent).toContain('COM.INBOX.UNKNOWN');
+    });
+
+    it('marks a landing-page conversation and can show only those', async () => {
+      const fixture = await mount(WhatsappInboxComponent);
+      expect(document.querySelectorAll('.pill').length).toBe(1);
+      const landing = Array.from(document.querySelectorAll('label')).find(l => l.textContent?.includes('COM.INBOX.LANDING_ONLY'))!;
+      landing.querySelector('input')!.click();
+      await settleUi(fixture);
+      expect(api['inbox']).toHaveBeenLastCalledWith(true, 100, true);
     });
 
     it('marks a reply handled and refreshes the counter', async () => {

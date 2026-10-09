@@ -22,6 +22,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
   template: `
     <div class="mb-4 flex items-center gap-4">
       <label class="flex items-center gap-1.5 text-sm font-semibold text-ink-700"><input type="checkbox" [ngModel]="unhandledOnly()" (ngModelChange)="unhandledOnly.set($event)" /> {{ 'COM.INBOX.UNHANDLED_ONLY' | translate }}</label>
+      <label class="flex items-center gap-1.5 text-sm font-semibold text-ink-700"><input type="checkbox" [ngModel]="landingPageOnly()" (ngModelChange)="landingPageOnly.set($event)" /> {{ 'COM.INBOX.LANDING_ONLY' | translate }}</label>
     </div>
     <ul class="card divide-y divide-ink-100" [attr.aria-busy]="inbox.loading()">
       @for (m of inbox.data(); track m.id) {
@@ -31,6 +32,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
             <p class="text-sm font-semibold text-ink-900">
               @if (m.patientId) { <a class="no-underline hover:text-petrol-700" [routerLink]="['/patients', m.patientId]">{{ m.patientName }}</a> } @else { {{ 'COM.INBOX.UNKNOWN' | translate }} }
               <span class="ms-2 text-xs font-normal text-ink-500">{{ m.fromPhone }}</span>
+              @if (m.fromLandingPage) { <span class="pill pill-active pill-nodot ms-2">{{ 'COM.INBOX.LANDING_BADGE' | translate }}</span> }
             </p>
             <p class="whitespace-pre-line text-sm text-ink-700">{{ m.body }}</p>
             <p class="mt-0.5 text-2xs text-ink-500">{{ m.occurredAt | date: 'medium' }}@if (m.handledAt) { · {{ 'COM.INBOX.HANDLED_AT' | translate: { at: (m.handledAt | date: 'short') } }} }</p>
@@ -51,22 +53,29 @@ export class WhatsappInboxComponent {
   private readonly counts = inject(NavCounts);
 
   protected readonly unhandledOnly = signal(true);
+  /** Only people who reached the clinic through its landing page (a number shared with the CRM keeps nobody else). */
+  protected readonly landingPageOnly = signal(false);
   protected readonly inbox = loadable<InboxMessage[]>([]);
   protected readonly busy = signal(false);
 
   constructor() {
     effect(() => {
       const only = this.unhandledOnly();
-      untracked(() => void this.inbox.load(() => this.api.inbox(only)));
+      const landing = this.landingPageOnly();
+      untracked(() => void this.inbox.load(() => this.api.inbox(only, 100, landing)));
     });
-    refreshOnLive(['whatsapp-inbox'], () => void this.inbox.load(() => this.api.inbox(this.unhandledOnly())));
+    refreshOnLive(['whatsapp-inbox'], () => void this.reload());
+  }
+
+  private reload(): Promise<boolean> {
+    return this.inbox.load(() => this.api.inbox(this.unhandledOnly(), 100, this.landingPageOnly()));
   }
 
   protected async handle(message: InboxMessage): Promise<void> {
     this.busy.set(true);
     try {
       await this.api.markHandled(message.id);
-      await Promise.all([this.inbox.load(() => this.api.inbox(this.unhandledOnly())), this.counts.refreshInbox()]);
+      await Promise.all([this.reload(), this.counts.refreshInbox()]);
     } catch (error) {
       this.errors.report(error);
     } finally {

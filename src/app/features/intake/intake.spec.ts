@@ -19,7 +19,7 @@ import { SurveysComponent, shares, stars } from './surveys.component';
 const request = (over: Partial<BookingRequest> = {}): BookingRequest => ({
   id: 'r1', appointmentTypeId: 'ty', typeName: 'Contrôle', practitionerId: '' as never, practitionerName: '', startsAt: '2026-10-07T07:00:00Z', durationMinutes: 20,
   firstName: 'Nadia', lastName: 'Zniber', phone: '0655443322', email: '', dateOfBirth: '' as never, note: 'Attache décollée', language: 'fr', status: 'PENDING',
-  patientId: '' as never, appointmentId: '' as never, declineReason: '', createdAt: '2026-10-06T10:00:00Z', slotStillFree: true, ...over,
+  patientId: '' as never, appointmentId: '' as never, declineReason: '', createdAt: '2026-10-06T10:00:00Z', slotStillFree: true, source: 'BOOKING_PAGE', ...over,
 });
 
 describe('intake helpers', () => {

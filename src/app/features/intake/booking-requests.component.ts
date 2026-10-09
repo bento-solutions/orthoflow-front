@@ -55,7 +55,9 @@ export function matchTerm(request: Pick<BookingRequest, 'phone' | 'lastName'>): 
         <li class="card">
           <div class="flex flex-wrap items-start justify-between gap-3 p-4">
             <div class="min-w-0">
-              <p class="text-base font-bold text-ink-900">{{ r.firstName }} {{ r.lastName }}</p>
+              <p class="text-base font-bold text-ink-900">{{ r.firstName }} {{ r.lastName }}
+                @if (r.source === 'LANDING_PAGE') { <span class="pill pill-active pill-nodot ms-2 align-middle">{{ 'INT.BOOK.FROM_LANDING' | translate }}</span> }
+              </p>
               <p class="text-sm text-ink-600">
                 @if (r.phone) { <a class="no-underline hover:text-petrol-700" [href]="'tel:' + r.phone">{{ r.phone }}</a> }
                 @if (r.email) { · {{ r.email }} }

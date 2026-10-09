@@ -55,8 +55,8 @@ export class MessagingApi {
     return this.post('/messaging/send-test', { channel, recipient });
   }
 
-  inbox(unhandledOnly: boolean, limit = 100): Promise<InboxMessage[]> {
-    return this.get('/messaging/inbox', { unhandledOnly, limit });
+  inbox(unhandledOnly: boolean, limit = 100, landingPageOnly = false): Promise<InboxMessage[]> {
+    return this.get('/messaging/inbox', { unhandledOnly, landingPageOnly, limit });
   }
   markHandled(id: string): Promise<void> {
     return this.post(`/messaging/inbox/${id}/handled`);

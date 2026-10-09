@@ -1557,7 +1557,8 @@
       "COPIED": "Copié",
       "COPY_MANUALLY": "Copie impossible : sélectionnez le lien et copiez-le à la main.",
       "ONCE": "Le lien ne sert qu'une fois. Ce que la personne renvoie apparaît dans « Demandes en ligne », où vous le vérifiez avant qu'il ne touche le dossier."
-    }
+    },
+    "LANDING_ONLY": "Venus par la landing page"
   },
   "REC": {
     "TITLE": "Rappels patients",
@@ -2066,7 +2067,9 @@
       "UNKNOWN": "Numéro inconnu",
       "HANDLED_AT": "traité le {{at}}",
       "MARK_HANDLED": "Marquer traité",
-      "EMPTY": "Aucune réponse en attente."
+      "EMPTY": "Aucune réponse en attente.",
+      "LANDING_ONLY": "Venus par la landing page",
+      "LANDING_BADGE": "Landing page"
     },
     "TPL": {
       "PURPOSE": "Message",
@@ -2228,7 +2231,8 @@
       "CONFIRMED": "Rendez-vous confirmé. Le patient est prévenu.",
       "DECLINE_TITLE": "Refuser la demande",
       "DECLINE_HINT": "Le patient en est informé. Le motif l'aide à choisir un autre horaire.",
-      "DECLINED": "Demande refusée."
+      "DECLINED": "Demande refusée.",
+      "FROM_LANDING": "Landing page"
     },
     "REG": {
       "INVITED": "Invité(e) par le cabinet",

@@ -119,6 +119,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
         @if (canSeeMoney()) {
           <label class="flex items-center gap-1.5 text-sm font-semibold text-ink-700"><input type="checkbox" [ngModel]="debtOnly()" (ngModelChange)="debtOnly.set($event); page.set(0)" /> {{ 'PAT.DEBT_ONLY' | translate }}</label>
         }
+        <label class="flex items-center gap-1.5 text-sm font-semibold text-ink-700"><input type="checkbox" [ngModel]="landingPageOnly()" (ngModelChange)="landingPageOnly.set($event); page.set(0)" /> {{ 'PAT.LANDING_ONLY' | translate }}</label>
         <label class="flex items-center gap-2 text-sm text-ink-600 lg:ms-auto">
           {{ 'PAT.SORT' | translate }}
           <select class="select w-auto" [ngModel]="sort()" (ngModelChange)="sort.set($event); page.set(0)">
@@ -303,6 +304,7 @@ export class PatientListComponent {
   protected readonly practitionerId = signal('');
   protected readonly insurerId = signal('');
   protected readonly debtOnly = signal(false);
+  protected readonly landingPageOnly = signal(false);
   protected readonly sort = signal<string>('name');
   protected readonly dir = signal<'asc' | 'desc'>('asc');
   protected readonly page = signal(0);
@@ -315,7 +317,7 @@ export class PatientListComponent {
   protected readonly canMerge = computed(() => this.permissions.can('PATIENT_MERGE'));
   protected readonly canSeeMoney = computed(() => this.permissions.can('BILLING_READ'));
   protected readonly rows = computed<DirectoryRow[]>(() => this.directory.data()?.content ?? []);
-  protected readonly filtered = computed(() => !!(this.search() || this.status() || this.gender() || this.practitionerId() || this.insurerId() || this.debtOnly()));
+  protected readonly filtered = computed(() => !!(this.search() || this.status() || this.gender() || this.practitionerId() || this.insurerId() || this.debtOnly() || this.landingPageOnly()));
   protected readonly pageInfo = computed(() => {
     const d = this.directory.data();
     if (!d || d.totalElements === 0) {
@@ -327,7 +329,7 @@ export class PatientListComponent {
 
   private readonly query = computed<DirectoryQuery>(() => ({
     search: this.search(), status: this.status(), gender: this.gender(), practitionerId: this.practitionerId(), insurerId: this.insurerId(),
-    debtOnly: this.canSeeMoney() ? this.debtOnly() : undefined, sort: this.sort(), dir: this.dir(), page: this.page(), size: PAGE_SIZE,
+    debtOnly: this.canSeeMoney() ? this.debtOnly() : undefined, landingPageOnly: this.landingPageOnly() || undefined, sort: this.sort(), dir: this.dir(), page: this.page(), size: PAGE_SIZE,
   }));
 
   constructor() {
@@ -409,6 +411,7 @@ export class PatientListComponent {
     this.practitionerId.set('');
     this.insurerId.set('');
     this.debtOnly.set(false);
+    this.landingPageOnly.set(false);
     this.page.set(0);
   }
 

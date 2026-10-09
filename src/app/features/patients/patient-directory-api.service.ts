@@ -28,6 +28,8 @@ export interface DirectoryQuery {
   insurerId?: string;
   duplicatesOnly?: boolean;
   debtOnly?: boolean;
+  /** Only patients who first came through the clinic's landing page. */
+  landingPageOnly?: boolean;
   sort?: string;
   dir?: 'asc' | 'desc';
   page?: number;

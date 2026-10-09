@@ -1557,7 +1557,8 @@
       "COPIED": "Copied",
       "COPY_MANUALLY": "Could not copy: select the link and copy it by hand.",
       "ONCE": "The link works once. What the person sends back appears under “Online requests”, where you check it before it touches the file."
-    }
+    },
+    "LANDING_ONLY": "From the landing page"
   },
   "REC": {
     "TITLE": "Patient recalls",
@@ -2066,7 +2067,9 @@
       "UNKNOWN": "Unknown number",
       "HANDLED_AT": "handled {{at}}",
       "MARK_HANDLED": "Mark handled",
-      "EMPTY": "No replies waiting."
+      "EMPTY": "No replies waiting.",
+      "LANDING_ONLY": "From the landing page",
+      "LANDING_BADGE": "Landing page"
     },
     "TPL": {
       "PURPOSE": "Message",
@@ -2228,7 +2231,8 @@
       "CONFIRMED": "Appointment confirmed. The patient is told.",
       "DECLINE_TITLE": "Decline the request",
       "DECLINE_HINT": "The patient is told. A reason helps them pick another time.",
-      "DECLINED": "Request declined."
+      "DECLINED": "Request declined.",
+      "FROM_LANDING": "Landing page"
     },
     "REG": {
       "INVITED": "Invited by the clinic",

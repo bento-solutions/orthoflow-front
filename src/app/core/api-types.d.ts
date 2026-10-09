@@ -523,7 +523,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_3"];
+        get: operations["get_4"];
         put: operations["update_8"];
         post?: never;
         delete?: never;
@@ -587,7 +587,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_4"];
+        get: operations["get_5"];
         put: operations["update_9"];
         post?: never;
         delete?: never;
@@ -2731,7 +2731,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["search"];
+        get: operations["search_1"];
         put?: never;
         post: operations["create_13"];
         delete?: never;
@@ -3668,6 +3668,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reference/ngap-acts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reference/ngap-acts/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reference/ngap-acts/chapters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["chapters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/recalls/{kind}": {
         parameters: {
             query?: never;
@@ -3771,7 +3819,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_2"];
+        get: operations["get_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4379,7 +4427,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_5"];
+        get: operations["get_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6640,6 +6688,7 @@ export interface components {
             language?: string;
             consent?: boolean;
             website?: string;
+            source?: string;
         };
         Received: {
             reference?: string;
@@ -6820,6 +6869,7 @@ export interface components {
             photoFileId?: string;
             occupation?: string;
             referralSource?: string;
+            acquisitionChannel?: string;
             globalDiscountPct?: number;
             preferredLanguage?: string;
             /** Format: uuid */
@@ -6977,7 +7027,7 @@ export interface components {
         };
         CreateInvoiceRequest: {
             /** Format: uuid */
-            practiceId: string;
+            practiceId?: string;
             /** Format: uuid */
             patientId: string;
             /** Format: uuid */
@@ -7499,15 +7549,15 @@ export interface components {
             sort?: string[];
         };
         PageStockMovementResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StockMovementResponse"][];
@@ -7521,8 +7571,8 @@ export interface components {
             pageNumber?: number;
             /** Format: int32 */
             pageSize?: number;
-            unpaged?: boolean;
             paged?: boolean;
+            unpaged?: boolean;
             /** Format: int64 */
             offset?: number;
             sort?: components["schemas"]["SortObject"][];
@@ -7735,6 +7785,18 @@ export interface components {
             status?: string;
             possibleDuplicates?: components["schemas"]["Candidate"][];
         };
+        NgapAct: {
+            code?: string;
+            keyLetter?: string;
+            coefficient?: number;
+            anesthesiaCoefficient?: number;
+            label?: string;
+            chapter?: string;
+            section?: string;
+            notes?: string;
+            priorAgreement?: boolean;
+            assimilatedTo?: string;
+        };
         RecallRow: {
             /** Format: uuid */
             patientId?: string;
@@ -7822,15 +7884,15 @@ export interface components {
             daysOverdue?: number;
         };
         PagePatientResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientResponse"][];
@@ -7855,6 +7917,8 @@ export interface components {
         ToothStateEvent: {
             /** Format: uuid */
             id?: string;
+            /** Format: uuid */
+            practiceId?: string;
             /** Format: uuid */
             patientId?: string;
             fdi?: string;
@@ -7949,6 +8013,8 @@ export interface components {
         InvoiceLine: {
             /** Format: uuid */
             id?: string;
+            /** Format: uuid */
+            practiceId?: string;
             actCode?: string;
             label?: string;
             quantity?: number;
@@ -7974,6 +8040,8 @@ export interface components {
         PatientTreatment: {
             /** Format: uuid */
             id?: string;
+            /** Format: uuid */
+            practiceId?: string;
             /** Format: int64 */
             version?: number;
             /** Format: uuid */
@@ -8006,6 +8074,8 @@ export interface components {
         PatientTreatmentConsumable: {
             /** Format: uuid */
             id?: string;
+            /** Format: uuid */
+            practiceId?: string;
             stockItem?: components["schemas"]["StockItem"];
             quantityUsed?: number;
             pricePerUnit?: number;
@@ -8014,6 +8084,8 @@ export interface components {
         Payment: {
             /** Format: uuid */
             id?: string;
+            /** Format: uuid */
+            practiceId?: string;
             /** Format: int64 */
             version?: number;
             invoice?: components["schemas"]["Invoice"];
@@ -8034,6 +8106,8 @@ export interface components {
         StockItem: {
             /** Format: uuid */
             id?: string;
+            /** Format: uuid */
+            practiceId?: string;
             /** Format: int64 */
             version?: number;
             name?: string;
@@ -8060,6 +8134,8 @@ export interface components {
         Supplier: {
             /** Format: uuid */
             id?: string;
+            /** Format: uuid */
+            practiceId?: string;
             /** Format: int64 */
             version?: number;
             name?: string;
@@ -8078,6 +8154,8 @@ export interface components {
         Treatment: {
             /** Format: uuid */
             id?: string;
+            /** Format: uuid */
+            practiceId?: string;
             /** Format: int64 */
             version?: number;
             name?: string;
@@ -8098,6 +8176,8 @@ export interface components {
         };
         TreatmentConsumable: {
             id?: components["schemas"]["TreatmentConsumableId"];
+            /** Format: uuid */
+            practiceId?: string;
             stockItem?: components["schemas"]["StockItem"];
             quantityUsed?: number;
             optional?: boolean;
@@ -8133,15 +8213,15 @@ export interface components {
             balance?: number;
         };
         PagePatientDirectoryRow: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientDirectoryRow"][];
@@ -8240,15 +8320,15 @@ export interface components {
             unhandledReplies?: number;
         };
         PageLogRow: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LogRow"][];
@@ -8269,6 +8349,7 @@ export interface components {
             occurredAt?: string;
             /** Format: date-time */
             handledAt?: string;
+            fromLandingPage?: boolean;
         };
         Me: {
             /** Format: uuid */
@@ -8300,15 +8381,15 @@ export interface components {
             email?: string;
         };
         PageInvoiceResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["InvoiceResponse"][];
@@ -8522,6 +8603,7 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
             slotStillFree?: boolean;
+            source?: string;
         };
         GroupTotal: {
             key?: string;
@@ -10090,7 +10172,7 @@ export interface operations {
             };
         };
     };
-    get_3: {
+    get_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -10260,7 +10342,7 @@ export interface operations {
             };
         };
     };
-    get_4: {
+    get_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -14730,7 +14812,7 @@ export interface operations {
             };
         };
     };
-    search: {
+    search_1: {
         parameters: {
             query?: {
                 status?: "PENDING" | "DEPOSITED" | "CASHED" | "REJECTED";
@@ -16196,6 +16278,72 @@ export interface operations {
             };
         };
     };
+    search: {
+        parameters: {
+            query?: {
+                q?: string;
+                chapter?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NgapAct"][];
+                };
+            };
+        };
+    };
+    get_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NgapAct"];
+                };
+            };
+        };
+    };
+    chapters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string[];
+                };
+            };
+        };
+    };
     list_1: {
         parameters: {
             query?: {
@@ -16347,7 +16495,7 @@ export interface operations {
             };
         };
     };
-    get_2: {
+    get_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -16579,6 +16727,7 @@ export interface operations {
                 insurerId?: string;
                 duplicatesOnly?: boolean;
                 debtOnly?: boolean;
+                landingPageOnly?: boolean;
                 sort?: string;
                 dir?: string;
                 page?: number;
@@ -16735,6 +16884,7 @@ export interface operations {
         parameters: {
             query?: {
                 unhandledOnly?: boolean;
+                landingPageOnly?: boolean;
                 limit?: number;
             };
             header?: never;
@@ -17223,7 +17373,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: never;
             header?: never;

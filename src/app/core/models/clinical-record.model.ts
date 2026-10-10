@@ -21,6 +21,8 @@
 import type {
   ToothFinding as ApiToothFinding,
   ClinicalNote as ApiClinicalNote,
+  PeriodontalAssessment as ApiPeriodontalAssessment,
+  PeriodontalStatus as ApiPeriodontalStatus,
   PatientAllergy as ApiPatientAllergy,
   MedicalHistoryEntry as ApiMedicalHistoryEntry,
   PatientClinicalRecord as ApiPatientClinicalRecord,
@@ -29,6 +31,8 @@ import type {
 export type FindingKind = 'EXISTING' | 'CONDITION' | 'TREATMENT_REQUIRED' | 'OBSERVATION';
 export type FindingStatus = 'ACTIVE' | 'RESOLVED' | 'RETRACTED';
 export type Severity = 'MILD' | 'MODERATE' | 'SEVERE';
+/** Whether this clinic did the work or the patient brought it from elsewhere. */
+export type FindingOrigin = 'THIS_CLINIC' | 'EXTERNAL';
 export type NoteCategory =
   | 'GENERAL' | 'CHIEF_COMPLAINT' | 'OBSERVATION' | 'DENTAL_HISTORY'
   | 'MEDICAL_HISTORY' | 'DIAGNOSIS' | 'FOLLOW_UP' | 'TREATMENT_PLAN'
@@ -39,8 +43,37 @@ export type MedicalHistoryCategory =
   | 'CONDITION' | 'MEDICATION' | 'SURGERY' | 'DENTAL_HISTORY' | 'FAMILY' | 'LIFESTYLE' | 'OTHER';
 
 export type ToothFinding =
-  Omit<ApiToothFinding, 'kind' | 'status' | 'severity'>
-  & { kind: FindingKind; status: FindingStatus; severity?: Severity };
+  Omit<ApiToothFinding, 'kind' | 'status' | 'severity' | 'origin'>
+  & { kind: FindingKind; status: FindingStatus; severity?: Severity; origin?: FindingOrigin };
+
+// ── Gum state ───────────────────────────────────────────────────────────
+
+export type PerioCondition = 'HEALTHY' | 'GINGIVITIS' | 'PERIODONTITIS';
+export type PerioRegion =
+  | 'WHOLE_MOUTH'
+  | 'UPPER_RIGHT' | 'UPPER_FRONT' | 'UPPER_LEFT'
+  | 'LOWER_LEFT' | 'LOWER_FRONT' | 'LOWER_RIGHT';
+
+export const PERIO_REGIONS: readonly PerioRegion[] = [
+  'WHOLE_MOUTH', 'UPPER_RIGHT', 'UPPER_FRONT', 'UPPER_LEFT', 'LOWER_RIGHT', 'LOWER_FRONT', 'LOWER_LEFT',
+];
+
+export type PeriodontalAssessment =
+  Omit<ApiPeriodontalAssessment, 'region' | 'condition'> & { region: PerioRegion; condition: PerioCondition };
+
+export interface PeriodontalStatus extends ApiPeriodontalStatus {
+  current: PeriodontalAssessment[];
+  history: PeriodontalAssessment[];
+}
+
+export interface RecordPeriodontalRequest {
+  region: PerioRegion;
+  condition: PerioCondition;
+  stage?: number;
+  note?: string;
+  assessedOn?: string;
+  source: string;
+}
 
 export type ClinicalNote =
   Omit<ApiClinicalNote, 'category'> & { category: NoteCategory };
@@ -68,6 +101,10 @@ export interface AddToothFindingRequest {
   surface?: string;
   severity?: Severity;
   note?: string;
+  /** ISO date the work was done or found; omitted when unknown. */
+  performedOn?: string;
+  origin?: FindingOrigin;
+  providerName?: string;
   source: string;
   sessionId?: string;
 }

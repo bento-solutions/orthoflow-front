@@ -5,7 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   PatientClinicalRecord, ToothFinding, ClinicalNote, PatientAllergy, MedicalHistoryEntry,
   AddToothFindingRequest, CreateClinicalNoteRequest, AddAllergyRequest, AddMedicalHistoryRequest,
-  FindingStatus, FindingCatalogResponse
+  FindingStatus, FindingCatalogResponse, PeriodontalStatus, RecordPeriodontalRequest, PeriodontalAssessment
 } from '../models/clinical-record.model';
 
 /**
@@ -26,10 +26,16 @@ export class ClinicalRecordService {
   private recordSignal = signal<PatientClinicalRecord | null>(null);
   private loadingSignal = signal(false);
   private catalogSignal = signal<FindingCatalogResponse | null>(null);
+  private historySignal = signal<ToothFinding[]>([]);
+  private periodontalSignal = signal<PeriodontalStatus | null>(null);
 
   record = this.recordSignal.asReadonly();
   loading = this.loadingSignal.asReadonly();
   catalog = this.catalogSignal.asReadonly();
+  /** Active and resolved findings, newest first: the treatment log. Empty until loadHistory(). */
+  history = this.historySignal.asReadonly();
+  /** Gum state today and how it got there. Null until loadPeriodontal(). */
+  periodontal = this.periodontalSignal.asReadonly();
 
   findings = () => this.recordSignal()?.findings ?? [];
   notes = () => this.recordSignal()?.notes ?? [];
@@ -44,6 +50,28 @@ export class ClinicalRecordService {
         next: (record) => this.recordSignal.set(record),
         error: (err) => console.error('Failed to load clinical record', err),
       });
+  }
+
+  loadHistory(patientId: string): void {
+    this.http.get<ToothFinding[]>(`${this.baseUrl}/${patientId}/clinical-record/findings/history`)
+      .subscribe({
+        next: (history) => this.historySignal.set(history),
+        error: (err) => console.error('Failed to load treatment history', err),
+      });
+  }
+
+  loadPeriodontal(patientId: string): void {
+    this.http.get<PeriodontalStatus>(`${this.baseUrl}/${patientId}/clinical-record/periodontal`)
+      .subscribe({
+        next: (status) => this.periodontalSignal.set(status),
+        error: (err) => console.error('Failed to load gum status', err),
+      });
+  }
+
+  recordPeriodontal(patientId: string, request: RecordPeriodontalRequest): Observable<PeriodontalAssessment> {
+    return this.http.post<PeriodontalAssessment>(
+      `${this.baseUrl}/${patientId}/clinical-record/periodontal`, request
+    ).pipe(tap(() => this.loadPeriodontal(patientId)));
   }
 
   loadCatalogOnce(): void {
@@ -70,13 +98,18 @@ export class ClinicalRecordService {
 
   addFinding(patientId: string, fdi: string, request: AddToothFindingRequest): Observable<ToothFinding> {
     return this.http.post<ToothFinding>(`${this.baseUrl}/${patientId}/clinical-record/teeth/${fdi}/findings`, request)
-      .pipe(tap(() => this.refresh(patientId)));
+      .pipe(tap(() => { this.refresh(patientId); this.refreshHistoryIfLoaded(patientId); }));
   }
 
   changeFindingStatus(patientId: string, findingId: string, status: FindingStatus): Observable<ToothFinding> {
     return this.http.patch<ToothFinding>(
       `${this.baseUrl}/${patientId}/clinical-record/findings/${findingId}?status=${status}`, {}
-    ).pipe(tap(() => this.refresh(patientId)));
+    ).pipe(tap(() => { this.refresh(patientId); this.refreshHistoryIfLoaded(patientId); }));
+  }
+
+  /** The log is only kept in step once something has asked for it. */
+  private refreshHistoryIfLoaded(patientId: string): void {
+    if (this.historySignal().length) this.loadHistory(patientId);
   }
 
   addNote(patientId: string, request: CreateClinicalNoteRequest): Observable<ClinicalNote> {

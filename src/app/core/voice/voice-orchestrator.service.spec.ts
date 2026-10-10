@@ -1,3 +1,4 @@
+import { InputLanguageService } from './input-language.service';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Observable, Subject, of, throwError } from 'rxjs';
@@ -166,6 +167,7 @@ describe('VoiceOrchestratorService — staging what was dictated', () => {
   let auth: FakeAuth;
   let session: FakeSession;
   let toasts: string[];
+  let inputLanguage = 'fr';
 
   const say = (text: string) => orchestrator.handleTranscript(text, 1, null, false);
   /** Something heard in the room, so the wake gate applies. */
@@ -179,11 +181,13 @@ describe('VoiceOrchestratorService — staging what was dictated', () => {
     auth = new FakeAuth();
     session = new FakeSession();
     toasts = [];
+    inputLanguage = 'fr';
     TestBed.configureTestingModule({
       providers: [
         { provide: VoiceApiService, useValue: api },
         { provide: SpeechFeedbackService, useValue: feedback },
         { provide: VoiceContextService, useClass: FakeContext },
+        { provide: InputLanguageService, useValue: { language: () => inputLanguage } },
         { provide: AudioCaptureService, useValue: capture },
         { provide: SpeechRecognitionService, useValue: recognition },
         { provide: SessionBufferService, useValue: { append: async () => undefined, remove: async () => undefined } },
@@ -953,6 +957,45 @@ describe('VoiceOrchestratorService — staging what was dictated', () => {
       await orchestrator.startExaminationMode();
 
       expect(feedback.spoken).toHaveLength(1);
+    });
+  });
+
+  describe('dictation language', () => {
+    it('ignores speech in another language than the one chosen, and counts it', async () => {
+      await hear('المريض ينتظر في الخارج');
+
+      expect(orchestrator.languageNoiseCount()).toBe(1);
+      expect(orchestrator.ignoredUtterance()).toBe('المريض ينتظر في الخارج');
+      expect(api.recorded).toEqual([]);
+    });
+
+    it('keeps speech in the chosen language, with or without a wake word', async () => {
+      await hear('dent seize carie mésiale');
+
+      expect(orchestrator.languageNoiseCount()).toBe(0);
+    });
+
+    it('follows a different chosen language', async () => {
+      inputLanguage = 'ar';
+
+      await hear('the patient is waiting outside the room');
+
+      expect(orchestrator.languageNoiseCount()).toBe(1);
+    });
+
+    it('never filters a command that was typed rather than heard', async () => {
+      await say('المريض ينتظر في الخارج');
+
+      expect(orchestrator.languageNoiseCount()).toBe(0);
+    });
+
+    it('starts counting again with each session', async () => {
+      await hear('المريض ينتظر في الخارج');
+      orchestrator.stopListening();
+
+      await orchestrator.startExaminationMode({ announce: false });
+
+      expect(orchestrator.languageNoiseCount()).toBe(0);
     });
   });
 });

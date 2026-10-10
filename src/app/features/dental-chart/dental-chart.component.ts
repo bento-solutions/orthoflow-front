@@ -19,17 +19,19 @@ import {
   toothStatusHex,
 } from '../../core/clinical/tooth-status';
 
+import { SURFACE_ZONES, SURFACE_ZONE_PATH, SurfaceZone, zonesOf } from '../../core/clinical/tooth-surfaces';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastService } from '../../core/services/toast.service';
 
 import { FormsModule } from '@angular/forms';
+import { ToothDetailComponent } from './tooth-detail/tooth-detail.component';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 @Component({
   selector: 'app-dental-chart',
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule],
+  imports: [CommonModule, TranslateModule, FormsModule, ToothDetailComponent],
   template: `
     <div class="dental-chart-wrapper" (click)="closeStatusMenu()">
       <div class="chart-header">
@@ -60,7 +62,7 @@ import html2canvas from 'html2canvas';
       <!-- Status selection popup -->
       @if (selectedTooth && interactive) {
       <div class="status-menu-overlay" (click)="closeStatusMenu()">
-        <div class="status-menu" (click)="$event.stopPropagation()">
+        <div class="status-menu" [class.status-menu--detail]="!!patientId" (click)="$event.stopPropagation()">
           <header class="menu-header">
             <div class="menu-title">
               <span class="material-icons">toll</span>
@@ -72,6 +74,11 @@ import html2canvas from 'html2canvas';
           </header>
           
           <div class="status-sections">
+            @if (patientId) {
+              <!-- A tooth can carry several states, each on its own surface: the panel
+                   records findings (the server derives the painted status from them). -->
+              <app-tooth-detail [patientId]="patientId" [fdi]="selectedTooth!" [findings]="findings" />
+            } @else {
             @for (group of statusGroups; track group.family) {
               <div class="status-group">
                 <h4 class="status-group-title">{{ group.titleKey | translate }}</h4>
@@ -89,6 +96,7 @@ import html2canvas from 'html2canvas';
                 </div>
               </div>
             }
+            }
 
             <div class="note-section">
               <label class="note-label">
@@ -104,11 +112,13 @@ import html2canvas from 'html2canvas';
             </div>
           </div>
           
-          <div class="menu-footer">
-            <button type="button" class="btn-reset" (click)="selectStatus(selectedTooth!, 'present')">
-              {{ 'DENTAL_CHART.RESET_PRESENT' | translate }}
-            </button>
-          </div>
+          @if (!patientId) {
+            <div class="menu-footer">
+              <button type="button" class="btn-reset" (click)="selectStatus(selectedTooth!, 'present')">
+                {{ 'DENTAL_CHART.RESET_PRESENT' | translate }}
+              </button>
+            </div>
+          }
         </div>
       </div>
       }
@@ -291,6 +301,7 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     this.applyAllToothColors();
     this.applyTreatmentIndicators();
     this.applyOverlays();
+    this.applySurfaceMarks();
     this.applyVoiceMarks();
   }
 
@@ -837,6 +848,77 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
       this.translate.get(titleKey).subscribe((label) => marker.setAttribute('aria-label', label));
       marker.setAttribute('role', 'img');
       svg.appendChild(marker);
+    }
+  }
+
+  /**
+   * Draws, on each tooth that has a finding on a particular surface, the
+   * five-part mark with those surfaces filled: "caries mesial, amalgam
+   * occlusal" is then visible on the chart itself and not only in the panel.
+   * The tooth's own fill still speaks for the tooth as a whole; this layer
+   * says where on it.
+   *
+   * A zone takes the strongest thing recorded there — pathology over work in
+   * place over work still owed — because the doctor scanning the chart needs
+   * the problem to show even where a restoration also exists.
+   */
+  private applySurfaceMarks() {
+    const svg = this.chartContainer?.nativeElement.querySelector('svg');
+    if (!svg) return;
+    svg.querySelectorAll('.odo-surface-mark').forEach((n) => n.remove());
+    const prefix = this.getToothPrefix();
+
+    const byTooth = new Map<string, Map<SurfaceZone, 'condition' | 'existing' | 'planned'>>();
+    const rank = { planned: 1, existing: 2, condition: 3 } as const;
+    for (const f of this.findings ?? []) {
+      if (f.status !== 'ACTIVE' || !f.surface) continue;
+      const family = f.kind === 'CONDITION' ? 'condition'
+        : f.kind === 'EXISTING' ? 'existing'
+        : f.kind === 'TREATMENT_REQUIRED' ? 'planned' : null;
+      if (!family) continue;
+      const zones = byTooth.get(f.fdi) ?? new Map<SurfaceZone, 'condition' | 'existing' | 'planned'>();
+      for (const zone of zonesOf(f.fdi, f.surface)) {
+        const current = zones.get(zone);
+        if (!current || rank[family] > rank[current]) zones.set(zone, family);
+      }
+      byTooth.set(f.fdi, zones);
+    }
+
+    const ink = {
+      condition: FAMILY_PAINT.condition.solid,
+      existing: FAMILY_PAINT.existing.solid,
+      planned: PLANNED_PAINT.solid,
+    };
+    for (const [fdi, zones] of byTooth) {
+      const el = svg.querySelector(`.${prefix}${fdi}-parent`) as SVGGraphicsElement | null;
+      if (!el || !zones.size) continue;
+      const box = el.getBBox();
+      const size = Math.max(9, Math.min(box.width, box.height) * 0.62);
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('class', 'odo-surface-mark');
+      g.setAttribute('transform',
+        `translate(${box.x + box.width / 2 - size / 2} ${box.y + box.height / 2 - size / 2}) scale(${size / 30})`);
+      g.setAttribute('pointer-events', 'none');
+      g.setAttribute('role', 'img');
+      for (const zone of SURFACE_ZONES) {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', SURFACE_ZONE_PATH[zone]);
+        const family = zones.get(zone);
+        path.setAttribute('fill', family ? ink[family] : 'rgb(255 255 255 / 0.85)');
+        // Planned work is an outline in the rest of the chart: keep it hollow here too.
+        if (family === 'planned') {
+          path.setAttribute('fill', 'rgb(255 255 255 / 0.85)');
+          path.setAttribute('stroke', PLANNED_PAINT.ink);
+          path.setAttribute('stroke-dasharray', '3 2');
+          path.setAttribute('stroke-width', '2.2');
+        } else {
+          path.setAttribute('stroke', '#334155');
+          path.setAttribute('stroke-width', '1.2');
+        }
+        path.setAttribute('stroke-linejoin', 'round');
+        g.appendChild(path);
+      }
+      svg.appendChild(g);
     }
   }
 

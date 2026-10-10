@@ -22,6 +22,8 @@ import {
   FOLLOW_UP_WINDOW_MS,
 } from './voice-wake';
 import { acceptsFollowUp } from './voice-followup';
+import { InputLanguageService } from './input-language.service';
+import { classifyLanguage } from './language-filter';
 import { affirmedFindings, allFindingCodes, extractFindings, findingLabel, spokenFindingCovers } from './clinical-lexicon';
 import { describeFdi, findToothMentions, resolveTooth } from './tooth-lexicon';
 import { WORD_END } from './voice-regex';
@@ -254,6 +256,7 @@ export class VoiceOrchestratorService {
   private buffer = inject(SessionBufferService);
   private feedback = inject(SpeechFeedbackService);
   private context = inject(VoiceContextService);
+  private inputLanguage = inject(InputLanguageService);
   private registry = inject(VoiceCommandRegistryService);
   private api = inject(VoiceApiService);
   private toast = inject(ToastService);
@@ -277,6 +280,8 @@ export class VoiceOrchestratorService {
   private bufferedSignal = signal<BufferedEntry[]>([]);
   private lastAcceptedAtSignal = signal<number | null>(null);
   private ignoredSignal = signal<string | null>(null);
+  /** How many things heard this session were dropped for being in another language than the one chosen. */
+  private languageNoiseSignal = signal(0);
   private pendingClipsSignal = signal(0);
   private transcriptionIssueSignal = signal<string | null>(null);
   private speechPausedSignal = signal(false);
@@ -319,6 +324,7 @@ export class VoiceOrchestratorService {
    * the system simply did not consider itself addressed.
    */
   ignoredUtterance = this.ignoredSignal.asReadonly();
+  languageNoiseCount = this.languageNoiseSignal.asReadonly();
   /** Clips recorded and still being transcribed. */
   pendingTranscriptions = this.pendingClipsSignal.asReadonly();
   /** Why recent clips produced nothing, when they failed rather than were silent. */
@@ -564,6 +570,7 @@ export class VoiceOrchestratorService {
     this.wire();
     this.errorSignal.set(null);
     this.ignoredSignal.set(null);
+    this.languageNoiseSignal.set(0);
     this.transcriptionIssueSignal.set(null);
     this.transcriptionFailures = 0;
     if (this.needsConsent()) {
@@ -875,6 +882,17 @@ export class VoiceOrchestratorService {
     const said = heard || cleaned;
     if (!said) return;
     const readings = distinct([cleaned, said]);
+
+    // Speech in a language other than the one chosen for dictation is noise: a
+    // patient answering in Arabic, a conversation in the corridor. Typed
+    // commands (not heard, not gated) are the user's own words and pass.
+    const heardAloud = gated || recognitionConfidence !== 1;
+    if (heardAloud && readings.every(reading => classifyLanguage(reading, this.inputLanguage.language()) === 'noise')) {
+      this.languageNoiseSignal.update(count => count + 1);
+      this.ignoredSignal.set(said);
+      this.settle();
+      return;
+    }
 
     this.transcriptSignal.set(said);
     this.normalizedSignal.set(cleaned && cleaned !== said ? cleaned : null);

@@ -566,3 +566,16 @@
   font-size: 0.85rem;
   font-style: italic;
 }
+
+/* The tooth panel (findings, surfaces, history) is taller and wider than the old status grid. */
+.status-menu--detail {
+  max-width: 460px;
+  max-height: min(90vh, 760px);
+  display: flex;
+  flex-direction: column;
+}
+.status-menu--detail .status-sections {
+  overflow-y: auto;
+  min-height: 0;
+  padding-inline-end: .25rem;
+}

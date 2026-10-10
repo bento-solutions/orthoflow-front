@@ -91,6 +91,19 @@ export class DentalChartService {
     return chart;
   }
 
+  /**
+   * Re-reads the server's chart. The painted status of a tooth is derived on
+   * the server from its findings, so after a finding is added, resolved or
+   * withdrawn the browser's copy is stale until this runs.
+   */
+  reloadChart(patientId: string): void {
+    const chartType = this.chartStore.get(patientId)?.chartType ?? 'adult';
+    this.api.getChart(patientId, chartType).subscribe({
+      next: (response) => this.applyServerChart(patientId, response),
+      error: (err) => console.error(`Failed to reload dental chart for patient ${patientId}`, err),
+    });
+  }
+
   private applyServerChart(patientId: string, response: DentalChartResponse): void {
     const chart = this.createDefaultChart(patientId, response.chartType);
     for (const tooth of response.teeth) {

@@ -13,6 +13,10 @@ import { INSURANCE_FORM_STATUSES, MISSING_FIELDS } from './services/insurance-fo
 import { PRESCRIPTION_CATEGORIES } from './services/prescriptions-api.service';
 import { PHOTO_STAGES } from './services/clinical-photo-api.service';
 import { VIEW_GROUPS } from '../features/patients/patient-photos/patient-photos.component';
+import { FINDING_KIND_ORDER, FINDING_OPTIONS } from './clinical/finding-options';
+import { SURFACE_ORDER } from './clinical/tooth-surfaces';
+import { INPUT_LANGUAGES } from './voice/language-filter';
+import { PERIO_REGIONS } from './models/clinical-record.model';
 
 /**
  * Templates build some keys at run time (`'REC.KINDS.' + kind`), which the static scan in
@@ -39,6 +43,13 @@ const FAMILIES: Record<string, readonly string[]> = {
   'INSURANCE.MISSING': MISSING_FIELDS,
   'RX.CAT': PRESCRIPTION_CATEGORIES,
   'TASK.OPEN_DOC': ['INSURANCE_FORM', 'PRESCRIPTION'],
+  'TREATMENT_LOG.OUTCOME': ['IN_PLACE', 'TREATED', 'COMPLETED', 'REQUIRED', 'PLANNED', 'IN_PROGRESS'],
+  'VOICE.LANG': INPUT_LANGUAGES,
+  'GUMS.REGION': PERIO_REGIONS,
+  'GUMS.CONDITION': ['HEALTHY', 'GINGIVITIS', 'PERIODONTITIS'],
+  'FINDING': FINDING_OPTIONS.map(o => o.code.toUpperCase()),
+  'SURFACE': SURFACE_ORDER.map(s => s.toUpperCase()),
+  'TOOTH_DETAIL.KIND': FINDING_KIND_ORDER,
   'REC.KINDS': RECALL_KINDS,
   'REC.KIND_HINTS': RECALL_KINDS,
   'REC.SORTS': ['last', 'remaining', 'name'],

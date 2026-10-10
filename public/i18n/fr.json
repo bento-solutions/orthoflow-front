@@ -226,6 +226,61 @@
       "HINT": "Seuls le prénom et le nom sont nécessaires. Le reste se complète pendant la consultation ou plus tard.",
       "SUBMIT": "Ajouter",
       "SUBMIT_CONSULT": "Ajouter et démarrer la consultation"
+    },
+    "PHOTOS": {
+      "TAB": "Photos & radios",
+      "TITLE": "Photos et radiographies",
+      "SUBTITLE": "Le bilan photo orthodontique : huit vues standard et deux radiographies par séance, pour comparer le début et la fin du traitement.",
+      "NEW_SERIES": "Nouvelle séance",
+      "START_INITIAL": "Commencer le bilan initial",
+      "SERIES": "Séances photo",
+      "EMPTY_TITLE": "Aucune photo pour ce patient",
+      "EMPTY_TEXT": "Créez le bilan initial pour ajouter les photos du visage, des arcades, de l'occlusion et les radiographies.",
+      "STAGE": "Étape",
+      "STAGES": {
+        "INITIAL": "Bilan initial",
+        "PROGRESS": "Suivi",
+        "FINAL": "Fin de traitement",
+        "RETENTION": "Contention"
+      },
+      "TAKEN_ON": "Date des photos",
+      "NOTE": "Note",
+      "NOTE_PLACEHOLDER": "Ex. : avant pose des attaches",
+      "PROGRESS": "{{done}} vues sur {{total}}",
+      "EDIT_SERIES": "Modifier",
+      "DELETE_SERIES": "Supprimer la séance",
+      "DELETE_SERIES_CONFIRM": "Supprimer cette séance et ses {{count}} photo(s) ? Cette action est définitive.",
+      "GROUPS": {
+        "EXTRA_ORAL": "Photos extra-orales",
+        "INTRA_ORAL": "Photos intra-orales",
+        "RADIOGRAPHS": "Radiographies"
+      },
+      "VIEWS": {
+        "SMILE": "Photo du sourire",
+        "FACE_AT_REST": "Visage au repos",
+        "PROFILE": "Photo de profil",
+        "UPPER_OCCLUSAL": "Vue occlusale supérieure",
+        "LOWER_OCCLUSAL": "Vue occlusale inférieure",
+        "LEFT_LATERAL": "Vue latérale gauche",
+        "FRONTAL_OCCLUSION": "Occlusion de face",
+        "RIGHT_LATERAL": "Vue latérale droite",
+        "PANORAMIC_XRAY": "Radiographie panoramique",
+        "LATERAL_CEPHALOGRAM": "Téléradiographie de profil"
+      },
+      "CHOOSE_FILE": "Choisir une photo",
+      "REPLACE": "Remplacer",
+      "REMOVE": "Retirer la photo",
+      "REMOVE_CONFIRM": "Retirer la photo « {{view}} » de cette séance ?",
+      "ENLARGE": "Agrandir",
+      "DROP_HINT": "Astuce : glissez une photo directement sur la vue correspondante. JPEG, PNG ou WebP, 15 Mo maximum.",
+      "UPLOADING": "Envoi en cours…",
+      "UPLOAD_FAILED": "La photo n'a pas pu être envoyée. Vérifiez le format (JPEG, PNG, WebP) et la taille (15 Mo maximum).",
+      "ONLY_IMAGES": "Seules les images JPEG, PNG ou WebP sont acceptées.",
+      "SAVE_FAILED": "L'enregistrement a échoué. Réessayez.",
+      "LOAD_FAILED": "Impossible de charger les photos du patient.",
+      "COMPARE": "Comparer",
+      "COMPARE_WITH": "Comparer avec",
+      "NO_PICTURE": "Pas de photo"
     }
   },
   "BILLING": {

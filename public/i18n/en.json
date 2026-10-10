@@ -226,6 +226,61 @@
       "HINT": "Only first and last name are needed. The rest can be filled in during the consultation or later.",
       "SUBMIT": "Add",
       "SUBMIT_CONSULT": "Add and start the consultation"
+    },
+    "PHOTOS": {
+      "TAB": "Photos & X-rays",
+      "TITLE": "Photos and radiographs",
+      "SUBTITLE": "The orthodontic photo record: eight standard views and two radiographs per sitting, to compare the start of treatment with its end.",
+      "NEW_SERIES": "New sitting",
+      "START_INITIAL": "Start the initial records",
+      "SERIES": "Photo sittings",
+      "EMPTY_TITLE": "No photos for this patient yet",
+      "EMPTY_TEXT": "Create the initial records to add photos of the face, arches and bite, and the radiographs.",
+      "STAGE": "Stage",
+      "STAGES": {
+        "INITIAL": "Initial records",
+        "PROGRESS": "Progress",
+        "FINAL": "End of treatment",
+        "RETENTION": "Retention"
+      },
+      "TAKEN_ON": "Date taken",
+      "NOTE": "Note",
+      "NOTE_PLACEHOLDER": "E.g. before bonding",
+      "PROGRESS": "{{done}} of {{total}} views",
+      "EDIT_SERIES": "Edit",
+      "DELETE_SERIES": "Delete sitting",
+      "DELETE_SERIES_CONFIRM": "Delete this sitting and its {{count}} photo(s)? This cannot be undone.",
+      "GROUPS": {
+        "EXTRA_ORAL": "Extra-oral photos",
+        "INTRA_ORAL": "Intra-oral photos",
+        "RADIOGRAPHS": "Radiographs"
+      },
+      "VIEWS": {
+        "SMILE": "Smile photo",
+        "FACE_AT_REST": "Face at rest",
+        "PROFILE": "Profile photo",
+        "UPPER_OCCLUSAL": "Upper occlusal view",
+        "LOWER_OCCLUSAL": "Lower occlusal view",
+        "LEFT_LATERAL": "Left lateral view",
+        "FRONTAL_OCCLUSION": "Frontal occlusion view",
+        "RIGHT_LATERAL": "Right lateral view",
+        "PANORAMIC_XRAY": "Panoramic radiograph",
+        "LATERAL_CEPHALOGRAM": "Lateral cephalogram"
+      },
+      "CHOOSE_FILE": "Choose a photo",
+      "REPLACE": "Replace",
+      "REMOVE": "Remove photo",
+      "REMOVE_CONFIRM": "Remove the \"{{view}}\" photo from this sitting?",
+      "ENLARGE": "Enlarge",
+      "DROP_HINT": "Tip: drop a photo straight onto its view. JPEG, PNG or WebP, up to 15 MB.",
+      "UPLOADING": "Uploading…",
+      "UPLOAD_FAILED": "The photo could not be uploaded. Check the format (JPEG, PNG, WebP) and the size (15 MB at most).",
+      "ONLY_IMAGES": "Only JPEG, PNG or WebP images are accepted.",
+      "SAVE_FAILED": "Saving failed. Please try again.",
+      "LOAD_FAILED": "Could not load the patient's photos.",
+      "COMPARE": "Compare",
+      "COMPARE_WITH": "Compare with",
+      "NO_PICTURE": "No photo"
     }
   },
   "BILLING": {

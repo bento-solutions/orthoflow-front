@@ -420,6 +420,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/photo-series/{seriesId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_8"];
+        post?: never;
+        delete: operations["delete_5"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/photo-series/{seriesId}/photos/{view}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["upload"];
+        post?: never;
+        delete: operations["removePhoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patients/{patientId}/treatments/{id}": {
         parameters: {
             query?: never;
@@ -524,7 +556,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_4"];
-        put: operations["update_8"];
+        put: operations["update_9"];
         post?: never;
         delete?: never;
         options?: never;
@@ -588,7 +620,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_5"];
-        put: operations["update_9"];
+        put: operations["update_10"];
         post?: never;
         delete?: never;
         options?: never;
@@ -716,7 +748,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["update_10"];
+        put: operations["update_11"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2036,6 +2068,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/patients/{patientId}/photo-series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_3"];
+        put?: never;
+        post: operations["create_10"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patients/{patientId}/payment-plans": {
         parameters: {
             query?: never;
@@ -2045,7 +2093,7 @@ export interface paths {
         };
         get: operations["forPatient_1"];
         put?: never;
-        post: operations["create_10"];
+        post: operations["create_11"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2315,9 +2363,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
-        post: operations["create_11"];
+        post: operations["create_12"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2475,9 +2523,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
-        post: operations["create_12"];
+        post: operations["create_13"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2571,9 +2619,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
-        post: operations["upload"];
+        post: operations["upload_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2635,7 +2683,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post: operations["start_1"];
         delete?: never;
@@ -2733,7 +2781,7 @@ export interface paths {
         };
         get: operations["search_1"];
         put?: never;
-        post: operations["create_13"];
+        post: operations["create_14"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3979,7 +4027,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4027,7 +4075,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4350,7 +4398,7 @@ export interface paths {
         get: operations["download"];
         put?: never;
         post?: never;
-        delete: operations["delete_5"];
+        delete: operations["delete_6"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4491,7 +4539,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5482,6 +5530,39 @@ export interface components {
         };
         PractitionerReorder: {
             orderedIds: string[];
+        };
+        ClinicalPhotoSeriesRequest: {
+            /** @enum {string} */
+            stage: "INITIAL" | "PROGRESS" | "FINAL" | "RETENTION";
+            /** Format: date */
+            takenOn: string;
+            note?: string;
+        };
+        ClinicalPhoto: {
+            /** @enum {string} */
+            view?: "SMILE" | "FACE_AT_REST" | "PROFILE" | "UPPER_OCCLUSAL" | "LOWER_OCCLUSAL" | "LEFT_LATERAL" | "FRONTAL_OCCLUSION" | "RIGHT_LATERAL" | "PANORAMIC_XRAY" | "LATERAL_CEPHALOGRAM";
+            /** Format: uuid */
+            fileId?: string;
+            name?: string;
+            contentType?: string;
+            /** Format: int64 */
+            sizeBytes?: number;
+            /** Format: date-time */
+            uploadedAt?: string;
+        };
+        ClinicalPhotoSeries: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            patientId?: string;
+            /** @enum {string} */
+            stage?: "INITIAL" | "PROGRESS" | "FINAL" | "RETENTION";
+            /** Format: date */
+            takenOn?: string;
+            note?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            photos?: components["schemas"]["ClinicalPhoto"][];
         };
         PatientTreatmentConsumableRequest: {
             /** Format: uuid */
@@ -7136,7 +7217,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             /** @enum {string} */
-            ownerType?: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT";
+            ownerType?: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "CLINICAL_PHOTO";
             /** Format: uuid */
             ownerId?: string;
             name?: string;
@@ -7551,33 +7632,33 @@ export interface components {
             sort?: string[];
         };
         PageStockMovementResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StockMovementResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageableObject: {
+            /** Format: int64 */
+            offset?: number;
+            sort?: components["schemas"]["SortObject"][];
             /** Format: int32 */
             pageNumber?: number;
             /** Format: int32 */
             pageSize?: number;
             paged?: boolean;
             unpaged?: boolean;
-            /** Format: int64 */
-            offset?: number;
-            sort?: components["schemas"]["SortObject"][];
         };
         SortObject: {
             direction?: string;
@@ -7886,21 +7967,21 @@ export interface components {
             daysOverdue?: number;
         };
         PagePatientResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PatientMergePreview: {
@@ -8215,21 +8296,21 @@ export interface components {
             balance?: number;
         };
         PagePatientDirectoryRow: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientDirectoryRow"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PatientDirectoryRow: {
@@ -8322,21 +8403,21 @@ export interface components {
             unhandledReplies?: number;
         };
         PageLogRow: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LogRow"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         InboxRow: {
@@ -8383,21 +8464,21 @@ export interface components {
             email?: string;
         };
         PageInvoiceResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["InvoiceResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         BillingSummaryResponse: {
@@ -9864,6 +9945,105 @@ export interface operations {
             };
         };
     };
+    update_8: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClinicalPhotoSeriesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClinicalPhotoSeries"];
+                };
+            };
+        };
+    };
+    delete_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+                view: "SMILE" | "FACE_AT_REST" | "PROFILE" | "UPPER_OCCLUSAL" | "LOWER_OCCLUSAL" | "LEFT_LATERAL" | "FRONTAL_OCCLUSION" | "RIGHT_LATERAL" | "PANORAMIC_XRAY" | "LATERAL_CEPHALOGRAM";
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClinicalPhotoSeries"];
+                };
+            };
+        };
+    };
+    removePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+                view: "SMILE" | "FACE_AT_REST" | "PROFILE" | "UPPER_OCCLUSAL" | "LOWER_OCCLUSAL" | "LEFT_LATERAL" | "FRONTAL_OCCLUSION" | "RIGHT_LATERAL" | "PANORAMIC_XRAY" | "LATERAL_CEPHALOGRAM";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClinicalPhotoSeries"];
+                };
+            };
+        };
+    };
     getTreatmentById_1: {
         parameters: {
             query?: never;
@@ -10196,7 +10376,7 @@ export interface operations {
             };
         };
     };
-    update_8: {
+    update_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -10366,7 +10546,7 @@ export interface operations {
             };
         };
     };
-    update_9: {
+    update_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -10676,7 +10856,7 @@ export interface operations {
             };
         };
     };
-    update_10: {
+    update_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -10773,7 +10953,7 @@ export interface operations {
                 };
                 content: {
                     "*/*": {
-                        [key: string]: string[];
+                        [key: string]: components["schemas"]["JsonNode"][];
                     };
                 };
             };
@@ -13463,6 +13643,54 @@ export interface operations {
             };
         };
     };
+    list_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClinicalPhotoSeries"][];
+                };
+            };
+        };
+    };
+    create_10: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClinicalPhotoSeriesRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClinicalPhotoSeries"];
+                };
+            };
+        };
+    };
     forPatient_1: {
         parameters: {
             query?: never;
@@ -13485,7 +13713,7 @@ export interface operations {
             };
         };
     };
-    create_10: {
+    create_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -14004,7 +14232,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: {
                 status?: ("SENT" | "IN_PROGRESS" | "RECEIVED" | "FITTED" | "REMAKE")[];
@@ -14035,7 +14263,7 @@ export interface operations {
             };
         };
     };
-    create_11: {
+    create_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -14300,7 +14528,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query: {
                 from: string;
@@ -14326,7 +14554,7 @@ export interface operations {
             };
         };
     };
-    create_12: {
+    create_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -14497,10 +14725,10 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query: {
-                ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT";
+                ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "CLINICAL_PHOTO";
                 ownerId: string;
             };
             header?: never;
@@ -14520,10 +14748,10 @@ export interface operations {
             };
         };
     };
-    upload: {
+    upload_1: {
         parameters: {
             query: {
-                ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT";
+                ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "CLINICAL_PHOTO";
                 ownerId?: string;
             };
             header?: never;
@@ -14646,7 +14874,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query: {
                 patientId: string;
@@ -14839,7 +15067,7 @@ export interface operations {
             };
         };
     };
-    create_13: {
+    create_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -16719,7 +16947,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: {
                 search?: string;
@@ -16792,7 +17020,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: {
                 limit?: number;
@@ -17273,7 +17501,7 @@ export interface operations {
             };
         };
     };
-    delete_5: {
+    delete_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -17461,7 +17689,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query?: {
                 status?: string;

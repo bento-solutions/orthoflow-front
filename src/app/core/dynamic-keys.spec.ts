@@ -9,6 +9,8 @@ import { MESSAGE_CHANNELS, MESSAGE_PURPOSES, MESSAGE_STATUSES } from './services
 import { ASSIGNEE_ROLES, LAB_ITEM_TYPES, LAB_STATUSES, TASK_PRIORITIES } from './services/operations-api.service';
 import { RECALL_KINDS } from '../features/patients/patient-directory-api.service';
 import { APPOINTMENT_STATUSES } from './services/agenda-config.service';
+import { PHOTO_STAGES } from './services/clinical-photo-api.service';
+import { VIEW_GROUPS } from '../features/patients/patient-photos/patient-photos.component';
 
 /**
  * Templates build some keys at run time (`'REC.KINDS.' + kind`), which the static scan in
@@ -74,6 +76,9 @@ const FAMILIES: Record<string, readonly string[]> = {
   'TASK.STATUSES': ['OPEN', 'DONE', 'CANCELLED'],
   'TASK.PRIORITIES': TASK_PRIORITIES,
   'TASK.ROLES': ASSIGNEE_ROLES,
+  'PATIENTS.PHOTOS.VIEWS': VIEW_GROUPS.flatMap(g => g.slots.map(s => s.view)),
+  'PATIENTS.PHOTOS.GROUPS': VIEW_GROUPS.map(g => g.key),
+  'PATIENTS.PHOTOS.STAGES': PHOTO_STAGES,
   'PAT.DUP.MERGE.FIELDS': [
     'email', 'phone', 'cin', 'address', 'dateOfBirth', 'gender', 'guardianName', 'guardianPhone', 'insuranceProvider', 'insuranceNumber',
     'occupation', 'referralSource', 'insurerId', 'primaryPractitionerId', 'photoFileId',

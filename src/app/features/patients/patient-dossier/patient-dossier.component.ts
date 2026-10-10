@@ -31,11 +31,12 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
 import { PermissionService } from '../../../core/services/permission.service';
 import { PatientAccountComponent } from '../account/patient-account.component';
 import { RegistrationInviteComponent } from '../registration-invite.component';
+import { PatientPhotosComponent } from '../patient-photos/patient-photos.component';
 
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, PatientAccountComponent, RegistrationInviteComponent],
+  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, PatientAccountComponent, RegistrationInviteComponent, PatientPhotosComponent],
   template: `
     <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive()" [class.has-consultation]="consultation.visible()">
       @if (patientService.currentPatient(); as patient) {
@@ -274,8 +275,8 @@ import { RegistrationInviteComponent } from '../registration-invite.component';
             <div class="tab-pane" role="tabpanel" id="dossier-panel-clinical" aria-labelledby="dossier-tab-clinical" tabindex="0">
               <!-- Secondary in-page navigation — consolidated here from what
                    were six separate top-level tabs (audit VIII.5) -->
-              <nav class="clinical-subtabs no-print" role="tablist" [attr.aria-label]="'PATIENTS.DOSSIER.CLINICAL' | translate" (keydown)="onTabKeydown($event, clinicalSubTabs, activeClinicalSubTab(), setActiveClinicalSubTab.bind(this), 'clinical-subtab-')">
-                @for (sub of clinicalSubTabs; track sub.id) {
+              <nav class="clinical-subtabs no-print" role="tablist" [attr.aria-label]="'PATIENTS.DOSSIER.CLINICAL' | translate" (keydown)="onTabKeydown($event, visibleClinicalSubTabs(), activeClinicalSubTab(), setActiveClinicalSubTab.bind(this), 'clinical-subtab-')">
+                @for (sub of visibleClinicalSubTabs(); track sub.id) {
                   <button
                     type="button"
                     [id]="'clinical-subtab-' + sub.id"
@@ -293,6 +294,11 @@ import { RegistrationInviteComponent } from '../registration-invite.component';
               </nav>
 
               @switch (activeClinicalSubTab()) {
+                @case ('photos') {
+                  <div role="tabpanel" id="clinical-subpanel-photos" aria-labelledby="clinical-subtab-photos">
+                    <app-patient-photos [patientId]="patient.id" />
+                  </div>
+                }
                 @case ('history') {
                   <section class="dossier-section">
                     <div class="notes-header">
@@ -1953,12 +1959,16 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
 
   clinicalSubTabs = [
     { id: 'treatments', key: 'COMMON.TREATMENTS', icon: 'healing' },
+    { id: 'photos', key: 'PATIENTS.PHOTOS.TAB', icon: 'photo_library' },
     { id: 'history', key: 'PATIENTS.DOSSIER.MEDICAL_HISTORY', icon: 'medical_services' },
     { id: 'diagnostics', key: 'PATIENTS.DOSSIER.DIAGNOSTICS', icon: 'biotech' },
     { id: 'plan', key: 'PATIENTS.DOSSIER.TREATMENT_PLAN', icon: 'assignment' },
     { id: 'appointments', key: 'COMMON.SCHEDULE', icon: 'event' },
     { id: 'notes', key: 'DENTAL_CHART.REPORT_TITLE', icon: 'history_edu' },
   ];
+  /** Photos are part of the clinical record and follow its read permission. */
+  visibleClinicalSubTabs = computed(() =>
+    this.clinicalSubTabs.filter(t => t.id !== 'photos' || this.permissions.can('CLINICAL_READ')));
   activeClinicalSubTab = signal('treatments');
 
   activeTreatmentsCount = computed(() =>

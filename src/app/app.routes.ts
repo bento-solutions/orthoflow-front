@@ -140,7 +140,22 @@ export const routes: Routes = [
             canActivate: [permissionGuard('SETTINGS_MANAGE')],
             loadComponent: () => import('./features/settings/pages/help-notes-settings.component').then(m => m.HelpNotesSettingsComponent),
           },
+          {
+            path: 'insurers',
+            canActivate: [permissionGuard('SETTINGS_MANAGE')],
+            loadComponent: () => import('./features/settings/pages/insurers-settings.component').then(m => m.InsurersSettingsComponent),
+          },
         ],
+      },
+      {
+        path: 'insurance-forms',
+        canActivate: [permissionGuard('BILLING_READ')],
+        loadComponent: () => import('./features/insurance/insurance-forms.component').then(m => m.InsuranceFormsComponent),
+      },
+      {
+        path: 'prescription-templates',
+        canActivate: [permissionGuard('CLINICAL_WRITE')],
+        loadComponent: () => import('./features/prescriptions/prescription-templates.component').then(m => m.PrescriptionTemplatesComponent),
       },
       {
         path: 'account',

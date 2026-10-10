@@ -73,6 +73,8 @@ export interface PlanData {
   notes: string | null;
   /** Where the price came from, for the "catalogue" badge. */
   priceSource: DraftPlanItem['priceSource'];
+  /** Done in this session rather than proposed; the doctor says so at review. */
+  performed?: boolean;
 }
 
 export interface AppointmentChoice {
@@ -209,7 +211,7 @@ export function mergeDraft(
     }), partial),
     plan: mergeList(previous.plan, draft.treatmentPlan ?? [], d => ({
       label: d.label, treatmentId: d.treatmentId, teeth: d.teeth, price: d.price, quantity: 1,
-      notes: d.notes, priceSource: d.priceSource,
+      notes: d.notes, priceSource: d.priceSource, performed: false,
     }), partial),
     appointmentSuggestion: draft.nextAppointment ?? (partial ? previous.appointmentSuggestion : null),
     appointment: previous.appointment,
@@ -453,6 +455,7 @@ export function toCommitRequest(
       price: p.price,
       quantity: Math.max(1, Math.floor(p.quantity || 1)),
       notes: text(p.notes),
+      performed: !!p.performed,
     })),
     nextAppointment: state.appointment && options.appointment
       ? {

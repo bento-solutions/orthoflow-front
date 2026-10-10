@@ -166,6 +166,8 @@ export interface CommitPlanLineDto {
   price?: number | null;
   quantity: number;
   notes?: string | null;
+  /** Done in this session: reported on the insurer's form as executed rather than proposed. */
+  performed?: boolean;
 }
 
 export interface CommitAppointmentDto {
@@ -206,4 +208,20 @@ export interface CommitConsultationResultDto {
   notReviewed: number;
   failed: { auditId: string; intent: string; errorMessage: string }[];
   appointmentId: string | null;
+  /** The insurer care forms the save filled and sent to the front desk. */
+  insuranceForms?: InsuranceFormIssuedDto[];
+  /** Set when the record saved but its insurance forms could not be made. */
+  insuranceFormError?: string | null;
+}
+
+/** A care form a saved consultation produced, as the save reports it. */
+export interface InsuranceFormIssuedDto {
+  id: string;
+  number: string;
+  insurerName: string | null;
+  formName: string;
+  purpose: 'EXECUTION' | 'PRIOR_AGREEMENT';
+  lines: number;
+  total: number;
+  sent: boolean;
 }

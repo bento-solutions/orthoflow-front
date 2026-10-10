@@ -6,12 +6,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { NavCounts } from '../../core/services/nav-counts.service';
 import { OperationsApi, Task } from '../../core/services/operations-api.service';
+import { InsuranceFormsApi } from '../../core/services/insurance-forms-api.service';
+import { PrescriptionsApi } from '../../core/services/prescriptions-api.service';
 import { screenMocks } from '../../testing/screen-mocks';
 import { TasksComponent, assigneeFields, assigneeValue } from './tasks.component';
 
 const task = (over: Partial<Task> = {}): Task => ({
   id: 't1', title: 'Rappeler Mme Alami', description: '', assigneeId: 'u1', assigneeName: 'Salma', assigneeRole: '' as never, createdBy: 'u0', dueDate: '2026-10-06', priority: 'NORMAL',
-  patientId: '', patientName: '', status: 'OPEN', doneAt: '', overdue: false, ...over,
+  patientId: '', patientName: '', status: 'OPEN', doneAt: '', overdue: false, documentKind: '' as never, documentId: '', ...over,
 });
 
 describe('assignee encoding', () => {
@@ -30,6 +32,7 @@ describe('TasksComponent', () => {
   let mocks: ReturnType<typeof screenMocks>;
   let confirmAnswer = true;
   let refreshTasks: ReturnType<typeof vi.fn>;
+  const insuranceForms = { open: vi.fn(async () => undefined) };
 
   const mount = async (can: Parameters<typeof screenMocks>[0] = {}) => {
     mocks = screenMocks(can);
@@ -39,6 +42,8 @@ describe('TasksComponent', () => {
       providers: [
         provideRouter([]),
         { provide: OperationsApi, useValue: api },
+        { provide: InsuranceFormsApi, useValue: insuranceForms },
+        { provide: PrescriptionsApi, useValue: { open: vi.fn() } },
         { provide: ConfirmDialogService, useValue: { confirm: async () => confirmAnswer } },
         { provide: NavCounts, useValue: { refreshTasks } },
         ...mocks.providers,
@@ -71,6 +76,15 @@ describe('TasksComponent', () => {
       taskAction: vi.fn(async () => task()),
       deleteTask: vi.fn(async () => undefined),
     };
+  });
+
+  it('opens the care form a task is about', async () => {
+    api['myTasks'] = vi.fn(async () => ({ overdue: [], today: [task({ id: 'f', title: 'Feuille de soins CNOPS — BENNANI Yasmine',
+      documentKind: 'INSURANCE_FORM', documentId: 'form-1' })], upcoming: [], doneToday: [] }));
+    const fixture = await mount();
+    [...document.querySelectorAll('button')].find(b => b.textContent?.includes('TASK.OPEN_DOC.INSURANCE_FORM'))!.click();
+    await settleUi(fixture);
+    expect(insuranceForms.open).toHaveBeenCalledWith('form-1');
   });
 
   it('shows my tasks in groups, the late ones first and named as late', async () => {

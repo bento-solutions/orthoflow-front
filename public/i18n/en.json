@@ -205,7 +205,15 @@
       "CONSENT_TEXT": "The patient (or their guardian, for a minor) has consented to their health data being collected and processed for the purpose of orthodontic care.",
       "CONSENT_HINT": "Required to comply with data protection law. If left unchecked, you can record consent later from the patient's dossier.",
       "NO_APPOINTMENTS": "No appointments recorded for this patient.",
-      "TITLE": "Patient file"
+      "TITLE": "Patient file",
+      "DOCUMENTS": "Documents",
+      "AFFILIATION_NUMBER": "Affiliation number",
+      "INSURED_RELATION": "Relation to the insured person",
+      "RELATION_SELF": "The patient is the insured person",
+      "RELATION_CHILD": "Insured person's child",
+      "RELATION_SPOUSE": "Insured person's spouse",
+      "INSURED_NAME": "Insured person's full name",
+      "INSURED_CIN": "Insured person's ID card (CIN)"
     },
     "ADD": "New patient",
     "SEARCH_PLACEHOLDER": "Search by name, phone or email…",
@@ -796,7 +804,9 @@
     "MESSAGES": "Staff messages",
     "BOOKING": "Online requests",
     "SURVEYS": "Satisfaction",
-    "ACCOUNT": "My account"
+    "ACCOUNT": "My account",
+    "INSURANCE_FORMS": "Care forms",
+    "PRESCRIPTION_TEMPLATES": "Prescription templates"
   },
   "STATUS": {
     "ACTIVE": "Active",
@@ -1106,7 +1116,11 @@
     "DISCARD_TITLE": "Discard the consultation?",
     "DISCARD_CONFIRM": "The recording and everything picked up from it will be erased. Nothing will be added to the record.",
     "DISCARD_LABEL": "Discard the consultation",
-    "KEEP_LABEL": "Keep going"
+    "KEEP_LABEL": "Keep going",
+    "PLAN_DONE": "Done today",
+    "PLAN_DONE_HINT": "Done during this session: it goes on the care form as executed",
+    "FORM_SENT": "{{purpose}} sent to the front desk: {{form}} (no. {{number}})",
+    "FORM_ERROR": "The consultation is saved, but its care form could not be prepared. The front desk can make it from the record (Documents tab)."
   },
   "SET": {
     "TABS": {
@@ -1116,7 +1130,8 @@
       "USERS": "Users and permissions",
       "BOOKING": "Online booking",
       "HELP": "Help texts",
-      "AGENDA": "Agenda"
+      "AGENDA": "Agenda",
+      "INSURERS": "Insurers"
     },
     "TEAM": {
       "TITLE": "Care team",
@@ -1346,6 +1361,23 @@
       "COLORS_HINT": "The status is always written out beside the colour: the colour helps, it never carries the meaning alone.",
       "RESET": "Default",
       "COLORS_SAVED": "Colours saved."
+    },
+    "INSURERS": {
+      "TITLE": "Insurers",
+      "HINT": "Your patients' insurers and mutuals, and the care form each one asks for.",
+      "ADD": "Add an insurer",
+      "EDIT": "Edit insurer",
+      "INACTIVE": "Inactive",
+      "CODE": "Code",
+      "NAME": "Name",
+      "KIND": "Type",
+      "PUBLIC": "Mandatory / public scheme",
+      "PRIVATE": "Private / complementary insurer",
+      "FORM": "Care form to fill in",
+      "FORM_DEFAULT": "Automatic: {{form}}",
+      "FORM_GENERIC": "Statement of acts (OrthoFlow)",
+      "FORM_HINT": "When OrthoFlow does not know the insurer's sheet, it prints a statement of acts to attach to the patient's own form.",
+      "ACTIVE": "Offered on the patient record"
     }
   },
   "FD": {
@@ -1991,7 +2023,11 @@
     "DUE": "Due",
     "PRIORITY": "Priority",
     "PATIENT": "Patient concerned",
-    "DELETE_CONFIRM": "Delete the task “{{title}}”?"
+    "DELETE_CONFIRM": "Delete the task “{{title}}”?",
+    "OPEN_DOC": {
+      "INSURANCE_FORM": "Open the care form",
+      "PRESCRIPTION": "Open the prescription"
+    }
   },
   "MSG": {
     "TITLE": "Staff messages",
@@ -2826,5 +2862,137 @@
     "HELP": "Open help",
     "THEME": "Switch light / dark",
     "TAX_SIMULATION": "Income tax simulator"
+  },
+  "INSURANCE": {
+    "TITLE": "Care forms (insurance)",
+    "GENERIC": "OrthoFlow statement",
+    "SINGLE_USE": "Numbered form",
+    "NEW": "New care form",
+    "MISSING_TITLE": "Still missing:",
+    "COMPLETE_RECORD": "Complete the record",
+    "NONE_YET": "No care forms for this patient yet. They are prepared when a consultation is saved, or by hand here.",
+    "NO_INSURER": "No insurer",
+    "ACTS": "{{count}} act(s)",
+    "OPEN": "Open / print",
+    "OVERLAY": "Overlay",
+    "OVERLAY_HINT": "The text alone, to print onto the paper form the patient brought",
+    "SEND": "Send to the front desk",
+    "REFRESH": "Refresh",
+    "REFRESH_HINT": "Re-read the patient's record (a number added, a new insurer) and redo the form",
+    "MARK_PRINTED": "Printed",
+    "MARK_HANDED": "Handed over",
+    "VOID": "Void",
+    "VOID_TITLE": "Void the care form",
+    "VOID_CONFIRM": "Void form {{number}}? It stays in the history, marked voided.",
+    "SENT": "Sent to the front desk.",
+    "PURPOSE_LABEL": "Purpose",
+    "CARE_DATE": "Date of care",
+    "ACT_N": "Act {{n}}",
+    "FROM_CATALOG": "Pick from the catalogue (its NGAP code is used)",
+    "CODE": "Code",
+    "LABEL": "Act",
+    "TEETH": "Teeth",
+    "AMOUNT": "Amount",
+    "REMOVE_ACT": "Remove act",
+    "ADD_ACT": "Add an act",
+    "SEND_ON_CREATE": "Send it to the front desk to print",
+    "CREATE": "Prepare the form",
+    "CREATED": "Form {{number}} prepared.",
+    "CREATED_SENT": "Form {{number}} prepared and sent to the front desk.",
+    "PAGE_TITLE": "Care forms",
+    "PAGE_SUB": "Insurance forms prepared at the end of each session: print them, have the practitioner stamp them, hand them to the patient.",
+    "STATUS_FILTER": "Status",
+    "MISSING": {
+      "INSURER": "Insurer",
+      "INSURANCE_NUMBER": "Registration number",
+      "AFFILIATION_NUMBER": "Affiliation number",
+      "INSURED_NAME": "Insured person's name",
+      "INSURED_CIN": "Insured person's ID card",
+      "DATE_OF_BIRTH": "Date of birth",
+      "GENDER": "Sex",
+      "PRACTITIONER_INPE": "Practitioner's INPE",
+      "ACT_CODES": "NGAP act codes"
+    },
+    "STATUS": {
+      "TO_PRINT": "To print",
+      "PRINTED": "Printed",
+      "HANDED_OVER": "Handed over",
+      "VOID": "Voided"
+    },
+    "EMPTY": {
+      "TO_PRINT": "No care forms to print.",
+      "PRINTED": "No printed forms waiting to be handed over.",
+      "HANDED_OVER": "No forms handed over yet.",
+      "VOID": "No voided forms."
+    },
+    "PURPOSE": {
+      "EXECUTION": "Care form",
+      "PRIOR_AGREEMENT": "Prior agreement request"
+    }
+  },
+  "RX": {
+    "TITLE": "Prescriptions",
+    "NEW": "Write a prescription",
+    "NEW_TITLE": "Prescription — {{name}}",
+    "EMPTY": "No prescriptions for this patient.",
+    "START_FROM": "Start from",
+    "BLANK": "A blank prescription",
+    "CLINIC_TEMPLATES": "The clinic's templates",
+    "TO_REVIEW": "to review",
+    "LIBRARY": "Reference library (ordonnance.ma)",
+    "LIBRARY_NOTE": "Reference prescription published by ordonnance.ma (educational content): read every drug and dose before prescribing.",
+    "ALTERNATIVE": "Alternative:",
+    "WARNING_SIGNS": "Warning signs:",
+    "SOURCE": "Source",
+    "TEMPLATE_TO_REVIEW": "This template comes from the library and has not been validated by a practitioner of the clinic yet.",
+    "DRUG_N": "Drug {{n}}",
+    "DRUG": "Drug (brand name, strength)",
+    "FORM": "Form",
+    "DCI": "Active substance (INN)",
+    "POSOLOGY": "Dose and duration",
+    "REMOVE_DRUG": "Remove",
+    "ADD_DRUG": "Add a drug",
+    "ADVICE": "Advice for the patient",
+    "ALLERGY_TITLE": "Caution: allergy on the record",
+    "ALLERGY_LINE": "{{drug}} — allergy \"{{allergy}}\" ({{reason}})",
+    "ALLERGY_ACK": "I have seen this and keep the prescription.",
+    "ALLERGY_NONE": "No allergy on the record matches these drugs. The check knows only some drug families: it does not replace reading the record.",
+    "INCOMPLETE": "{{count}} drug(s) missing a name or a dose.",
+    "ISSUE": "Issue and print",
+    "ISSUING": "Issuing…",
+    "ISSUED": "Prescription {{number}} issued.",
+    "VOID": "Voided",
+    "ALLERGY_OVERRIDDEN": "Allergy warning overridden",
+    "OPEN": "Open",
+    "VOID_ACTION": "Void",
+    "VOID_TITLE": "Void the prescription",
+    "VOID_CONFIRM": "Void prescription {{number}}? It stays in the history, marked voided.",
+    "TEMPLATES_TITLE": "Prescription templates",
+    "TEMPLATES_SUB": "The clinic's prescription templates, and the reference library to adopt them from.",
+    "NEW_TEMPLATE": "New template",
+    "EDIT_TEMPLATE": "Edit template",
+    "NO_TEMPLATES": "No templates yet. Adopt one from the library or write your own (orthodontic prescriptions are not in it).",
+    "INACTIVE": "Inactive",
+    "REVIEWED_BY": "Validated by {{name}} on {{date}}",
+    "VALIDATE": "Validate",
+    "VALIDATE_CONFIRM": "You have read \"{{name}}\" and validate it for the clinic?",
+    "DELETE_CONFIRM": "Delete the template \"{{name}}\"? Prescriptions already issued do not change.",
+    "LIBRARY_EXPLAINED": "Educational content from ordonnance.ma, to be validated clinically: an adopted template stays \"to review\" until a practitioner of the clinic validates it.",
+    "HIDE": "Hide",
+    "DETAILS": "Details",
+    "ADOPTED": "Adopted",
+    "ADOPT": "Adopt",
+    "ADOPTED_TOAST": "\"{{name}}\" added to the clinic's templates, to review.",
+    "TEMPLATE_NAME": "Template name",
+    "CATEGORY": "Category",
+    "ACTIVE": "Offered when writing prescriptions",
+    "SAVE_REVIEWS": "Saving counts as your validation.",
+    "CAT": {
+      "DENTAL": "Dental",
+      "ORTHO": "Orthodontics",
+      "MUCOSA": "Oral mucosa",
+      "PAIN": "Pain",
+      "OTHER": "Other"
+    }
   }
 }

@@ -23,7 +23,7 @@ import {
 } from './consultation-documents';
 import { isBeginExaminationPhrase } from './consultation-phrases';
 import { chartLine } from './consultation-chart';
-import { CommitConsultationDto, ConsultationDto, ConsultationConfigDto } from './consultation.model';
+import { CommitConsultationDto, ConsultationDto, ConsultationConfigDto, InsuranceFormIssuedDto } from './consultation.model';
 import { VoiceApiService } from '../voice/voice-api.service';
 import { VoiceOrchestratorService } from '../voice/voice-orchestrator.service';
 import { VoiceSessionService } from '../voice/voice-session.service';
@@ -85,6 +85,11 @@ export interface SavedConsultation {
   chartLines: string[];
   date: Date;
   appointmentText: string | null;
+  /** The saved consultation, for the documents written after it (an ordonnance). */
+  consultationId: string;
+  /** The insurer forms the save sent to the front desk, and why none were made if it failed to. */
+  insuranceForms: InsuranceFormIssuedDto[];
+  insuranceFormError: string | null;
 }
 
 /**
@@ -747,6 +752,9 @@ export class ConsultationService {
         chartLines,
         date: new Date(),
         appointmentText: this.appointmentText(review.appointment),
+        consultationId: consultation.id,
+        insuranceForms: result.insuranceForms ?? [],
+        insuranceFormError: result.insuranceFormError ?? null,
       });
       this.savedVersionSignal.update(v => v + 1);
       this.say('saved');

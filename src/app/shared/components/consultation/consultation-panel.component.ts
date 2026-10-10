@@ -33,6 +33,8 @@ import { PatientService } from '../../../core/services/patient.service';
 import { StockService } from '../../../core/services/stock.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { Treatment } from '../../../core/models/stock.model';
+import { PermissionService } from '../../../core/services/permission.service';
+import { PrescriptionEditorComponent } from '../prescription/prescription-editor.component';
 
 type Mode = 'intro' | 'recording' | 'review' | 'saved';
 
@@ -54,11 +56,12 @@ interface EditModel {
   price: number | null;
   quantity: number;
   treatmentId: string;
+  performed: boolean;
 }
 
 const EMPTY_EDIT: EditModel = {
   text: '', detail: '', reaction: '', severity: '', category: 'CONDITION', type: 'MEDICATION',
-  teeth: '', price: null, quantity: 1, treatmentId: '',
+  teeth: '', price: null, quantity: 1, treatmentId: '', performed: false,
 };
 
 const FIELDS: FieldDef[] = [
@@ -96,7 +99,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
 @Component({
   selector: 'app-consultation-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, TranslateModule, PrescriptionEditorComponent],
   template: `
     @if (c.visible()) {
       <aside class="cp" [attr.data-mode]="mode()" [attr.aria-label]="'CONSULTATION.TITLE' | translate">
@@ -343,10 +346,34 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                   <button type="button" class="cp-btn big" (click)="c.printAssistantSheet()">
                     <span class="material-icons" aria-hidden="true">assignment</span>{{ 'CONSULTATION.PRINT_SHEET' | translate }}
                   </button>
+                  @if (canPrescribe()) {
+                    <button type="button" class="cp-btn big" (click)="writingRx.set(true)">
+                      <span class="material-icons" aria-hidden="true">medication</span>{{ 'RX.NEW' | translate }}
+                    </button>
+                  }
                   <button type="button" class="cp-link" (click)="c.dismiss()">{{ 'CONSULTATION.CLOSE' | translate }}</button>
                 </div>
+                @if (c.saved(); as saved) {
+                  @if (saved.insuranceForms.length) {
+                    <ul class="cp-forms" [attr.aria-label]="'INSURANCE.TITLE' | translate">
+                      @for (f of saved.insuranceForms; track f.id) {
+                        <li>
+                          <span class="material-icons" aria-hidden="true">outgoing_mail</span>
+                          {{ 'CONSULTATION.FORM_SENT' | translate: { purpose: ('INSURANCE.PURPOSE.' + f.purpose | translate), form: f.formName, number: f.number } }}
+                        </li>
+                      }
+                    </ul>
+                  } @else if (saved.insuranceFormError) {
+                    <p class="cp-hint">{{ 'CONSULTATION.FORM_ERROR' | translate }}</p>
+                  }
+                }
               </div>
             </div>
+            @if (c.saved(); as saved) {
+              <app-prescription-editor [open]="writingRx()" [patientId]="saved.patient.id"
+                [patientName]="saved.patient.firstName + ' ' + saved.patient.lastName" [consultationId]="saved.consultationId"
+                (closed)="writingRx.set(false)" />
+            }
           }
         }
       </aside>
@@ -466,6 +493,16 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                     <span class="cp-value" [class.proposed]="item.status === 'proposed'">{{ itemText(list.name, item) }}</span>
                     <span class="cp-status" [attr.data-status]="item.status">{{ statusKey(item) | translate }}</span>
                     @if (list.name === 'plan' && priceBadge(item); as badge) { <span class="cp-onfile">{{ badge | translate }}</span> }
+                    @if (list.name === 'plan' && item.status !== 'removed') {
+                      @if (editable) {
+                        <button type="button" class="cp-done" [class.on]="isPerformed(item)" [attr.aria-pressed]="isPerformed(item)"
+                          (click)="togglePerformed(item.key)" [title]="'CONSULTATION.PLAN_DONE_HINT' | translate">
+                          <span class="material-icons" aria-hidden="true">{{ isPerformed(item) ? 'check_box' : 'check_box_outline_blank' }}</span>{{ 'CONSULTATION.PLAN_DONE' | translate }}
+                        </button>
+                      } @else if (isPerformed(item)) {
+                        <span class="cp-onfile">{{ 'CONSULTATION.PLAN_DONE' | translate }}</span>
+                      }
+                    }
                     @if (item.quote) { <span class="cp-quote" [title]="item.quote">« {{ item.quote }} »</span> }
                     @if (editable) {
                       <span class="cp-row-actions">
@@ -565,6 +602,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
               <input type="number" class="cp-input narrow" [(ngModel)]="edit.quantity" min="1" [attr.aria-label]="'CONSULTATION.PLAN_QTY' | translate" />
             </span>
             <input type="text" class="cp-input" [(ngModel)]="edit.detail" [placeholder]="'CONSULTATION.F_NOTES' | translate" maxlength="500" />
+            <label class="cp-check"><input type="checkbox" [(ngModel)]="edit.performed" /> {{ 'CONSULTATION.PLAN_DONE_HINT' | translate }}</label>
           }
         }
         <span class="cp-editor row">
@@ -604,6 +642,16 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-card h3, .cp-card p { margin: 0; }
     .cp-hero { font-size: 2rem; color: rgb(var(--petrol-600)); }
     .cp-hero.ok { color: rgb(var(--positive-600)); font-size: 2.5rem; }
+    .cp-forms { list-style: none; margin: .75rem 0 0; padding: 0; display: grid; gap: .35rem; text-align: start; font-size: .85rem; color: rgb(var(--ink-700)); }
+    .cp-forms li { display: flex; gap: .4rem; align-items: flex-start; }
+    .cp-forms .material-icons { font-size: 1rem; color: rgb(var(--brand-600, 37 99 235)); }
+    .cp-done {
+      display: inline-flex; align-items: center; gap: .2rem; padding: .05rem .4rem; border-radius: 999px;
+      border: 1px solid rgb(var(--ink-200)); background: var(--surface); color: rgb(var(--ink-600)); font-size: .75rem; cursor: pointer;
+    }
+    .cp-done .material-icons { font-size: .95rem; }
+    .cp-done.on { border-color: rgb(var(--ok-300, 134 239 172)); background: rgb(var(--ok-50, 240 253 244)); color: rgb(var(--ok-800, 22 101 52)); font-weight: 600; }
+    .cp-check { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: rgb(var(--ink-700)); }
     .cp-steps { margin: 0; padding-inline-start: 1.1rem; color: rgb(var(--ink-700)); font-size: .875rem; display: grid; gap: .25rem; }
     .cp-notice { display: flex; gap: .5rem; font-size: .8125rem; color: rgb(var(--ink-700)); background: rgb(var(--caution-50)); border-radius: 10px; padding: .625rem .75rem; }
     .cp-notice .material-icons { font-size: 1.125rem; color: rgb(var(--caution-700)); flex-shrink: 0; }
@@ -752,6 +800,11 @@ export class ConsultationPanelComponent {
   showHeard = signal(true);
   editKey = signal<string | null>(null);
   edit: EditModel = { ...EMPTY_EDIT };
+
+  private readonly permissions = inject(PermissionService);
+  /** The ordonnance written once the consultation is saved, from its saved screen. */
+  readonly canPrescribe = computed(() => this.permissions.can('CLINICAL_WRITE'));
+  readonly writingRx = signal(false);
   typed = '';
   catalog = signal<Treatment[]>([]);
 
@@ -960,6 +1013,23 @@ export class ConsultationPanelComponent {
     }
   }
 
+  isPerformed(item: ReviewItem<unknown>): boolean {
+    return !!(item.data as PlanData).performed;
+  }
+
+  /**
+   * Done today or proposed. Ticking it is the doctor's decision, so the line becomes
+   * theirs (validated, edited) and a later re-reading of the conversation cannot undo it.
+   */
+  togglePerformed(key: string): void {
+    this.c.changeReview(state => {
+      const item = state.plan.find(p => p.key === key);
+      if (!item) return state;
+      const data = { ...item.data, performed: !item.data.performed };
+      return setItem(state, 'plan', key, { data: data as never, edited: true, status: 'validated' });
+    });
+  }
+
   priceBadge(item: ReviewItem<unknown>): string | null {
     const source = (item.data as PlanData).priceSource;
     if (source === 'CATALOG') return 'CONSULTATION.PRICE_CATALOG';
@@ -1006,7 +1076,7 @@ export class ConsultationPanelComponent {
         const p = item.data as PlanData;
         Object.assign(e, {
           text: p.label, teeth: p.teeth ?? '', price: p.price, quantity: p.quantity,
-          detail: p.notes ?? '', treatmentId: p.treatmentId ?? '',
+          detail: p.notes ?? '', treatmentId: p.treatmentId ?? '', performed: !!p.performed,
         });
         break;
       }
@@ -1044,6 +1114,7 @@ export class ConsultationPanelComponent {
             label: text, treatmentId: e.treatmentId || null, teeth: e.teeth.trim() || null, price,
             quantity: Math.max(1, Math.floor(Number(e.quantity) || 1)), notes: e.detail.trim() || null,
             priceSource: price !== null && catalogPrice !== null && price === Number(catalogPrice) ? 'CATALOG' : price !== null ? 'SPOKEN' : null,
+            performed: !!e.performed,
           };
         }
       }

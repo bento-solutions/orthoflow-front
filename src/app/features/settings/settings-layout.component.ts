@@ -18,6 +18,7 @@ const TABS: Tab[] = [
   { path: 'agenda', key: 'SET.TABS.AGENDA', permission: ['SETTINGS_MANAGE'] },
   { path: 'booking', key: 'SET.TABS.BOOKING', permission: ['SETTINGS_MANAGE'] },
   { path: 'help-notes', key: 'SET.TABS.HELP', permission: ['SETTINGS_MANAGE'] },
+  { path: 'insurers', key: 'SET.TABS.INSURERS', permission: ['SETTINGS_MANAGE'] },
 ];
 
 /** The frame around the settings pages: a heading and the tabs this person may open. */

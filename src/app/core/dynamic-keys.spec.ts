@@ -9,6 +9,8 @@ import { MESSAGE_CHANNELS, MESSAGE_PURPOSES, MESSAGE_STATUSES } from './services
 import { ASSIGNEE_ROLES, LAB_ITEM_TYPES, LAB_STATUSES, TASK_PRIORITIES } from './services/operations-api.service';
 import { RECALL_KINDS } from '../features/patients/patient-directory-api.service';
 import { APPOINTMENT_STATUSES } from './services/agenda-config.service';
+import { INSURANCE_FORM_STATUSES, MISSING_FIELDS } from './services/insurance-forms-api.service';
+import { PRESCRIPTION_CATEGORIES } from './services/prescriptions-api.service';
 
 /**
  * Templates build some keys at run time (`'REC.KINDS.' + kind`), which the static scan in
@@ -29,6 +31,12 @@ const has = (key: string): boolean => {
 };
 
 const FAMILIES: Record<string, readonly string[]> = {
+  'INSURANCE.STATUS': INSURANCE_FORM_STATUSES,
+  'INSURANCE.EMPTY': INSURANCE_FORM_STATUSES,
+  'INSURANCE.PURPOSE': ['EXECUTION', 'PRIOR_AGREEMENT'],
+  'INSURANCE.MISSING': MISSING_FIELDS,
+  'RX.CAT': PRESCRIPTION_CATEGORIES,
+  'TASK.OPEN_DOC': ['INSURANCE_FORM', 'PRESCRIPTION'],
   'REC.KINDS': RECALL_KINDS,
   'REC.KIND_HINTS': RECALL_KINDS,
   'REC.SORTS': ['last', 'remaining', 'name'],

@@ -148,12 +148,14 @@ export class SidebarComponent {
         { key: 'NAV.LAB_ORDERS', path: '/lab-orders', icon: 'flask', permission: ['LAB_ORDERS_MANAGE'] },
         { key: 'NAV.STERILIZATION', path: '/sterilization', icon: 'shield', permission: ['STERILIZATION_MANAGE'] },
         { key: 'NAV.TASKS', path: '/tasks', icon: 'clipboard', permission: ['TASKS_MANAGE'], badge: 'tasks' },
+        { key: 'NAV.PRESCRIPTION_TEMPLATES', path: '/prescription-templates', icon: 'file-text', permission: ['CLINICAL_WRITE'] },
       ],
     },
     {
       key: 'NAV.PRACTICE',
       items: [
         { key: 'COMMON.BILLING', path: '/billing', icon: 'receipt', permission: ['BILLING_READ'] },
+        { key: 'NAV.INSURANCE_FORMS', path: '/insurance-forms', icon: 'shield', permission: ['BILLING_READ'] },
         { key: 'NAV.FINANCE', path: '/finance', icon: 'wallet', permission: ['FINANCE_VIEW', 'BILLING_READ'] },
         { key: 'NAV.RETROCESSIONS', path: '/retrocessions', icon: 'percent', permission: ['RETROCESSION_VIEW'] },
         { key: 'COMMON.STOCK', path: '/stock', icon: 'box', permission: ['STOCK_READ'] },

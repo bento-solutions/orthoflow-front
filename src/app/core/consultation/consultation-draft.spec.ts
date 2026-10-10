@@ -388,11 +388,22 @@ describe('what is saved', () => {
     expect(request.allergies).toEqual([{ substance: 'pénicilline', reaction: null, severity: null }]);
     expect(request.medicalHistory).toEqual([{ category: 'CONDITION', label: 'Diabète', detail: 'depuis 10 ans' }]);
     expect(request.treatmentPlan).toEqual([{
-      label: 'Détartrage', treatmentId: 'T1', teeth: null, price: 300, quantity: 1, notes: null,
+      label: 'Détartrage', treatmentId: 'T1', teeth: null, price: 300, quantity: 1, notes: null, performed: false,
     }]);
     expect(request.chiefComplaint).toBe('Douleur sur la 16');
     expect(request.report).toBe('Compte rendu');
     expect(request.nextAppointment).toBeNull();
+  });
+
+  it('sends a plan line the doctor ticked as done today as performed, for the insurer form', () => {
+    const state = reviewed();
+    const key = state.plan[0].key;
+    const done = setItem(state, 'plan', key, { data: { ...state.plan[0].data, performed: true } as never, edited: true });
+
+    expect(toCommitRequest(done, record, TODAY, { report: null, appointment: null }).treatmentPlan[0].performed).toBe(true);
+    // A re-reading of the conversation does not undo the doctor's tick.
+    const merged = mergeDraft(done, draft());
+    expect(merged.plan.find(p => p.key === key)?.data.performed).toBe(true);
   });
 
   it('leaves out an item that was never validated', () => {

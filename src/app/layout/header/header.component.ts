@@ -32,6 +32,8 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
   ['/stock', 'COMMON.STOCK'],
   ['/treatments', 'COMMON.TREATMENTS'],
   ['/analytics', 'COMMON.ANALYTICS'],
+  ['/insurance-forms', 'NAV.INSURANCE_FORMS'],
+  ['/prescription-templates', 'NAV.PRESCRIPTION_TEMPLATES'],
   ['/settings', 'COMMON.SETTINGS'],
   ['/account', 'NAV.ACCOUNT'],
 ];

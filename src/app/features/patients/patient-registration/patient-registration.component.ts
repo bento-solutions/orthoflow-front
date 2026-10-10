@@ -8,6 +8,7 @@ import { Patient } from '../../../core/models/patient.model';
 import { TranslateModule } from '@ngx-translate/core';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
+import { Insurer, PatientDirectoryApi } from '../patient-directory-api.service';
 
 function notInFutureValidator(control: AbstractControl): ValidationErrors | null {
   if (!control.value) return null;
@@ -134,20 +135,38 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
               <h2 class="section-title">{{ 'PATIENTS.DOSSIER.INSURANCE' | translate }}</h2>
               <div class="inputs-grid">
                 <div class="form-group">
-                  <label for="insuranceProvider">{{ 'PATIENTS.DOSSIER.INSURANCE' | translate }}</label>
-                  <select id="insuranceProvider" formControlName="insuranceProvider">
+                  <label for="insurerId">{{ 'PATIENTS.DOSSIER.INSURANCE' | translate }}</label>
+                  <select id="insurerId" formControlName="insurerId">
                     <option value="">{{ 'PATIENTS.DOSSIER.INSURANCE_NONE' | translate }}</option>
-                    <option value="CNOPS">CNOPS</option>
-                    <option value="CNSS">CNSS</option>
-                    <option value="CNAM">CNAM</option>
-                    <option value="RAMED">RAMED</option>
-                    <option value="PRIVATE">{{ 'PATIENTS.DOSSIER.INSURANCE_PRIVATE' | translate }}</option>
+                    @for (i of insurers(); track i.id) { <option [value]="i.id">{{ i.name }}</option> }
                   </select>
                 </div>
                 <div class="form-group">
                   <label for="insuranceNumber">{{ 'PATIENTS.DOSSIER.POLICY_NUMBER' | translate }}</label>
-                  <input id="insuranceNumber" formControlName="insuranceNumber" type="text" />
+                  <input id="insuranceNumber" formControlName="insuranceNumber" type="text" maxlength="100" />
                 </div>
+                <div class="form-group">
+                  <label for="insuranceAffiliationNumber">{{ 'PATIENTS.DOSSIER.AFFILIATION_NUMBER' | translate }} ({{ 'COMMON.OPTIONAL' | translate }})</label>
+                  <input id="insuranceAffiliationNumber" formControlName="insuranceAffiliationNumber" type="text" maxlength="50" />
+                </div>
+                <div class="form-group">
+                  <label for="insuredRelation">{{ 'PATIENTS.DOSSIER.INSURED_RELATION' | translate }}</label>
+                  <select id="insuredRelation" formControlName="insuredRelation">
+                    <option value="SELF">{{ 'PATIENTS.DOSSIER.RELATION_SELF' | translate }}</option>
+                    <option value="CHILD">{{ 'PATIENTS.DOSSIER.RELATION_CHILD' | translate }}</option>
+                    <option value="SPOUSE">{{ 'PATIENTS.DOSSIER.RELATION_SPOUSE' | translate }}</option>
+                  </select>
+                </div>
+                @if (patientForm.controls.insuredRelation.value !== 'SELF') {
+                  <div class="form-group">
+                    <label for="insuredName">{{ 'PATIENTS.DOSSIER.INSURED_NAME' | translate }}</label>
+                    <input id="insuredName" formControlName="insuredName" type="text" maxlength="255" />
+                  </div>
+                  <div class="form-group">
+                    <label for="insuredCin">{{ 'PATIENTS.DOSSIER.INSURED_CIN' | translate }}</label>
+                    <input id="insuredCin" formControlName="insuredCin" type="text" maxlength="50" />
+                  </div>
+                }
               </div>
             </div>
 
@@ -421,12 +440,25 @@ export class PatientRegistrationComponent implements OnInit {
     guardianName: [''],
     guardianPhone: [''],
     insuranceProvider: [''],
+    insurerId: [''],
     insuranceNumber: [''],
+    insuranceAffiliationNumber: [''],
+    insuredRelation: ['SELF'],
+    insuredName: [''],
+    insuredCin: [''],
     status: ['ACTIVE'],
     consentGiven: [false]
   });
 
+  /** The clinic's insurers: picking one (not typing a name) is what lets its own care form be filled. */
+  insurers = signal<Insurer[]>([]);
+  private readonly directory = inject(PatientDirectoryApi);
+
   ngOnInit() {
+    this.directory.insurers().then(list => {
+      this.insurers.set(list);
+      this.matchTypedInsurer();
+    }).catch(() => undefined);
     this.patientId = this.route.snapshot.paramMap.get('id');
     if (this.patientId && this.patientId !== 'register') {
       this.editMode = true;
@@ -436,9 +468,25 @@ export class PatientRegistrationComponent implements OnInit {
 
   loadPatientData(id: string) {
     this.patientService.setCurrentPatient(id).subscribe({
-      next: (patient) => this.patientForm.patchValue(patient as any),
+      next: (patient) => {
+        const p = patient as any;
+        this.patientForm.patchValue({ ...p, insurerId: p.insurerId ?? '', insuredRelation: p.insuredRelation ?? 'SELF' });
+        this.matchTypedInsurer();
+      },
       error: (err) => console.error('Failed to load patient for editing', err)
     });
+  }
+
+  /**
+   * A patient saved before insurers were a list carries the insurer as text ("CNOPS"):
+   * select the clinic's insurer of that code or name, so saving links it.
+   */
+  private matchTypedInsurer(): void {
+    const controls = this.patientForm.controls;
+    const typed = (controls.insuranceProvider.value ?? '').trim().toLowerCase();
+    if (controls.insurerId.value || !typed) return;
+    const match = this.insurers().find(i => i.code.toLowerCase() === typed || i.name.toLowerCase() === typed);
+    if (match) controls.insurerId.setValue(match.id);
   }
 
   isInvalid(controlName: keyof typeof this.patientForm.controls): boolean {
@@ -468,6 +516,19 @@ export class PatientRegistrationComponent implements OnInit {
     const patientData = { ...this.patientForm.value } as any;
     const consentGiven = !!patientData.consentGiven;
     delete patientData.consentGiven;
+    // The insurer is the clinic's record; its name stays in the text field the older screens read.
+    // Until the list has loaded the choice is unknown, so the record's insurer is left as it is.
+    if (this.insurers().length) {
+      const insurer = this.insurers().find(i => i.id === patientData.insurerId);
+      patientData.insurerId = insurer?.id ?? null;
+      patientData.insuranceProvider = insurer?.name ?? '';
+    } else {
+      delete patientData.insurerId;
+    }
+    if (patientData.insuredRelation === 'SELF') {
+      patientData.insuredName = '';
+      patientData.insuredCin = '';
+    }
 
     if (!this.editMode) {
       const duplicate = this.findPossibleDuplicate(patientData.firstName, patientData.lastName, patientData.dateOfBirth);

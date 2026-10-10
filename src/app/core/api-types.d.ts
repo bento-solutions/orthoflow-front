@@ -388,6 +388,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/prescriptions/templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateTemplate"];
+        post?: never;
+        delete: operations["deleteTemplate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/practitioners/{id}": {
         parameters: {
             query?: never;
@@ -491,7 +507,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["templates"];
+        get: operations["templates_1"];
         put: operations["upsertTemplate"];
         post?: never;
         delete?: never;
@@ -587,7 +603,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_5"];
+        get: operations["get_6"];
         put: operations["update_9"];
         post?: never;
         delete?: never;
@@ -1892,7 +1908,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/practitioners": {
+    "/prescriptions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1900,6 +1916,102 @@ export interface paths {
             cookie?: never;
         };
         get: operations["list_2"];
+        put?: never;
+        post: operations["issue_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/{id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["voidPrescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["templates"];
+        put?: never;
+        post: operations["createTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/templates/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["review"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/library/{code}/adopt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adopt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["check"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/practitioners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_3"];
         put?: never;
         post: operations["create_9"];
         delete?: never;
@@ -2315,7 +2427,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         post: operations["create_11"];
         delete?: never;
@@ -2366,6 +2478,102 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["recordPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/insurance-forms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_7"];
+        put?: never;
+        post: operations["create_12"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/insurance-forms/{id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["voidForm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/insurance-forms/{id}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/insurance-forms/{id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/insurance-forms/{id}/printed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["printed"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/insurance-forms/{id}/handed-over": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["handedOver"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2475,9 +2683,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_8"];
         put?: never;
-        post: operations["create_12"];
+        post: operations["create_13"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2571,7 +2779,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_9"];
         put?: never;
         post: operations["upload"];
         delete?: never;
@@ -2635,7 +2843,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_10"];
         put?: never;
         post: operations["start_1"];
         delete?: never;
@@ -2733,7 +2941,7 @@ export interface paths {
         };
         get: operations["search_1"];
         put?: never;
-        post: operations["create_13"];
+        post: operations["create_14"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2861,7 +3069,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["refresh"];
+        post: operations["refresh_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3796,6 +4004,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/prescriptions/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["file_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/library": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["library"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/practitioners/unmatched-names": {
         parameters: {
             query?: never;
@@ -3979,7 +4219,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4027,7 +4267,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4188,6 +4428,70 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getBillingSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/insurance-forms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_5"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/insurance-forms/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["file_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/insurance-forms/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["preview_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/insurance-forms/layouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["layouts"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4427,7 +4731,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_6"];
+        get: operations["get_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4491,7 +4795,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4830,6 +5134,10 @@ export interface components {
             /** Format: date-time */
             doneAt?: string;
             overdue?: boolean;
+            /** @enum {string} */
+            documentKind?: "INSURANCE_FORM" | "PRESCRIPTION";
+            /** Format: uuid */
+            documentId?: string;
         };
         IdReference: {
             /** Format: uuid */
@@ -5447,6 +5755,7 @@ export interface components {
             name: string;
             kind?: string;
             active?: boolean;
+            formCode?: string;
         };
         InsurerResponse: {
             /** Format: uuid */
@@ -5454,6 +5763,36 @@ export interface components {
             code?: string;
             name?: string;
             kind?: string;
+            active?: boolean;
+            formCode?: string;
+        };
+        PrescriptionLine: {
+            drug: string;
+            form?: string;
+            dci?: string;
+            posology: string;
+        };
+        PrescriptionTemplateRequest: {
+            name: string;
+            /** @enum {string} */
+            category?: "DENTAL" | "MUCOSA" | "PAIN" | "ORTHO" | "OTHER";
+            lines: components["schemas"]["PrescriptionLine"][];
+            advice?: string;
+            active?: boolean;
+        };
+        PrescriptionTemplateView: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            /** @enum {string} */
+            category?: "DENTAL" | "MUCOSA" | "PAIN" | "ORTHO" | "OTHER";
+            lines?: components["schemas"]["PrescriptionLine"][];
+            advice?: string;
+            libraryCode?: string;
+            reviewed?: boolean;
+            /** Format: date-time */
+            reviewedAt?: string;
+            reviewedByName?: string;
             active?: boolean;
         };
         PractitionerRequest: {
@@ -5582,6 +5921,10 @@ export interface components {
             preferredLanguage?: string;
             /** Format: uuid */
             insurerId?: string;
+            insuranceAffiliationNumber?: string;
+            insuredRelation?: string;
+            insuredName?: string;
+            insuredCin?: string;
             /** Format: uuid */
             primaryPractitionerId?: string;
             /** Format: uuid */
@@ -5618,6 +5961,10 @@ export interface components {
             guardianPhone?: string;
             insuranceProvider?: string;
             insuranceNumber?: string;
+            insuranceAffiliationNumber?: string;
+            insuredRelation?: string;
+            insuredName?: string;
+            insuredCin?: string;
             status?: string;
             /** Format: date-time */
             consentGivenAt?: string;
@@ -6695,6 +7042,51 @@ export interface components {
         Received: {
             reference?: string;
         };
+        PrescriptionRequest: {
+            /** Format: uuid */
+            patientId: string;
+            /** Format: uuid */
+            practitionerId?: string;
+            /** Format: uuid */
+            consultationId?: string;
+            /** Format: uuid */
+            templateId?: string;
+            lines: components["schemas"]["PrescriptionLine"][];
+            advice?: string;
+            acknowledgeWarnings?: boolean;
+        };
+        PrescriptionAllergyWarning: {
+            drug?: string;
+            allergy?: string;
+            reason?: string;
+        };
+        PrescriptionView: {
+            /** Format: uuid */
+            id?: string;
+            number?: string;
+            /** Format: uuid */
+            patientId?: string;
+            patientName?: string;
+            /** Format: uuid */
+            practitionerId?: string;
+            practitionerName?: string;
+            /** Format: uuid */
+            consultationId?: string;
+            /** Format: uuid */
+            templateId?: string;
+            lines?: components["schemas"]["PrescriptionLine"][];
+            advice?: string;
+            warnings?: components["schemas"]["PrescriptionAllergyWarning"][];
+            /** @enum {string} */
+            status?: "ISSUED" | "VOID";
+            /** Format: date-time */
+            issuedAt?: string;
+        };
+        PrescriptionCheckRequest: {
+            /** Format: uuid */
+            patientId: string;
+            lines: components["schemas"]["PrescriptionLine"][];
+        };
         ResolveUnmatched: {
             doctorName: string;
             /** Format: uuid */
@@ -6757,6 +7149,10 @@ export interface components {
             preferredLanguage?: string;
             /** Format: uuid */
             insurerId?: string;
+            insuranceAffiliationNumber?: string;
+            insuredRelation?: string;
+            insuredName?: string;
+            insuredCin?: string;
             /** Format: uuid */
             primaryPractitionerId?: string;
             /** Format: uuid */
@@ -6878,6 +7274,10 @@ export interface components {
             insurerId?: string;
             insuranceProvider?: string;
             insuranceNumber?: string;
+            insuranceAffiliationNumber?: string;
+            insuredRelation?: string;
+            insuredName?: string;
+            insuredCin?: string;
             status?: string;
             /** Format: date-time */
             createdAt?: string;
@@ -7059,6 +7459,84 @@ export interface components {
             reference?: string;
             notes?: string;
         };
+        InsuranceFormLineRequest: {
+            /** Format: date */
+            date?: string;
+            teeth?: string;
+            /** Format: uuid */
+            treatmentId?: string;
+            code?: string;
+            label?: string;
+            cotation?: string;
+            amount?: number;
+        };
+        InsuranceFormRequest: {
+            /** Format: uuid */
+            patientId: string;
+            /** @enum {string} */
+            purpose: "EXECUTION" | "PRIOR_AGREEMENT";
+            /** Format: date */
+            careDate?: string;
+            /** Format: uuid */
+            practitionerId?: string;
+            lines: components["schemas"]["InsuranceFormLineRequest"][];
+            agreementNumber?: string;
+            notes?: string;
+            send?: boolean;
+            /** Format: uuid */
+            assigneeId?: string;
+        };
+        InsuranceFormLine: {
+            /** Format: date */
+            date?: string;
+            teeth?: string;
+            code?: string;
+            label?: string;
+            cotation?: string;
+            amount?: number;
+        };
+        InsuranceFormView: {
+            /** Format: uuid */
+            id?: string;
+            number?: string;
+            /** Format: uuid */
+            patientId?: string;
+            patientName?: string;
+            /** Format: uuid */
+            insurerId?: string;
+            insurerName?: string;
+            formCode?: string;
+            formName?: string;
+            official?: boolean;
+            singleUse?: boolean;
+            /** @enum {string} */
+            purpose?: "EXECUTION" | "PRIOR_AGREEMENT";
+            /** @enum {string} */
+            source?: "CONSULTATION" | "MANUAL";
+            /** Format: uuid */
+            consultationId?: string;
+            /** Format: date */
+            careDate?: string;
+            lines?: components["schemas"]["InsuranceFormLine"][];
+            total?: number;
+            /** @enum {string} */
+            status?: "TO_PRINT" | "PRINTED" | "HANDED_OVER" | "VOID";
+            /** Format: uuid */
+            taskId?: string;
+            /** Format: date-time */
+            printedAt?: string;
+            /** Format: date-time */
+            handedOverAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            notes?: string;
+            missing?: string[];
+        };
+        InsuranceFormSendRequest: {
+            /** Format: uuid */
+            assigneeId?: string;
+            message?: string;
+        };
         AskRequest: {
             question: string;
             lang?: string;
@@ -7136,7 +7614,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             /** @enum {string} */
-            ownerType?: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT";
+            ownerType?: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "INSURANCE_FORM" | "PRESCRIPTION";
             /** Format: uuid */
             ownerId?: string;
             name?: string;
@@ -7347,6 +7825,7 @@ export interface components {
             /** Format: int32 */
             quantity?: number;
             notes?: string;
+            performed?: boolean;
         };
         CommitConsultationResponse: {
             consultation?: components["schemas"]["ConsultationResponse"];
@@ -7362,6 +7841,21 @@ export interface components {
             failed?: components["schemas"]["FailedCommand"][];
             /** Format: uuid */
             appointmentId?: string;
+            insuranceForms?: components["schemas"]["InsuranceFormIssued"][];
+            insuranceFormError?: string;
+        };
+        InsuranceFormIssued: {
+            /** Format: uuid */
+            id?: string;
+            number?: string;
+            insurerName?: string;
+            formName?: string;
+            /** @enum {string} */
+            purpose?: "EXECUTION" | "PRIOR_AGREEMENT";
+            /** Format: int32 */
+            lines?: number;
+            total?: number;
+            sent?: boolean;
         };
         ChequeCreate: {
             number: string;
@@ -7551,15 +8045,15 @@ export interface components {
             sort?: string[];
         };
         PageStockMovementResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StockMovementResponse"][];
@@ -7863,6 +8357,17 @@ export interface components {
                 [key: string]: string[];
             };
         };
+        PrescriptionLibraryEntry: {
+            code?: string;
+            name?: string;
+            category?: string;
+            lines?: components["schemas"]["PrescriptionLine"][];
+            advice?: string;
+            warningSigns?: string;
+            alternative?: string;
+            sourceUrl?: string;
+            adopted?: boolean;
+        };
         Unmatched: {
             doctorName?: string;
             /** Format: int32 */
@@ -7886,15 +8391,15 @@ export interface components {
             daysOverdue?: number;
         };
         PagePatientResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientResponse"][];
@@ -8215,15 +8720,15 @@ export interface components {
             balance?: number;
         };
         PagePatientDirectoryRow: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientDirectoryRow"][];
@@ -8322,15 +8827,15 @@ export interface components {
             unhandledReplies?: number;
         };
         PageLogRow: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LogRow"][];
@@ -8383,15 +8888,15 @@ export interface components {
             email?: string;
         };
         PageInvoiceResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["InvoiceResponse"][];
@@ -8413,6 +8918,25 @@ export interface components {
             byStatus?: {
                 [key: string]: number;
             };
+        };
+        InsuranceFormPreview: {
+            /** Format: uuid */
+            insurerId?: string;
+            insurerName?: string;
+            formCode?: string;
+            formName?: string;
+            official?: boolean;
+            singleUse?: boolean;
+            missing?: string[];
+        };
+        InsuranceFormLayoutView: {
+            code?: string;
+            name?: string;
+            insurerCodes?: string[];
+            official?: boolean;
+            singleUse?: boolean;
+            source?: string;
+            note?: string;
         };
         AgendaKpis: {
             /** Format: int32 */
@@ -9816,6 +10340,52 @@ export interface operations {
             };
         };
     };
+    updateTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrescriptionTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PrescriptionTemplateView"];
+                };
+            };
+        };
+    };
+    deleteTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     update_7: {
         parameters: {
             query?: never;
@@ -10080,7 +10650,7 @@ export interface operations {
             };
         };
     };
-    templates: {
+    templates_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -10344,7 +10914,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -10773,7 +11343,7 @@ export interface operations {
                 };
                 content: {
                     "*/*": {
-                        [key: string]: string[];
+                        [key: string]: components["schemas"]["JsonNode"][];
                     };
                 };
             };
@@ -13176,6 +13746,188 @@ export interface operations {
     };
     list_2: {
         parameters: {
+            query: {
+                patientId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PrescriptionView"][];
+                };
+            };
+        };
+    };
+    issue_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrescriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PrescriptionView"];
+                };
+            };
+        };
+    };
+    voidPrescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PrescriptionView"];
+                };
+            };
+        };
+    };
+    templates: {
+        parameters: {
+            query?: {
+                includeInactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PrescriptionTemplateView"][];
+                };
+            };
+        };
+    };
+    createTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrescriptionTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PrescriptionTemplateView"];
+                };
+            };
+        };
+    };
+    review: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PrescriptionTemplateView"];
+                };
+            };
+        };
+    };
+    adopt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PrescriptionTemplateView"];
+                };
+            };
+        };
+    };
+    check: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrescriptionCheckRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PrescriptionAllergyWarning"][];
+                };
+            };
+        };
+    };
+    list_3: {
+        parameters: {
             query?: {
                 includeInactive?: boolean;
             };
@@ -14004,7 +14756,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: {
                 status?: ("SENT" | "IN_PROGRESS" | "RECEIVED" | "FITTED" | "REMAKE")[];
@@ -14156,6 +14908,167 @@ export interface operations {
             };
         };
     };
+    list_7: {
+        parameters: {
+            query?: {
+                patientId?: string;
+                status?: "TO_PRINT" | "PRINTED" | "HANDED_OVER" | "VOID";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InsuranceFormView"][];
+                };
+            };
+        };
+    };
+    create_12: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InsuranceFormRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InsuranceFormView"];
+                };
+            };
+        };
+    };
+    voidForm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InsuranceFormView"];
+                };
+            };
+        };
+    };
+    send: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InsuranceFormSendRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InsuranceFormView"];
+                };
+            };
+        };
+    };
+    refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InsuranceFormView"];
+                };
+            };
+        };
+    };
+    printed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InsuranceFormView"];
+                };
+            };
+        };
+    };
+    handedOver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InsuranceFormView"];
+                };
+            };
+        };
+    };
     ask: {
         parameters: {
             query?: never;
@@ -14300,7 +15213,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_8: {
         parameters: {
             query: {
                 from: string;
@@ -14326,7 +15239,7 @@ export interface operations {
             };
         };
     };
-    create_12: {
+    create_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -14497,10 +15410,10 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_9: {
         parameters: {
             query: {
-                ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT";
+                ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "INSURANCE_FORM" | "PRESCRIPTION";
                 ownerId: string;
             };
             header?: never;
@@ -14523,7 +15436,7 @@ export interface operations {
     upload: {
         parameters: {
             query: {
-                ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT";
+                ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "INSURANCE_FORM" | "PRESCRIPTION";
                 ownerId?: string;
             };
             header?: never;
@@ -14646,7 +15559,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_10: {
         parameters: {
             query: {
                 patientId: string;
@@ -14839,7 +15752,7 @@ export interface operations {
             };
         };
     };
-    create_13: {
+    create_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -15025,7 +15938,7 @@ export interface operations {
             };
         };
     };
-    refresh: {
+    refresh_1: {
         parameters: {
             query?: never;
             header: {
@@ -16477,6 +17390,48 @@ export interface operations {
             };
         };
     };
+    file_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    library: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PrescriptionLibraryEntry"][];
+                };
+            };
+        };
+    };
     unmatched: {
         parameters: {
             query?: never;
@@ -16719,7 +17674,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: {
                 search?: string;
@@ -16792,7 +17747,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: {
                 limit?: number;
@@ -17030,6 +17985,95 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BillingSummaryResponse"];
+                };
+            };
+        };
+    };
+    get_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InsuranceFormView"];
+                };
+            };
+        };
+    };
+    file_2: {
+        parameters: {
+            query?: {
+                overlay?: boolean;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    preview_1: {
+        parameters: {
+            query: {
+                patientId: string;
+                practitionerId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InsuranceFormPreview"];
+                };
+            };
+        };
+    };
+    layouts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InsuranceFormLayoutView"][];
                 };
             };
         };
@@ -17375,7 +18419,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -17461,7 +18505,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_11: {
         parameters: {
             query?: {
                 status?: string;

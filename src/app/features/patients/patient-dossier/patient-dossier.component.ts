@@ -31,11 +31,12 @@ import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clini
 import { PermissionService } from '../../../core/services/permission.service';
 import { PatientAccountComponent } from '../account/patient-account.component';
 import { RegistrationInviteComponent } from '../registration-invite.component';
+import { PatientDocumentsComponent } from '../documents/patient-documents.component';
 
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, PatientAccountComponent, RegistrationInviteComponent],
+  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent],
   template: `
     <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive()" [class.has-consultation]="consultation.visible()">
       @if (patientService.currentPatient(); as patient) {
@@ -747,6 +748,11 @@ import { RegistrationInviteComponent } from '../registration-invite.component';
           @case ('financial') {
             <div class="tab-pane" role="tabpanel" id="dossier-panel-financial" aria-labelledby="dossier-tab-financial" tabindex="0">
               <app-patient-account [patientId]="patient.id" />
+            </div>
+          }
+          @case ('documents') {
+            <div class="tab-pane" role="tabpanel" id="dossier-panel-documents" aria-labelledby="dossier-tab-documents" tabindex="0">
+              <app-patient-documents [patientId]="patient.id" [patientName]="patient.firstName + ' ' + patient.lastName" />
             </div>
           }
         }
@@ -1938,13 +1944,18 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     { id: 'overview', key: 'COMMON.OVERVIEW', icon: 'dashboard' },
     { id: 'clinical', key: 'PATIENTS.DOSSIER.CLINICAL', icon: 'healing' },
     { id: 'financial', key: 'PATIENTS.DOSSIER.FINANCIAL', icon: 'payments' },
+    { id: 'documents', key: 'PATIENTS.DOSSIER.DOCUMENTS', icon: 'description' },
   ];
 
   /** The voice tab exists while a session does, or while one is being started. */
   private readonly permissions = inject(PermissionService);
 
   /** The money tab is for those who may see billing: a clinical assistant never sees what a patient owes. */
-  private readonly visibleTabs = computed(() => this.tabs.filter(t => t.id !== 'financial' || this.permissions.can('BILLING_READ')));
+  private readonly visibleTabs = computed(() => this.tabs.filter(t =>
+    t.id === 'financial' ? this.permissions.can('BILLING_READ')
+      // Insurance forms are the front desk's, ordonnances the clinical team's: either is enough to open the tab.
+      : t.id === 'documents' ? this.permissions.can('BILLING_READ') || this.permissions.can('CLINICAL_READ')
+        : true));
 
   navTabs = computed(() =>
     this.voiceSession.isActive() || this.voiceSession.reviewing() || this.activeTab() === 'voice'

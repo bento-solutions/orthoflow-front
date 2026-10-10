@@ -205,7 +205,15 @@
       "CONSENT_TEXT": "Le patient (ou son tuteur légal, pour un mineur) a consenti à ce que ses données de santé soient collectées et traitées dans le cadre des soins orthodontiques.",
       "CONSENT_HINT": "Requis pour se conformer à la loi sur la protection des données. Si non coché, vous pourrez enregistrer le consentement plus tard depuis le dossier du patient.",
       "NO_APPOINTMENTS": "Aucun rendez-vous enregistré pour ce patient.",
-      "TITLE": "Dossier patient"
+      "TITLE": "Dossier patient",
+      "DOCUMENTS": "Documents",
+      "AFFILIATION_NUMBER": "N° d'affiliation",
+      "INSURED_RELATION": "Lien avec l'assuré(e)",
+      "RELATION_SELF": "Le patient est l'assuré(e)",
+      "RELATION_CHILD": "Enfant de l'assuré(e)",
+      "RELATION_SPOUSE": "Conjoint(e) de l'assuré(e)",
+      "INSURED_NAME": "Nom et prénom de l'assuré(e)",
+      "INSURED_CIN": "CIN de l'assuré(e)"
     },
     "ADD": "Nouveau patient",
     "SEARCH_PLACEHOLDER": "Rechercher par nom, téléphone ou e-mail…",
@@ -796,7 +804,9 @@
     "MESSAGES": "Messages internes",
     "BOOKING": "Demandes en ligne",
     "SURVEYS": "Satisfaction",
-    "ACCOUNT": "Mon compte"
+    "ACCOUNT": "Mon compte",
+    "INSURANCE_FORMS": "Feuilles de soins",
+    "PRESCRIPTION_TEMPLATES": "Ordonnances types"
   },
   "STATUS": {
     "ACTIVE": "Actif",
@@ -1106,7 +1116,11 @@
     "DISCARD_TITLE": "Annuler la consultation ?",
     "DISCARD_CONFIRM": "L’enregistrement et tout ce qui en a été relevé seront effacés. Rien ne sera ajouté au dossier.",
     "DISCARD_LABEL": "Annuler la consultation",
-    "KEEP_LABEL": "Continuer"
+    "KEEP_LABEL": "Continuer",
+    "PLAN_DONE": "Fait aujourd'hui",
+    "PLAN_DONE_HINT": "Acte réalisé pendant cette séance : il figure sur la feuille de soins comme exécuté",
+    "FORM_SENT": "{{purpose}} envoyée à l'accueil : {{form}} (n° {{number}})",
+    "FORM_ERROR": "La consultation est enregistrée, mais la feuille de soins n'a pas pu être préparée. L'accueil peut la faire depuis le dossier (onglet Documents)."
   },
   "SET": {
     "TABS": {
@@ -1116,7 +1130,8 @@
       "USERS": "Utilisateurs et droits",
       "BOOKING": "Réservation en ligne",
       "HELP": "Textes d'aide",
-      "AGENDA": "Agenda"
+      "AGENDA": "Agenda",
+      "INSURERS": "Assurances"
     },
     "TEAM": {
       "TITLE": "Équipe soignante",
@@ -1346,6 +1361,23 @@
       "COLORS_HINT": "Le statut est toujours écrit en toutes lettres à côté de la couleur : celle-ci aide, elle ne porte pas seule le sens.",
       "RESET": "Défaut",
       "COLORS_SAVED": "Couleurs enregistrées."
+    },
+    "INSURERS": {
+      "TITLE": "Organismes d'assurance",
+      "HINT": "Les assurances et mutuelles de vos patients, et la feuille de soins que chacune demande.",
+      "ADD": "Ajouter un organisme",
+      "EDIT": "Modifier l'organisme",
+      "INACTIVE": "Inactif",
+      "CODE": "Code",
+      "NAME": "Nom",
+      "KIND": "Type",
+      "PUBLIC": "Régime obligatoire / public",
+      "PRIVATE": "Assureur privé / complémentaire",
+      "FORM": "Feuille de soins à remplir",
+      "FORM_DEFAULT": "Automatique : {{form}}",
+      "FORM_GENERIC": "Relevé des actes (OrthoFlow)",
+      "FORM_HINT": "Si OrthoFlow ne connaît pas la feuille de l'organisme, il imprime un relevé des actes à joindre à la feuille du patient.",
+      "ACTIVE": "Proposé dans la fiche patient"
     }
   },
   "FD": {
@@ -1991,7 +2023,11 @@
     "DUE": "Pour le",
     "PRIORITY": "Priorité",
     "PATIENT": "Patient concerné",
-    "DELETE_CONFIRM": "Supprimer la tâche « {{title}} » ?"
+    "DELETE_CONFIRM": "Supprimer la tâche « {{title}} » ?",
+    "OPEN_DOC": {
+      "INSURANCE_FORM": "Ouvrir la feuille de soins",
+      "PRESCRIPTION": "Ouvrir l'ordonnance"
+    }
   },
   "MSG": {
     "TITLE": "Messages internes",
@@ -2826,5 +2862,137 @@
     "HELP": "Ouvrir l'aide",
     "THEME": "Basculer clair / sombre",
     "TAX_SIMULATION": "Simulateur d'impôt sur le revenu"
+  },
+  "INSURANCE": {
+    "TITLE": "Feuilles de soins (assurance)",
+    "GENERIC": "Relevé OrthoFlow",
+    "SINGLE_USE": "Formulaire numéroté",
+    "NEW": "Nouvelle feuille de soins",
+    "MISSING_TITLE": "À compléter :",
+    "COMPLETE_RECORD": "Compléter le dossier",
+    "NONE_YET": "Aucune feuille de soins pour ce patient. Elles sont préparées à l'enregistrement d'une consultation, ou à la main ici.",
+    "NO_INSURER": "Sans organisme",
+    "ACTS": "{{count}} acte(s)",
+    "OPEN": "Ouvrir / imprimer",
+    "OVERLAY": "Calque",
+    "OVERLAY_HINT": "Le texte seul, à imprimer sur la feuille papier apportée par le patient",
+    "SEND": "Envoyer à l'accueil",
+    "REFRESH": "Actualiser",
+    "REFRESH_HINT": "Relire le dossier du patient (n° complété, assurance changée) et refaire la feuille",
+    "MARK_PRINTED": "Imprimée",
+    "MARK_HANDED": "Remise au patient",
+    "VOID": "Annuler",
+    "VOID_TITLE": "Annuler la feuille de soins",
+    "VOID_CONFIRM": "Annuler la feuille {{number}} ? Elle reste dans l'historique, marquée annulée.",
+    "SENT": "Envoyée à l'accueil.",
+    "PURPOSE_LABEL": "Objet",
+    "CARE_DATE": "Date des soins",
+    "ACT_N": "Acte {{n}}",
+    "FROM_CATALOG": "Choisir dans le catalogue (code NGAP repris)",
+    "CODE": "Code",
+    "LABEL": "Acte",
+    "TEETH": "Dents",
+    "AMOUNT": "Montant",
+    "REMOVE_ACT": "Retirer l'acte",
+    "ADD_ACT": "Ajouter un acte",
+    "SEND_ON_CREATE": "L'envoyer à l'accueil pour impression",
+    "CREATE": "Préparer la feuille",
+    "CREATED": "Feuille {{number}} préparée.",
+    "CREATED_SENT": "Feuille {{number}} préparée et envoyée à l'accueil.",
+    "PAGE_TITLE": "Feuilles de soins",
+    "PAGE_SUB": "Les feuilles d'assurance préparées en fin de séance : à imprimer, faire cacheter par le praticien et remettre au patient.",
+    "STATUS_FILTER": "Statut",
+    "MISSING": {
+      "INSURER": "Organisme d'assurance",
+      "INSURANCE_NUMBER": "N° d'immatriculation",
+      "AFFILIATION_NUMBER": "N° d'affiliation",
+      "INSURED_NAME": "Nom de l'assuré(e)",
+      "INSURED_CIN": "CIN de l'assuré(e)",
+      "DATE_OF_BIRTH": "Date de naissance",
+      "GENDER": "Sexe",
+      "PRACTITIONER_INPE": "INPE du praticien",
+      "ACT_CODES": "Code NGAP des actes"
+    },
+    "STATUS": {
+      "TO_PRINT": "À imprimer",
+      "PRINTED": "Imprimée",
+      "HANDED_OVER": "Remise au patient",
+      "VOID": "Annulée"
+    },
+    "EMPTY": {
+      "TO_PRINT": "Aucune feuille de soins à imprimer.",
+      "PRINTED": "Aucune feuille imprimée en attente de remise.",
+      "HANDED_OVER": "Aucune feuille remise pour le moment.",
+      "VOID": "Aucune feuille annulée."
+    },
+    "PURPOSE": {
+      "EXECUTION": "Feuille de soins",
+      "PRIOR_AGREEMENT": "Entente préalable"
+    }
+  },
+  "RX": {
+    "TITLE": "Ordonnances",
+    "NEW": "Rédiger une ordonnance",
+    "NEW_TITLE": "Ordonnance — {{name}}",
+    "EMPTY": "Aucune ordonnance pour ce patient.",
+    "START_FROM": "Partir de",
+    "BLANK": "Une ordonnance vierge",
+    "CLINIC_TEMPLATES": "Modèles du cabinet",
+    "TO_REVIEW": "à relire",
+    "LIBRARY": "Bibliothèque de référence (ordonnance.ma)",
+    "LIBRARY_NOTE": "Ordonnance de référence publiée par ordonnance.ma (contenu éducatif) : relisez chaque médicament et chaque posologie avant de prescrire.",
+    "ALTERNATIVE": "Alternative :",
+    "WARNING_SIGNS": "Signes de gravité :",
+    "SOURCE": "Source",
+    "TEMPLATE_TO_REVIEW": "Ce modèle vient de la bibliothèque et n'a pas encore été validé par un praticien du cabinet.",
+    "DRUG_N": "Médicament {{n}}",
+    "DRUG": "Médicament (nom commercial, dosage)",
+    "FORM": "Forme",
+    "DCI": "DCI (substance active)",
+    "POSOLOGY": "Posologie et durée",
+    "REMOVE_DRUG": "Retirer",
+    "ADD_DRUG": "Ajouter un médicament",
+    "ADVICE": "Conseils au patient",
+    "ALLERGY_TITLE": "Attention : allergie notée au dossier",
+    "ALLERGY_LINE": "{{drug}} — allergie « {{allergy}} » ({{reason}})",
+    "ALLERGY_ACK": "J'en ai pris connaissance et je maintiens cette prescription.",
+    "ALLERGY_NONE": "Aucune allergie notée au dossier ne correspond à ces médicaments. La vérification ne connaît que certaines familles : elle ne remplace pas votre lecture du dossier.",
+    "INCOMPLETE": "{{count}} médicament(s) sans nom ou sans posologie.",
+    "ISSUE": "Émettre et imprimer",
+    "ISSUING": "Émission…",
+    "ISSUED": "Ordonnance {{number}} émise.",
+    "VOID": "Annulée",
+    "ALLERGY_OVERRIDDEN": "Alerte allergie passée",
+    "OPEN": "Ouvrir",
+    "VOID_ACTION": "Annuler",
+    "VOID_TITLE": "Annuler l'ordonnance",
+    "VOID_CONFIRM": "Annuler l'ordonnance {{number}} ? Elle reste dans l'historique, marquée annulée.",
+    "TEMPLATES_TITLE": "Ordonnances types",
+    "TEMPLATES_SUB": "Les modèles d'ordonnance du cabinet, et la bibliothèque de référence d'où les adopter.",
+    "NEW_TEMPLATE": "Nouveau modèle",
+    "EDIT_TEMPLATE": "Modifier le modèle",
+    "NO_TEMPLATES": "Aucun modèle pour l'instant. Adoptez-en un depuis la bibliothèque ou créez le vôtre (les ordonnances d'orthodontie n'y figurent pas).",
+    "INACTIVE": "Inactif",
+    "REVIEWED_BY": "Validé par {{name}} le {{date}}",
+    "VALIDATE": "Valider",
+    "VALIDATE_CONFIRM": "Vous avez relu « {{name}} » et vous le validez pour le cabinet ?",
+    "DELETE_CONFIRM": "Supprimer le modèle « {{name}} » ? Les ordonnances déjà émises ne changent pas.",
+    "LIBRARY_EXPLAINED": "Contenu éducatif d'ordonnance.ma, à valider cliniquement : un modèle adopté reste « à relire » jusqu'à ce qu'un praticien du cabinet le valide.",
+    "HIDE": "Masquer",
+    "DETAILS": "Détails",
+    "ADOPTED": "Adopté",
+    "ADOPT": "Adopter",
+    "ADOPTED_TOAST": "« {{name}} » ajouté aux modèles du cabinet, à relire.",
+    "TEMPLATE_NAME": "Nom du modèle",
+    "CATEGORY": "Catégorie",
+    "ACTIVE": "Proposé à la rédaction des ordonnances",
+    "SAVE_REVIEWS": "Enregistrer vaut validation par vous.",
+    "CAT": {
+      "DENTAL": "Dentaire",
+      "ORTHO": "Orthodontie",
+      "MUCOSA": "Muqueuse buccale",
+      "PAIN": "Douleur",
+      "OTHER": "Autre"
+    }
   }
 }

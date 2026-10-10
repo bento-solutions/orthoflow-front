@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../core/services/api-error.service';
+import { InsuranceFormsApi } from '../../core/services/insurance-forms-api.service';
+import { PrescriptionsApi } from '../../core/services/prescriptions-api.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { NavCounts } from '../../core/services/nav-counts.service';
 import { refreshOnLive } from '../../core/services/live-refresh';
@@ -110,7 +112,12 @@ const blankTask = (assignee = ''): TaskForm => ({ title: '', description: '', as
         <input type="checkbox" class="mt-1 h-4 w-4" [checked]="t.status === 'DONE'" [disabled]="t.status === 'CANCELLED'" (change)="toggle(t, $any($event.target).checked)" [attr.aria-label]="('TASK.DONE_LABEL' | translate) + ' ' + t.title" />
         <div class="min-w-0 flex-1">
           <p class="font-semibold text-ink-900" [class.line-through]="t.status !== 'OPEN'" [class.text-ink-500]="t.status !== 'OPEN'">{{ t.title }}</p>
-          @if (t.description) { <p class="text-sm text-ink-600">{{ t.description }}</p> }
+          @if (t.description) { <p class="whitespace-pre-line text-sm text-ink-600">{{ t.description }}</p> }
+          @if (t.documentKind && t.documentId) {
+            <button type="button" class="btn btn-secondary btn-sm mt-2" (click)="openDocument(t)">
+              <app-icon name="file-text" [size]="14" /> {{ ('TASK.OPEN_DOC.' + t.documentKind) | translate }}
+            </button>
+          }
           <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500">
             <span class="pill pill-nodot" [class]="'pill pill-nodot ' + pill(t.priority)">{{ 'TASK.PRIORITIES.' + t.priority | translate }}</span>
             @if (t.dueDate) { <span [class.text-critical-700]="t.overdue" [class.font-semibold]="t.overdue">{{ t.dueDate | date: 'mediumDate' }}</span> }
@@ -159,6 +166,18 @@ export class TasksComponent {
   private readonly translate = inject(TranslateService);
   private readonly counts = inject(NavCounts);
   private readonly permissions = inject(PermissionService);
+  private readonly insuranceForms = inject(InsuranceFormsApi);
+  private readonly prescriptions = inject(PrescriptionsApi);
+
+  /** Opens the document a task is about: the insurance form to print, the prescription. */
+  async openDocument(t: Task): Promise<void> {
+    try {
+      if (t.documentKind === 'INSURANCE_FORM') await this.insuranceForms.open(t.documentId);
+      else if (t.documentKind === 'PRESCRIPTION') await this.prescriptions.open(t.documentId);
+    } catch (e) {
+      this.errors.report(e);
+    }
+  }
 
   protected readonly priorities = TASK_PRIORITIES;
   protected readonly roles = ASSIGNEE_ROLES;

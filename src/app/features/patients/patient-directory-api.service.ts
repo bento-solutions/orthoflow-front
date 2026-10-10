@@ -13,6 +13,7 @@ export type MergePreview = Wire<'PatientMergePreview'>;
 export type MergeRequest = Req<'PatientMergeRequest'>;
 export type MergeResult = Wire<'PatientMergeResult'>;
 export type Insurer = Wire<'InsurerResponse'>;
+export type InsurerInput = Req<'InsurerRequest'>;
 export type RecallRow = Wire<'RecallRow'>;
 
 export const RECALL_KINDS = [
@@ -61,8 +62,16 @@ export class PatientDirectoryApi {
     return firstValueFrom(this.http.post<MergeResult>(api(`/patients/${targetId}/merge`), request));
   }
 
-  insurers(): Promise<Insurer[]> {
-    return firstValueFrom(this.http.get<Insurer[]>(api('/reference/insurers')));
+  insurers(includeInactive = false): Promise<Insurer[]> {
+    return firstValueFrom(this.http.get<Insurer[]>(api('/reference/insurers'), { params: toParams({ includeInactive }) }));
+  }
+
+  createInsurer(body: InsurerInput): Promise<Insurer> {
+    return firstValueFrom(this.http.post<Insurer>(api('/reference/insurers'), body));
+  }
+
+  updateInsurer(id: string, body: InsurerInput): Promise<Insurer> {
+    return firstValueFrom(this.http.put<Insurer>(api(`/reference/insurers/${id}`), body));
   }
 
   recalls(kind: RecallKind, query: Record<string, QueryValue>): Promise<RecallRow[]> {

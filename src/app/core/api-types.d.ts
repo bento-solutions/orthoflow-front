@@ -2100,6 +2100,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/patients/{patientId}/clinical-record/periodontal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["status"];
+        put?: never;
+        post: operations["record_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patients/{patientId}/clinical-record/notes": {
         parameters: {
             query?: never;
@@ -3924,6 +3940,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/patients/{patientId}/clinical-record/passport": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["preview_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patientId}/clinical-record/passport/download.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patientId}/clinical-record/passport/download.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["json"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patients/{patientId}/clinical-record/findings": {
         parameters: {
             query?: never;
@@ -3932,6 +3996,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listFindings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patientId}/clinical-record/findings/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["findingHistory"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6892,6 +6972,10 @@ export interface components {
             surface?: string;
             severity?: string;
             note?: string;
+            /** Format: date */
+            performedOn?: string;
+            origin?: string;
+            providerName?: string;
             source: string;
             /** Format: uuid */
             sessionId?: string;
@@ -6905,10 +6989,40 @@ export interface components {
             surface?: string;
             severity?: string;
             note?: string;
+            /** Format: date */
+            performedOn?: string;
+            origin?: string;
+            providerName?: string;
             status?: string;
             source?: string;
             /** Format: uuid */
             sessionId?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        RecordPeriodontalRequest: {
+            region: string;
+            condition: string;
+            /** Format: int32 */
+            stage?: number;
+            note?: string;
+            /** Format: date */
+            assessedOn?: string;
+            source: string;
+        };
+        PeriodontalAssessmentResponse: {
+            /** Format: uuid */
+            id?: string;
+            region?: string;
+            condition?: string;
+            /** Format: int32 */
+            stage?: number;
+            note?: string;
+            /** Format: date */
+            assessedOn?: string;
+            source?: string;
             /** Format: date-time */
             createdAt?: string;
         };
@@ -7551,15 +7665,15 @@ export interface components {
             sort?: string[];
         };
         PageStockMovementResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            first?: boolean;
-            last?: boolean;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StockMovementResponse"][];
@@ -7569,12 +7683,12 @@ export interface components {
             empty?: boolean;
         };
         PageableObject: {
+            paged?: boolean;
+            unpaged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
             /** Format: int32 */
             pageSize?: number;
-            paged?: boolean;
-            unpaged?: boolean;
             /** Format: int64 */
             offset?: number;
             sort?: components["schemas"]["SortObject"][];
@@ -7886,15 +8000,15 @@ export interface components {
             daysOverdue?: number;
         };
         PagePatientResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            first?: boolean;
-            last?: boolean;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientResponse"][];
@@ -8191,6 +8305,83 @@ export interface components {
             /** Format: uuid */
             stockItemId?: string;
         };
+        PeriodontalStatusResponse: {
+            current?: components["schemas"]["PeriodontalAssessmentResponse"][];
+            history?: components["schemas"]["PeriodontalAssessmentResponse"][];
+        };
+        PassportAllergy: {
+            substance?: string;
+            reaction?: string;
+            severity?: string;
+        };
+        PassportClinic: {
+            name?: string;
+            city?: string;
+            phone?: string;
+            email?: string;
+        };
+        PassportFinding: {
+            fdi?: string;
+            findingCode?: string;
+            kind?: string;
+            surfaces?: string[];
+            severity?: string;
+            note?: string;
+            /** Format: date */
+            performedOn?: string;
+            origin?: string;
+            provider?: string;
+        };
+        PassportGum: {
+            region?: string;
+            condition?: string;
+            /** Format: int32 */
+            stage?: number;
+            /** Format: date */
+            assessedOn?: string;
+            note?: string;
+        };
+        PassportHistoryItem: {
+            category?: string;
+            label?: string;
+            detail?: string;
+        };
+        PassportPatient: {
+            firstName?: string;
+            lastName?: string;
+            /** Format: date */
+            dateOfBirth?: string;
+            sex?: string;
+        };
+        PassportWork: {
+            /** Format: date */
+            date?: string;
+            type?: string;
+            teeth?: string[];
+            code?: string;
+            name?: string;
+            actCode?: string;
+            surfaces?: string[];
+            origin?: string;
+            provider?: string;
+            outcome?: string;
+            note?: string;
+        };
+        TreatmentPassport: {
+            format?: string;
+            /** Format: int32 */
+            version?: number;
+            /** Format: date-time */
+            issuedAt?: string;
+            clinic?: components["schemas"]["PassportClinic"];
+            patient?: components["schemas"]["PassportPatient"];
+            allergies?: components["schemas"]["PassportAllergy"][];
+            medicalHistory?: components["schemas"]["PassportHistoryItem"][];
+            teeth?: components["schemas"]["PassportFinding"][];
+            planned?: components["schemas"]["PassportWork"][];
+            log?: components["schemas"]["PassportWork"][];
+            gums?: components["schemas"]["PassportGum"][];
+        };
         Account: {
             /** Format: uuid */
             patientId?: string;
@@ -8215,15 +8406,15 @@ export interface components {
             balance?: number;
         };
         PagePatientDirectoryRow: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            first?: boolean;
-            last?: boolean;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientDirectoryRow"][];
@@ -8322,15 +8513,15 @@ export interface components {
             unhandledReplies?: number;
         };
         PageLogRow: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            first?: boolean;
-            last?: boolean;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LogRow"][];
@@ -8383,15 +8574,15 @@ export interface components {
             email?: string;
         };
         PageInvoiceResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            first?: boolean;
-            last?: boolean;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["InvoiceResponse"][];
@@ -10773,7 +10964,7 @@ export interface operations {
                 };
                 content: {
                     "*/*": {
-                        [key: string]: string[];
+                        [key: string]: components["schemas"]["JsonNode"][];
                     };
                 };
             };
@@ -13609,6 +13800,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ToothFindingResponse"];
+                };
+            };
+        };
+    };
+    status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PeriodontalStatusResponse"];
+                };
+            };
+        };
+    };
+    record_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordPeriodontalRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PeriodontalAssessmentResponse"];
                 };
             };
         };
@@ -16655,7 +16894,97 @@ export interface operations {
             };
         };
     };
+    preview_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TreatmentPassport"];
+                };
+            };
+        };
+    };
+    pdf: {
+        parameters: {
+            query?: {
+                lang?: string;
+            };
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    json: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TreatmentPassport"];
+                };
+            };
+        };
+    };
     listFindings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ToothFindingResponse"][];
+                };
+            };
+        };
+    };
+    findingHistory: {
         parameters: {
             query?: never;
             header?: never;

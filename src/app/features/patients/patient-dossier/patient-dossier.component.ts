@@ -10,6 +10,8 @@ import { DentalChartService } from '../../../core/services/dental-chart.service'
 import { ScheduleService } from '../../../core/services/schedule.service';
 import { Patient, DentalChartState, DentalChartType, ToothState, Appointment } from '../../../core/models/patient.model';
 import { DentalChartComponent } from '../../dental-chart/dental-chart.component';
+import { GumStatusComponent } from '../gum-status/gum-status.component';
+import { TreatmentLogComponent } from '../treatment-log/treatment-log.component';
 import { Dental3DCanvasComponent } from '../../dental-3d-canvas/dental-3d-canvas.component';
 import { InvoiceService } from '../../billing/services/invoice.service';
 import { Invoice } from '../../billing/models/billing.model';
@@ -35,7 +37,7 @@ import { RegistrationInviteComponent } from '../registration-invite.component';
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, PatientAccountComponent, RegistrationInviteComponent],
+  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, PatientAccountComponent, RegistrationInviteComponent, GumStatusComponent, TreatmentLogComponent],
   template: `
     <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive()" [class.has-consultation]="consultation.visible()">
       @if (patientService.currentPatient(); as patient) {
@@ -480,6 +482,16 @@ import { RegistrationInviteComponent } from '../registration-invite.component';
                         <p>{{ 'PATIENTS.DOSSIER.NO_APPOINTMENTS' | translate }}</p>
                       </div>
                     }
+                  </section>
+                }
+                @case ('treatment-log') {
+                  <section class="dossier-section">
+                    <app-treatment-log [patientId]="patient.id" />
+                  </section>
+                }
+                @case ('gums') {
+                  <section class="dossier-section">
+                    <app-gum-status [patientId]="patient.id" />
                   </section>
                 }
                 @case ('notes') {
@@ -1957,6 +1969,8 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     { id: 'diagnostics', key: 'PATIENTS.DOSSIER.DIAGNOSTICS', icon: 'biotech' },
     { id: 'plan', key: 'PATIENTS.DOSSIER.TREATMENT_PLAN', icon: 'assignment' },
     { id: 'appointments', key: 'COMMON.SCHEDULE', icon: 'event' },
+    { id: 'treatment-log', key: 'TREATMENT_LOG.TAB', icon: 'history' },
+    { id: 'gums', key: 'GUMS.TAB', icon: 'healing' },
     { id: 'notes', key: 'DENTAL_CHART.REPORT_TITLE', icon: 'history_edu' },
   ];
   activeClinicalSubTab = signal('treatments');

@@ -5,6 +5,8 @@ import { TranslateModule } from '@ngx-translate/core';
 import { VoiceOrchestratorService, BufferedEntry } from '../../../core/voice/voice-orchestrator.service';
 import { VoiceSessionService } from '../../../core/voice/voice-session.service';
 import { VoiceContextService } from '../../../core/voice/voice-context.service';
+import { InputLanguageService } from '../../../core/voice/input-language.service';
+import { INPUT_LANGUAGES } from '../../../core/voice/language-filter';
 import { SpeechFeedbackService } from '../../../core/voice/speech-feedback.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { COMMAND_EXAMPLES, spokenFindingLabel, spokenLanguage } from '../../../core/voice/voice-vocabulary';
@@ -131,6 +133,23 @@ interface ToothGroup {
               <li>{{ 'VOICE.HOW_WAKE' | translate }}</li>
               <li>{{ 'VOICE.HOW_DIRECT' | translate }}</li>
             </ul>
+            <fieldset class="vs-lang">
+              <legend>{{ 'VOICE.LANG_TITLE' | translate }}</legend>
+              <div class="vs-lang-options" role="radiogroup" [attr.aria-label]="'VOICE.LANG_TITLE' | translate">
+                @for (lang of inputLanguages; track lang) {
+                  <button type="button" role="radio" [attr.aria-checked]="inputLanguage.language() === lang"
+                    [class.on]="inputLanguage.language() === lang" (click)="inputLanguage.set(lang)">
+                    {{ 'VOICE.LANG.' + lang | translate }}
+                  </button>
+                }
+              </div>
+              <p class="vs-lang-hint">
+                {{ (inputLanguage.isPinned() ? 'VOICE.LANG_HINT_PINNED' : 'VOICE.LANG_HINT_DEFAULT') | translate }}
+                @if (inputLanguage.isPinned()) {
+                  <button type="button" class="link-btn" (click)="inputLanguage.set(null)">{{ 'VOICE.LANG_FOLLOW_APP' | translate }}</button>
+                }
+              </p>
+            </fieldset>
             <button type="button" class="btn-big primary" (click)="begin.emit()" [disabled]="starting()">
               <span class="material-icons" aria-hidden="true">mic</span>
               {{ (starting() ? 'VOICE.STARTING' : 'VOICE.START') | translate }}
@@ -248,6 +267,9 @@ interface ToothGroup {
             }
             @if (voice.ignoredUtterance(); as ignored) {
               <p class="vs-line ignored">{{ 'VOICE.IGNORED' | translate: { text: ignored } }}</p>
+            }
+            @if (voice.languageNoiseCount() > 0) {
+              <p class="vs-line ignored">{{ 'VOICE.LANG_NOISE' | translate: { count: voice.languageNoiseCount(), language: ('VOICE.LANG.' + inputLanguage.language() | translate) } }}</p>
             }
             @if (voice.undoAvailable()) {
               <button type="button" class="vs-undo" (click)="voice.undoLast()">
@@ -485,6 +507,14 @@ interface ToothGroup {
     .vs-line { margin: 0; font-size: .875rem; line-height: 1.45; color: rgb(var(--ink-800)); overflow-wrap: anywhere; }
     .vs-line.outcome { color: rgb(var(--positive-700)); font-weight: 600; }
     .vs-line.outcome.bad { color: rgb(var(--caution-800)); }
+    .vs-lang { border: 0; margin: .75rem 0 0; padding: 0; }
+    .vs-lang legend { padding: 0; margin-bottom: .375rem; font-size: .8125rem; font-weight: 700; color: var(--text); }
+    .vs-lang-options { display: inline-flex; border: 1px solid var(--border-strong); border-radius: .5rem; overflow: hidden; }
+    .vs-lang-options button { padding: .4375rem .875rem; font: inherit; font-size: .875rem; border: 0; background: var(--surface, #fff); color: var(--text); cursor: pointer; }
+    .vs-lang-options button + button { border-inline-start: 1px solid var(--border-strong); }
+    .vs-lang-options button.on { background: var(--action); color: var(--text-inverse); font-weight: 700; }
+    .vs-lang-options button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+    .vs-lang-hint { margin: .375rem 0 0; font-size: .75rem; color: var(--text-muted); }
     .vs-line.ignored { color: rgb(var(--ink-500)); font-size: .8125rem; font-style: italic; }
     .vs-label {
       display: inline-block; margin-inline-end: .375rem; font-size: .6875rem; font-weight: 700;
@@ -570,6 +600,8 @@ export class VoiceSessionPanelComponent {
   session = inject(VoiceSessionService);
   feedback = inject(SpeechFeedbackService);
   private context = inject(VoiceContextService);
+  inputLanguage = inject(InputLanguageService);
+  inputLanguages = INPUT_LANGUAGES;
   private confirmDialog = inject(ConfirmDialogService);
 
   chart = input<DentalChartState | null>(null);

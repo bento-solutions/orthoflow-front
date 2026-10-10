@@ -9,6 +9,10 @@ import { MESSAGE_CHANNELS, MESSAGE_PURPOSES, MESSAGE_STATUSES } from './services
 import { ASSIGNEE_ROLES, LAB_ITEM_TYPES, LAB_STATUSES, TASK_PRIORITIES } from './services/operations-api.service';
 import { RECALL_KINDS } from '../features/patients/patient-directory-api.service';
 import { APPOINTMENT_STATUSES } from './services/agenda-config.service';
+import { FINDING_KIND_ORDER, FINDING_OPTIONS } from './clinical/finding-options';
+import { SURFACE_ORDER } from './clinical/tooth-surfaces';
+import { INPUT_LANGUAGES } from './voice/language-filter';
+import { PERIO_REGIONS } from './models/clinical-record.model';
 
 /**
  * Templates build some keys at run time (`'REC.KINDS.' + kind`), which the static scan in
@@ -29,6 +33,13 @@ const has = (key: string): boolean => {
 };
 
 const FAMILIES: Record<string, readonly string[]> = {
+  'TREATMENT_LOG.OUTCOME': ['IN_PLACE', 'TREATED', 'COMPLETED', 'REQUIRED', 'PLANNED', 'IN_PROGRESS'],
+  'VOICE.LANG': INPUT_LANGUAGES,
+  'GUMS.REGION': PERIO_REGIONS,
+  'GUMS.CONDITION': ['HEALTHY', 'GINGIVITIS', 'PERIODONTITIS'],
+  'FINDING': FINDING_OPTIONS.map(o => o.code.toUpperCase()),
+  'SURFACE': SURFACE_ORDER.map(s => s.toUpperCase()),
+  'TOOTH_DETAIL.KIND': FINDING_KIND_ORDER,
   'REC.KINDS': RECALL_KINDS,
   'REC.KIND_HINTS': RECALL_KINDS,
   'REC.SORTS': ['last', 'remaining', 'name'],

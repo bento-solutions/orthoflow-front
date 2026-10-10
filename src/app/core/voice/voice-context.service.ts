@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
-import { LanguageService } from '../services/language.service';
+import { InputLanguageService } from './input-language.service';
 import { PatientService } from '../services/patient.service';
 import { DentalChartService } from '../services/dental-chart.service';
 import { Dentition } from './tooth-lexicon';
@@ -20,22 +20,12 @@ import { LastWriteRef, VoiceContextSnapshot, VoiceIntent } from './voice-intent.
  * not a record. The durable trail is the server-side audit.
  */
 
-/** Recognisers want a BCP-47 tag; the app stores a bare language code. */
-const SPEECH_LOCALE: Record<string, string> = {
-  // fr-MA rather than fr-FR: Moroccan clinicians code-switch between French
-  // and Darija mid-sentence, and the regional model handles that far better
-  // (audit XII.4 §9).
-  fr: 'fr-MA',
-  ar: 'ar-MA',
-  en: 'en-US',
-};
-
 const MAX_HISTORY = 8;
 
 @Injectable({ providedIn: 'root' })
 export class VoiceContextService {
   private router = inject(Router);
-  private language = inject(LanguageService);
+  private inputLanguage = inject(InputLanguageService);
   private patients = inject(PatientService);
   private chart = inject(DentalChartService);
 
@@ -70,7 +60,8 @@ export class VoiceContextService {
     return 'dashboard';
   });
 
-  locale = computed<string>(() => SPEECH_LOCALE[this.language.currentLang()] ?? 'en-US');
+  /** What the doctor dictates in: the app's language unless they chose another at the start of the session. */
+  locale = computed<string>(() => this.inputLanguage.locale());
 
   dentition = computed<Dentition>(() => this.chart.currentChart()?.chartType ?? 'adult');
 

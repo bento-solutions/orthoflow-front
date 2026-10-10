@@ -1,0 +1,55 @@
+name: Deploy parity environment
+
+# push to feature/denteam-parity (in either repo) -> SSH the VPS and run
+# deploy-parity.sh, which fast-forwards both repos, builds both images on the
+# box and recreates the orthoflow-parity stack (orthoflow.bento212.com).
+# Production (main -> deploy.yml, project "ortho") is never touched.
+on:
+  push:
+    branches: [feature/denteam-parity]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/workflows/ci.yml'
+  workflow_dispatch: {}
+
+# A push to each repo fires its own run; on the box they queue behind one lock
+# and the later run simply rebuilds the latest of both repos.
+concurrency:
+  group: deploy-parity-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Pin host key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy parity to the VPS
+        run: |
+          ssh -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=40 \
+            "${{ secrets.DEPLOY_SSH_HOST }}" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          cd /srv/bento/apps/orthoflow-parity
+          exec 9>/tmp/orthoflow-parity-deploy.lock
+          flock -w 1800 9
+          g() { GIT_TERMINAL_PROMPT=0 git -c http.version=HTTP/1.1 -c credential.helper= -c http.https://github.com/.extraheader= "$@"; }
+          # Pull first so bash never runs a script that git rewrites under it;
+          # deploy-parity.sh then finds both repos already current.
+          g fetch --quiet origin feature/denteam-parity
+          g merge --ff-only --quiet origin/feature/denteam-parity
+          g -C frontend fetch --quiet origin feature/denteam-parity
+          g -C frontend merge --ff-only --quiet origin/feature/denteam-parity
+          ./deploy-parity.sh 2>&1 | grep --line-buffered -vE '^#[0-9]+ |^\[INFO\]|Downloading|Downloaded'
+          REMOTE

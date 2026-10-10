@@ -774,7 +774,13 @@
     "NGAP_REMOVE": "إزالة",
     "NGAP_COTATION": "التسعيرة",
     "NGAP_ANESTHESIA": "التخدير",
-    "NGAP_PRIOR_AGREEMENT": "موافقة مسبقة"
+    "NGAP_PRIOR_AGREEMENT": "موافقة مسبقة",
+    "FACE_TARIFF": "السعر حسب عدد الأوجه",
+    "FACE_TARIFF_HINT": "اترك الخانة فارغة لتطبيق السعر الأساسي. الترميم الذي يشمل أوجهًا أكثر من آخر سعر مُدخل يُحاسَب بآخر سعر.",
+    "FACES_N": "{{n}} وجه",
+    "SESSION_FACES": "الأوجه المعالجة (اختياري)",
+    "SESSION_QUOTE_BASE": "السعر الأساسي: {{price}} د.م",
+    "SESSION_QUOTE_FACES": "السعر لـ {{n}} وجه: {{price}} د.م"
   },
   "SETTINGS": {
     "TITLE": "الإعدادات",
@@ -3145,7 +3151,13 @@
       "EXISTING": "علاجات موجودة",
       "TREATMENT_REQUIRED": "علاجات مطلوبة",
       "OBSERVATION": "للمراقبة"
-    }
+    },
+    "STATES": "حالات السن",
+    "CARE": "العلاجات المطلوبة",
+    "NO_STATES": "لا حالة مسجَّلة.",
+    "NO_CARE": "لا علاج مخطَّط.",
+    "MARK_DONE": "تم العلاج",
+    "MARK_DONE_HINT": "تم العلاج: يخرج من القائمة وينتقل إلى سجل السن."
   },
   "GUMS": {
     "TAB": "اللثة",

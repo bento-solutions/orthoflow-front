@@ -151,6 +151,8 @@ export type StockMovement = Always<Api<'StockMovementResponse'>, 'id'>;
 
 export type Treatment = Always<Api<'TreatmentResponse'>, 'id' | 'name'>;
 export type TreatmentRequest = Api<'TreatmentRequest'>;
+export type TreatmentSurfacePrice = Api<'TreatmentSurfacePrice'>;
+export type TreatmentPrice = Api<'TreatmentPrice'>;
 
 export type TreatmentConsumable = Api<'TreatmentConsumableResponse'>;
 

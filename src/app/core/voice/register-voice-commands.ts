@@ -270,7 +270,7 @@ export class VoiceCommandsService {
         args: { findings: 'the corrected findings' },
         examples: ['no, actually crown replacement', 'change that to recurrent caries'],
         preview: (entities, context) => {
-          const fdi = context.lastWrite?.fdi;
+          const fdi = String(entities['fdi'] ?? '') || context.lastWrite?.fdi;
           const labels = this.findingsOf(entities).map(f => f.label).join(', ');
           return fdi
             ? `Correct tooth ${fdi} (${describeFdi(fdi)}) to: ${labels}`
@@ -281,8 +281,10 @@ export class VoiceCommandsService {
         // finding. The orchestrator replaces that entry, so there is nothing
         // to retract. Only a write that reached the record carries finding ids.
         toServerEntities: (entities, context) => ({
-          fdi: context.lastWrite?.fdi ?? String(entities['fdi'] ?? ''),
-          ...(context.lastWrite?.targetType === 'BufferedCommand'
+          // A correction that moves the entry names its tooth; a plain "no,
+          // actually…" does not and stays on the tooth of the last write.
+          fdi: String(entities['fdi'] ?? '') || context.lastWrite?.fdi || '',
+          ...(context.lastWrite?.targetType === 'BufferedCommand' || entities['replaceAuditId']
             ? {}
             : { retractIds: (context.lastWrite?.targetId ?? '').split(',').filter(Boolean) }),
           findings: this.findingsOf(entities).map(f => ({
@@ -295,6 +297,58 @@ export class VoiceCommandsService {
           const result = this.findingsRecorded(audit, entities, context);
           return { ...result, message: `Corrected. ${result.message}` };
         },
+      },
+      {
+        id: 'chart.reclassifyFinding',
+        description: 'Replace a finding on a tooth with the right one: "not caries, it\'s inflammation"',
+        risk: 'CONFIRM',
+        requiresPatient: true,
+        serverIntent: 'clinical.addFindings',
+        args: { fdi: 'FDI tooth code', from: 'the finding that was wrong', findings: 'what it really is' },
+        examples: ['not caries, it\'s inflammation', 'ce n\'est pas une carie, c\'est une inflammation'],
+        preview: (entities) => {
+          const fdi = String(entities['fdi'] ?? '');
+          const wrong = this.fromOf(entities).map(f => f.label ?? findingLabel(f.code)).join(', ');
+          const right = this.findingsOf(entities).map(f => f.label ?? findingLabel(f.code)).join(', ');
+          return `Tooth ${fdi} (${describeFdi(fdi)}): not ${wrong}, but ${right}`;
+        },
+        // The server withdraws what is on the tooth under those codes when the
+        // command executes, and records the replacement in the same transaction.
+        toServerEntities: (entities) => ({
+          fdi: String(entities['fdi'] ?? ''),
+          retractCodes: this.fromOf(entities).map(f => f.code),
+          findings: this.findingsOf(entities).map(f => ({
+            code: f.code,
+            surface: f.surface ?? undefined,
+            severity: f.severity ?? undefined,
+          })),
+        }),
+        onServerExecuted: (audit, entities, context) => {
+          const result = this.findingsRecorded(audit, entities, context);
+          return { ...result, message: `Corrected. ${result.message}` };
+        },
+      },
+      {
+        id: 'chart.moveFindings',
+        description: 'Move an entry to the right tooth: "forget tooth 16, this is 17"',
+        risk: 'CONFIRM',
+        requiresPatient: true,
+        serverIntent: 'clinical.addFindings',
+        args: { fromFdi: 'the tooth it was recorded on by mistake', fdi: 'the tooth it belongs to' },
+        examples: ['forget tooth 16, this is 17', 'oublie la 16, c\'est la 17'],
+        preview: (entities) => {
+          const fdi = String(entities['fdi'] ?? '');
+          return `Move the entry from tooth ${String(entities['fromFdi'] ?? '')} to tooth ${fdi} (${describeFdi(fdi)})`;
+        },
+        toServerEntities: (entities) => ({
+          fdi: String(entities['fdi'] ?? ''),
+          findings: this.findingsOf(entities).map(f => ({
+            code: f.code,
+            surface: f.surface ?? undefined,
+            severity: f.severity ?? undefined,
+          })),
+        }),
+        onServerExecuted: (audit, entities, context) => this.findingsRecorded(audit, entities, context),
       },
       {
         id: 'chart.removeFinding',
@@ -390,6 +444,12 @@ export class VoiceCommandsService {
         },
       },
     ];
+  }
+
+  /** The findings a correction says were wrong. */
+  private fromOf(entities: Record<string, unknown>): FindingEntity[] {
+    const raw = entities['from'];
+    return Array.isArray(raw) ? raw as FindingEntity[] : [];
   }
 
   private findingsOf(entities: Record<string, unknown>): FindingEntity[] {

@@ -774,7 +774,13 @@
     "NGAP_REMOVE": "Retirer",
     "NGAP_COTATION": "Cotation",
     "NGAP_ANESTHESIA": "Anesthésie",
-    "NGAP_PRIOR_AGREEMENT": "Accord préalable"
+    "NGAP_PRIOR_AGREEMENT": "Accord préalable",
+    "FACE_TARIFF": "Tarif selon le nombre de faces",
+    "FACE_TARIFF_HINT": "Laissez une case vide pour appliquer le prix de base. Une restauration qui couvre plus de faces que le dernier tarif saisi est facturée à ce dernier tarif.",
+    "FACES_N": "{{n}} face(s)",
+    "SESSION_FACES": "Faces traitées (facultatif)",
+    "SESSION_QUOTE_BASE": "Prix de base : {{price}} DH",
+    "SESSION_QUOTE_FACES": "Prix pour {{n}} face(s) : {{price}} DH"
   },
   "SETTINGS": {
     "TITLE": "Paramètres",
@@ -3145,7 +3151,13 @@
       "EXISTING": "Soins déjà présents",
       "TREATMENT_REQUIRED": "Soins à réaliser",
       "OBSERVATION": "À surveiller"
-    }
+    },
+    "STATES": "États de la dent",
+    "CARE": "Soins à réaliser",
+    "NO_STATES": "Aucun état enregistré.",
+    "NO_CARE": "Aucun soin prévu.",
+    "MARK_DONE": "Soin réalisé",
+    "MARK_DONE_HINT": "Le soin est fait : il quitte la liste et passe dans l’historique de la dent."
   },
   "GUMS": {
     "TAB": "Gencives",

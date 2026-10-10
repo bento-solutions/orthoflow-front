@@ -93,4 +93,24 @@ describe('TreatmentsListComponent — NGAP act', () => {
     component.saveTreatment();
     expect(update.mock.calls[0][1]).toMatchObject({ actCode: undefined, actCoefficient: undefined });
   });
+
+  it('saves the tariff by number of faces, leaving empty boxes out, and reloads it on edit', async () => {
+    const fixture = await open();
+    const component = fixture.componentInstance;
+    component.openEditModal({ ...plain, surfacePrices: [{ surfaceCount: 2, price: 400 }] } as never);
+    expect(component.faceTariff[2]).toBe(400);
+
+    component.faceTariff[1] = 250;
+    component.saveTreatment();
+    expect(update.mock.calls[0][1].surfacePrices).toEqual([
+      { surfaceCount: 1, price: 250 },
+      { surfaceCount: 2, price: 400 },
+    ]);
+
+    // Emptying every box clears the tariff on the server (an empty list, not "unchanged").
+    component.openEditModal({ ...plain, surfacePrices: [{ surfaceCount: 1, price: 250 }] } as never);
+    component.faceTariff[1] = null;
+    component.saveTreatment();
+    expect(update.mock.calls[1][1].surfacePrices).toEqual([]);
+  });
 });

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ClinicalRecordService } from '../../../core/services/clinical-record.service';
@@ -29,39 +29,58 @@ import { SurfacePickerComponent } from './surface-picker.component';
 @Component({
   selector: 'app-tooth-detail',
   standalone: true,
-  imports: [FormsModule, DatePipe, TranslateModule, SurfacePickerComponent],
+  imports: [FormsModule, DatePipe, NgTemplateOutlet, TranslateModule, SurfacePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="block" [attr.aria-label]="'TOOTH_DETAIL.CURRENT' | translate">
-      <h4 class="block-title">{{ 'TOOTH_DETAIL.CURRENT' | translate }}</h4>
-      @if (active().length) {
+    <ng-template #row let-f let-done="done">
+      <li class="finding" [attr.data-kind]="f.kind">
+        <span class="dot" [attr.data-kind]="f.kind" aria-hidden="true"></span>
+        <div class="finding-main">
+          <span class="finding-label">
+            {{ label(f.findingCode) }}
+            @if (f.surface) { <span class="surface-badge" [title]="f.surface">{{ shorthand(f.surface) }}</span> }
+          </span>
+          <span class="finding-meta">{{ meta(f) }}</span>
+          @if (f.note) { <span class="finding-note">{{ f.note }}</span> }
+        </div>
+        <div class="finding-actions">
+          <button type="button" class="act" (click)="setStatus(f, 'RESOLVED')"
+            [title]="(done ? 'TOOTH_DETAIL.MARK_DONE_HINT' : 'TOOTH_DETAIL.MARK_TREATED_HINT') | translate">
+            <span class="material-icons" aria-hidden="true">check_circle</span>{{ (done ? 'TOOTH_DETAIL.MARK_DONE' : 'TOOTH_DETAIL.MARK_TREATED') | translate }}
+          </button>
+          <button type="button" class="act danger" (click)="setStatus(f, 'RETRACTED')"
+            [title]="'TOOTH_DETAIL.REMOVE_HINT' | translate">
+            <span class="material-icons" aria-hidden="true">close</span>{{ 'TOOTH_DETAIL.REMOVE' | translate }}
+          </button>
+        </div>
+      </li>
+    </ng-template>
+
+    <!-- États (what the tooth is) and soins (what is to be done to it) are two lists: a
+         finished soin leaves the second and joins the tooth's history below. -->
+    <section class="block" [attr.aria-label]="'TOOTH_DETAIL.STATES' | translate">
+      <h4 class="block-title">{{ 'TOOTH_DETAIL.STATES' | translate }}</h4>
+      @if (states().length) {
         <ul class="findings">
-          @for (f of active(); track f.id) {
-            <li class="finding" [attr.data-kind]="f.kind">
-              <span class="dot" [attr.data-kind]="f.kind" aria-hidden="true"></span>
-              <div class="finding-main">
-                <span class="finding-label">
-                  {{ label(f.findingCode) }}
-                  @if (f.surface) { <span class="surface-badge" [title]="f.surface">{{ shorthand(f.surface) }}</span> }
-                </span>
-                <span class="finding-meta">{{ meta(f) }}</span>
-                @if (f.note) { <span class="finding-note">{{ f.note }}</span> }
-              </div>
-              <div class="finding-actions">
-                <button type="button" class="act" (click)="setStatus(f, 'RESOLVED')"
-                  [title]="'TOOTH_DETAIL.MARK_TREATED_HINT' | translate">
-                  <span class="material-icons" aria-hidden="true">check_circle</span>{{ 'TOOTH_DETAIL.MARK_TREATED' | translate }}
-                </button>
-                <button type="button" class="act danger" (click)="setStatus(f, 'RETRACTED')"
-                  [title]="'TOOTH_DETAIL.REMOVE_HINT' | translate">
-                  <span class="material-icons" aria-hidden="true">close</span>{{ 'TOOTH_DETAIL.REMOVE' | translate }}
-                </button>
-              </div>
-            </li>
+          @for (f of states(); track f.id) {
+            <ng-container *ngTemplateOutlet="row; context: { $implicit: f, done: false }" />
           }
         </ul>
       } @else {
-        <p class="empty">{{ 'TOOTH_DETAIL.NOTHING_RECORDED' | translate }}</p>
+        <p class="empty">{{ 'TOOTH_DETAIL.NO_STATES' | translate }}</p>
+      }
+    </section>
+
+    <section class="block" [attr.aria-label]="'TOOTH_DETAIL.CARE' | translate">
+      <h4 class="block-title">{{ 'TOOTH_DETAIL.CARE' | translate }}</h4>
+      @if (care().length) {
+        <ul class="findings">
+          @for (f of care(); track f.id) {
+            <ng-container *ngTemplateOutlet="row; context: { $implicit: f, done: true }" />
+          }
+        </ul>
+      } @else {
+        <p class="empty">{{ 'TOOTH_DETAIL.NO_CARE' | translate }}</p>
       }
     </section>
 
@@ -217,6 +236,10 @@ export class ToothDetailComponent {
   protected readonly chosen = computed(() => findingOption(this.code()));
   protected readonly active = computed(() =>
     this.findings().filter((f) => f.fdi === this.fdi() && f.status === 'ACTIVE'));
+  /** États: what the tooth is — pathology, work already in the mouth, things to watch. */
+  protected readonly states = computed(() => this.active().filter((f) => f.kind !== 'TREATMENT_REQUIRED'));
+  /** Soins: what is still to be done to it. Done ones move to the history. */
+  protected readonly care = computed(() => this.active().filter((f) => f.kind === 'TREATMENT_REQUIRED'));
   /** Treated work of this tooth, from the full history the panel asks for. */
   protected readonly treated = computed(() =>
     this.records.history().filter((f) => f.fdi === this.fdi() && f.status === 'RESOLVED'));

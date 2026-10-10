@@ -56,6 +56,13 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
                 <span class="text-xs text-ink-500 font-semibold uppercase tracking-wide">{{ "TREATMENTS.BASE_PRICE" | translate }}:</span>
                 <span class="text-lg font-extrabold text-ink-900">{{ t.basePrice | number:'1.2-2' }} DH</span>
               </div>
+              @if (t.surfacePrices?.length) {
+                <p class="text-xs text-ink-500 font-semibold">
+                  @for (sp of t.surfacePrices; track sp.surfaceCount; let last = $last) {
+                    {{ "TREATMENTS.FACES_N" | translate: { n: sp.surfaceCount } }} <span class="text-ink-700">{{ sp.price | number:'1.0-2' }} DH</span>@if (!last) { · }
+                  }
+                </p>
+              }
             </div>
 
             <!-- Consumables list summary -->
@@ -113,6 +120,19 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
                   <input type="number" [(ngModel)]="form.basePrice" required min="0" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
                 </div>
               </div>
+
+              <fieldset class="rounded-xl border border-ortho-navy/10 p-3">
+                <legend class="px-1 text-xs font-bold text-ink-500 uppercase tracking-wide">{{ "TREATMENTS.FACE_TARIFF" | translate }}</legend>
+                <p class="text-xs text-ink-500 mb-2">{{ "TREATMENTS.FACE_TARIFF_HINT" | translate }}</p>
+                <div class="grid grid-cols-5 gap-2">
+                  @for (n of faceCounts; track n) {
+                    <label class="block text-xs font-semibold text-ink-600">
+                      {{ "TREATMENTS.FACES_N" | translate: { n: n } }}
+                      <input type="number" min="0" step="any" [(ngModel)]="faceTariff[n]" [attr.aria-label]="('TREATMENTS.FACES_N' | translate: { n: n }) + ' (DH)'" class="mt-1 w-full px-2 py-1.5 border border-ortho-navy/10 rounded-lg text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                    </label>
+                  }
+                </div>
+              </fieldset>
 
               <div>
                 <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "TREATMENTS.PROCEDURE_NAME" | translate }} *</label>
@@ -289,8 +309,13 @@ export class TreatmentsListComponent implements OnInit {
     return t.consumables.reduce((acc, curr) => acc + (curr.quantityUsed * curr.stockItem.pricePerUse), 0);
   }
 
+  /** The tariff by number of faces: one box per count, empty means the base price applies. */
+  readonly faceCounts = [1, 2, 3, 4, 5];
+  faceTariff: Record<number, number | null | undefined> = {};
+
   openAddModal() {
     this.editMode.set(false);
+    this.faceTariff = {};
     this.form = {
       code: '',
       name: '',
@@ -330,6 +355,7 @@ export class TreatmentsListComponent implements OnInit {
   openEditModal(t: Treatment) {
     this.editMode.set(true);
     this.form = { ...t };
+    this.faceTariff = Object.fromEntries((t.surfacePrices ?? []).map(sp => [sp.surfaceCount, sp.price]));
     this.ngapQuery.set('');
     this.actRevision.update(n => n + 1);
     // Clone lines so edits don't affect original data instantly
@@ -364,6 +390,10 @@ export class TreatmentsListComponent implements OnInit {
     // A blank box means "not set", which the server stores as no code and no coefficient.
     this.form.actCode = this.form.actCode?.trim() || undefined;
     if (this.form.actCoefficient == null || (this.form.actCoefficient as unknown) === '') this.form.actCoefficient = undefined;
+
+    this.form.surfacePrices = this.faceCounts
+      .filter(n => this.faceTariff[n] != null && (this.faceTariff[n] as unknown) !== '')
+      .map(n => ({ surfaceCount: n, price: Number(this.faceTariff[n]) }));
 
     // Attach mapped lines
     this.form.consumables = this.formConsumables

@@ -7,6 +7,7 @@ import { PatientApiService } from '../../../../core/services/patient-api.service
 import { 
   TreatmentInvoice, 
   Treatment, 
+  TreatmentPrice,
   TreatmentInvoiceConsumable, 
   StockItem, 
   TreatmentInvoiceStatus,
@@ -158,7 +159,7 @@ import { ToastService } from '../../../../core/services/toast.service';
                   </div>
                   <div>
                     <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1.5">{{ "TREATMENTS.SELECT_TREATMENT_PROCEDURE" | translate }} *</label>
-                    <select [(ngModel)]="logTreatmentId" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white font-medium">
+                    <select [(ngModel)]="logTreatmentId" (ngModelChange)="refreshQuote()" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white font-medium">
                       <option [value]="null">{{ "TREATMENTS.SELECT_TREATMENT_PLACEHOLDER" | translate }}</option>
                       @for (t of treatments(); track t.id) {
                         <option [value]="t.id">{{ t.name }} ({{ t.basePrice }} DH)</option>
@@ -166,6 +167,30 @@ import { ToastService } from '../../../../core/services/toast.service';
                     </select>
                   </div>
                 </div>
+
+                @if (logTreatmentId) {
+                  <fieldset class="rounded-xl border border-ortho-navy/10 p-3">
+                    <legend class="px-1 text-xs font-bold text-ink-500 uppercase tracking-wide">{{ "TREATMENTS.SESSION_FACES" | translate }}</legend>
+                    <div class="flex flex-wrap gap-2">
+                      @for (face of faceChoices; track face) {
+                        <label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold cursor-pointer"
+                               [class.border-petrol-600]="logFaces.has(face)" [class.bg-petrol-50]="logFaces.has(face)" [class.border-ortho-navy/10]="!logFaces.has(face)">
+                          <input type="checkbox" class="sr-only" [checked]="logFaces.has(face)" (change)="toggleFace(face)" />
+                          {{ "SURFACE." + face.toUpperCase() | translate }}
+                        </label>
+                      }
+                    </div>
+                    @if (quote(); as q) {
+                      <p class="mt-2 text-sm text-ink-700" aria-live="polite">
+                        @if (q.basis === 'BASE') {
+                          {{ "TREATMENTS.SESSION_QUOTE_BASE" | translate: { price: q.price } }}
+                        } @else {
+                          {{ "TREATMENTS.SESSION_QUOTE_FACES" | translate: { n: q.faceCount, price: q.price } }}
+                        }
+                      </p>
+                    }
+                  </fieldset>
+                }
 
                 <div class="flex justify-end pt-2">
                   <button type="button" (click)="initializeDraft()" [disabled]="!logPatientId || !logTreatmentId" class="px-5 py-2 bg-petrol-600 text-white rounded-xl text-sm font-semibold hover:bg-petrol-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
@@ -357,6 +382,10 @@ export class TreatmentSessionsComponent implements OnInit {
   // Selection
   logPatientId: string | null = null;
   logTreatmentId: string | null = null;
+  /** The faces the session worked on; the treatment is priced by how many (V63). */
+  readonly faceChoices = ['mesial', 'distal', 'buccal', 'lingual', 'occlusal', 'cervical'];
+  logFaces = new Set<string>();
+  readonly quote = signal<TreatmentPrice | null>(null);
 
   // Active Draft Session
   readonly activeDraft = signal<TreatmentInvoice | null>(null);
@@ -380,6 +409,8 @@ export class TreatmentSessionsComponent implements OnInit {
     this.editDraftMode.set(false);
     this.logPatientId = null;
     this.logTreatmentId = null;
+    this.logFaces = new Set();
+    this.quote.set(null);
     this.activeDraft.set(null);
     this.draftConsumables = [];
     this.draftDiscounts = [];
@@ -398,12 +429,30 @@ export class TreatmentSessionsComponent implements OnInit {
     this.showLogModal.set(false);
   }
 
+  toggleFace(face: string) {
+    if (this.logFaces.has(face)) this.logFaces.delete(face); else this.logFaces.add(face);
+    this.refreshQuote();
+  }
+
+  private surfaceValue(): string | null {
+    return this.faceChoices.filter(f => this.logFaces.has(f)).join('-') || null;
+  }
+
+  refreshQuote() {
+    if (!this.logTreatmentId) {
+      this.quote.set(null);
+      return;
+    }
+    this.stockService.getTreatmentPrice(this.logTreatmentId, this.surfaceValue())
+      .subscribe({ next: q => this.quote.set(q), error: () => this.quote.set(null) });
+  }
+
   initializeDraft() {
     if (!this.logPatientId || !this.logTreatmentId) {
       return;
     }
 
-    this.stockService.createDraftTreatmentInvoice(this.logPatientId, this.logTreatmentId).subscribe(draft => {
+    this.stockService.createDraftTreatmentInvoice(this.logPatientId, this.logTreatmentId, this.surfaceValue()).subscribe(draft => {
       this.activeDraft.set(draft);
       this.draftConsumables = draft.consumablesUsed ? draft.consumablesUsed.map(c => ({ ...c })) : [];
       this.draftDiscounts = draft.discounts ? draft.discounts.map(d => ({ ...d })) : [];

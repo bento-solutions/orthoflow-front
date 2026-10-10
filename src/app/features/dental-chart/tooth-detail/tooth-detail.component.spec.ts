@@ -77,6 +77,23 @@ describe('ToothDetailComponent', () => {
     expect(rows[1]).toContain('Dr Benani');
   });
 
+  it('lists conditions and treatments separately, and a finished treatment leaves the treatments for the history', async () => {
+    await mount('16', [
+      finding({ findingCode: 'caries', kind: 'CONDITION' }),
+      finding({ findingCode: 'filling_required', kind: 'TREATMENT_REQUIRED' }),
+    ]);
+
+    const sections = [...document.querySelectorAll('section.block')].slice(0, 2);
+    expect(sections[0].textContent).toContain('Caries');
+    expect(sections[0].textContent).not.toContain('Filling required');
+    expect(sections[1].textContent).toContain('Filling required');
+    expect(sections[1].textContent).not.toContain('Caries');
+
+    // "Done" on a treatment resolves it: the server moves it to the tooth's history.
+    (sections[1].querySelector('button.act') as HTMLButtonElement).click();
+    expect(records.changeFindingStatus).toHaveBeenCalledWith('p1', expect.any(String), 'RESOLVED');
+  });
+
   it('asks where on the tooth only for findings that are about a part of it', async () => {
     const fixture = await mount('16', []);
 

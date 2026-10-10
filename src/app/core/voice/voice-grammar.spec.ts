@@ -770,3 +770,53 @@ describe('a task for the team', () => {
     expect(resolve('pas de tâche pour l\'accueil').kind).not.toBe('intent');
   });
 });
+
+describe('corrections that say what was wrong', () => {
+  const lastOn16 = {
+    lastWrite: { commandId: 'chart.addToothFindings', targetType: 'BufferedCommand', targetId: 'a-1', fdi: '16', description: 'x' },
+  };
+
+  it('"not caries, it\'s inflammation" swaps the finding rather than adding one', () => {
+    const found = expectIntent('Not caries, it\'s inflammation.', 'chart.reclassifyFinding', lastOn16);
+    expect(found.entities['fdi']).toBe('16');
+    expect(((found.entities['from'] ?? []) as FindingEntity[]).map(f => f.code)).toEqual(['caries']);
+    expect(findingCodes(found.entities)).toEqual(['gingival_inflammation']);
+  });
+
+  it('reads the French and the named-tooth forms', () => {
+    const fr = expectIntent('Ce n\'est pas une carie, c\'est une inflammation.', 'chart.reclassifyFinding', lastOn16);
+    expect(findingCodes(fr.entities)).toEqual(['gingival_inflammation']);
+    const named = expectIntent('Tooth 17 is not caries but inflammation', 'chart.reclassifyFinding');
+    expect(named.entities['fdi']).toBe('17');
+  });
+
+  it('keeps "no caries, inflammation" as two statements about the tooth, not a correction', () => {
+    const result = resolve('Tooth 16: no caries, inflammation.');
+    expect(result.kind === 'intent' && result.intent.intent).not.toBe('chart.reclassifyFinding');
+    const fr = resolve('Dent 16 pas de carie, inflammation.');
+    expect(fr.kind === 'intent' && fr.intent.intent).not.toBe('chart.reclassifyFinding');
+  });
+
+  it('asks which tooth when none is named, selected or just written', () => {
+    expect(resolve('Not caries, it\'s inflammation.').kind).toBe('clarification');
+  });
+
+  it('"forget tooth 16, this is 17" moves the entry', () => {
+    const found = expectIntent('Forget tooth 16, this is 17.', 'chart.moveFindings');
+    expect(found.entities['fromFdi']).toBe('16');
+    expect(found.entities['fdi']).toBe('17');
+    expect(found.entities['findings']).toBeUndefined();
+    const fr = expectIntent('Oublie la 16, c\'est la 17.', 'chart.moveFindings');
+    expect([fr.entities['fromFdi'], fr.entities['fdi']]).toEqual(['16', '17']);
+  });
+
+  it('findings said after the new tooth redo the entry on it', () => {
+    const found = expectIntent('Forget 16, it\'s 17, deep caries.', 'chart.moveFindings');
+    expect(findingCodes(found.entities)).toEqual(['deep_caries']);
+  });
+
+  it('is not triggered by a list of teeth', () => {
+    const result = resolve('Not 16 and 17 caries.');
+    expect(result.kind === 'intent' && result.intent.intent).not.toBe('chart.moveFindings');
+  });
+});

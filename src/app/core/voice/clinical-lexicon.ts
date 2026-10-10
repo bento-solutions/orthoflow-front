@@ -209,7 +209,10 @@ export const FINDINGS: FindingDefinition[] = [
   F('gingival_inflammation', 'CONDITION', 'Gingival inflammation',
     /\bgingivitis\b/iu, /\bgingival\s+inflammation\b/iu, /\b(?:inflamed|swollen|bleeding)\s+gums?\b/iu,
     /\bgums?\s+(?:are\s+)?(?:inflamed|swollen|bleeding)\b/iu,
-    /\bgingivite\b/iu, /\bgencives?\s+(?:enflamm[ée]es?|gonfl[ée]es?|qui\s+saignent)/iu),
+    /\bgingivite\b/iu, /\bgencives?\s+(?:enflamm[ée]es?|gonfl[ée]es?|qui\s+saignent)/iu,
+    // A bare "inflammation" ("not caries, it's inflammation"): the soft tissue, unless a
+    // pulp or periapical word before it has already claimed the phrase.
+    /\binflammation\b/iu, /\binflamm[ée]e?s?\b/iu),
 
   F('periodontal_pocket', 'CONDITION', 'Periodontal pocket',
     /\b(?:periodontal\s+)?pockets?\b/iu, /\bperiodontitis\b/iu,
@@ -319,6 +322,13 @@ const SURFACES: Array<{ code: string; pattern: RegExp }> = [
   { code: 'cervical', pattern: /\bcervical\w*|\bcervico\b|\bneck\s+of\s+the\s+tooth\b/iu },
 ];
 
+/**
+ * "Proximal" is the collective word for the two contact surfaces, not a surface of its
+ * own: it is stored as mesial + distal so a lesion is never tagged with a third,
+ * overlapping value (which would also give it a third price).
+ */
+const PROXIMAL = /\b(?:inter)?proximal\w*|\bapproximal\w*/iu;
+
 /** A compound surface is stored joined — "mesial-occlusal" — in this order, at most this many parts. */
 const MAX_SURFACES = 3;
 
@@ -330,8 +340,13 @@ const SEVERITIES: Array<{ code: Severity; pattern: RegExp }> = [
 
 /** Every surface named in `text`, canonical order, as one value; null when none. */
 export function detectSurface(text: string): string | null {
-  const named = SURFACES.filter(s => unicodeBoundaries(s.pattern).test(text)).map(s => s.code);
-  return named.length ? named.slice(0, MAX_SURFACES).join('-') : null;
+  const named = new Set(SURFACES.filter(s => unicodeBoundaries(s.pattern).test(text)).map(s => s.code));
+  if (unicodeBoundaries(PROXIMAL).test(text)) {
+    named.add('mesial');
+    named.add('distal');
+  }
+  const ordered = SURFACES.map(s => s.code).filter(code => named.has(code));
+  return ordered.length ? ordered.slice(0, MAX_SURFACES).join('-') : null;
 }
 
 interface SurfaceMention {
@@ -349,6 +364,11 @@ function surfaceMentions(utterance: string): SurfaceMention[] {
       if (match.index === undefined) continue;
       mentions.push({ code: surface.code, start: match.index, end: match.index + match[0].length });
     }
+  }
+  for (const match of utterance.matchAll(unicodeBoundaries(new RegExp(PROXIMAL.source, 'giu')))) {
+    if (match.index === undefined) continue;
+    const at = { start: match.index, end: match.index + match[0].length };
+    mentions.push({ code: 'mesial', ...at }, { code: 'distal', ...at });
   }
   return mentions;
 }

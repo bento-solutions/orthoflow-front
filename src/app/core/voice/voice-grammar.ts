@@ -364,6 +364,113 @@ const undoLast: GrammarRule = {
   },
 };
 
+// ── Corrections that name what is wrong ─────────────────────────────────
+
+/**
+ * "It's not caries, it's inflammation." The leading words that make the next
+ * thing an identity ("it is not X"), as opposed to an absence: "pas de carie"
+ * and "no caries" say the tooth has none, and are findings' own negation, not a
+ * correction. The bare "not" and "pas une" are identities; "pas de" and "no" are not.
+ */
+const NOT_THAT_HEAD =
+  /^(?:(?:no|non|sorry|pardon|actually|en\s+fait)[,\s]+)*(?:(?:it|that|this)(?:['’]?s|\s+(?:is|was))\s+not|(?:is|was)\s+not|ce\s+n['’\s]?est\s+pas|c['’\s]?est\s+pas|[çc]a\s+n['’\s]?est\s+pas|not|pas\s+(?:une?|la|le|l['’])|non\s+pas|machi)\s+/iu;
+
+/** Words that open the second half: "…, it's inflammation", "…, but inflammation", "…, plutôt une gingivite". */
+const IT_IS_INSTEAD: RegExp[] = [
+  /(?:[,;]\s*|\s+)(?:(?:but|rather|mais|plut[ôo]t|instead|more\s+like|walakin)\s+)?(?:(?:it|that|this)(?:['’]?s|\s+is)|c['’\s]?est|[çc]a\s+c['’\s]?est|hada|hadi|hiya|هذا|هذي|هادا|هادي)\s+/iu,
+  /\s+(?:but|rather|mais|plut[ôo]t|instead|walakin)\s+/iu,
+];
+const BARE_COMMA = /[,;]\s*/u;
+
+/**
+ * "Not caries, it's inflammation." Replaces the named finding on the tooth
+ * with the right one and leaves everything else the tooth carries alone — a
+ * correction is not a new finding, and appending would leave both on the
+ * record with the dentist believing one had been replaced.
+ */
+const reclassifyFinding: GrammarRule = {
+  id: 'grammar.correction.reclassify',
+  match: (raw, _text, context) => {
+    // "Tooth 17 is not caries…": the tooth comes first, the correction after it.
+    const lead = /^(?:(?:the\s+)?(?:tooth|dent|la|le)\s+(?:number\s+|n[°o]\s*)?)?\d{2}[\s,:;-]+/iu.exec(raw)?.[0].length ?? 0;
+    const head = NOT_THAT_HEAD.exec(raw.slice(lead));
+    if (!head) return null;
+    const rest = raw.slice(lead + head[0].length);
+
+    let wrong: string | null = null;
+    let right: string | null = null;
+    for (const connector of IT_IS_INSTEAD) {
+      const found = connector.exec(rest);
+      if (found) {
+        wrong = rest.slice(0, found.index);
+        right = rest.slice(found.index + found[0].length);
+        break;
+      }
+    }
+    // "Not caries, inflammation": a bare comma is enough only when the head
+    // already said it was an identity (the pattern above only matches those).
+    if (wrong === null) {
+      const comma = BARE_COMMA.exec(rest);
+      if (!comma) return null;
+      wrong = rest.slice(0, comma.index);
+      right = rest.slice(comma.index + comma[0].length);
+    }
+
+    const from = extractEveryFinding(wrong);
+    const to = affirmedFindings(extractFindings(right ?? ''));
+    if (from.length === 0 || to.length === 0) return null;
+
+    const mentions = findToothMentions(raw);
+    if (mentions.some(mention => !mention.valid)) return ask(NO_SUCH_TOOTH_QUESTION, raw);
+    const named = new Set(mentions.map(mention => mention.fdi));
+    if (named.size > 1) return ask(SEVERAL_TEETH_QUESTION, raw);
+    const fdi = [...named][0] ?? context.selectedFdi ?? context.lastWrite?.fdi ?? null;
+    if (!fdi) return ask('Which tooth is that about?', raw);
+
+    return intent(
+      'chart.reclassifyFinding',
+      { fdi, from: toEntities(from), findings: toEntities(to) },
+      CONFIDENCE_STRONG,
+      raw,
+    );
+  },
+};
+
+/** "Forget tooth 16, this is 17." / "Oublie la 16, c'est la 17." / "Not the 16, the 17." */
+const WRONG_TOOTH_HEAD =
+  /^(?:(?:no|non|sorry|pardon|oops|actually|en\s+fait)[,\s]+)*(?:forget|ignore|scratch|never\s+mind|disregard|oublie[rz]?|laisse[rz]?\s+tomber|annule[rz]?|(?:it|that|this)(?:['’]?s|\s+is)\s+not|ce\s+n['’\s]?est\s+pas|pas|not|wrong\s+tooth|mauvaise\s+dent|machi)\b/iu;
+const TOOTH_SWAP_CONNECTOR =
+  /(?:\b(?:this|that|it)(?:['’]?s|\s+is)|\bi\s+meant|\bi\s+mean|\bc['’\s]?est|\bje\s+voulais\s+dire|\bmais|\bbut|\bplut[ôo]t|\brather|\bin\s+fact|\ben\s+fait)/iu;
+
+/**
+ * The entry was recorded on the wrong tooth: it moves whole to the right one —
+ * its findings, surfaces and severities included — instead of being dictated
+ * again. Findings said after the new tooth redo the entry on it instead.
+ */
+const moveToAnotherTooth: GrammarRule = {
+  id: 'grammar.correction.moveTooth',
+  match: (raw, _text, _context) => {
+    if (!WRONG_TOOTH_HEAD.test(raw)) return null;
+    const mentions = findToothMentions(raw);
+    if (mentions.length !== 2 || mentions.some(mention => !mention.valid)) return null;
+    const [wrong, right] = mentions;
+    if (wrong.fdi === right.fdi) return null;
+    // Both teeth and a word saying "this is the other one" between them.
+    const between = raw.slice(wrong.end, right.start);
+    if (!TOOTH_SWAP_CONNECTOR.test(between) && !/^[\s,;]*$/u.test(between.replace(/\b(?:tooth|dent|la|le|number|num[ée]ro)\b/giu, ''))) {
+      return null;
+    }
+    // The wrong tooth is named first: "forget 16, this is 17".
+    const redo = affirmedFindings(extractFindings(raw.slice(right.end)));
+    return intent(
+      'chart.moveFindings',
+      { fromFdi: wrong.fdi, fdi: right.fdi, ...(redo.length ? { findings: toEntities(redo) } : {}) },
+      CONFIDENCE_STRONG,
+      raw,
+    );
+  },
+};
+
 /**
  * "No, actually crown replacement." Attaches to the tooth of the last write
  * rather than starting a new record — the correction case in §11 of the
@@ -994,6 +1101,8 @@ export const GRAMMAR_RULES: GrammarRule[] = [
   createTask,
   showFindings,
   undoLast,
+  moveToAnotherTooth,
+  reclassifyFinding,
   correctLast,
   removeFinding,
   noAllergy,

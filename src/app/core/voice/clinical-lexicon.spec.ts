@@ -121,6 +121,15 @@ describe('surface and severity', () => {
     expect(detectSurface('nothing here')).toBeNull();
   });
 
+  it('stores "proximal" as mesial + distal, never as a surface of its own', () => {
+    expect(detectSurface('proximal caries')).toBe('mesial-distal');
+    expect(detectSurface('carie interproximale')).toBe('mesial-distal');
+    // Already said as mesial: proximal adds the distal once, no duplicate.
+    expect(detectSurface('mesial and proximal')).toBe('mesial-distal');
+    const caries = extractFindings('tooth 16 proximal caries').find(f => f.code === 'caries');
+    expect(caries?.surface).toBe('mesial-distal');
+  });
+
   it('detects severity', () => {
     expect(detectSeverity('severe mobility')).toBe('SEVERE');
     expect(detectSeverity('mild sensitivity')).toBe('MILD');

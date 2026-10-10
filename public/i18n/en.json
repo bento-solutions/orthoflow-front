@@ -774,7 +774,13 @@
     "NGAP_REMOVE": "Remove",
     "NGAP_COTATION": "Rating",
     "NGAP_ANESTHESIA": "Anaesthesia",
-    "NGAP_PRIOR_AGREEMENT": "Prior agreement"
+    "NGAP_PRIOR_AGREEMENT": "Prior agreement",
+    "FACE_TARIFF": "Price by number of faces",
+    "FACE_TARIFF_HINT": "Leave a box empty to charge the base price. A restoration covering more faces than the last price entered is charged that last price.",
+    "FACES_N": "{{n}} face(s)",
+    "SESSION_FACES": "Faces treated (optional)",
+    "SESSION_QUOTE_BASE": "Base price: {{price}} DH",
+    "SESSION_QUOTE_FACES": "Price for {{n}} face(s): {{price}} DH"
   },
   "SETTINGS": {
     "TITLE": "Settings",
@@ -3145,7 +3151,13 @@
       "EXISTING": "Work already in the mouth",
       "TREATMENT_REQUIRED": "Work still to do",
       "OBSERVATION": "To watch"
-    }
+    },
+    "STATES": "Conditions",
+    "CARE": "Treatments to do",
+    "NO_STATES": "No condition recorded.",
+    "NO_CARE": "No treatment planned.",
+    "MARK_DONE": "Done",
+    "MARK_DONE_HINT": "The treatment is done: it leaves this list and moves into the tooth’s history."
   },
   "GUMS": {
     "TAB": "Gums",

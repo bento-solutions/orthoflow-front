@@ -242,6 +242,53 @@ describe('VoiceOrchestratorService — staging what was dictated', () => {
     });
   });
 
+  describe('a correction that names what was wrong', () => {
+    const codesOf = (index: number) => (entitiesOf(index)['findings'] as Array<{ code: string }>).map(f => f.code);
+
+    it('swaps one finding of the staged entry and keeps the rest', async () => {
+      await say('dent 16 carie et fracture');
+      expect(codesOf(0).sort()).toEqual(['caries', 'fracture']);
+
+      await say('ce n\'est pas une carie, c\'est une gingivite');
+
+      expect(api.recorded[1].intent).toBe('clinical.addFindings');
+      expect(entitiesOf(1)['fdi']).toBe('16');
+      expect(entitiesOf(1)['retractCodes']).toBeUndefined();
+      expect(codesOf(1).sort()).toEqual(['fracture', 'gingival_inflammation']);
+      expect(api.rejected).toEqual(['audit-1']);
+      expect(orchestrator.buffered().map(entry => entry.auditId)).toEqual(['audit-2']);
+    });
+
+    it('asks the server to swap a finding already on the record, by code', async () => {
+      await say('dent 17 ce n\'est pas une carie, c\'est une gingivite');
+
+      expect(api.recorded).toHaveLength(1);
+      expect(api.recorded[0].intent).toBe('clinical.addFindings');
+      expect(entitiesOf(0)['fdi']).toBe('17');
+      expect(entitiesOf(0)['retractCodes']).toEqual(['caries']);
+      expect(codesOf(0)).toEqual(['gingival_inflammation']);
+    });
+
+    it('moves the staged entry to the right tooth, findings and all', async () => {
+      await say('dent 16 carie mésiale');
+      await say('oublie la 16, c\'est la 17');
+
+      expect(api.recorded[1].intent).toBe('clinical.addFindings');
+      expect(entitiesOf(1)['fdi']).toBe('17');
+      expect(codesOf(1)).toEqual(['caries']);
+      expect((entitiesOf(1)['findings'] as Array<{ surface?: string }>)[0].surface).toBe('mesial');
+      expect(api.rejected).toEqual(['audit-1']);
+      expect(orchestrator.buffered().map(entry => entry.auditId)).toEqual(['audit-2']);
+    });
+
+    it('says so when nothing was dictated on the tooth to move', async () => {
+      await say('oublie la 16, c\'est la 17');
+
+      expect(api.recorded).toEqual([]);
+      expect(feedback.spoken.at(-1)?.text).toBe('Rien à corriger.');
+    });
+  });
+
   describe('one utterance naming two teeth', () => {
     it('stages one command per tooth, each with its own findings', async () => {
       await say('dent 16 carie et dent 17 couronne');

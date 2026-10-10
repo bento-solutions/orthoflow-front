@@ -24,7 +24,7 @@ import {
 import { acceptsFollowUp } from './voice-followup';
 import { InputLanguageService } from './input-language.service';
 import { classifyLanguage } from './language-filter';
-import { affirmedFindings, allFindingCodes, extractFindings, findingLabel, spokenFindingCovers } from './clinical-lexicon';
+import { affirmedFindings, allFindingCodes, extractFindings, findingKind, findingLabel, spokenFindingCovers } from './clinical-lexicon';
 import { describeFdi, findToothMentions, resolveTooth } from './tooth-lexicon';
 import { WORD_END } from './voice-regex';
 import {
@@ -44,6 +44,7 @@ import {
 import {
   CommandOutcome,
   ConfirmationStatus,
+  FindingEntity,
   VoiceClarification,
   VoiceCommand,
   VoiceContextSnapshot,
@@ -1325,13 +1326,30 @@ export class VoiceOrchestratorService {
       return;
     }
 
+    // "Pas une carie, c'est une inflammation" and "oublie la 16, c'est la 17"
+    // correct what was just dictated. Against a staged entry they become the
+    // same replacement "non, en fait…" makes; against the record, a reclassify
+    // is staged as it is and the server swaps the findings on the tooth.
+    if (command.id === 'chart.reclassifyFinding' || command.id === 'chart.moveFindings') {
+      const rewritten = this.rewriteCorrection(intent, snapshot);
+      if (!rewritten) {
+        this.settle();
+        this.announce(false, 'There is no entry to correct.', this.say('nothingToCorrect'));
+        return;
+      }
+      if (rewritten !== intent) {
+        await this.dispatch(rewritten, snapshot, recognitionConfidence, batch, humanConfirmed);
+        return;
+      }
+    }
+
     // "Non, en fait…" corrects the entry just staged. In the buffered flow
     // nothing is on the record yet, so the correction replaces that entry; it
     // cannot retract anything. Found before anything is staged, so a
     // correction with nothing to correct changes nothing.
     let replaced: BufferedEntry | null = null;
     if (command.id === 'chart.replaceLastFinding') {
-      replaced = this.stagedToReplace(snapshot);
+      replaced = this.stagedToReplace(snapshot, intent);
       if (!replaced) {
         this.settle();
         this.announce(false, 'There is no entry to correct.', this.say('nothingToCorrect'));
@@ -1460,11 +1478,72 @@ export class VoiceOrchestratorService {
    * is still in the buffer and is a set of findings. Null when there is
    * nothing to correct — it was undone, or the last thing said was a note.
    */
-  private stagedToReplace(snapshot: VoiceContextSnapshot): BufferedEntry | null {
+  private stagedToReplace(snapshot: VoiceContextSnapshot, intent?: VoiceIntent): BufferedEntry | null {
+    // A correction that already found its entry ("not caries, it's…") names it.
+    const named = intent ? entityString(intent.entities, 'replaceAuditId') : null;
+    if (named) {
+      const entry = this.bufferedSignal().find(candidate => candidate.auditId === named);
+      return entry && entry.intent === 'clinical.addFindings' ? entry : null;
+    }
     const last = snapshot.lastWrite;
     if (!last || last.targetType !== 'BufferedCommand') return null;
     const entry = this.bufferedSignal().find(candidate => candidate.auditId === last.targetId);
     return entry && entry.intent === 'clinical.addFindings' ? entry : null;
+  }
+
+  /**
+   * Turns "not X, it's Y" and "forget tooth A, this is B" into a replacement
+   * of the staged entry they are about, keeping whatever else that entry says:
+   * a correction changes one thing, not the whole dictation.
+   *
+   * Returns the same intent when it must be staged as it is (a reclassify of a
+   * finding already on the record — the server resolves it by code), and null
+   * when there is nothing to correct.
+   */
+  private rewriteCorrection(intent: VoiceIntent, snapshot: VoiceContextSnapshot): VoiceIntent | null {
+    const staged = this.bufferedSignal().filter(entry => entry.intent === 'clinical.addFindings');
+    const stagedFindings = (entry: BufferedEntry) =>
+      (Array.isArray(entry.entities['findings']) ? entry.entities['findings'] as Array<Record<string, unknown>> : []);
+    const asEntity = (f: Record<string, unknown>): FindingEntity => ({
+      code: String(f['code']),
+      label: findingLabel(String(f['code'])),
+      kind: findingKind(String(f['code'])) ?? 'CONDITION',
+      surface: (f['surface'] as string | null | undefined) ?? null,
+      severity: (f['severity'] as FindingEntity['severity'] | undefined) ?? null,
+      ...(f['note'] ? { note: String(f['note']) } : {}),
+    });
+    const replacing = (entry: BufferedEntry, fdi: string, findings: FindingEntity[]): VoiceIntent => ({
+      ...intent,
+      intent: 'chart.replaceLastFinding',
+      entities: { fdi, findings, replaceAuditId: entry.auditId },
+    });
+
+    if (intent.intent === 'chart.reclassifyFinding') {
+      const fdi = entityString(intent.entities, 'fdi');
+      const wrong = stagedFindingCodes({ findings: intent.entities['from'] });
+      const right = Array.isArray(intent.entities['findings']) ? intent.entities['findings'] as FindingEntity[] : [];
+      if (!fdi || wrong.length === 0 || right.length === 0) return null;
+      const covers = (code: string) => wrong.some(spoken => spokenFindingCovers(spoken, code));
+      const entry = [...staged].reverse().find(candidate =>
+        entityString(candidate.entities, 'fdi') === fdi
+        && stagedFindings(candidate).some(f => covers(String(f['code']))));
+      // Not dictated in this session: it is on the record, and the server
+      // swaps it there when the session is committed.
+      if (!entry) return intent;
+      const kept = stagedFindings(entry).filter(f => !covers(String(f['code']))).map(asEntity);
+      return replacing(entry, fdi, [...kept, ...right]);
+    }
+
+    // chart.moveFindings: the entry on the wrong tooth, the last one said first.
+    const from = entityString(intent.entities, 'fromFdi');
+    const to = entityString(intent.entities, 'fdi');
+    if (!from || !to) return null;
+    const lastId = snapshot.lastWrite?.targetType === 'BufferedCommand' ? snapshot.lastWrite.targetId : null;
+    const onWrongTooth = staged.filter(entry => entityString(entry.entities, 'fdi') === from);
+    const entry = onWrongTooth.find(candidate => candidate.auditId === lastId) ?? onWrongTooth[onWrongTooth.length - 1];
+    if (!entry) return null;
+    const redone = Array.isArray(intent.entities['findings']) ? intent.entities['findings'] as FindingEntity[] : [];
+    return replacing(entry, to, redone.length ? redone : stagedFindings(entry).map(asEntity));
   }
 
   private stage(entry: BufferedEntry, sessionId: string | null): void {

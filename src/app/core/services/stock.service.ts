@@ -16,6 +16,7 @@ import {
   StockItemQuery,
   Supplier,
   Treatment,
+  TreatmentPrice,
   PurchaseOrder,
   DeliveryNote,
   VendorInvoice,
@@ -298,8 +299,16 @@ export class StockService {
     return this.http.get<TreatmentInvoice[]>(`${this.baseUrl}/treatment-invoices/patient/${patientId}`);
   }
 
-  createDraftTreatmentInvoice(patientId: string, treatmentId: string): Observable<TreatmentInvoice> {
-    const params = new HttpParams().set('patientId', patientId).set('treatmentId', treatmentId);
+  /** What the treatment costs on this part of the tooth (no surface: the base price). */
+  getTreatmentPrice(treatmentId: string, surface?: string | null): Observable<TreatmentPrice> {
+    let params = new HttpParams();
+    if (surface) params = params.set('surface', surface);
+    return this.http.get<TreatmentPrice>(`${this.baseUrl}/treatments/${treatmentId}/price`, { params });
+  }
+
+  createDraftTreatmentInvoice(patientId: string, treatmentId: string, surface?: string | null): Observable<TreatmentInvoice> {
+    let params = new HttpParams().set('patientId', patientId).set('treatmentId', treatmentId);
+    if (surface) params = params.set('surface', surface);
     return this.http.post<TreatmentInvoice>(`${this.baseUrl}/treatment-invoices/draft`, {}, { params });
   }
 

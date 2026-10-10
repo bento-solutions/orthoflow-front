@@ -5289,6 +5289,22 @@ export interface components {
             actCode?: string;
             actCoefficient?: number;
             consumables?: components["schemas"]["TreatmentConsumableRequest"][];
+            surfacePrices?: components["schemas"]["TreatmentSurfacePrice"][];
+        };
+        TreatmentSurfacePrice: {
+            /** Format: int32 */
+            surfaceCount: number;
+            price: number;
+        };
+        TreatmentPrice: {
+            /** Format: uuid */
+            treatmentId?: string;
+            surface?: string;
+            /** Format: int32 */
+            faceCount?: number;
+            price?: number;
+            basePrice?: number;
+            basis?: string;
         };
         StockItemResponse: {
             /** Format: uuid */
@@ -5342,6 +5358,7 @@ export interface components {
             active?: boolean;
             actCode?: string;
             actCoefficient?: number;
+            surfacePrices?: components["schemas"]["TreatmentSurfacePrice"][];
         };
         InvoiceDiscountRequest: {
             /** @enum {string} */

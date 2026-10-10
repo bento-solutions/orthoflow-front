@@ -53,6 +53,8 @@ export type {
   // Treatment
   Treatment,
   TreatmentRequest,
+  TreatmentSurfacePrice,
+  TreatmentPrice,
   TreatmentConsumable,
   TreatmentInvoice,
   TreatmentInvoiceConsumable,

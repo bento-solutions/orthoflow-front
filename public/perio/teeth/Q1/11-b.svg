@@ -1,0 +1,12 @@
+<svg width="76" height="200" viewBox="0 0 76 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="t11b-enamel" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F0ECE3"/></linearGradient>
+    <linearGradient id="t11b-dentin" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#EFDFC7"/><stop offset="1" stop-color="#DFC9A8"/></linearGradient>
+    <linearGradient id="t11b-dentin-back" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#E2D0B2"/><stop offset="1" stop-color="#D2B992"/></linearGradient>
+  </defs>
+  <path d="M18.23 133.96 C18.33 113.62 19.62 94.72 20.08 79.6 C20.61 61.96 23.55 46.34 25.65 31.72 C28.02 15.09 33.17 8.41 36.95 8.41 C40.73 8.41 47.62 15.09 50.01 31.72 C52.11 46.34 55.75 61.96 56.27 79.6 C56.73 94.72 58.02 113.62 58.23 133.96 C47.8 128.68 28.55 128.68 18.23 133.96 Z" fill="url(#t11b-dentin)"/>
+  <path d="M18.23 133.96 C18.33 113.62 19.62 94.72 20.08 79.6 C20.61 61.96 23.55 46.34 25.65 31.72 C28.02 15.09 33.17 8.41 36.95 8.41 C40.73 8.41 47.62 15.09 50.01 31.72 C52.11 46.34 55.75 61.96 56.27 79.6 C56.73 94.72 58.02 113.62 58.23 133.96" fill="none" stroke="#1A1A1A" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18.23 133.96 C16.46 137.56 14.71 144.69 13.33 151.78 C11.66 160.3 10.52 168.76 10.52 170.92 C10.52 179.83 15.77 195.67 21.03 196 C32.4 196 49.55 196 61.66 196 C64.04 196 65.65 192.37 65.65 184.12 C65.65 180.97 63.97 165.19 61.9 151.78 C60.73 144.16 59.42 137.31 58.23 133.96 C47.8 128.68 28.55 128.68 18.23 133.96 Z" fill="url(#t11b-enamel)"/>
+  <path d="M18.23 133.96 C16.46 137.56 14.71 144.69 13.33 151.78 C11.66 160.3 10.52 168.76 10.52 170.92 C10.52 179.83 15.77 195.67 21.03 196 C32.4 196 49.55 196 61.66 196 C64.04 196 65.65 192.37 65.65 184.12 C65.65 180.97 63.97 165.19 61.9 151.78 C60.73 144.16 59.42 137.31 58.23 133.96" fill="none" stroke="#1A1A1A" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18.23 133.96 C28.55 128.68 47.8 128.68 58.23 133.96" fill="none" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

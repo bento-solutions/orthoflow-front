@@ -516,6 +516,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/patients/{patientId}/clinical-record/perio-charts/{chartId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_4"];
+        put: operations["save"];
+        post?: never;
+        delete: operations["delete_6"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patients/{id}": {
         parameters: {
             query?: never;
@@ -571,7 +587,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_4"];
+        get: operations["get_5"];
         put: operations["update_9"];
         post?: never;
         delete?: never;
@@ -604,7 +620,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["note"];
-        put: operations["save"];
+        put: operations["save_1"];
         post?: never;
         delete: operations["reset"];
         options?: never;
@@ -635,7 +651,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_6"];
+        get: operations["get_7"];
         put: operations["update_10"];
         post?: never;
         delete?: never;
@@ -1149,7 +1165,7 @@ export interface paths {
         };
         get: operations["getAll_1"];
         put?: never;
-        post: operations["save_1"];
+        post: operations["save_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2276,6 +2292,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/patients/{patientId}/clinical-record/perio-charts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_5"];
+        put?: never;
+        post: operations["create_12"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patientId}/clinical-record/perio-charts/{chartId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patients/{patientId}/clinical-record/notes": {
         parameters: {
             query?: never;
@@ -2491,9 +2539,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
-        post: operations["create_12"];
+        post: operations["create_13"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2555,9 +2603,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
-        post: operations["create_13"];
+        post: operations["create_14"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2747,9 +2795,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
-        post: operations["create_14"];
+        post: operations["create_15"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2843,7 +2891,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         post: operations["upload_1"];
         delete?: never;
@@ -2907,7 +2955,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         post: operations["start_1"];
         delete?: never;
@@ -3005,7 +3053,7 @@ export interface paths {
         };
         get: operations["search_1"];
         put?: never;
-        post: operations["create_15"];
+        post: operations["create_16"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3407,6 +3455,22 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stock/treatments/{id}/price": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["priceFor"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -4347,7 +4411,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4395,7 +4459,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4571,7 +4635,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_5"];
+        get: operations["get_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4782,7 +4846,7 @@ export interface paths {
         get: operations["download"];
         put?: never;
         post?: never;
-        delete: operations["delete_6"];
+        delete: operations["delete_7"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4859,7 +4923,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_7"];
+        get: operations["get_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4923,7 +4987,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_12"];
+        get: operations["list_13"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5293,18 +5357,8 @@ export interface components {
         };
         TreatmentSurfacePrice: {
             /** Format: int32 */
-            surfaceCount: number;
+            surfaceCount?: number;
             price: number;
-        };
-        TreatmentPrice: {
-            /** Format: uuid */
-            treatmentId?: string;
-            surface?: string;
-            /** Format: int32 */
-            faceCount?: number;
-            price?: number;
-            basePrice?: number;
-            basis?: string;
         };
         StockItemResponse: {
             /** Format: uuid */
@@ -6086,6 +6140,82 @@ export interface components {
             channels?: {
                 [key: string]: boolean;
             };
+        };
+        SaveChartRequest: {
+            /** Format: int64 */
+            expectedVersion: number;
+            /** Format: date */
+            chartDate?: string;
+            visitReason?: string;
+            clinicalNotes?: string;
+            toothStatus: {
+                [key: string]: string;
+            };
+            teeth: {
+                [key: string]: components["schemas"]["ToothMeasurements"];
+            };
+        };
+        ToothMeasurements: {
+            /** Format: int32 */
+            mobility?: number;
+            furcation?: {
+                [key: string]: string;
+            };
+            pocketDepth?: {
+                [key: string]: number;
+            };
+            recession?: {
+                [key: string]: number;
+            };
+            bleeding?: string[];
+            plaque?: string[];
+            suppuration?: string[];
+            empty?: boolean;
+        };
+        Chart: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            patientId?: string;
+            /** Format: date */
+            chartDate?: string;
+            visitReason?: string;
+            clinicalNotes?: string;
+            toothStatus?: {
+                [key: string]: string;
+            };
+            teeth?: {
+                [key: string]: components["schemas"]["ToothMeasurements"];
+            };
+            /** Format: int64 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            summary?: components["schemas"]["PerioSummary"];
+        };
+        PerioSummary: {
+            /** Format: int32 */
+            sitesRecorded?: number;
+            /** Format: double */
+            bleedingPercent?: number;
+            /** Format: double */
+            plaquePercent?: number;
+            /** Format: double */
+            suppurationPercent?: number;
+            /** Format: double */
+            meanPocketDepth?: number;
+            /** Format: double */
+            pocketsAboveFourPercent?: number;
+            /** Format: int32 */
+            deepestPocketDepth?: number;
+            /** Format: double */
+            meanRecession?: number;
+            /** Format: double */
+            meanCal?: number;
+            /** Format: double */
+            sitesAboveFiveCalPercent?: number;
         };
         PhoneEntry: {
             number: string;
@@ -7524,6 +7654,11 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
         };
+        CreateChartRequest: {
+            /** Format: date */
+            chartDate?: string;
+            visitReason?: string;
+        };
         CreateClinicalNoteRequest: {
             category: string;
             content: string;
@@ -8249,6 +8384,16 @@ export interface components {
             /** Format: int64 */
             callBacksPending?: number;
         };
+        TreatmentPrice: {
+            /** Format: uuid */
+            treatmentId?: string;
+            surface?: string;
+            /** Format: int32 */
+            faceCount?: number;
+            price?: number;
+            basePrice?: number;
+            basis?: string;
+        };
         Pageable: {
             /** Format: int32 */
             page?: number;
@@ -8262,10 +8407,10 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StockMovementResponse"][];
@@ -8608,10 +8753,10 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientResponse"][];
@@ -8752,6 +8897,8 @@ export interface components {
             treatments?: components["schemas"]["PatientTreatment"][];
             invoices?: components["schemas"]["Invoice"][];
             clinicalRecord?: components["schemas"]["PatientClinicalRecordResponse"];
+            periodontalStatus?: components["schemas"]["PeriodontalStatusResponse"];
+            periodontalCharts?: components["schemas"]["Chart"][];
             voiceSessions?: components["schemas"]["VoiceSessionResponse"][];
             voiceCommands?: components["schemas"]["VoiceCommandAuditResponse"][];
             consultations?: components["schemas"]["ConsultationResponse"][];
@@ -8822,6 +8969,10 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
         };
+        PeriodontalStatusResponse: {
+            current?: components["schemas"]["PeriodontalAssessmentResponse"][];
+            history?: components["schemas"]["PeriodontalAssessmentResponse"][];
+        };
         StockItem: {
             /** Format: uuid */
             id?: string;
@@ -8888,6 +9039,7 @@ export interface components {
             actCode?: string;
             actCoefficient?: number;
             consumables?: components["schemas"]["TreatmentConsumable"][];
+            surfacePrices?: components["schemas"]["TreatmentSurfacePrice"][];
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -8908,9 +9060,19 @@ export interface components {
             /** Format: uuid */
             stockItemId?: string;
         };
-        PeriodontalStatusResponse: {
-            current?: components["schemas"]["PeriodontalAssessmentResponse"][];
-            history?: components["schemas"]["PeriodontalAssessmentResponse"][];
+        ChartListItem: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: date */
+            chartDate?: string;
+            visitReason?: string;
+            /** Format: int64 */
+            version?: number;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: date-time */
+            deletedAt?: string;
+            summary?: components["schemas"]["PerioSummary"];
         };
         PassportAllergy: {
             substance?: string;
@@ -9014,10 +9176,10 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientDirectoryRow"][];
@@ -9121,10 +9283,10 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LogRow"][];
@@ -9182,10 +9344,10 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["InvoiceResponse"][];
@@ -10970,6 +11132,77 @@ export interface operations {
             };
         };
     };
+    get_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+                chartId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Chart"];
+                };
+            };
+        };
+    };
+    save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+                chartId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveChartRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Chart"];
+                };
+            };
+        };
+    };
+    delete_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+                chartId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getPatientById: {
         parameters: {
             query?: never;
@@ -11132,7 +11365,7 @@ export interface operations {
             };
         };
     };
-    get_4: {
+    get_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -11230,7 +11463,7 @@ export interface operations {
             };
         };
     };
-    save: {
+    save_1: {
         parameters: {
             query: {
                 lang: string;
@@ -11302,7 +11535,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -12391,7 +12624,7 @@ export interface operations {
             };
         };
     };
-    save_1: {
+    save_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -12464,6 +12697,7 @@ export interface operations {
             query: {
                 patientId: string;
                 treatmentId: string;
+                surface?: string;
             };
             header?: never;
             path?: never;
@@ -14849,6 +15083,79 @@ export interface operations {
             };
         };
     };
+    list_5: {
+        parameters: {
+            query?: {
+                deleted?: boolean;
+            };
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChartListItem"][];
+                };
+            };
+        };
+    };
+    create_12: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateChartRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Chart"];
+                };
+            };
+        };
+    };
+    restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+                chartId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Chart"];
+                };
+            };
+        };
+    };
     listNotes: {
         parameters: {
             query?: never;
@@ -15240,7 +15547,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: {
                 status?: ("SENT" | "IN_PROGRESS" | "RECEIVED" | "FITTED" | "REMAKE")[];
@@ -15271,7 +15578,7 @@ export interface operations {
             };
         };
     };
-    create_12: {
+    create_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -15392,7 +15699,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query?: {
                 patientId?: string;
@@ -15415,7 +15722,7 @@ export interface operations {
             };
         };
     };
-    create_13: {
+    create_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -15697,7 +16004,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query: {
                 from: string;
@@ -15723,7 +16030,7 @@ export interface operations {
             };
         };
     };
-    create_14: {
+    create_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -15894,7 +16201,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query: {
                 ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "INSURANCE_FORM" | "PRESCRIPTION" | "CLINICAL_PHOTO";
@@ -16043,7 +16350,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query: {
                 patientId: string;
@@ -16236,7 +16543,7 @@ export interface operations {
             };
         };
     };
-    create_15: {
+    create_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -16900,6 +17207,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": Record<string, never>;
+                };
+            };
+        };
+    };
+    priceFor: {
+        parameters: {
+            query?: {
+                surface?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TreatmentPrice"];
                 };
             };
         };
@@ -18248,7 +18579,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: {
                 search?: string;
@@ -18321,7 +18652,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: {
                 limit?: number;
@@ -18563,7 +18894,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -18891,7 +19222,7 @@ export interface operations {
             };
         };
     };
-    delete_6: {
+    delete_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -18993,7 +19324,7 @@ export interface operations {
             };
         };
     };
-    get_7: {
+    get_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -19079,7 +19410,7 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    list_13: {
         parameters: {
             query?: {
                 status?: string;

@@ -7,6 +7,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import {
   PERIO_REGIONS, PerioCondition, PerioRegion, PeriodontalAssessment,
 } from '../../../core/models/clinical-record.model';
+import { PerioChartComponent } from '../perio-chart/perio-chart.component';
 
 const CONDITIONS: readonly PerioCondition[] = ['HEALTHY', 'GINGIVITIS', 'PERIODONTITIS'];
 /** The mouth as the dentist faces the patient: the patient's right is on the left. */
@@ -16,7 +17,8 @@ const MOUTH_ROWS: readonly (readonly PerioRegion[])[] = [
 ];
 
 /**
- * The state of the gums, by area of the mouth. Gums are rarely uniform:
+ * The gums of a patient, in two parts. The probing chart (six sites on every tooth, charted again at each
+ * re-evaluation) is the evidence; below it is the verdict, by area of the mouth. Gums are rarely uniform:
  * "periodontitis" on a mouth whose front teeth are healthy would misinform the
  * next practitioner, so each of the six sextants (and the mouth as a whole) has
  * its own latest assessment, and every earlier one is kept.
@@ -24,9 +26,12 @@ const MOUTH_ROWS: readonly (readonly PerioRegion[])[] = [
 @Component({
   selector: 'app-gum-status',
   standalone: true,
-  imports: [FormsModule, DatePipe, NgTemplateOutlet, TranslateModule],
+  imports: [FormsModule, DatePipe, NgTemplateOutlet, TranslateModule, PerioChartComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-perio-chart [patientId]="patientId()" [patientName]="patientName()" [patientBirthDate]="patientBirthDate()" />
+
+    <section class="areas">
     <header class="head">
       <h2>{{ 'GUMS.TITLE' | translate }}</h2>
       <p class="sub">{{ 'GUMS.SUBTITLE' | translate }}</p>
@@ -123,9 +128,11 @@ const MOUTH_ROWS: readonly (readonly PerioRegion[])[] = [
         <p class="muted">{{ 'GUMS.NO_HISTORY' | translate }}</p>
       }
     </section>
+    </section>
   `,
   styles: [`
-    :host { display: block; max-width: 44rem; }
+    :host { display: block; }
+    .areas { max-width: 44rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
     .head h2 { margin: 0; font-size: 1.125rem; }
     .sub { margin: .25rem 0 1rem; color: var(--text-muted); font-size: .875rem; }
     .map { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1.25rem; }
@@ -175,6 +182,9 @@ const MOUTH_ROWS: readonly (readonly PerioRegion[])[] = [
 })
 export class GumStatusComponent {
   readonly patientId = input.required<string>();
+  /** Only for the header of a printed periodontal chart. */
+  readonly patientName = input<string | null>(null);
+  readonly patientBirthDate = input<string | null>(null);
 
   private readonly records = inject(ClinicalRecordService);
   private readonly toast = inject(ToastService);

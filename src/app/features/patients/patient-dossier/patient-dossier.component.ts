@@ -498,7 +498,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                 }
                 @case ('gums') {
                   <section class="dossier-section">
-                    <app-gum-status [patientId]="patient.id" />
+                    <app-gum-status [patientId]="patient.id" [patientName]="patient.firstName + ' ' + patient.lastName" [patientBirthDate]="patient.dateOfBirth ?? null" />
                   </section>
                 }
                 @case ('notes') {

@@ -17,6 +17,10 @@ import { FINDING_KIND_ORDER, FINDING_OPTIONS } from './clinical/finding-options'
 import { SURFACE_ORDER } from './clinical/tooth-surfaces';
 import { INPUT_LANGUAGES } from './voice/language-filter';
 import { PERIO_REGIONS } from './models/clinical-record.model';
+import { REFUSAL_KEYS } from './clinical/perio/perio-input';
+import { FURCATION_SITES, PERIO_MODES, PROBING_SITES, TOOTH_STATUSES } from './clinical/perio/perio.model';
+import { modeKey } from '../features/patients/perio-chart/perio-palette';
+import { TREND_KEYS, TREND_METRICS } from '../features/patients/perio-chart/perio-progression';
 
 /**
  * Templates build some keys at run time (`'REC.KINDS.' + kind`), which the static scan in
@@ -46,6 +50,14 @@ const FAMILIES: Record<string, readonly string[]> = {
   'TREATMENT_LOG.OUTCOME': ['IN_PLACE', 'TREATED', 'COMPLETED', 'REQUIRED', 'PLANNED', 'IN_PROGRESS'],
   'VOICE.LANG': INPUT_LANGUAGES,
   'GUMS.REGION': PERIO_REGIONS,
+  'PERIO.LABEL': PERIO_MODES.map(modeKey),
+  'PERIO.SITE': [...PROBING_SITES, ...FURCATION_SITES].map(s => s.toUpperCase()),
+  'PERIO.STATUS': TOOTH_STATUSES.map(s => s.toUpperCase()),
+  'PERIO.VALIDATION': REFUSAL_KEYS,
+  'PERIO.RANGE': ['pocketDepth', 'recession', 'mobility', 'furcation'].map(m => modeKey(m as never)),
+  'PERIO.HINT': ['pocketDepth', 'recession', 'mobility', 'furcation'].map(m => modeKey(m as never)),
+  'PERIO.PROGRESSION': [...TREND_KEYS.flatMap(k => [`${k}_TITLE`, `${k}_DESC`]), ...TREND_METRICS.map(m => `METRIC_${m}`)],
+  'PERIO.TOUR': ['PICK', 'TYPE', 'TEETH', 'SAVE'].flatMap(step => [`${step}_TITLE`, `${step}_TEXT`]),
   'GUMS.CONDITION': ['HEALTHY', 'GINGIVITIS', 'PERIODONTITIS'],
   'FINDING': FINDING_OPTIONS.map(o => o.code.toUpperCase()),
   'SURFACE': SURFACE_ORDER.map(s => s.toUpperCase()),

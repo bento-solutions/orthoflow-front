@@ -1,0 +1,12 @@
+<svg width="76" height="200" viewBox="0 0 76 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="t12b-enamel" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F0ECE3"/></linearGradient>
+    <linearGradient id="t12b-dentin" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#EFDFC7"/><stop offset="1" stop-color="#DFC9A8"/></linearGradient>
+    <linearGradient id="t12b-dentin-back" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#E2D0B2"/><stop offset="1" stop-color="#D2B992"/></linearGradient>
+  </defs>
+  <path d="M18.75 133.96 C18.92 113.62 20.85 94.72 21.38 79.6 C21.83 66.5 22.7 43.44 24.88 31.72 C27.85 15.97 29.43 6.52 32.92 6.52 C36.42 6.52 42.73 16.85 46.58 31.72 C49.48 42.93 54.38 66.5 54.87 79.6 C55.43 94.72 57.18 113.62 57.77 133.96 C47.45 128.68 28.9 128.68 18.75 133.96 Z" fill="url(#t12b-dentin)"/>
+  <path d="M18.75 133.96 C18.92 113.62 20.85 94.72 21.38 79.6 C21.83 66.5 22.7 43.44 24.88 31.72 C27.85 15.97 29.43 6.52 32.92 6.52 C36.42 6.52 42.73 16.85 46.58 31.72 C49.48 42.93 54.38 66.5 54.87 79.6 C55.43 94.72 57.18 113.62 57.77 133.96" fill="none" stroke="#1A1A1A" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18.75 133.96 C17.82 137.99 17.01 145.34 16.46 152.11 C15.96 158.11 15.67 163.65 15.67 165.97 C15.67 173.56 18.92 192.37 24.17 193.03 C32.4 193.03 46.4 193.03 54.62 193.03 C58.47 193.03 60.68 180.82 60.68 173.89 C60.68 171.14 60.14 161.47 59.46 152.11 C58.92 144.62 58.29 137.33 57.77 133.96 C47.45 128.68 28.9 128.68 18.75 133.96 Z" fill="url(#t12b-enamel)"/>
+  <path d="M18.75 133.96 C17.82 137.99 17.01 145.34 16.46 152.11 C15.96 158.11 15.67 163.65 15.67 165.97 C15.67 173.56 18.92 192.37 24.17 193.03 C32.4 193.03 46.4 193.03 54.62 193.03 C58.47 193.03 60.68 180.82 60.68 173.89 C60.68 171.14 60.14 161.47 59.46 152.11 C58.92 144.62 58.29 137.33 57.77 133.96" fill="none" stroke="#1A1A1A" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18.75 133.96 C28.9 128.68 47.45 128.68 57.77 133.96" fill="none" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

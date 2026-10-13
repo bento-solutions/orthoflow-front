@@ -16,6 +16,10 @@ export const ANALYTICS_TABS: AnalyticsTab[] = [
   { path: 'income', key: 'ANA.TABS.INCOME', permission: ['FINANCE_VIEW'] },
   { path: 'goals', key: 'ANA.TABS.GOALS', permission: ['FINANCE_VIEW'] },
   { path: 'tax', key: 'ANA.TABS.TAX', permission: ['FINANCE_VIEW'] },
+  // The warehouse pair. Same two screens are reachable under /stock, because one
+  // audience arrives from the stockroom and the other from the accounts.
+  { path: 'leakage', key: 'ANA.TABS.LEAKAGE', permission: ['ANALYTICS_VIEW'] },
+  { path: 'forecast', key: 'ANA.TABS.FORECAST', permission: ['ANALYTICS_VIEW'] },
 ];
 
 /** `/analytics` opens on the first report this person may see (decided after their permissions are known, so not with a plain redirect). */

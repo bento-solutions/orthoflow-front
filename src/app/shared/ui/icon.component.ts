@@ -4,7 +4,7 @@ export type IconName =
   // navigation
   | 'grid' | 'users' | 'calendar' | 'activity' | 'receipt' | 'box' | 'chart' | 'settings'
   // actions
-  | 'plus' | 'search' | 'close' | 'edit' | 'trash' | 'filter' | 'print' | 'download'
+  | 'plus' | 'minus' | 'search' | 'close' | 'edit' | 'trash' | 'filter' | 'print' | 'download'
   | 'send' | 'save' | 'refresh' | 'external' | 'more'
   // state
   | 'check' | 'check-circle' | 'alert-triangle' | 'alert-circle' | 'info' | 'clock'
@@ -82,6 +82,7 @@ export type IconName =
         }
 
         @case ('plus') { <path d="M12 5v14M5 12h14" /> }
+        @case ('minus') { <path d="M5 12h14" /> }
         @case ('search') { <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /> }
         @case ('close') { <path d="M18 6 6 18M6 6l12 12" /> }
         @case ('edit') { <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" /><path d="m15 5 4 4" /> }

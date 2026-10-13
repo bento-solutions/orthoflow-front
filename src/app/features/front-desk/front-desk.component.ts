@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -17,6 +17,7 @@ import { PatientPickerComponent, PickedPatient } from '../../shared/ui/patient-p
 import { Appointment, ChairBoard, FrontDesk, FrontDeskApi, WaitingCard } from './front-desk-api.service';
 import { AbsencesComponent } from './absences.component';
 import { WaitingListComponent } from './waiting-list.component';
+import { WaitingRoomDesignerComponent } from './waiting-room/waiting-room-designer.component';
 
 type Tab = 'today' | 'list' | 'absences';
 
@@ -32,7 +33,7 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
 @Component({
   selector: 'app-front-desk',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent, PatientPickerComponent, WaitingListComponent, AbsencesComponent],
+  imports: [DatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent, PatientPickerComponent, WaitingListComponent, AbsencesComponent, WaitingRoomDesignerComponent],
   template: `
     <div class="page-head">
       <div>
@@ -56,31 +57,50 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
 
     @if (tab() === 'today') {
       @if (board.data(); as b) {
-        <section class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6" [attr.aria-label]="'FD.KPIS' | translate">
+        <section class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7" [attr.aria-label]="'FD.KPIS' | translate">
           @for (k of kpis(); track k.key) {
             <div class="tile p-4">
               <p class="text-2xs font-bold uppercase tracking-wider text-ink-500">{{ k.key | translate }}</p>
               <p class="mt-1 text-2xl font-extrabold tabular-nums" [class.text-critical-700]="k.tone === 'critical'" [class.text-caution-700]="k.tone === 'warn'" [class.text-ink-900]="k.tone === 'ok'">{{ k.value }}</p>
+              @if (k.hint) { <p class="mt-0.5 text-2xs font-bold text-ink-400">{{ k.hint }}</p> }
             </div>
           }
         </section>
 
+        <!-- The plan and the people on it, side by side: the list is what the desk reads. -->
         <div class="grid gap-6 xl:grid-cols-5">
-          <section class="card xl:col-span-3">
+          <app-waiting-room-designer class="block xl:col-span-3" [highlighted]="highlight()" (changed)="reload()" (seatPicked)="highlight.set($event)" />
+          <section class="card xl:col-span-2">
             <div class="card-head"><h2 class="text-lg font-bold text-ink-900">{{ 'FD.WAITING_ROOM' | translate }} <span class="pill pill-active ms-1">{{ b.waiting.length }}</span></h2></div>
             <ul class="divide-y divide-ink-100">
               @for (w of b.waiting; track w.appointmentId; let i = $index; let last = $last) {
-                <li class="flex flex-wrap items-center gap-3 px-5 py-3">
+                <li class="flex flex-wrap items-center gap-3 px-5 py-3" [class.bg-petrol-50]="highlight() === w.appointmentId">
                   <span class="h-10 w-1.5 shrink-0 rounded-full" [style.background]="w.typeColor || '#64748b'" aria-hidden="true"></span>
                   <div class="min-w-0 flex-1">
-                    <p class="truncate font-bold text-ink-900">{{ w.patientName }} @if (w.walkIn) { <span class="pill pill-attention ms-1">{{ 'FD.WALK_IN_TAG' | translate }}</span> }</p>
-                    <p class="truncate text-sm text-ink-500">{{ w.typeName }} · {{ w.practitionerName || '—' }} @if (!w.walkIn) { · {{ w.scheduledFor | date: 'shortTime' }} }</p>
+                    <p class="truncate font-bold text-ink-900">
+                      @if (w.gender) {
+                        <span class="gender-dot" [class.is-male]="w.gender === 'M'" [class.is-female]="w.gender === 'F'"
+                              [attr.title]="w.gender === 'M' ? 'M' : 'F'" aria-hidden="true"></span>
+                      }
+                      {{ w.patientName }} @if (w.walkIn) { <span class="pill pill-attention ms-1">{{ 'FD.WALK_IN_TAG' | translate }}</span> }
+                    </p>
+                    <p class="truncate text-sm text-ink-500">
+                      {{ w.typeName }} · {{ w.practitionerName || '—' }}
+                      @if (!w.walkIn) { · {{ w.scheduledFor | date: 'shortTime' }} }
+                      @if (w.arrivedAt) { · {{ 'FD.WR.TIP_ARRIVED' | translate }} {{ w.arrivedAt | date: 'shortTime' }} }
+                    </p>
                   </div>
                   <span class="text-sm font-bold tabular-nums" [class.text-critical-700]="tone(w) === 'critical'" [class.text-caution-700]="tone(w) === 'warn'" [attr.title]="'FD.WAITING_SINCE' | translate">
                     {{ w.waitMinutes }} min
                   </span>
+                  @if (w.seatId) {
+                    <span class="pill pill-active" [title]="'FD.WR.SEATED' | translate">{{ 'FD.WR.SEATED' | translate }}</span>
+                  }
                   @if (canManage()) {
                     <div class="flex items-center gap-1">
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="assignSeat(w)">
+                        {{ (w.seatId ? 'FD.WR.MOVE_SEAT' : 'FD.WR.GIVE_SEAT') | translate }}
+                      </button>
                       <button type="button" class="btn btn-ghost btn-icon" [disabled]="i === 0" (click)="move(i, -1)" [attr.aria-label]="('FD.MOVE_UP' | translate) + ' ' + w.patientName"><app-icon name="chevron-up" [size]="16" /></button>
                       <button type="button" class="btn btn-ghost btn-icon" [disabled]="last" (click)="move(i, 1)" [attr.aria-label]="('FD.MOVE_DOWN' | translate) + ' ' + w.patientName"><app-icon name="chevron-down" [size]="16" /></button>
                       <select class="select w-36" [ngModel]="chairChoice()[w.appointmentId] ?? ''" (ngModelChange)="chooseChair(w.appointmentId, $event)" [attr.aria-label]="('FD.CHAIR' | translate) + ' — ' + w.patientName">
@@ -96,8 +116,9 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
               }
             </ul>
           </section>
+        </div>
 
-          <section class="card xl:col-span-2">
+        <section class="card mt-6">
             <div class="card-head"><h2 class="text-lg font-bold text-ink-900">{{ 'FD.CHAIRS' | translate }}</h2></div>
             <ul class="divide-y divide-ink-100">
               @for (c of b.chairs; track c.chairId) {
@@ -119,7 +140,6 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
               }
             </ul>
           </section>
-        </div>
 
         <section class="card mt-6">
           <div class="card-head"><h2 class="text-lg font-bold text-ink-900">{{ 'FD.EXPECTED' | translate }} <span class="pill pill-idle ms-1">{{ expected().length }}</span></h2></div>
@@ -183,6 +203,25 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
       </div>
     </app-modal>
   `,
+  styles: [
+    `
+      .gender-dot {
+        display: inline-block;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 9999px;
+        margin-inline-end: 0.375rem;
+        vertical-align: middle;
+        background: rgb(var(--ink-400));
+      }
+      .gender-dot.is-male {
+        background: rgb(37 99 235);
+      }
+      .gender-dot.is-female {
+        background: rgb(219 39 119);
+      }
+    `,
+  ],
 })
 export class FrontDeskComponent {
   private readonly api = inject(FrontDeskApi);
@@ -198,6 +237,9 @@ export class FrontDeskComponent {
     { id: 'absences', key: 'FD.TAB_ABSENCES' },
   ];
   protected readonly tab = signal<Tab>('today');
+  /** The patient the plan last pointed at, so the list can echo the selection. */
+  protected readonly highlight = signal<string | null>(null);
+  @ViewChild(WaitingRoomDesignerComponent) private designer?: WaitingRoomDesignerComponent;
   protected readonly board = loadable<FrontDesk | null>(null);
   protected readonly today = loadable<Appointment[]>([]);
   protected readonly chairChoice = signal<Record<string, string>>({});
@@ -213,13 +255,23 @@ export class FrontDeskComponent {
     if (!k) {
       return [];
     }
+    // averageWaitMinutes and longestWaitMinutes are genuinely absent when nobody has
+    // waited yet — not zero. Rendering the raw value put "null min" on the board.
+    const mins = (v: number | null | undefined) => (v == null ? '—' : `${Math.round(v)} min`);
+    const known = (k.waitingMale ?? 0) + (k.waitingFemale ?? 0);
     return [
-      { key: 'FD.KPI.WAITING', value: String(k.waiting), tone: 'ok' as const },
-      { key: 'FD.KPI.IN_TREATMENT', value: String(k.inTreatment), tone: 'ok' as const },
-      { key: 'FD.KPI.ARRIVED', value: String(k.arrivedToday), tone: 'ok' as const },
-      { key: 'FD.KPI.AVG_WAIT', value: `${Math.round(k.averageWaitMinutes)} min`, tone: waitTone(k.averageWaitMinutes) },
-      { key: 'FD.KPI.LONGEST', value: `${k.longestWaitMinutes} min`, tone: waitTone(k.longestWaitMinutes) },
-      { key: 'FD.KPI.CHAIRS', value: `${k.chairsOccupied} / ${k.chairsTotal}`, tone: 'ok' as const },
+      {
+        key: 'FD.KPI.WAITING',
+        value: String(k.waiting),
+        hint: known > 0 ? `${k.waitingMale ?? 0} ♂ · ${k.waitingFemale ?? 0} ♀` : '',
+        tone: 'ok' as const,
+      },
+      { key: 'FD.KPI.IN_TREATMENT', value: String(k.inTreatment), hint: '', tone: 'ok' as const },
+      { key: 'FD.KPI.ARRIVED', value: String(k.arrivedToday), hint: '', tone: 'ok' as const },
+      { key: 'FD.KPI.AVG_WAIT', value: mins(k.averageWaitMinutes), hint: '', tone: waitTone(k.averageWaitMinutes ?? 0) },
+      { key: 'FD.KPI.LONGEST', value: mins(k.longestWaitMinutes), hint: '', tone: waitTone(k.longestWaitMinutes ?? 0) },
+      { key: 'FD.KPI.SEATS', value: `${k.seatsOccupied ?? 0} / ${k.seatsTotal ?? 0}`, hint: '', tone: 'ok' as const },
+      { key: 'FD.KPI.CHAIRS', value: `${k.chairsOccupied} / ${k.chairsTotal}`, hint: '', tone: 'ok' as const },
     ];
   });
   /** Booked visits that have not started: the people the desk is still waiting for. */
@@ -237,6 +289,12 @@ export class FrontDeskComponent {
     merge(this.live.of('appointment', 'waiting-list', 'agenda-config')).pipe(takeUntilDestroyed(destroyRef)).subscribe(() => void this.reload());
     const timer = setInterval(() => void this.reload(), 60_000);
     destroyRef.onDestroy(() => clearInterval(timer));
+  }
+
+  /** Hands the plan a patient to seat; free seats light up and the next click places them. */
+  protected assignSeat(w: WaitingCard): void {
+    this.highlight.set(w.appointmentId);
+    this.designer?.beginAssign(w);
   }
 
   protected tone(w: WaitingCard): 'ok' | 'warn' | 'critical' {

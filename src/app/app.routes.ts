@@ -225,6 +225,8 @@ export const routes: Routes = [
           { path: 'income', canActivate: [permissionGuard('FINANCE_VIEW')], loadComponent: () => import('./features/analytics/income-statement.component').then(m => m.IncomeStatementComponent) },
           { path: 'goals', canActivate: [permissionGuard('FINANCE_VIEW')], loadComponent: () => import('./features/analytics/goals.component').then(m => m.GoalsComponent) },
           { path: 'tax', canActivate: [permissionGuard('FINANCE_VIEW')], loadComponent: () => import('./features/analytics/tax-simulation.component').then(m => m.TaxSimulationComponent) },
+          { path: 'leakage', canActivate: [permissionGuard('ANALYTICS_VIEW')], loadComponent: () => import('./features/warehouse-insights/leakage-report.component').then(m => m.LeakageReportComponent) },
+          { path: 'forecast', canActivate: [permissionGuard('ANALYTICS_VIEW')], loadComponent: () => import('./features/warehouse-insights/order-forecast.component').then(m => m.OrderForecastComponent) },
         ],
       },
       {
@@ -311,6 +313,19 @@ export const routes: Routes = [
           {
             path: 'treatment-sessions',
             loadComponent: () => import('./features/stock/pages/treatment-sessions/treatment-sessions.component').then(m => m.TreatmentSessionsComponent),
+          },
+          // The same two screens as under /analytics: whoever is standing in the
+          // stockroom should not have to go looking in the accounts for them. They sit
+          // under a layout that carries the stock nav, which the screens themselves
+          // cannot own because /analytics renders them too.
+          {
+            path: '',
+            canActivate: [permissionGuard('ANALYTICS_VIEW')],
+            loadComponent: () => import('./features/warehouse-insights/stock-insights-layout.component').then(m => m.StockInsightsLayoutComponent),
+            children: [
+              { path: 'leakage', loadComponent: () => import('./features/warehouse-insights/leakage-report.component').then(m => m.LeakageReportComponent) },
+              { path: 'forecast', loadComponent: () => import('./features/warehouse-insights/order-forecast.component').then(m => m.OrderForecastComponent) },
+            ],
           },
         ]
       },

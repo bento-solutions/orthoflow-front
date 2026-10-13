@@ -687,7 +687,10 @@
     "DISCREPANCY_REMARKS_PLACEHOLDER": "Describe any discrepancies in quantity or damages...",
     "CONFIRM_RECEIPT_ADD_TO_STOCK": "Confirm Receipt & Add to Stock",
     "NAV_CATALOG": "Stock Catalog",
-    "NAV_SALES": "Patient OTC Sales (SO)"
+    "NAV_SALES": "Patient OTC Sales (SO)",
+    "LEAKAGE": "Consumption Gap",
+    "FORECAST": "Order Forecast",
+    "PACK_OPEN": "{{qty}} {{unit}} open"
   },
   "TREATMENTS": {
     "TITLE": "Treatments",
@@ -1500,7 +1503,8 @@
       "ARRIVED": "Arrived",
       "AVG_WAIT": "Average wait",
       "LONGEST": "Longest wait",
-      "CHAIRS": "Chairs in use"
+      "CHAIRS": "Chairs in use",
+      "SEATS": "Seats occupied"
     },
     "WAITING_ROOM": "Waiting room",
     "WAITING_SINCE": "Time waiting",
@@ -1557,6 +1561,40 @@
       "ADD": "Add a closure",
       "NAME": "Title",
       "EMPTY": "No closures planned."
+    },
+    "WR": {
+      "TITLE": "Waiting room",
+      "EMPTY": "Your waiting room is empty. Add benches or sofas to create your layout.",
+      "EDIT": "Edit layout",
+      "SAVE": "Save layout",
+      "ZOOM_IN": "Zoom in",
+      "ZOOM_OUT": "Zoom out",
+      "RESET_VIEW": "Reset view",
+      "ADD_TITLE": "Add seating",
+      "ADD_HINT": "Pick a type and how many seats, then add it to the room.",
+      "CAPACITY": "Seats",
+      "SELECTED": "Selected seating",
+      "ROTATE": "Rotate",
+      "DUPLICATE": "Duplicate",
+      "CLEAR": "Clear the room",
+      "CLEAR_CONFIRM": "Remove all seating from this waiting room?",
+      "KIND": {
+        "BENCH": "Bench seats",
+        "SOFA": "Sofa seats"
+      },
+      "ADD_BENCH": "Add bench ({{count}} seats)",
+      "ADD_SOFA": "Add sofa ({{count}} seats)",
+      "TIP_APPOINTMENT": "Appointment",
+      "TIP_ARRIVED": "Arrived",
+      "TIP_WAITING": "Waiting",
+      "TIP_TREATMENT": "Treatment",
+      "PICK_SEAT_FOR": "Choose a seat for",
+      "ASSIGN_HERE": "Seat here",
+      "SEATED": "Seated",
+      "GIVE_SEAT": "Seat",
+      "MOVE_SEAT": "Move",
+      "ADD_BENCH_ONE": "Add bench (1 seat)",
+      "ADD_SOFA_ONE": "Add armchair (1 seat)"
     }
   },
   "PAT": {
@@ -2513,7 +2551,9 @@
       "TIME": "Chair time",
       "INCOME": "Income statement",
       "GOALS": "Goal",
-      "TAX": "Income tax"
+      "TAX": "Income tax",
+      "LEAKAGE": "Consumption gap",
+      "FORECAST": "Order forecast"
     },
     "PROC": {
       "CATEGORY": "Category",
@@ -3480,6 +3520,63 @@
       "METRIC_MEAN_CAL": "Mean attachment level",
       "METRIC_MEAN_RECESSION": "Mean recession",
       "METRIC_SITES_5_CAL": "Sites ≥ 5 mm attachment"
+    }
+  },
+  "WH": {
+    "LEAK": {
+      "TITLE": "Consumption gap",
+      "BY_DOCTOR": "By doctor",
+      "TREATMENTS": "treatments",
+      "RETX": "re-treatments",
+      "RETREATMENT_HINT": "Work that was redone. The materials were genuinely used, so this is excluded from the gap.",
+      "ITEM": "Consumable",
+      "EXPECTED": "Expected",
+      "TOLERATED": "Tolerated",
+      "ACTUAL": "Actual",
+      "EXPLAINED": "Explained",
+      "UNEXPLAINED": "Unexplained",
+      "COST": "Cost",
+      "QUANTITY": "Quantity",
+      "SOURCE": "Source",
+      "NOTHING": "No completed treatments in this period.",
+      "UNATTRIBUTED": "Stock with no treatment behind it",
+      "UNATTRIBUTED_HINT": "Adjustments, write-offs and direct sales. Not a gap in itself, but no recipe accounts for it.",
+      "LOW_COVERAGE": "Only {{pct}}% of this period’s consumption could be traced to a treatment, so every figure below covers less than the whole picture.",
+      "KPI": {
+        "UNEXPLAINED": "Unexplained",
+        "UNEXPLAINED_HINT": "Beyond tolerance, with no reason given",
+        "EXPLAINED": "Explained",
+        "EXPLAINED_HINT": "Wastage, breakage, patient factors",
+        "RETREATMENT": "Re-treatment",
+        "RETREATMENT_HINT": "Legitimate; excluded from the gap",
+        "UNATTRIBUTED": "Unattributed",
+        "UNATTRIBUTED_HINT": "No treatment behind it",
+        "COVERAGE": "Coverage",
+        "COVERAGE_HINT": "Consumption traceable to a treatment"
+      }
+    },
+    "FC": {
+      "TITLE": "Suggested order",
+      "MONTH": "Month",
+      "TOTAL": "Estimated total",
+      "SUBTITLE": "Based on {{months}} month(s) of consumption, net of what is already on the shelf.",
+      "ITEM": "Consumable",
+      "ON_HAND": "On hand",
+      "DEMAND": "Forecast",
+      "SEASON": "Season",
+      "SAFETY": "Safety",
+      "ORDER": "Order",
+      "COST": "Cost",
+      "SUPPLIER": "Supplier",
+      "NOTHING": "Nothing to order: the shelf covers the period.",
+      "THIN_HISTORY": "Only {{months}} month(s) of history, so no seasonal adjustment has been applied. These figures will sharpen as the months accumulate.",
+      "WHY": {
+        "BASE": "Averaged {{mean}} a month over {{months}} month(s)",
+        "NO_SEASON": "no seasonal adjustment (too little history)",
+        "SEASON": "this month usually runs {{pct}}% against that",
+        "SAFETY": "{{qty}} held back for volatility",
+        "ON_HAND": "{{qty}} already on the shelf"
+      }
     }
   }
 }

@@ -74,7 +74,9 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
                   <div class="flex items-center justify-between text-xs font-semibold text-ink-700 bg-gray-50 border border-gray-100 rounded-lg p-2">
                     <span class="truncate max-w-[150px]">{{ c.stockItem?.name }}</span>
                     <div class="flex items-center gap-2 shrink-0">
-                      <span class="font-bold text-ink-500">x{{ c.quantityUsed }}</span>
+                      <!-- The unit is the whole point: "x8" never said whether that was
+                           pieces, grams or millilitres. -->
+                      <span class="font-bold text-ink-500">{{ c.quantityUsed }} {{ c.stockItem?.unitSymbol || '' }}</span>
                       <span class="text-emerald-600 font-extrabold">{{ (c.quantityUsed * c.stockItem.pricePerUse) | number:'1.2-2' }} DH</span>
                     </div>
                   </div>
@@ -210,7 +212,10 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
                         </select>
                       </div>
                       <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.QTY_USED" | translate }}</label>
+                        <label class="block text-[10px] font-bold text-ink-600 uppercase mb-1">
+                          {{ "TREATMENTS.QTY_USED" | translate }}
+                          @if (c.stockItem?.unitSymbol) { <span class="text-petrol-600">({{ c.stockItem?.unitSymbol }})</span> }
+                        </label>
                         <input type="number" [(ngModel)]="c.quantityUsed" min="0.0001" step="any" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none font-mono" />
                       </div>
                       <div class="col-span-3 text-right">

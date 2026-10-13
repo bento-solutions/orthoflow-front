@@ -71,16 +71,16 @@ export type {
   TopConsumedItem,
 } from '../api/contract';
 
-import type { StockCategory, MovementType } from '../api/contract';
+import type { StockCategory, MovementType, StockItem as StockItemWire } from '../api/contract';
 
 /**
  * Units of measure.
  *
- * `StockItemResponse.unit` is a plain `String` server-side, so the generator
- * cannot narrow it. This union is a client-side assumption about what the
- * server stores, not a contract.
+ * Derived from the schema, not guessed. `StockItemResponse.unit` is still free text —
+ * it is the wording a clinic reads ("box of 100 pairs") — but `unitOfMeasure` is a real
+ * server-side enum now, so this is the contract rather than an assumption about it.
  */
-export type UnitOfMeasure = 'UNIT' | 'BOX' | 'BOTTLE' | 'PACK' | 'ML' | 'MG' | 'ROLL' | 'PAIR';
+export type UnitOfMeasure = NonNullable<StockItemWire['unitOfMeasure']>;
 
 // ── Query parameters ───────────────────────────────────────────────────
 //

@@ -16,6 +16,11 @@ export type Absence = Wire<'AbsenceResponse'>;
 export type AbsenceInput = Req<'AbsenceRequest'>;
 export type ClinicEvent = Wire<'EventResponse'>;
 export type ClinicEventInput = Req<'EventRequest'>;
+export type WaitingRoomLayout = Wire<'LayoutResponse'>;
+export type WaitingRoomModule = Wire<'FurnitureResponse'>;
+export type SeatOccupant = Wire<'SeatOccupant'>;
+export type LayoutSave = Req<'LayoutSaveRequest'>;
+export type AssignSeat = Req<'AssignSeatRequest'>;
 
 export const URGENCIES = ['LOW', 'NORMAL', 'HIGH', 'URGENT'] as const;
 export const ABSENCE_REASONS = ['LEAVE', 'SICK', 'TRAINING', 'CONFERENCE', 'OTHER'] as const;
@@ -98,5 +103,25 @@ export class FrontDeskApi {
 
   removeEvent(id: string): Promise<void> {
     return firstValueFrom(this.http.delete<void>(api(`/scheduling/events/${id}`)));
+  }
+
+  // ── The waiting room as a room: its plan, and who is sitting on it ──
+  waitingRoomLayout(waitingRoomId?: string): Promise<WaitingRoomLayout> {
+    const params = waitingRoomId ? { waitingRoomId } : undefined;
+    return firstValueFrom(this.http.get<WaitingRoomLayout>(api('/waiting-room/layout'), params ? { params } : {}));
+  }
+
+  /** Replaces the plan. Rejected with 409 when it would strand a seated patient. */
+  saveWaitingRoomLayout(input: LayoutSave): Promise<WaitingRoomLayout> {
+    return firstValueFrom(this.http.put<WaitingRoomLayout>(api('/waiting-room/layout'), input));
+  }
+
+  /** Sits a waiting patient down, or moves one already seated. */
+  assignSeat(input: AssignSeat): Promise<WaitingRoomLayout> {
+    return firstValueFrom(this.http.post<WaitingRoomLayout>(api('/waiting-room/seats'), input));
+  }
+
+  releaseSeat(appointmentId: string): Promise<WaitingRoomLayout> {
+    return firstValueFrom(this.http.delete<WaitingRoomLayout>(api(`/waiting-room/seats/${appointmentId}`)));
   }
 }

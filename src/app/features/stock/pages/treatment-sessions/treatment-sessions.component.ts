@@ -55,6 +55,12 @@ import { ToastService } from '../../../../core/services/toast.service';
         <a routerLink="/stock/treatment-sessions" class="px-4 py-2 rounded-lg transition bg-white text-ink-900 shadow-sm">
           {{ "STOCK.TREATMENT_SESSIONS" | translate }}
         </a>
+        <a routerLink="/stock/leakage" class="px-4 py-2 rounded-lg transition text-ink-500 hover:text-ink-900 hover:bg-white/50">
+          {{ "STOCK.LEAKAGE" | translate }}
+        </a>
+        <a routerLink="/stock/forecast" class="px-4 py-2 rounded-lg transition text-ink-500 hover:text-ink-900 hover:bg-white/50">
+          {{ "STOCK.FORECAST" | translate }}
+        </a>
       </div>
 
 

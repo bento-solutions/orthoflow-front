@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import type { UnitOfMeasure } from '../models/stock.model';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -41,6 +42,10 @@ export interface StockItemRequestPayload {
   sku: string;
   category: string;
   unit: string;
+  /** The unit the server reasons about; `unit` above is only the wording shown to people. */
+  unitOfMeasure?: UnitOfMeasure;
+  /** Applications one unit yields before it is spent. Omitted or 1 = used up first time. */
+  usesPerUnit?: number;
   unitSize: number;
   unitLabel: string;
   purchasePrice: number;

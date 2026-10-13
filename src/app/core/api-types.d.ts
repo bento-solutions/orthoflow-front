@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/waiting-room/layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["layout"];
+        put: operations["save"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tasks/{id}": {
         parameters: {
             query?: never;
@@ -604,7 +620,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["note"];
-        put: operations["save"];
+        put: operations["save_1"];
         post?: never;
         delete: operations["reset"];
         options?: never;
@@ -798,6 +814,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["receive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/waiting-room/seats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["assign"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1149,7 +1181,7 @@ export interface paths {
         };
         get: operations["getAll_1"];
         put?: never;
-        post: operations["save_1"];
+        post: operations["save_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3556,6 +3588,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/stock/insights/leakage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["leakage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stock/insights/forecast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["forecast"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/stock/delivery-notes/{id}": {
         parameters: {
             query?: never;
@@ -5092,6 +5156,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/waiting-room/seats/{appointmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["release"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/retrocessions/advances/{id}": {
         parameters: {
             query?: never;
@@ -5214,7 +5294,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["release"];
+        delete: operations["release_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5224,6 +5304,75 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        FurnitureRequest: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            kind: "BENCH" | "SOFA";
+            /** Format: int32 */
+            seatCount?: number;
+            /** Format: int32 */
+            x?: number;
+            /** Format: int32 */
+            y?: number;
+            /** Format: int32 */
+            rotation?: number;
+            /** Format: int32 */
+            displayOrder?: number;
+        };
+        LayoutSaveRequest: {
+            /** Format: uuid */
+            waitingRoomId: string;
+            furniture: components["schemas"]["FurnitureRequest"][];
+        };
+        FurnitureResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            kind?: "BENCH" | "SOFA";
+            /** Format: int32 */
+            seatCount?: number;
+            /** Format: int32 */
+            x?: number;
+            /** Format: int32 */
+            y?: number;
+            /** Format: int32 */
+            rotation?: number;
+            /** Format: int32 */
+            displayOrder?: number;
+            seatIds?: string[];
+        };
+        LayoutResponse: {
+            /** Format: uuid */
+            waitingRoomId?: string;
+            furniture?: components["schemas"]["FurnitureResponse"][];
+            /** Format: int32 */
+            totalSeats?: number;
+            occupants?: components["schemas"]["SeatOccupant"][];
+        };
+        SeatOccupant: {
+            seatId?: string;
+            /** Format: uuid */
+            furnitureId?: string;
+            /** Format: int32 */
+            seatIndex?: number;
+            /** Format: uuid */
+            appointmentId?: string;
+            /** Format: uuid */
+            patientId?: string;
+            patientName?: string;
+            gender?: string;
+            /** Format: date-time */
+            scheduledFor?: string;
+            /** Format: date-time */
+            arrivedAt?: string;
+            /** Format: int64 */
+            waitMinutes?: number;
+            typeName?: string;
+            typeColor?: string;
+            /** Format: date-time */
+            assignedAt?: string;
+        };
         TaskRequest: {
             title: string;
             description?: string;
@@ -5299,12 +5448,22 @@ export interface components {
             category?: "ANESTHESIA" | "CONSUMABLES" | "ORTHODONTIC_PARTS" | "HYGIENE" | "INSTRUMENTS" | "MEDICATION";
             unit?: string;
             unitLabel?: string;
+            /** @enum {string} */
+            unitOfMeasure?: "PIECE" | "PAIR" | "BOX" | "PACK" | "CARTRIDGE" | "MILLIGRAM" | "GRAM" | "MILLILITRE" | "LITRE" | "MILLIMETRE" | "CENTIMETRE" | "METRE" | "USE";
+            unitSymbol?: string;
+            /** Format: int32 */
+            usesPerUnit?: number;
+            /** Format: int32 */
+            usesOnCurrentUnit?: number;
             decimalSupported?: boolean;
             supplier?: components["schemas"]["SupplierResponse"];
             currentStock?: number;
             minimumStock?: number;
             purchasePrice?: number;
             unitSize?: number;
+            /** Format: int32 */
+            packCount?: number;
+            packRemainder?: number;
             pricePerUse?: number;
             /** Format: date-time */
             createdAt?: string;
@@ -5391,6 +5550,7 @@ export interface components {
             phone?: string;
             cin?: string;
             preferredLanguage?: string;
+            gender?: string;
         };
         TreatmentInvoiceConsumableResponse: {
             /** Format: uuid */
@@ -5482,6 +5642,10 @@ export interface components {
             /** @enum {string} */
             category: "ANESTHESIA" | "CONSUMABLES" | "ORTHODONTIC_PARTS" | "HYGIENE" | "INSTRUMENTS" | "MEDICATION";
             unit: string;
+            /** @enum {string} */
+            unitOfMeasure?: "PIECE" | "PAIR" | "BOX" | "PACK" | "CARTRIDGE" | "MILLIGRAM" | "GRAM" | "MILLILITRE" | "LITRE" | "MILLIMETRE" | "CENTIMETRE" | "METRE" | "USE";
+            /** Format: int32 */
+            usesPerUnit?: number;
             unitSize: number;
             unitLabel: string;
             purchasePrice: number;
@@ -6540,6 +6704,14 @@ export interface components {
                 [key: string]: ("PATIENT_READ" | "PATIENT_WRITE" | "PATIENT_DELETE" | "PATIENT_MERGE" | "CLINICAL_READ" | "CLINICAL_WRITE" | "AGENDA_VIEW" | "AGENDA_MANAGE" | "WAITING_ROOM_MANAGE" | "BILLING_READ" | "BILLING_WRITE" | "FINANCE_VIEW" | "FINANCE_MANAGE" | "EXPENSES_MANAGE" | "RETROCESSION_VIEW" | "RETROCESSION_MANAGE" | "STOCK_READ" | "STOCK_WRITE" | "LAB_ORDERS_MANAGE" | "TASKS_MANAGE" | "TASKS_ADMIN" | "MESSAGING_SEND" | "MESSAGING_VIEW" | "BOOKING_REVIEW" | "SURVEYS_VIEW" | "ANALYTICS_VIEW" | "STERILIZATION_MANAGE" | "SETTINGS_MANAGE" | "USERS_MANAGE")[];
             };
             customised?: ("ADMIN" | "DOCTOR" | "ASSISTANT")[];
+        };
+        AssignSeatRequest: {
+            /** Format: uuid */
+            appointmentId: string;
+            /** Format: uuid */
+            furnitureId: string;
+            /** Format: int32 */
+            seatIndex?: number;
         };
         TranscriptionResponse: {
             text?: string;
@@ -8244,11 +8416,11 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StockMovementResponse"][];
@@ -8274,6 +8446,86 @@ export interface components {
             ascending?: boolean;
             property?: string;
             ignoreCase?: boolean;
+        };
+        LeakageByDoctor: {
+            /** Format: uuid */
+            practitionerId?: string;
+            practitionerName?: string;
+            /** Format: int32 */
+            treatments?: number;
+            /** Format: int32 */
+            retreatments?: number;
+            retreatmentCost?: number;
+            unexplainedCost?: number;
+            unexplainedPctOfExpected?: number;
+            lines?: components["schemas"]["LeakageLine"][];
+        };
+        LeakageLine: {
+            /** Format: uuid */
+            practitionerId?: string;
+            practitionerName?: string;
+            /** Format: uuid */
+            stockItemId?: string;
+            itemName?: string;
+            unitOfMeasure?: string;
+            /** Format: int32 */
+            treatments?: number;
+            expected?: number;
+            tolerated?: number;
+            actual?: number;
+            explained?: number;
+            retreatment?: number;
+            unexplained?: number;
+            unexplainedCost?: number;
+        };
+        LeakageReport: {
+            /** Format: date */
+            from?: string;
+            /** Format: date */
+            to?: string;
+            totalUnexplainedCost?: number;
+            totalExplainedCost?: number;
+            totalRetreatmentCost?: number;
+            totalUnattributedCost?: number;
+            attributionCoveragePct?: number;
+            byDoctor?: components["schemas"]["LeakageByDoctor"][];
+            unattributed?: components["schemas"]["UnattributedConsumption"][];
+        };
+        UnattributedConsumption: {
+            itemName?: string;
+            unitOfMeasure?: string;
+            sourceType?: string;
+            quantity?: number;
+            cost?: number;
+        };
+        OrderForecast: {
+            /** Format: date */
+            periodStart?: string;
+            /** Format: date */
+            periodEnd?: string;
+            /** Format: int32 */
+            monthsOfHistory?: number;
+            totalEstimatedCost?: number;
+            suggestions?: components["schemas"]["OrderSuggestion"][];
+        };
+        OrderSuggestion: {
+            /** Format: uuid */
+            stockItemId?: string;
+            itemName?: string;
+            unitOfMeasure?: string;
+            onHand?: number;
+            minimumStock?: number;
+            forecastDemand?: number;
+            seasonalFactor?: number;
+            safetyStock?: number;
+            suggestedOrder?: number;
+            estimatedCost?: number;
+            /** Format: uuid */
+            supplierId?: string;
+            supplierName?: string;
+            /** Format: int32 */
+            monthsObserved?: number;
+            meanMonthly?: number;
         };
         TreatmentProfitabilityResponse: {
             /** Format: uuid */
@@ -8590,11 +8842,11 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientResponse"][];
@@ -8758,6 +9010,8 @@ export interface components {
             doctorName?: string;
             /** Format: uuid */
             practitionerId?: string;
+            /** Format: uuid */
+            retreatmentOfId?: string;
             /** Format: date */
             startDate?: string;
             /** Format: date */
@@ -8772,6 +9026,7 @@ export interface components {
             deletedAt?: string;
             /** Format: uuid */
             deletedBy?: string;
+            retreatment?: boolean;
         };
         PatientTreatmentConsumable: {
             /** Format: uuid */
@@ -8817,6 +9072,12 @@ export interface components {
             /** @enum {string} */
             category?: "ANESTHESIA" | "CONSUMABLES" | "ORTHODONTIC_PARTS" | "HYGIENE" | "INSTRUMENTS" | "MEDICATION";
             unit?: string;
+            /** @enum {string} */
+            unitOfMeasure?: "PIECE" | "PAIR" | "BOX" | "PACK" | "CARTRIDGE" | "MILLIGRAM" | "GRAM" | "MILLILITRE" | "LITRE" | "MILLIMETRE" | "CENTIMETRE" | "METRE" | "USE";
+            /** Format: int32 */
+            usesPerUnit?: number;
+            /** Format: int32 */
+            usesOnCurrentUnit?: number;
             unitSize?: number;
             unitLabel?: string;
             purchasePrice?: number;
@@ -8882,6 +9143,7 @@ export interface components {
             practiceId?: string;
             stockItem?: components["schemas"]["StockItem"];
             quantityUsed?: number;
+            varianceAllowancePct?: number;
             optional?: boolean;
             notes?: string;
         };
@@ -8996,11 +9258,11 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientDirectoryRow"][];
@@ -9103,11 +9365,11 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LogRow"][];
@@ -9164,11 +9426,11 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["InvoiceResponse"][];
@@ -9225,6 +9487,14 @@ export interface components {
             chairsTotal?: number;
             /** Format: int32 */
             chairsOccupied?: number;
+            /** Format: int32 */
+            seatsTotal?: number;
+            /** Format: int32 */
+            seatsOccupied?: number;
+            /** Format: int32 */
+            waitingMale?: number;
+            /** Format: int32 */
+            waitingFemale?: number;
         };
         ChairBoard: {
             /** Format: uuid */
@@ -9268,6 +9538,8 @@ export interface components {
             /** Format: uuid */
             waitingRoomId?: string;
             walkIn?: boolean;
+            gender?: string;
+            seatId?: string;
         };
         DebtRow: {
             /** Format: uuid */
@@ -9552,6 +9824,52 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    layout: {
+        parameters: {
+            query?: {
+                waitingRoomId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LayoutResponse"];
+                };
+            };
+        };
+    };
+    save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LayoutSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LayoutResponse"];
+                };
+            };
+        };
+    };
     update: {
         parameters: {
             query?: never;
@@ -11213,7 +11531,7 @@ export interface operations {
             };
         };
     };
-    save: {
+    save_1: {
         parameters: {
             query: {
                 lang: string;
@@ -11716,6 +12034,30 @@ export interface operations {
                     "*/*": {
                         [key: string]: components["schemas"]["JsonNode"][];
                     };
+                };
+            };
+        };
+    };
+    assign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignSeatRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LayoutResponse"];
                 };
             };
         };
@@ -12374,7 +12716,7 @@ export interface operations {
             };
         };
     };
-    save_1: {
+    save_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -17109,6 +17451,51 @@ export interface operations {
             };
         };
     };
+    leakage: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LeakageReport"];
+                };
+            };
+        };
+    };
+    forecast: {
+        parameters: {
+            query?: {
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OrderForecast"];
+                };
+            };
+        };
+    };
     getById_4: {
         parameters: {
             query?: never;
@@ -19331,6 +19718,28 @@ export interface operations {
             };
         };
     };
+    release: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LayoutResponse"];
+                };
+            };
+        };
+    };
     deleteAdvance: {
         parameters: {
             query?: never;
@@ -19476,7 +19885,7 @@ export interface operations {
             };
         };
     };
-    release: {
+    release_1: {
         parameters: {
             query?: never;
             header?: never;

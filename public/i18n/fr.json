@@ -686,7 +686,10 @@
     "DISCREPANCY_REMARKS_PLACEHOLDER": "Décrivez les écarts de quantité ou les dommages...",
     "CONFIRM_RECEIPT_ADD_TO_STOCK": "Confirmer la réception et ajouter au stock",
     "NAV_CATALOG": "Catalogue de stock",
-    "NAV_SALES": "Ventes OTC au patient (BC)"
+    "NAV_SALES": "Ventes OTC au patient (BC)",
+    "LEAKAGE": "Écart de consommation",
+    "FORECAST": "Prévision d’achat",
+    "PACK_OPEN": "{{qty}} {{unit}} entamé"
   },
   "TREATMENTS": {
     "TITLE": "Traitements",
@@ -1453,7 +1456,8 @@
       "ARRIVED": "Arrivés",
       "AVG_WAIT": "Attente moyenne",
       "LONGEST": "Plus longue attente",
-      "CHAIRS": "Fauteuils occupés"
+      "CHAIRS": "Fauteuils occupés",
+      "SEATS": "Places occupées"
     },
     "WAITING_ROOM": "Salle d'attente",
     "WAITING_SINCE": "Temps d'attente",
@@ -1510,6 +1514,40 @@
       "ADD": "Ajouter une fermeture",
       "NAME": "Intitulé",
       "EMPTY": "Aucune fermeture prévue."
+    },
+    "WR": {
+      "TITLE": "Salle d'attente",
+      "EMPTY": "Votre salle d'attente est vide. Ajoutez des bancs ou des canapés pour créer votre plan.",
+      "EDIT": "Modifier le plan",
+      "SAVE": "Enregistrer le plan",
+      "ZOOM_IN": "Agrandir",
+      "ZOOM_OUT": "Réduire",
+      "RESET_VIEW": "Vue par défaut",
+      "ADD_TITLE": "Ajouter des sièges",
+      "ADD_HINT": "Choisissez un type et un nombre de places, puis ajoutez-le à la salle.",
+      "CAPACITY": "Places",
+      "SELECTED": "Siège sélectionné",
+      "ROTATE": "Pivoter",
+      "DUPLICATE": "Dupliquer",
+      "CLEAR": "Vider la salle",
+      "CLEAR_CONFIRM": "Retirer tous les sièges de cette salle d'attente ?",
+      "KIND": {
+        "BENCH": "Banc",
+        "SOFA": "Canapé"
+      },
+      "ADD_BENCH": "Ajouter un banc ({{count}} places)",
+      "ADD_SOFA": "Ajouter un canapé ({{count}} places)",
+      "TIP_APPOINTMENT": "Rendez-vous",
+      "TIP_ARRIVED": "Arrivée",
+      "TIP_WAITING": "Attente",
+      "TIP_TREATMENT": "Soin",
+      "PICK_SEAT_FOR": "Choisissez une place pour",
+      "ASSIGN_HERE": "Asseoir ici",
+      "SEATED": "Assis",
+      "GIVE_SEAT": "Placer",
+      "MOVE_SEAT": "Déplacer",
+      "ADD_BENCH_ONE": "Ajouter un banc (1 place)",
+      "ADD_SOFA_ONE": "Ajouter un fauteuil (1 place)"
     }
   },
   "PAT": {
@@ -2466,7 +2504,9 @@
       "TIME": "Temps au fauteuil",
       "INCOME": "Compte de résultat",
       "GOALS": "Objectif",
-      "TAX": "Simulateur IR"
+      "TAX": "Simulateur IR",
+      "LEAKAGE": "Écart de consommation",
+      "FORECAST": "Prévision d’achat"
     },
     "PROC": {
       "CATEGORY": "Catégorie",
@@ -3048,6 +3088,63 @@
       "MUCOSA": "Muqueuse buccale",
       "PAIN": "Douleur",
       "OTHER": "Autre"
+    }
+  },
+  "WH": {
+    "LEAK": {
+      "TITLE": "Écart de consommation",
+      "BY_DOCTOR": "Par praticien",
+      "TREATMENTS": "actes",
+      "RETX": "reprises",
+      "RETREATMENT_HINT": "Acte repris. Les consommables ont réellement servi : exclus de l’écart.",
+      "ITEM": "Consommable",
+      "EXPECTED": "Prévu",
+      "TOLERATED": "Toléré",
+      "ACTUAL": "Réel",
+      "EXPLAINED": "Justifié",
+      "UNEXPLAINED": "Inexpliqué",
+      "COST": "Coût",
+      "QUANTITY": "Quantité",
+      "SOURCE": "Origine",
+      "NOTHING": "Aucun acte terminé sur cette période.",
+      "UNATTRIBUTED": "Sorties sans acte rattaché",
+      "UNATTRIBUTED_HINT": "Ajustements, pertes et ventes directes. Pas un écart en soi, mais aucune fiche ne les explique.",
+      "LOW_COVERAGE": "Seulement {{pct}}% de la consommation de la période est rattachée à un acte : les chiffres ci-dessous ne couvrent pas tout.",
+      "KPI": {
+        "UNEXPLAINED": "Inexpliqué",
+        "UNEXPLAINED_HINT": "Hors tolérance et sans motif",
+        "EXPLAINED": "Justifié",
+        "EXPLAINED_HINT": "Perte, casse, facteur patient",
+        "RETREATMENT": "Reprise",
+        "RETREATMENT_HINT": "Légitime ; exclu de l’écart",
+        "UNATTRIBUTED": "Non rattaché",
+        "UNATTRIBUTED_HINT": "Aucun acte à l’origine",
+        "COVERAGE": "Couverture",
+        "COVERAGE_HINT": "Consommation rattachée à un acte"
+      }
+    },
+    "FC": {
+      "TITLE": "Commande suggérée",
+      "MONTH": "Mois",
+      "TOTAL": "Total estimé",
+      "SUBTITLE": "Sur {{months}} mois de consommation, déduction faite du stock disponible.",
+      "ITEM": "Consommable",
+      "ON_HAND": "En stock",
+      "DEMAND": "Prévision",
+      "SEASON": "Saison",
+      "SAFETY": "Sécurité",
+      "ORDER": "À commander",
+      "COST": "Coût",
+      "SUPPLIER": "Fournisseur",
+      "NOTHING": "Rien à commander : le stock couvre la période.",
+      "THIN_HISTORY": "Seulement {{months}} mois d’historique : aucun ajustement saisonnier appliqué. Ces chiffres s’affineront avec le temps.",
+      "WHY": {
+        "BASE": "Moyenne de {{mean}} par mois sur {{months}} mois",
+        "NO_SEASON": "aucun ajustement saisonnier (historique insuffisant)",
+        "SEASON": "ce mois est habituellement à {{pct}}% de cette moyenne",
+        "SAFETY": "{{qty}} de marge pour la variabilité",
+        "ON_HAND": "{{qty}} déjà en stock"
+      }
     }
   }
 }

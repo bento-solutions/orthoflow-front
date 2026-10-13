@@ -47,6 +47,12 @@ import { ToastService } from '../../../../core/services/toast.service';
         <a routerLink="/stock/treatment-sessions" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
           {{ "STOCK.TREATMENT_SESSIONS" | translate }}
         </a>
+        <a routerLink="/stock/leakage" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
+          {{ "STOCK.LEAKAGE" | translate }}
+        </a>
+        <a routerLink="/stock/forecast" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
+          {{ "STOCK.FORECAST" | translate }}
+        </a>
       </div>
 
       <!-- KPI Summary Dashboard -->
@@ -193,7 +199,19 @@ import { ToastService } from '../../../../core/services/toast.service';
                     <td class="p-4 text-center">
                       <div class="flex items-center justify-center gap-2">
                         <span class="font-bold" [class.text-red-600]="item.currentStock === 0" [class.text-amber-500]="item.currentStock > 0 && item.currentStock <= item.minimumStock" [class.text-emerald-600]="item.currentStock > item.minimumStock">
-                          {{ item.currentStock }} {{ item.unit || 'units' }}
+                          @if (item.packCount > 0) {
+                            <!-- Nobody counts a shelf in millilitres: lead with the bottles. -->
+                            <span class="block">{{ item.packCount }} × {{ item.unitLabel }}</span>
+                            <span class="block text-[10px] font-normal text-ink-500">
+                              {{ item.currentStock }} {{ item.unitSymbol || item.unit || 'units' }}@if (item.packRemainder > 0) { · {{ 'STOCK.PACK_OPEN' | translate: { qty: item.packRemainder, unit: item.unitSymbol } }} }
+                            </span>
+                          } @else {
+                            {{ item.currentStock }} {{ item.unitSymbol || item.unit || 'units' }}
+                          }
+                          @if (item.usesPerUnit > 1) {
+                            <span class="ms-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold bg-petrol-50 text-petrol-700"
+                                  title="Uses on the unit in service">{{ item.usesOnCurrentUnit }}/{{ item.usesPerUnit }}</span>
+                          }
                         </span>
                         @if (item.currentStock === 0) {
                           <span class="px-1.5 py-0.5 text-[9px] font-bold bg-red-50 text-red-600 rounded border border-red-200 uppercase">Empty</span>
@@ -637,15 +655,18 @@ import { ToastService } from '../../../../core/services/toast.service';
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Unit of Measurement (UOM) *</label>
-                  <select [(ngModel)]="itemForm.unit" name="unit" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white">
-                    <option value="Unit(s)">Unit(s)</option>
-                    <option value="ml">ml</option>
-                    <option value="L">L</option>
-                    <option value="g">g</option>
-                    <option value="kg">kg</option>
-                    <option value="Box">Box</option>
-                    <option value="Pack">Pack</option>
+                  <select [ngModel]="itemForm.unitOfMeasure" (ngModelChange)="chooseUnit($event)" name="unitOfMeasure" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white">
+                    @for (u of unitOptions; track u.value) {
+                      <option [value]="u.value">{{ u.label }}</option>
+                    }
                   </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Uses per unit</label>
+                  <input type="number" [(ngModel)]="itemForm.usesPerUnit" name="usesPerUnit" min="1" max="1000" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                  <p class="mt-1 text-[10px] text-ink-500">
+                    How many times one unit can be used before it is spent. Leave at 1 for anything used up the first time.
+                  </p>
                 </div>
                 <div class="flex items-center pt-5">
                   <label class="flex items-center gap-2 text-xs font-bold text-ink-500 uppercase tracking-wide cursor-pointer select-none">
@@ -686,7 +707,12 @@ import { ToastService } from '../../../../core/services/toast.service';
               <div>
                 <span class="text-xs text-ink-500 font-bold block mb-1 uppercase tracking-wider">Stock Item</span>
                 <span class="font-bold text-ink-900 block text-base">{{ selectedItem()?.name }}</span>
-                <span class="text-xs text-ink-500 block font-medium">Current Stock: {{ selectedItem()?.currentStock }} {{ selectedItem()?.unit || 'units' }}</span>
+                <span class="text-xs text-ink-500 block font-medium">
+                  Current Stock: {{ selectedItem()?.currentStock }} {{ selectedItem()?.unitSymbol || selectedItem()?.unit || 'units' }}
+                  @if ((selectedItem()?.packCount ?? 0) > 0) {
+                    <span class="text-ink-900 font-bold">({{ selectedItem()?.packCount }} × {{ selectedItem()?.unitLabel }})</span>
+                  }
+                </span>
               </div>
               
               <div>
@@ -816,6 +842,36 @@ export class StockDashboardComponent implements OnInit, OnDestroy {
      sit in this form for so long without anyone noticing the server has no
      such fields. */
   itemForm: Partial<StockItemRequestPayload> & { id?: string; currentStock?: number } = {};
+
+  /**
+   * The units the server actually understands. The label is what a person reads; the
+   * value is the enum the backend stores and reasons about, which is what makes "1" on
+   * a treatment line mean one gram rather than one of something unspecified.
+   */
+  protected readonly unitOptions = [
+    { value: 'PIECE', label: 'Unit(s)' },
+    { value: 'PAIR', label: 'Pair' },
+    { value: 'BOX', label: 'Box' },
+    { value: 'PACK', label: 'Pack' },
+    { value: 'CARTRIDGE', label: 'Cartridge' },
+    { value: 'GRAM', label: 'Gram (g)' },
+    { value: 'MILLIGRAM', label: 'Milligram (mg)' },
+    { value: 'MILLILITRE', label: 'Millilitre (ml)' },
+    { value: 'LITRE', label: 'Litre (L)' },
+    { value: 'MILLIMETRE', label: 'Millimetre (mm)' },
+    { value: 'CENTIMETRE', label: 'Centimetre (cm)' },
+    { value: 'METRE', label: 'Metre (m)' },
+    { value: 'USE', label: 'Use' },
+  ] as const;
+
+  /** Picking a unit also fills the display wording, which a clinic can still overwrite. */
+  protected chooseUnit(value: string): void {
+    this.itemForm.unitOfMeasure = value as StockItemRequestPayload['unitOfMeasure'];
+    const picked = this.unitOptions.find(u => u.value === value);
+    if (picked) {
+      this.itemForm.unit = picked.label;
+    }
+  }
   selectedSupplierId: string | null = null;
 
   // Manual Adjustment Modal
@@ -1099,6 +1155,8 @@ export class StockDashboardComponent implements OnInit, OnDestroy {
       sku: '',
       category: 'CONSUMABLES',
       unit: 'Unit(s)',
+      unitOfMeasure: 'PIECE',
+      usesPerUnit: 1,
       unitLabel: 'Unit(s)',
       decimalSupported: false,
       currentStock: 0,

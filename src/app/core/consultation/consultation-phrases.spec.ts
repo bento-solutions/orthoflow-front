@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isBeginExaminationPhrase } from './consultation-phrases';
+import { isBeginExaminationCommand, isBeginExaminationPhrase } from './consultation-phrases';
 import { isStopPhrase } from '../voice/voice-wake';
 
 /**
@@ -54,5 +54,26 @@ describe('isBeginExaminationPhrase', () => {
     expect(isStopPhrase('Fin de la consultation')).toBe(true);
     expect(isBeginExaminationPhrase('Fin de la consultation')).toBe(false);
     expect(isStopPhrase('On commence la consultation')).toBe(false);
+  });
+});
+
+/**
+ * The same order, but for a command the wake gate has already accepted: the
+ * wake word is gone, so a bare "consultation" can only have been addressed to
+ * the system. It is what stops the pipeline answering "pas compris" to it.
+ */
+describe('isBeginExaminationCommand', () => {
+  it.each([
+    'consultation', 'la consultation', 'examen', 'on commence la consultation', 'début de l\'examen',
+    'let\'s start the consultation', 'the examination begins',
+  ])('accepts %s', command => {
+    expect(isBeginExaminationCommand(command)).toBe(true);
+  });
+
+  it.each([
+    'dent 16 carie', 'après la consultation je vous donne une ordonnance', 'la consultation coûte trois cents dirhams',
+    'fin de la consultation', '', '  ',
+  ])('ignores %s', command => {
+    expect(isBeginExaminationCommand(command)).toBe(false);
   });
 });

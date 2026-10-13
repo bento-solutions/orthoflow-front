@@ -45,6 +45,15 @@ function plain(utterance: string): string {
     .trim();
 }
 
+/**
+ * The same, for a command the wake gate has already accepted — the wake word is
+ * gone from it, and the bare word "consultation" is therefore a safe order.
+ */
+export function isBeginExaminationCommand(command: string): boolean {
+  const body = plain(command);
+  return !!body && (BEGIN_PHRASES.some(pattern => pattern.test(body)) || BARE_AFTER_WAKE.some(pattern => pattern.test(body)));
+}
+
 /** Whether the doctor has called the consultation — the order to start the examination. */
 export function isBeginExaminationPhrase(utterance: string): boolean {
   const raw = utterance.trim();

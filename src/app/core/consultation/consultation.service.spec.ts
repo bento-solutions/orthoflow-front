@@ -9,7 +9,9 @@ import {
   toOffsetIso,
 } from './consultation.service';
 import { addManualItem, emptyReview, mergeDraft, ReviewState, setItem, toStoredReview } from './consultation-draft';
-import { ConsultationDraftDto, ConsultationDto, ConsultationStatus } from './consultation.model';
+import {
+  ConsultationDraftDto, ConsultationDto, ConsultationLineDto, ConsultationLinePayload, ConsultationStatus,
+} from './consultation.model';
 import { VoiceApiService } from '../voice/voice-api.service';
 import { VoiceOrchestratorService } from '../voice/voice-orchestrator.service';
 import { VoiceSessionService } from '../voice/voice-session.service';
@@ -50,13 +52,15 @@ describe('ConsultationService', () => {
   let service: ConsultationService;
   let calls: string[];
   let extractions: string[];
+  let sentLines: ConsultationLinePayload[][];
+  let openLines: ConsultationLineDto[] | null;
   let savedReviews: unknown[];
   let nextDraft: ConsultationDraftDto;
   let extractFails: { status: number } | null;
   let commitResult: { saved: boolean; failed: { auditId: string; intent: string; errorMessage: string }[] };
   let committed: unknown;
   let listener: ((text: string) => void) | null;
-  let conversationOnly: boolean;
+  let handledElsewhere: ((text: string) => boolean) | null;
   let routing: { end: (o: { waitForClips?: boolean }) => Promise<void>; abandon: () => Promise<void> } | null;
   let buffered: ReturnType<typeof signal<Array<{ auditId: string; preview: string }>>>;
   let patient: ReturnType<typeof signal<typeof PATIENT | null>>;
@@ -67,13 +71,15 @@ describe('ConsultationService', () => {
     vi.useFakeTimers();
     calls = [];
     extractions = [];
+    sentLines = [];
+    openLines = null;
     savedReviews = [];
     nextDraft = draft();
     extractFails = null;
     commitResult = { saved: true, failed: [] };
     committed = null;
     listener = null;
-    conversationOnly = false;
+    handledElsewhere = null;
     routing = null;
     // A signal, as the real orchestrator's is: the service's computeds depend on it.
     buffered = signal([]);
@@ -91,14 +97,19 @@ describe('ConsultationService', () => {
               calls.push(`api.start ${patientId} ${locale} informed=${informed}`);
               return of(dto('INTAKE'));
             },
-            open: () => of(dto(currentStatus, { transcript: 'Bonjour\nJ\'ai mal' })),
+            open: () => of(dto(currentStatus, { transcript: 'Bonjour\nJ\'ai mal', lines: openLines })),
             saveReviewState: (_id: string, state: unknown) => { savedReviews.push(state); return of(undefined); },
-            extract: (_id: string, transcript: string) => {
+            extract: (_id: string, transcript: string, lines: ConsultationLinePayload[] = []) => {
               extractions.push(transcript);
+              sentLines.push(lines);
               return extractFails ? throwError(() => extractFails) : of({ draft: nextDraft, error: null, truncated: false });
             },
             beginExamination: () => { calls.push('api.examination'); return of(dto('EXAMINATION')); },
-            end: (_id: string, transcript: string) => { calls.push(`api.end ${transcript.length}`); return of(dto('REVIEW', { transcript })); },
+            end: (_id: string, transcript: string, lines: ConsultationLinePayload[] = []) => {
+              calls.push(`api.end ${transcript.length}`);
+              sentLines.push(lines);
+              return of(dto('REVIEW', { transcript }));
+            },
             commit: (_id: string, body: unknown) => {
               committed = body;
               return of({
@@ -119,7 +130,7 @@ describe('ConsultationService', () => {
             startExaminationMode: async () => { calls.push('mic.start'); },
             stopListening: () => calls.push('mic.stop'),
             setTranscriptListener: (l: ((t: string) => void) | null) => { listener = l; },
-            setConversationOnly: (on: boolean) => { conversationOnly = on; },
+            setHandledElsewhere: (predicate: ((text: string) => boolean) | null) => { handledElsewhere = predicate; },
           },
         },
         {
@@ -199,7 +210,7 @@ describe('ConsultationService', () => {
       expect(service.available()).toBe(true);
     });
 
-    it('starts in the intake, tells the server the doctor attested, and opens the microphone for conversation only', async () => {
+    it('starts recording, tells the server the doctor attested, and has the chart listening from the first second', async () => {
       await service.loadConfig();
 
       expect(await service.start()).toBe(true);
@@ -208,11 +219,12 @@ describe('ConsultationService', () => {
         'api.start p-1 fr-MA informed=true',
         'session.adopt',
         'mic.start',
-        'say Enregistrement démarré.',
+        'say Consultation démarrée. Les commandes sont actives.',
       ]);
       expect(service.phase()).toBe('intake');
-      expect(conversationOnly).toBe(true);
+      // Nothing is held back from the chart waiting for a phrase: the pipeline is told no such mode.
       expect(listener).not.toBeNull();
+      expect(handledElsewhere).not.toBeNull();
       // every way of ending a session now ends the consultation
       expect(routing).not.toBeNull();
     });
@@ -363,7 +375,7 @@ describe('ConsultationService', () => {
   // ── Phases ──────────────────────────────────────────────────────────
 
   describe('calling the consultation', () => {
-    it('moves to the examination when the doctor says so, and lets the chart commands work', async () => {
+    it('says the commands are active when the doctor calls the consultation, and marks the examination as begun', async () => {
       await started();
 
       hear('Calypso, consultation');
@@ -371,8 +383,20 @@ describe('ConsultationService', () => {
 
       expect(calls).toContain('api.examination');
       expect(service.phase()).toBe('examination');
-      expect(conversationOnly).toBe(false);
-      expect(calls).toContain('say Consultation commencée. Dites Calypso avant une commande.');
+      expect(calls).toContain('say Consultation en cours. Les commandes sont actives.');
+    });
+
+    it('marks the examination as begun, silently, at the first command given — nobody had to say a phrase first', async () => {
+      await started();
+      expect(service.phase()).toBe('intake');
+
+      buffered.set([{ auditId: 'a-1', preview: 'Dent 16 : carie' }]);
+      TestBed.tick();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(calls).toContain('api.examination');
+      expect(service.phase()).toBe('examination');
+      expect(calls.some(c => c.startsWith('say'))).toBe(false);
     });
 
     it('does not start the examination because someone said the word in conversation', async () => {
@@ -385,20 +409,37 @@ describe('ConsultationService', () => {
       expect(calls).not.toContain('api.examination');
     });
 
-    it('leaves the examination commands to the voice pipeline once the examination has begun', async () => {
+    it('tells the pipeline its own phrase is handled, so "Calypso, consultation" is not answered "pas compris"', async () => {
+      await started();
+
+      expect(handledElsewhere!('Consultation')).toBe(true);
+      expect(handledElsewhere!('on commence la consultation')).toBe(true);
+      expect(handledElsewhere!('dent 16 carie')).toBe(false);
+      expect(handledElsewhere!('après la consultation')).toBe(false);
+    });
+
+    it('answers the phrase again once the examination has begun, without asking the server twice', async () => {
       await started();
       hear('Calypso, consultation');
       await vi.advanceTimersByTimeAsync(0);
       calls.length = 0;
 
-      // Said again, or a stop: the orchestrator owns these now; acting here too would double them.
       hear('Calypso, consultation');
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(calls).toEqual(['say Consultation en cours. Les commandes sont actives.']);
+      expect(service.phase()).toBe('examination');
+    });
+
+    it('ends from a spoken stop in the examination as well', async () => {
+      await started();
+      hear('Calypso, consultation');
+      await vi.advanceTimersByTimeAsync(0);
+
       hear('Fin de la consultation');
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(calls).toEqual([]);
-      expect(service.phase()).toBe('examination');
-      // ...but they are still part of what was said
+      expect(service.phase()).toBe('review');
       expect(service.lines().map(l => l.text)).toContain('Fin de la consultation');
     });
   });
@@ -585,6 +626,78 @@ describe('ConsultationService', () => {
       const body = committed as { nextAppointment: { dateTime: string; durationMinutes: number } };
       expect(body.nextAppointment.dateTime).toMatch(/^2026-10-16T10:00:00[+-]\d\d:\d\d$/);
       expect(body.nextAppointment.durationMinutes).toBe(45);
+    });
+  });
+
+  // ── The consultation log ────────────────────────────────────────────
+
+  describe('the consultation log', () => {
+    it('sends each sentence with its number, the time it was heard and the phase it was said in', async () => {
+      vi.setSystemTime(new Date('2026-10-13T10:00:05Z'));
+      await started();
+      hear('Bonjour docteur');
+      vi.setSystemTime(new Date('2026-10-13T10:00:20Z'));
+      await service.beginExamination();
+      vi.setSystemTime(new Date('2026-10-13T10:00:31Z'));
+      hear('dent 16 carie');
+
+      await service.extractNow();
+
+      expect(sentLines.at(-1)).toEqual([
+        { seq: 1, at: '2026-10-13T10:00:05.000Z', phase: 'INTAKE', typed: false, text: 'Bonjour docteur' },
+        { seq: 2, at: '2026-10-13T10:00:31.000Z', phase: 'EXAMINATION', typed: false, text: 'dent 16 carie' },
+      ]);
+    });
+
+    it('marks a sentence the doctor typed', async () => {
+      vi.setSystemTime(new Date('2026-10-13T10:00:05Z'));
+      await started();
+
+      service.addTyped('RDV dans 15 jours');
+      await service.extractNow();
+
+      expect(sentLines.at(-1)?.[0]).toMatchObject({ typed: true, text: 'RDV dans 15 jours' });
+    });
+
+    it('sends the lines again when recording ends, so the last sentences are in the log', async () => {
+      vi.setSystemTime(new Date('2026-10-13T10:00:05Z'));
+      await started();
+      hear('Merci docteur');
+
+      await service.end();
+
+      expect(sentLines[0].map(l => l.text)).toEqual(['Merci docteur']);
+    });
+
+    it('keeps the numbers and times of a conversation it comes back to, so a resend is not a duplicate', async () => {
+      openLines = [
+        { seq: 7, at: '2026-10-13T09:00:00.000Z', phase: 'INTAKE', typed: false, text: 'Bonjour' },
+        { seq: 8, at: '2026-10-13T09:00:09.000Z', phase: 'INTAKE', typed: false, text: 'J\'ai mal' },
+      ];
+      currentStatus = 'INTAKE';
+      await service.resumeOpen('p-1');
+      vi.setSystemTime(new Date('2026-10-13T09:05:00Z'));
+
+      hear('Depuis hier');
+      await service.extractNow();
+
+      expect(sentLines.at(-1)?.map(l => [l.seq, l.at])).toEqual([
+        [7, '2026-10-13T09:00:00.000Z'], [8, '2026-10-13T09:00:09.000Z'], [9, '2026-10-13T09:05:00.000Z'],
+      ]);
+    });
+
+    it('does not invent a time for a conversation recorded before lines were timed', async () => {
+      openLines = null;
+      currentStatus = 'INTAKE';
+      await service.resumeOpen('p-1');
+      vi.setSystemTime(new Date('2026-10-13T09:05:00Z'));
+
+      hear('Depuis hier');
+      await service.extractNow();
+
+      // The two older lines stay in the transcript text; only the new one is timed.
+      expect(sentLines.at(-1)?.map(l => l.text)).toEqual(['Depuis hier']);
+      expect(extractions.at(-1)).toBe('Bonjour\nJ\'ai mal\nDepuis hier');
     });
   });
 

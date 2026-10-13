@@ -247,7 +247,75 @@ function planTeeth(
     }
   }
 
-  return null;
+  return planGroups(raw, findings, mentions);
+}
+
+/** The words that tie a finding to the tooth it is about: "carie SUR la 16". */
+const TIES_FINDING_TO_TOOTH = /\b(?:sur|de|du|des|on|at|in|of|pour|dans|for|[àa]|au|aux)\b/iu;
+
+/** What may stand between two teeth that are listed together: "la 14 et la 15", "14, 15 et 16". */
+const LISTED_TOGETHER = /^[\s,;]*(?:(?:et|and|puis|then|ainsi\s+que|ou|or)[\s,;]*)?$/iu;
+
+/**
+ * Teeth listed together share the finding beside them, and each list has its own
+ * — "la 14 et la 15 amalgame et la 16 carie", or the other way round, "amalgame
+ * sur la 14 et la 15 et une carie sur la 16". The single-tooth rules above do not
+ * see a list; this does, and only when it can say which finding goes with which
+ * list without guessing:
+ *
+ * - **findings first**: every list is preceded by its finding(s) and nothing
+ *   follows the last list; or
+ * - **teeth first**: every list is followed by its finding(s) and nothing comes
+ *   before the first.
+ *
+ * At most one of the two can hold. Anything negated is left to the caller's
+ * question: the note a denial leaves has to be clipped to its own tooth.
+ */
+function planGroups(
+  raw: string,
+  findings: ExtractedFinding[],
+  mentions: ToothMention[],
+): ToothFindingsPlan[] | null {
+  if (findings.length === 0 || findings.some(finding => finding.negated)) return null;
+
+  // Mentions are grouped while nothing but a conjunction separates them.
+  const groups: ToothMention[][] = [];
+  for (const mention of mentions) {
+    const group = groups[groups.length - 1];
+    const gap = group ? raw.slice(group[group.length - 1].end, mention.start) : null;
+    const apart = group && gap !== null && (!LISTED_TOGETHER.test(gap)
+      || findings.some(finding => finding.at >= group[group.length - 1].end && finding.at < mention.start));
+    if (group && !apart) group.push(mention);
+    else groups.push([mention]);
+  }
+  if (groups.length < 2) return null;
+
+  // Which gap each finding falls in: 0 before the first list, groups.length after the last.
+  const slotOf = (finding: ExtractedFinding) =>
+    groups.filter(group => group[group.length - 1].end <= finding.at).length;
+  const bySlot = Array.from({ length: groups.length + 1 }, () => [] as ExtractedFinding[]);
+  for (const finding of findings) bySlot[slotOf(finding)].push(finding);
+
+  // A finding that comes first has to be tied to its list by a word that does the
+  // tying — "carie SUR la 16" — and not by a comma: "carie, dent 16 couronne,
+  // dent 17" is three things said in a row, and pairing them by position hands
+  // each tooth the finding that was said about the other.
+  const tied = (index: number) => {
+    const last = bySlot[index][bySlot[index].length - 1];
+    const between = last ? raw.slice(last.at + last.matchedText.length, groups[index][0].start) : '';
+    return !!last && TIES_FINDING_TO_TOOTH.test(between) && !/[,;.]/u.test(between);
+  };
+  const findingsFirst = bySlot[groups.length].length === 0
+    && groups.every((_, index) => bySlot[index].length > 0 && tied(index));
+  const teethFirst = bySlot[0].length === 0 && groups.every((_, index) => bySlot[index + 1].length > 0);
+  if (!findingsFirst && !teethFirst) return null;
+
+  const plan: ToothFindingsPlan[] = [];
+  groups.forEach((group, index) => {
+    const own = bySlot[findingsFirst ? index : index + 1];
+    for (const fdi of new Set(group.map(mention => mention.fdi))) plan.push({ fdi, findings: own });
+  });
+  return plan;
 }
 
 function severalTeeth(

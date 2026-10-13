@@ -75,6 +75,8 @@ class FakeFeedback {
 class FakeContext {
   lastWrite: LastWriteRef | null = null;
   selected: string | null = null;
+  /** The dictation locale: what the real service reads from the chosen language. */
+  tag = 'fr-MA';
 
   snapshot(): VoiceContextSnapshot {
     return {
@@ -85,13 +87,13 @@ class FakeContext {
       route: '/patients/p-1',
       selectedFdi: this.selected,
       sessionId: 's-1',
-      locale: 'fr-MA',
+      locale: this.tag,
       recentIntents: [],
       recentUtterances: [],
       lastWrite: this.lastWrite,
     };
   }
-  locale() { return 'fr-MA'; }
+  locale() { return this.tag; }
   dentition() { return 'adult' as const; }
   sessionId() { return 's-1'; }
   selectTooth(fdi: string | null) { this.selected = fdi; }
@@ -187,7 +189,14 @@ describe('VoiceOrchestratorService — staging what was dictated', () => {
         { provide: VoiceApiService, useValue: api },
         { provide: SpeechFeedbackService, useValue: feedback },
         { provide: VoiceContextService, useClass: FakeContext },
-        { provide: InputLanguageService, useValue: { language: () => inputLanguage } },
+        {
+          provide: InputLanguageService,
+          useValue: {
+            language: () => inputLanguage,
+            locale: () => ({ fr: 'fr-MA', en: 'en-US', ar: 'ar-MA' }[inputLanguage]),
+            set: (language: string) => { inputLanguage = language; },
+          },
+        },
         { provide: AudioCaptureService, useValue: capture },
         { provide: SpeechRecognitionService, useValue: recognition },
         { provide: SessionBufferService, useValue: { append: async () => undefined, remove: async () => undefined } },
@@ -948,27 +957,32 @@ describe('VoiceOrchestratorService — staging what was dictated', () => {
       expect(api.recorded.map(entry => entry.intent)).toEqual(['clinical.addFindings']);
     });
 
-    it('in conversation-only mode keeps what is said and runs none of it as a command', async () => {
-      orchestrator.setConversationOnly(true);
-
+    it('has no stretch in which the chart is not listening: the first thing said is already a command', async () => {
       await spoken('dent 16 carie');
 
-      expect(heard).toEqual(['dent 16 carie']);
-      expect(api.recorded).toEqual([]);
-      expect(orchestrator.buffered()).toEqual([]);
-      expect(orchestrator.conversationOnly()).toBe(true);
+      expect(api.recorded.map(entry => entry.intent)).toEqual(['clinical.addFindings']);
+      expect(orchestrator.buffered()).toHaveLength(1);
     });
 
-    it('goes back to commands when conversation-only is switched off', async () => {
-      orchestrator.setConversationOnly(true);
+    it('acknowledges a phrase the consultation handles itself instead of answering "pas compris"', async () => {
+      orchestrator.setHandledElsewhere(text => /^consultation$/i.test(text));
+
+      await spoken('Calypso, consultation');
+
+      expect(api.recorded).toEqual([]);
+      expect(api.interpreted).toBe(0);
+      expect(feedback.spoken).toEqual([]);
+      // ...and it keeps the floor open for the command that follows
       await spoken('dent 16 carie');
-      orchestrator.setConversationOnly(false);
+      expect(api.recorded.map(entry => entry.intent)).toEqual(['clinical.addFindings']);
+    });
 
-      await spoken('dent 17 couronne');
+    it('answers "pas compris" as before for anything else it does not handle', async () => {
+      orchestrator.setHandledElsewhere(text => /^consultation$/i.test(text));
 
-      expect(heard).toEqual(['dent 16 carie', 'dent 17 couronne']);
-      expect(api.recorded).toHaveLength(1);
-      expect(entitiesOf(0)['fdi']).toBe('17');
+      await spoken('Calypso, ouvrez grand');
+
+      expect(feedback.spoken.at(-1)?.text).toBe('Pas compris.');
     });
 
     it('is not told about a clip that arrives after the session closed', async () => {
@@ -1044,5 +1058,160 @@ describe('VoiceOrchestratorService — staging what was dictated', () => {
 
       expect(orchestrator.languageNoiseCount()).toBe(0);
     });
+
+    it('says nothing about what was never a command — a patient talking in another language is just noise', async () => {
+      await hear('المريض ينتظر في الخارج');
+      await hear('wakha khoya daba nji');
+
+      expect(orchestrator.languageNoiseCount()).toBe(2);
+      expect(feedback.spoken).toEqual([]);
+    });
+
+    it('drops Darija as noise for a French session, even when it carries a tooth and a finding', async () => {
+      await hear('Calypso, la 16 fiha tsous');
+
+      expect(orchestrator.languageNoiseCount()).toBe(1);
+      expect(api.recorded).toEqual([]);
+    });
+
+    it('drops a command said in English while French is chosen — and tells the doctor, once, why', async () => {
+      await hear('Calypso, tooth 16 has deep caries');
+      await hear('Calypso, tooth 17 has a fracture');
+
+      expect(api.recorded).toEqual([]);
+      expect(orchestrator.languageNoiseCount()).toBe(2);
+      expect(feedback.spoken.map(line => line.text)).toEqual([
+        'Dictée réglée sur français : phrase ignorée. Pour changer, dites Calypso, puis la langue.',
+      ]);
+    });
+
+    it('drops a command said in French while English is chosen', async () => {
+      inputLanguage = 'en';
+      (TestBed.inject(VoiceContextService) as unknown as FakeContext).tag = 'en-US';
+
+      await hear('la 13 et 14 amalgame');
+
+      expect(api.recorded).toEqual([]);
+      expect(orchestrator.languageNoiseCount()).toBe(1);
+      expect(feedback.spoken.at(-1)?.text)
+        .toBe('Dictation is set to English: sentence ignored. To change it, say Calypso, then the language.');
+    });
+
+    it('keeps a sentence that mixes the two languages, and stages both of its findings', async () => {
+      await hear('tooth 17 infectione et amalgam');
+
+      expect(orchestrator.languageNoiseCount()).toBe(0);
+      expect(entitiesOf(0)['fdi']).toBe('17');
+      expect((entitiesOf(0)['findings'] as Array<{ code: string }>).map(f => f.code).sort())
+        .toEqual(['existing_amalgam', 'infection']);
+    });
+
+    it('lets "oui" and "yes" answer a question whatever language is chosen', async () => {
+      await orchestrator.handleTranscript('dent 16 carie', 0.5, null, false);
+      expect(orchestrator.confirmation()).not.toBeNull();
+      inputLanguage = 'en';
+
+      await hear('oui');
+
+      expect(orchestrator.confirmation()).toBeNull();
+      expect(api.recorded.map(entry => entry.intent)).toEqual(['clinical.addFindings']);
+    });
+
+    it('still ends the examination when the stop phrase is in the other language', async () => {
+      inputLanguage = 'en';
+      let ended = 0;
+      orchestrator.sessionHooks = { start: async () => undefined, end: async () => { ended++; }, summary: async () => undefined };
+
+      await hear('fin de la consultation');
+
+      expect(ended).toBe(1);
+      expect(orchestrator.languageNoiseCount()).toBe(0);
+    });
+
+    describe('changing it by voice', () => {
+      it('switches to French from an English setting, and from then on understands French', async () => {
+        inputLanguage = 'en';
+
+        await hear('Calypso, passe en français');
+
+        expect(inputLanguage).toBe('fr');
+        expect(feedback.spoken.at(-1)?.text).toBe('Dictée en français.');
+        await hear('la 16 est cariée');
+        expect(api.recorded.map(entry => entry.intent)).toEqual(['clinical.addFindings']);
+      });
+
+      it('switches to English from a French setting', async () => {
+        await hear('Calypso, switch to English');
+
+        expect(inputLanguage).toBe('en');
+        expect(feedback.spoken.at(-1)?.text).toBe('Dictation in English.');
+      });
+
+      it('needs the wake word: "en anglais" is also something said to a patient', async () => {
+        await hear('on parle en anglais');
+        await hear('dictée en anglais');
+
+        expect(inputLanguage).toBe('fr');
+      });
+
+      it('is not something a typed command does: there is a button for that', async () => {
+        await say('Calypso, switch to English');
+
+        expect(inputLanguage).toBe('fr');
+      });
+    });
+  });
+
+  describe('a forgiving reading of what was said', () => {
+    const codes = (index: number) => (entitiesOf(index)['findings'] as Array<{ code: string }>).map(f => f.code).sort();
+
+    it('takes a word that was nearly a finding for that finding, and says it did', async () => {
+      await say('la 17 infectione et amalgame');
+
+      expect(entitiesOf(0)['fdi']).toBe('17');
+      expect(codes(0)).toEqual(['existing_amalgam', 'infection']);
+      expect(feedback.spoken.at(-1)?.text).toContain('infectione');
+    });
+
+    it('never moves a tooth number: a near-miss number is left alone', async () => {
+      await say('la 17 carie et amalgame');
+
+      expect(entitiesOf(0)['fdi']).toBe('17');
+    });
+
+    const WITHOUT_THE_WAKE_WORD: Array<[string, string]> = [
+      ['sur la 16 je vois des caries', '16'],
+      ['je vois une carie sur la 16', '16'],
+      ['il y a une carie sur la seize', '16'],
+      ['on a une carie sur la 16', '16'],
+      ['alors sur la 14 euh je vois un amalgame', '14'],
+      ['I see caries on tooth 16', '16'],
+      ['there is a cavity on tooth 26', '26'],
+    ];
+    for (const [sentence, tooth] of WITHOUT_THE_WAKE_WORD) {
+      it(`does not need "Calypso" for "${sentence}"`, async () => {
+        inputLanguage = /^(?:I |there )/.test(sentence) ? 'en' : 'fr';
+
+        await hear(sentence);
+
+        expect(api.recorded.map(entry => entry.intent)).toEqual(['clinical.addFindings']);
+        expect(entitiesOf(0)['fdi']).toBe(tooth);
+      });
+    }
+
+    const STILL_NEEDS_IT = [
+      'j\'ai mal à la 16 depuis hier',
+      'passe-moi le composite pour la seize',
+      'est-ce que vous avez mal à la 16 ?',
+      'rendez-vous le 15 mai pour une carie',
+    ];
+    for (const sentence of STILL_NEEDS_IT) {
+      it(`still ignores "${sentence}" without the wake word`, async () => {
+        await hear(sentence);
+
+        expect(api.recorded).toEqual([]);
+        expect(orchestrator.ignoredUtterance()).toBe(sentence);
+      });
+    }
   });
 });

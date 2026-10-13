@@ -1,4 +1,4 @@
-import { foldAccents, similarity } from './voice-fuzzy';
+import { foldAccents, repairClinicalTerms, similarity } from './voice-fuzzy';
 import { Dentition, resolveTooth } from './tooth-lexicon';
 import { extractFindings } from './clinical-lexicon';
 
@@ -220,7 +220,31 @@ export function isResumePhrase(transcript: string): boolean {
 }
 
 /** A dictated finding is a short sentence; a conversation is not. */
-const DICTATION_MAX_WORDS = 16;
+const DICTATION_MAX_WORDS = 22;
+
+/**
+ * How a doctor opens a sentence that reports what they see before naming the
+ * tooth: "sur la 16 je vois…", "je vois une carie sur la 16", "il y a…",
+ * "I see caries on tooth 16", "there is…". Filler words in front of it
+ * ("alors", "bon", "euh", "so") do not count against it.
+ *
+ * It is a whitelist on purpose. What it keeps out is what a patient or an
+ * assistant says — "j'ai mal à la 16", "passe-moi le composite pour la seize",
+ * "est-ce que ça fait mal sur la 16" — none of which opens like a finding being
+ * reported.
+ */
+const REPORTING_LEAD = new RegExp(
+  '^(?:(?:et|alors|donc|bon|ben|ok|okay|euh|hum|puis|voil[àa]|and|so|well|then|now|uh|um|right)[\\s,]+)*'
+  + '(?:'
+  + 'sur|pour|[àa]|au\\s+niveau\\s+d[eu]|concernant|pr[ée]sence\\s+d[eu]|on|at|for|regarding'
+  + '|je\\s+(?:vois|note|constate|remarque|retrouve|observe|relève)'
+  + '|on\\s+(?:voit|a|constate|note|retrouve|observe)|nous\\s+(?:voyons|avons|constatons)'
+  + '|il\\s+y\\s+a|il\\s+existe|il\\s+(?:faut|faudra|faudrait)|j[\'’]\\s*observe'
+  + '|i\\s+(?:see|note|can\\s+see|found|find|notice[ds]?|observe)|i[\'’]ve\\s+(?:found|noticed)'
+  + '|we\\s+(?:see|have|found|got|need)|there\\s+(?:is|are|[\'’]s)'
+  + ')(?![\\p{L}\\p{N}])',
+  'iu',
+);
 
 /**
  * Dictation that is unmistakably dictation, accepted without the wake word.
@@ -232,22 +256,43 @@ const DICTATION_MAX_WORDS = 16;
  * recogniser clips. Every such command is still read back aloud, staged
  * rather than written, and reviewed before it reaches the record.
  *
- * The opening requirement is what keeps it from firing on talk *about* a
- * tooth: "passe-moi le composite pour la seize" contains a finding word and a
- * tooth, but opens with neither, and still needs the wake word.
+ * Two ways in:
+ *
+ * - it **opens** with the tooth, or with the finding straight after it;
+ * - it opens with a **reporting lead** ({@link REPORTING_LEAD}) — "sur la 16 je
+ *   vois des caries", "je vois une carie sur la 16", "il y a une infection sur
+ *   la 17" — and holds a tooth and a finding. Someone telling the patient what
+ *   is in their mouth is telling the chart too.
+ *
+ * Neither lets in talk *about* a tooth: "passe-moi le composite pour la seize"
+ * contains a finding word and a tooth, but opens with neither, and still needs
+ * the wake word.
  */
 export function isSelfEvidentDictation(transcript: string, dentition: Dentition = 'adult'): boolean {
-  const text = transcript.trim();
+  let text = transcript.trim();
   const words = text.split(/\s+/).filter(Boolean);
   if (words.length === 0 || words.length > DICTATION_MAX_WORDS) return false;
+  if (opensWithQuestion(text)) return false;
   if (resolveTooth(text, dentition).kind !== 'resolved') return false;
 
-  const findings = extractFindings(text);
-  if (findings.length === 0) return false;
+  let findings = extractFindings(text);
+  if (findings.length === 0) {
+    // A tooth and a word that was nearly a finding — "la 16 carriée", "dent 17
+    // infectione" — is still dictation: the recogniser misspelled it, the
+    // doctor did not stop making it.
+    const repaired = repairClinicalTerms(text);
+    if (repaired.corrections.length === 0) return false;
+    text = repaired.text;
+    findings = extractFindings(text);
+    if (findings.length === 0) return false;
+  }
 
   if (resolveTooth(words.slice(0, 4).join(' '), dentition).kind === 'resolved') return true;
   const firstFinding = text.toLowerCase().indexOf(findings[0].matchedText.toLowerCase());
-  return firstFinding >= 0 && firstFinding <= 1;
+  if (firstFinding >= 0 && firstFinding <= 1) return true;
+
+  // The weaker evidence: it has to read as a statement, not as a question.
+  return REPORTING_LEAD.test(text) && !/\?\s*$/u.test(text);
 }
 
 export function isStopPhrase(transcript: string): boolean {
@@ -260,6 +305,20 @@ export function isStopPhrase(transcript: string): boolean {
 
 // ── Speech heard during the follow-up window ────────────────────────────
 
+/** How a question opens, in French and English — before any question mark a recogniser may or may not add. */
+const QUESTION_LEAD = new RegExp(
+  '^(?:est[- ]ce|qu[\'’]?(?:est|y|il|elle|on)|qui|quoi|pourquoi|comment|combien|quand|où'
+  + '|avez[- ]vous|as[- ]tu|tu\\s+as|vous\\s+avez|pouvez[- ]vous'
+  + '|do\\s+you|does|did|is\\s+(?:it|there)|are\\s+(?:you|there)|have\\s+you|can\\s+you'
+  + '|what|why|how|when|where|who)(?![\\p{L}\\p{N}])',
+  'iu',
+);
+
+/** Whether the sentence opens the way a question does — "does the 16 hurt", "vous avez mal ?". */
+export function opensWithQuestion(utterance: string): boolean {
+  return QUESTION_LEAD.test(utterance.trim());
+}
+
 /**
  * Whether an utterance is a question — to the patient or to the room — rather
  * than something to record. "Vous avez une infection ?" contains a finding word
@@ -267,14 +326,7 @@ export function isStopPhrase(transcript: string): boolean {
  */
 export function looksLikeQuestion(utterance: string): boolean {
   const text = utterance.trim();
-  if (/\?\s*$/u.test(text)) return true;
-  return new RegExp(
-    '^(?:est[- ]ce|qu[\'’]?(?:est|y|il|elle|on)|qui|quoi|pourquoi|comment|combien|quand|où'
-    + '|avez[- ]vous|as[- ]tu|tu\\s+as|vous\\s+avez|pouvez[- ]vous'
-    + '|do\\s+you|does|did|is\\s+(?:it|there)|are\\s+(?:you|there)|have\\s+you|can\\s+you'
-    + '|what|why|how|when|where|who)(?![\\p{L}\\p{N}])',
-    'iu',
-  ).test(text);
+  return /\?\s*$/u.test(text) || QUESTION_LEAD.test(text);
 }
 
 /** Words that may lead a further finding: "et une fracture", "plus, mobilité". */

@@ -29,6 +29,8 @@ import { VoiceSessionPanelComponent } from '../../../shared/components/voice/voi
 import { VoiceSessionDockComponent } from '../../../shared/components/voice/voice-session-dock.component';
 import { ConsultationPanelComponent } from '../../../shared/components/consultation/consultation-panel.component';
 import { ConsultationService } from '../../../core/consultation/consultation.service';
+import { ConsultationApiService } from '../../../core/consultation/consultation-api.service';
+import { ConsultationLogComponent } from '../../../shared/components/consultation/consultation-log.component';
 import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clinical-record.model';
 import { PermissionService } from '../../../core/services/permission.service';
 import { PatientAccountComponent } from '../account/patient-account.component';
@@ -39,7 +41,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent, PatientPhotosComponent, GumStatusComponent, TreatmentLogComponent],
+  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, ConsultationLogComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent, PatientPhotosComponent, GumStatusComponent, TreatmentLogComponent],
   template: `
     <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive()" [class.has-consultation]="consultation.visible()">
       @if (patientService.currentPatient(); as patient) {
@@ -541,6 +543,10 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                                   <summary>{{ 'CONSULTATION.TRANSCRIPT_OPEN' | translate }}</summary>
                                   <p class="clinical-item-detail">{{ note.content }}</p>
                                 </details>
+                                <!-- Beside the commands the examination understood and what was validated. -->
+                                <button type="button" class="btn btn-ghost btn-sm" (click)="openConsultationLog(note.sessionId)">
+                                  <span class="material-icons text-sm">history</span> {{ 'CONSULTATION.OPEN_LOG' | translate }}
+                                </button>
                               } @else {
                                 <p class="clinical-item-detail">{{ note.content }}</p>
                               }
@@ -784,6 +790,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
       <!-- The consultation: what is heard and what the system catches, beside the
            dossier while it runs, and the review once it ends. -->
       <app-consultation-panel class="dossier-consultation" />
+      <app-consultation-log [consultationId]="logConsultationId()" (closed)="logConsultationId.set(null)" />
 
       <!-- Scoped to the dossier rather than mounted at the app root. A voice
            command like "sixteen, recurrent caries" only has a referent when a
@@ -1792,6 +1799,9 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   private confirmDialog = inject(ConfirmDialogService);
   voiceSession = inject(VoiceSessionService);
   consultation = inject(ConsultationService);
+  private consultationApi = inject(ConsultationApiService);
+  /** The consultation whose log is open, or null. */
+  logConsultationId = signal<string | null>(null);
   private commandRegistry = inject(CommandRegistryService);
   clinicalRecordService = inject(ClinicalRecordService);
   private voiceContext = inject(VoiceContextService);
@@ -2102,6 +2112,24 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
         this.showNoteForm.set(false);
       },
       error: (err) => this.toast.error(err.error?.detail || err.error?.message || 'Could not save the note.')
+    });
+  }
+
+  /**
+   * Opens the log of the consultation a filed transcript came from. The note
+   * carries the dictated session's id, not the consultation's, so the patient's
+   * consultations are searched for the one that owns that session.
+   */
+  openConsultationLog(sessionId?: string): void {
+    const patient = this.patientService.currentPatient();
+    if (!patient || !sessionId) return;
+    this.consultationApi.list(patient.id).subscribe({
+      next: list => {
+        const owner = list.find(c => c.voiceSessionId === sessionId);
+        if (owner) this.logConsultationId.set(owner.id);
+        else this.toast.error(this.translate.instant('CONSULTATION.LOG.ERROR'));
+      },
+      error: () => this.toast.error(this.translate.instant('CONSULTATION.LOG.ERROR')),
     });
   }
 

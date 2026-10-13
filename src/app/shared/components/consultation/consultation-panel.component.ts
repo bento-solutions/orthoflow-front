@@ -25,6 +25,8 @@ import {
 import { PatientFieldName } from '../../../core/consultation/consultation.model';
 import { chartLine } from '../../../core/consultation/consultation-chart';
 import { spokenLanguage } from '../../../core/voice/voice-vocabulary';
+import { InputLanguageService } from '../../../core/voice/input-language.service';
+import { INPUT_LANGUAGES } from '../../../core/voice/language-filter';
 import { VoiceContextService } from '../../../core/voice/voice-context.service';
 import { BufferedEntry } from '../../../core/voice/voice-orchestrator.service';
 import { TranslateService } from '@ngx-translate/core';
@@ -35,6 +37,7 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
 import { Treatment } from '../../../core/models/stock.model';
 import { PermissionService } from '../../../core/services/permission.service';
 import { PrescriptionEditorComponent } from '../prescription/prescription-editor.component';
+import { ConsultationLogComponent } from './consultation-log.component';
 
 type Mode = 'intro' | 'recording' | 'review' | 'saved';
 
@@ -99,7 +102,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
 @Component({
   selector: 'app-consultation-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, PrescriptionEditorComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, PrescriptionEditorComponent, ConsultationLogComponent],
   template: `
     @if (c.visible()) {
       <aside class="cp" [attr.data-mode]="mode()" [attr.aria-label]="'CONSULTATION.TITLE' | translate">
@@ -108,7 +111,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
             <span class="cp-dot" [class.live]="c.listening()" aria-hidden="true"></span>
             <h2>{{ 'CONSULTATION.TITLE' | translate }}</h2>
             @if (mode() === 'recording') {
-              <span class="cp-badge">{{ (c.phase() === 'intake' ? 'CONSULTATION.PHASE_INTAKE' : 'CONSULTATION.PHASE_EXAMINATION') | translate }}</span>
+              <span class="cp-badge">{{ 'CONSULTATION.PHASE_RECORDING' | translate }}</span>
             } @else if (mode() === 'review') {
               <span class="cp-badge review">{{ 'CONSULTATION.PHASE_REVIEW' | translate }}</span>
             }
@@ -135,6 +138,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                   <input type="checkbox" [ngModel]="informed()" (ngModelChange)="informed.set($event)" />
                   <span>{{ (c.retainTranscript() ? 'CONSULTATION.INTRO_ACK' : 'CONSULTATION.INTRO_ACK_NOT_KEPT') | translate }}</span>
                 </label>
+                <ng-container *ngTemplateOutlet="languagePicker" />
                 @if (voice.error(); as error) {
                   <p class="cp-alert critical" role="alert">{{ error }}</p>
                 }
@@ -176,20 +180,19 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
               </div>
 
               <div class="cp-controls">
-                @if (c.phase() === 'intake') {
-                  <button type="button" class="cp-btn primary" (click)="c.beginExamination()" [disabled]="c.busy()">
-                    <span class="material-icons" aria-hidden="true">medical_services</span>{{ 'CONSULTATION.BEGIN_EXAM' | translate }}
-                  </button>
-                }
                 <button type="button" class="cp-btn danger" (click)="c.end()" [disabled]="c.busy()">
                   <span class="material-icons" aria-hidden="true">stop_circle</span>
                   {{ (c.busy() ? 'VOICE.ENDING' : 'CONSULTATION.END') | translate }}
                 </button>
               </div>
-              <p class="cp-hint">
-                @if (c.phase() === 'intake') { {{ 'CONSULTATION.HINT_INTAKE' | translate }} }
-                @else { {{ 'CONSULTATION.HINT_EXAM' | translate }} }
-              </p>
+              <p class="cp-hint">{{ 'CONSULTATION.HINT_RECORDING' | translate }}</p>
+
+              <ng-container *ngTemplateOutlet="languagePicker" />
+              @if (voice.languageNoiseCount() > 0) {
+                <p class="cp-hint cp-ignored" role="status">
+                  {{ 'VOICE.LANG_NOISE' | translate: { count: voice.languageNoiseCount(), language: ('VOICE.LANG.' + inputLanguage.language() | translate) } }}
+                </p>
+              }
 
               <section class="cp-sec">
                 <button type="button" class="cp-sec-head" (click)="showHeard.set(!showHeard())" [attr.aria-expanded]="showHeard()">
@@ -351,6 +354,11 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                       <span class="material-icons" aria-hidden="true">medication</span>{{ 'RX.NEW' | translate }}
                     </button>
                   }
+                  @if (c.saved(); as saved) {
+                    <button type="button" class="cp-btn big" (click)="openLog.set(saved.consultationId)">
+                      <span class="material-icons" aria-hidden="true">history</span>{{ 'CONSULTATION.OPEN_LOG' | translate }}
+                    </button>
+                  }
                   <button type="button" class="cp-link" (click)="c.dismiss()">{{ 'CONSULTATION.CLOSE' | translate }}</button>
                 </div>
                 @if (c.saved(); as saved) {
@@ -373,11 +381,31 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
               <app-prescription-editor [open]="writingRx()" [patientId]="saved.patient.id"
                 [patientName]="saved.patient.firstName + ' ' + saved.patient.lastName" [consultationId]="saved.consultationId"
                 (closed)="writingRx.set(false)" />
+              <app-consultation-log [consultationId]="openLog()" (closed)="openLog.set(null)" />
             }
           }
         }
       </aside>
     }
+
+    <!-- ── The language the doctor dictates in ───────────────────────────
+         Everything said in another language is kept in the conversation but
+         never acted on as a command, so it is shown, and can be changed here or
+         by voice ("Calypso, dictée en anglais"). -->
+    <ng-template #languagePicker>
+      <fieldset class="cp-lang">
+        <legend>{{ 'VOICE.LANG_TITLE' | translate }}</legend>
+        <div class="cp-lang-options" role="radiogroup" [attr.aria-label]="'VOICE.LANG_TITLE' | translate">
+          @for (lang of inputLanguages; track lang) {
+            <button type="button" role="radio" [attr.aria-checked]="inputLanguage.language() === lang"
+                    [class.on]="inputLanguage.language() === lang" (click)="inputLanguage.set(lang)">
+              {{ 'VOICE.LANG.' + lang | translate }}
+            </button>
+          }
+        </div>
+        <p class="cp-hint">{{ (inputLanguage.isPinned() ? 'VOICE.LANG_HINT_PINNED' : 'VOICE.LANG_HINT_DEFAULT') | translate }}</p>
+      </fieldset>
+    </ng-template>
 
     <!-- ── What the system caught, as the doctor sees it ───────────────── -->
     <ng-template #items let-editable="editable">
@@ -701,6 +729,14 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-live-label { font-size: .8125rem; font-weight: 600; color: rgb(var(--ink-700)); white-space: nowrap; }
 
     .cp-hint { margin: 0; font-size: .75rem; color: rgb(var(--ink-600)); }
+    .cp-ignored { color: rgb(var(--caution-800)); }
+    .cp-lang { border: 0; margin: 0; padding: 0; display: grid; gap: .375rem; min-width: 0; }
+    .cp-lang legend { padding: 0; margin-bottom: .125rem; font-size: .8125rem; font-weight: 700; color: rgb(var(--ink-900)); }
+    .cp-lang-options { display: inline-flex; width: fit-content; max-width: 100%; border: 1px solid rgb(var(--ink-300)); border-radius: .5rem; overflow: hidden; }
+    .cp-lang-options button { padding: .4375rem .875rem; min-height: 2.25rem; font: inherit; font-size: .875rem; border: 0; background: var(--surface); color: rgb(var(--ink-800)); cursor: pointer; }
+    .cp-lang-options button + button { border-inline-start: 1px solid rgb(var(--ink-300)); }
+    .cp-lang-options button.on { background: rgb(var(--petrol-600)); color: #fff; font-weight: 700; }
+    .cp-lang-options button:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
     .cp-hint.note { display: flex; gap: .375rem; align-items: center; background: rgb(var(--ink-100)); border-radius: 8px; padding: .375rem .625rem; }
     .cp-hint .material-icons { font-size: 1rem; }
     .cp-reading { margin: 0; font-size: .75rem; font-weight: 600; color: rgb(var(--petrol-700)); }
@@ -772,6 +808,8 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
 export class ConsultationPanelComponent {
   c = inject(ConsultationService);
   voice = inject(VoiceOrchestratorService);
+  inputLanguage = inject(InputLanguageService);
+  inputLanguages = INPUT_LANGUAGES;
   private patients = inject(PatientService);
   private stock = inject(StockService);
   private confirmDialog = inject(ConfirmDialogService);
@@ -805,6 +843,8 @@ export class ConsultationPanelComponent {
   /** The ordonnance written once the consultation is saved, from its saved screen. */
   readonly canPrescribe = computed(() => this.permissions.can('CLINICAL_WRITE'));
   readonly writingRx = signal(false);
+  /** The consultation whose log is open, or null. */
+  readonly openLog = signal<string | null>(null);
   typed = '';
   catalog = signal<Treatment[]>([]);
 

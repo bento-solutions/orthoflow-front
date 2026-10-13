@@ -10,8 +10,8 @@ import { VoiceContextService } from './voice-context.service';
 import { VoiceCommandRegistryService } from './voice-command-registry.service';
 import { TranscriptionDto, VoiceApiService } from './voice-api.service';
 import { VoiceSessionService } from './voice-session.service';
-import { SEVERAL_TEETH_QUESTION, resolveWithGrammar } from './voice-grammar';
-import { repairClinicalTerms } from './voice-fuzzy';
+import { SEVERAL_TEETH_QUESTION } from './voice-grammar';
+import { resolveForgiving } from './voice-resolve';
 import {
   detectWake,
   isPausePhrase,
@@ -23,7 +23,7 @@ import {
 } from './voice-wake';
 import { acceptsFollowUp } from './voice-followup';
 import { InputLanguageService } from './input-language.service';
-import { classifyLanguage } from './language-filter';
+import { InputLanguage, classifyLanguage, isLanguageNeutralAnswer, requestedLanguage } from './language-filter';
 import { affirmedFindings, allFindingCodes, extractFindings, findingKind, findingLabel, spokenFindingCovers } from './clinical-lexicon';
 import { describeFdi, findToothMentions, resolveTooth } from './tooth-lexicon';
 import { WORD_END } from './voice-regex';
@@ -33,6 +33,8 @@ import {
   SpokenLanguage,
   dictationLanguage,
   expiryWarning,
+  languageIgnored,
+  languageSwitched,
   phrase,
   speechHints,
   spokenConfirmation,
@@ -57,8 +59,8 @@ import {
 /**
  * The pipeline, and the place every safety rule is actually enforced:
  *
- *   capture → transcribe (verbatim + normalized) → wake gate → grammar
- *           → fuzzy repair → tooth guard → (NLU fallback) → validation
+ *   capture → transcribe (verbatim + normalized) → language filter → wake gate
+ *           → grammar → forgiving repair → tooth guard → (NLU fallback) → validation
  *           → risk gate → buffer or execute → visual + spoken feedback
  *           → audit → undo
  *
@@ -177,6 +179,13 @@ const MIC_RECOVERY_DELAY_MS = 2_000;
  */
 const FINISH_WAIT_MS = 12_000;
 
+/**
+ * Something that sounded like a command was ignored for being in the wrong
+ * language: the doctor is told, but not more often than this — a patient
+ * chatting in Darija must not make the room talk back.
+ */
+const LANGUAGE_WARNING_INTERVAL_MS = 45_000;
+
 /** How a spoken utterance came to be treated as addressed to the system. */
 export type AddressedVia = 'wake-word' | 'dictation' | 'follow-up' | 'explicit';
 
@@ -204,11 +213,6 @@ interface StagedBatch {
   spoken: Spoken[];
   /** Teeth whose command could not be recorded. */
   failedTeeth: string[];
-}
-
-/** A resolution that is something to do, not a question or a miss. */
-function isCommand(resolution: VoiceResolution): boolean {
-  return resolution.kind === 'intent' || resolution.kind === 'sequence';
 }
 
 function distinct(values: Array<string | null | undefined>): string[] {
@@ -510,14 +514,12 @@ export class VoiceOrchestratorService {
   //
   // A recorded consultation keeps the whole conversation, where dictation keeps
   // only what is addressed to the system. The listener below is told every
-  // transcribed utterance *before* the wake gate decides whether it is a
-  // command; `conversationOnly` is the intake phase, where nothing is.
+  // transcribed utterance *before* the language filter and the wake gate decide
+  // whether it is a command. Commands themselves work from the first second of
+  // a consultation: there is no stretch of it in which the chart is not listening.
 
   private transcriptListener: ((text: string) => void) | null = null;
-  private conversationOnlySignal = signal(false);
-
-  /** True while everything heard is kept as conversation and none of it is a command. */
-  conversationOnly = this.conversationOnlySignal.asReadonly();
+  private handledElsewhere: ((text: string) => boolean) | null = null;
 
   /** Receives every transcribed utterance, spoken or recognised, in order. Null to stop. */
   setTranscriptListener(listener: ((text: string) => void) | null): void {
@@ -525,11 +527,12 @@ export class VoiceOrchestratorService {
   }
 
   /**
-   * In conversation-only mode utterances are heard, kept, and never run as
-   * commands — the intake of a consultation, where the patient is talking.
+   * Phrases an owner of the session handles itself — a consultation's "Calypso,
+   * consultation" — so the pipeline acknowledges them instead of answering "pas
+   * compris". Called with an utterance already known to be addressed to the system.
    */
-  setConversationOnly(on: boolean): void {
-    this.conversationOnlySignal.set(on);
+  setHandledElsewhere(predicate: ((text: string) => boolean) | null): void {
+    this.handledElsewhere = predicate;
   }
 
   // ── Microphone control ──────────────────────────────────────────────
@@ -538,7 +541,6 @@ export class VoiceOrchestratorService {
     if (this.wired) return;
     this.speech.setResultHandler(result => {
       this.transcriptListener?.(result.transcript.trim());
-      if (this.conversationOnlySignal()) return;
       void this.handleTranscript(result.transcript, result.confidence);
     });
     this.capture.setUtteranceHandler(clip => this.transcribeClip(clip));
@@ -823,7 +825,6 @@ export class VoiceOrchestratorService {
     // Kept before the wake gate: a recorded consultation wants the whole
     // conversation, not only the part addressed to the system.
     this.transcriptListener?.(result.text.trim());
-    if (this.conversationOnlySignal()) return;
     await this.handleTranscript(result.text, 1, result.normalized ?? null, inSession);
   }
 
@@ -884,13 +885,34 @@ export class VoiceOrchestratorService {
     if (!said) return;
     const readings = distinct([cleaned, said]);
 
-    // Speech in a language other than the one chosen for dictation is noise: a
-    // patient answering in Arabic, a conversation in the corridor. Typed
-    // commands (not heard, not gated) are the user's own words and pass.
     const heardAloud = gated || recognitionConfidence !== 1;
-    if (heardAloud && readings.every(reading => classifyLanguage(reading, this.inputLanguage.language()) === 'noise')) {
+
+    // "Calypso, dictée en anglais": the way to correct the setting without
+    // touching the screen. Checked first, and in every language, because a wrong
+    // setting is exactly when the doctor needs it and cannot be heard otherwise.
+    if (heardAloud) {
+      const requested = readings.map(reading => requestedLanguage(reading)).find(language => language !== null) ?? null;
+      if (requested) {
+        this.switchDictationLanguage(requested);
+        return;
+      }
+    }
+
+    // Speech in a language other than the one chosen for dictation is noise: a
+    // patient answering in Darija, a conversation in the corridor — and a
+    // command said in the other language than the setting, which is told to the
+    // doctor rather than guessed at. Typed commands (not heard, not gated) are
+    // the user's own words and pass. So do a yes or a no to a question the app
+    // asked, and ending the examination: neither means anything in a patient's
+    // mouth, and being unable to say "oui" or "fin" would leave the doctor stuck.
+    const answeringQuestion = !!(this.confirmationSignal() || this.clarificationSignal());
+    const exempt = (answeringQuestion && readings.every(reading => isLanguageNeutralAnswer(reading)))
+      || readings.some(reading => isStopPhrase(reading));
+    const chosenLanguage = this.inputLanguage.language();
+    if (heardAloud && !exempt && readings.every(reading => classifyLanguage(reading, chosenLanguage) === 'noise')) {
       this.languageNoiseSignal.update(count => count + 1);
       this.ignoredSignal.set(said);
+      this.warnWrongLanguage(readings);
       this.settle();
       return;
     }
@@ -950,11 +972,49 @@ export class VoiceOrchestratorService {
         this.settle();
         return;
       }
+      // The consultation's own phrases ("Calypso, consultation"): acknowledged,
+      // never answered with "pas compris".
+      const mine = this.handledElsewhere;
+      if (mine && [addressed.primary, addressed.alternate].some(text => !!text && mine(text))) {
+        this.touchWakeWindow();
+        this.settle();
+        return;
+      }
       await this.resolveAndApply(addressed.primary, addressed.alternate, recognitionConfidence, said, addressed.via);
       return;
     }
 
     await this.resolveAndApply(readings[0], readings[1] ?? null, recognitionConfidence, said);
+  }
+
+  private lastLanguageWarningAt = 0;
+
+  /**
+   * Tells the doctor their command was ignored for its language — but only when
+   * it was a command. A patient chatting in another language is noise and stays
+   * silent; "Calypso, tooth 16 caries" in a French session is the doctor, and
+   * saying nothing is what makes a consultation seem to be running while its
+   * commands go nowhere.
+   */
+  private warnWrongLanguage(readings: string[]): void {
+    if (!readings.some(reading => this.wasAddressed(reading))) return;
+    const now = Date.now();
+    if (now - this.lastLanguageWarningAt < LANGUAGE_WARNING_INTERVAL_MS) return;
+    this.lastLanguageWarningAt = now;
+    const spoken = languageIgnored(this.inputLanguage.language(), this.language());
+    this.announce(false, spoken.text, spoken);
+  }
+
+  private switchDictationLanguage(language: InputLanguage): void {
+    this.inputLanguage.set(language);
+    // Confirmations followed what the recogniser last heard, which was the other language.
+    this.dictationLanguageSignal.set(null);
+    this.ignoredSignal.set(null);
+    this.touchWakeWindow();
+    this.sessionService.touchSession();
+    this.settle();
+    const spoken = languageSwitched(language, language === 'en' ? 'en' : 'fr');
+    this.announce(true, spoken.text, spoken);
   }
 
   private pauseByVoice(): void {
@@ -1034,40 +1094,10 @@ export class VoiceOrchestratorService {
 
     const snapshot = this.context.snapshot();
     const readings = distinct([primary, alternate]);
-    let resolution: VoiceResolution = { kind: 'unrecognized', transcript: primary };
-    let corrections: { from: string; to: string }[] = [];
-    let resolvedFrom = primary;
-
-    for (const reading of readings) {
-      const attempt = resolveWithGrammar(reading, snapshot);
-      if (attempt.kind === 'intent' || attempt.kind === 'sequence') {
-        resolution = attempt;
-        resolvedFrom = reading;
-        break;
-      }
-      if (attempt.kind === 'clarification' && resolution.kind === 'unrecognized') {
-        resolution = attempt;
-        resolvedFrom = reading;
-      }
-    }
-
-    // A near miss — "recurrence caries" for "recurrent caries" — is repaired
-    // against the lexicon's own vocabulary and retried. Numbers are never
-    // repaired: a fuzzy tooth number is the one error that survives review
-    // looking correct. Only an outright intent is accepted from the retry.
-    if (resolution.kind !== 'intent' && resolution.kind !== 'sequence') {
-      for (const reading of readings) {
-        const repair = repairClinicalTerms(reading, candidate => isCommand(resolveWithGrammar(candidate, snapshot)));
-        if (repair.corrections.length === 0) continue;
-        const retried = resolveWithGrammar(repair.text, snapshot);
-        if (retried.kind === 'intent' || retried.kind === 'sequence') {
-          resolution = retried;
-          corrections = repair.corrections;
-          resolvedFrom = reading;
-          break;
-        }
-      }
-    }
+    const resolved = resolveForgiving(readings, snapshot);
+    let resolution: VoiceResolution = resolved.resolution;
+    const corrections = resolved.corrections;
+    const resolvedFrom = resolved.resolvedFrom;
 
     if (resolvedFrom !== heard) {
       if (resolution.kind === 'intent') resolution = this.guardTooth(resolution, heard, snapshot);

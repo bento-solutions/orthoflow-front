@@ -138,7 +138,7 @@ export const FINDINGS: FindingDefinition[] = [
     /\bcari[ée]e?s?\b/iu, /\bl[ée]sions?\s+carieuses?\b/iu),
 
   F('cavity', 'CONDITION', 'Cavity',
-    /\bcavit(?:y|ies)\b/iu, /\bcavit[ée]\b/iu, /\btrou\b/iu),
+    /\bcavit(?:y|ies)\b/iu, /\bcavit[ée]s?\b/iu, /\btrous?\b/iu),
 
   F('fracture', 'CONDITION', 'Fracture',
     // First, so "fractured crown" is one fracture rather than a fracture plus
@@ -173,10 +173,10 @@ export const FINDINGS: FindingDefinition[] = [
 
   F('extracted', 'CONDITION', 'Extracted',
     /\b(?:already\s+)?extracted\b/iu, /\bhas\s+been\s+(?:pulled|removed|extracted)/iu,
-    /\bextraite?\b/iu, /\bd[ée]j[àa]\s+extraite?/iu),
+    /\bextraite?s?\b/iu, /\bd[ée]j[àa]\s+extraite?s?/iu),
 
   F('missing', 'CONDITION', 'Missing',
-    /\bmissing\b/iu, /\babsent\b/iu, /\bnot\s+present\b/iu, /\bmanquante?\b/iu, /\babsente?\b/iu),
+    /\bmissing\b/iu, /\babsent\b/iu, /\bnot\s+present\b/iu, /\bmanquante?s?\b/iu, /\babsente?s?\b/iu),
 
   F('impacted', 'CONDITION', 'Impacted',
     /\bimpacted\b/iu, /\bunerupted\b/iu, /\bincluse?\b/iu, /\bnon\s+[ée]rupt[ée]e?\b/iu),
@@ -185,7 +185,7 @@ export const FINDINGS: FindingDefinition[] = [
     /\babscess\w*/iu, /\bfistula\b/iu, /\babc[èe]s\b/iu),
 
   F('infection', 'CONDITION', 'Infection',
-    /\binfect(?:ion|ed)\b/iu, /\bsuppurat\w+/iu, /\binfect[ée]e?\b/iu),
+    /\binfect(?:ions?|ed)\b/iu, /\bsuppurat\w+/iu, /\binfect[ée]e?s?\b/iu),
 
   F('mobility', 'CONDITION', 'Mobility',
     /\bmobilit(?:y|[ée])\b/iu, /\b(?:tooth\s+is\s+)?(?:loose|wobbly)\b/iu, /\bmobile\b/iu),
@@ -239,21 +239,21 @@ export const FINDINGS: FindingDefinition[] = [
   // ── Existing restorations ───────────────────────────────────────────
   F('existing_crown', 'EXISTING', 'Existing crown',
     /\b(?:old|existing|previous|has\s+an?)\s+crown/iu, /\bcrowned\b/iu, /\bcrowns?\b/iu,
-    /\b(?:ancienne\s+)?couronne\b/iu),
+    /\b(?:ancienne\s+)?couronnes?\b/iu),
 
   F('existing_bridge', 'EXISTING', 'Existing bridge',
-    /\b(?:old|existing|previous|has\s+an?)\s+bridge/iu, /\bbridge\b/iu, /\bbridge\s+existant\b/iu),
+    /\b(?:old|existing|previous|has\s+an?)\s+bridge/iu, /\bbridges?\b/iu, /\bbridge\s+existant\b/iu),
 
   F('existing_implant', 'EXISTING', 'Existing implant',
-    /\b(?:old|existing|previous|has\s+an?)\s+implant/iu, /\bimplant\b/iu),
+    /\b(?:old|existing|previous|has\s+an?)\s+implant/iu, /\bimplants?\b/iu),
 
   F('existing_veneer', 'EXISTING', 'Existing veneer',
-    /\b(?:old|existing|previous|has\s+an?)\s+(?:veneer|facette)/iu, /\bveneer\b/iu, /\bfacette\b/iu),
+    /\b(?:old|existing|previous|has\s+an?)\s+(?:veneer|facette)/iu, /\bveneers?\b/iu, /\bfacettes?\b/iu),
 
   F('existing_root_canal', 'EXISTING', 'Existing root canal',
     /\b(?:previous|old|existing|prior)\s+(?:root\s+canal|endo\w*|rct)/iu,
     /\broot\s+(?:canal|filled|treated)\b/iu, /\bendodontically\s+treated\b/iu,
-    /\bd[ée]vitalis[ée]e?\b/iu, /\bd[ée]vitalisation\b/iu,
+    /\bd[ée]vitalis[ée]e?s?\b/iu, /\bd[ée]vitalisation\b/iu,
     /\btraitement\s+canalaire\s+(?:existant|ant[ée]rieur)/iu),
 
   F('existing_post', 'EXISTING', 'Existing post',
@@ -267,7 +267,7 @@ export const FINDINGS: FindingDefinition[] = [
     /\bamalgam\w*/iu, /\bsilver\s+filling/iu, /\bamalgame\b/iu),
 
   F('existing_composite', 'EXISTING', 'Existing composite',
-    /\bcomposite\b/iu, /\bwhite\s+filling/iu, /\btooth[- ]coloured\s+filling/iu),
+    /\bcomposites?\b/iu, /\bwhite\s+filling/iu, /\btooth[- ]coloured\s+filling/iu),
 
   F('existing_sealant', 'EXISTING', 'Existing sealant',
     /\bsealant\b/iu, /\bscellement\s+de\s+sillons\b/iu),
@@ -536,6 +536,18 @@ function firstWords(text: string, count: number): string {
   return text.trim().split(/\s+/).filter(Boolean).slice(0, count).join(' ');
 }
 
+/** Where the first finding of any kind starts in `text`, or -1. */
+function firstFindingOffset(text: string): number {
+  let first = -1;
+  for (const definition of FINDINGS) {
+    for (const pattern of definition.patterns) {
+      const at = unicodeBoundaries(pattern).exec(text)?.index ?? -1;
+      if (at >= 0 && (first < 0 || at < first)) first = at;
+    }
+  }
+  return first;
+}
+
 /** The definition an existing restoration really is, given what is said beside it. */
 function asTreatmentNeed(
   definition: FindingDefinition,
@@ -548,7 +560,12 @@ function asTreatmentNeed(
 
   const clause = clauseBounds(utterance, at);
   const before = lastWords(utterance.slice(clause.start, at), NEED_REACH_WORDS);
-  const after = firstWords(utterance.slice(at + length, clause.end), NEED_REACH_WORDS);
+  // A cue after the restoration belongs to the nearest one: in "dévitalisée avec
+  // couronne à refaire" the "à refaire" is the crown's, and reading it as the
+  // root canal's would record a root canal as still to do.
+  const afterAll = utterance.slice(at + length, clause.end);
+  const nextFinding = firstFindingOffset(afterAll);
+  const after = firstWords(nextFinding >= 0 ? afterAll.slice(0, nextFinding) : afterAll, NEED_REACH_WORDS);
   if (!unicodeBoundaries(NEED_BEFORE).test(before) && !unicodeBoundaries(NEED_AFTER).test(after)) return definition;
 
   const replacing = unicodeBoundaries(REPLACEMENT_WORDS).test(`${before} ${after}`);

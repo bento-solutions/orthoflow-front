@@ -409,6 +409,18 @@ export function findToothMentions(utterance: string): ToothMention[] {
       }
     }
 
+    // "Seize carie", "dix-sept amalgame": a code said in words as the first
+    // thing in the utterance. Nowhere else — a number word in the middle of a
+    // sentence is far more likely to be a quantity than a tooth.
+    if (i === 0 && ALL_UNITS[word] !== undefined) {
+      const run = consumeNumber(wordsFrom(0));
+      if (run && run.value >= 11 && isValidFdi(String(run.value)) && !quantity(run.used - 1)) {
+        push(String(run.value), 0, run.used - 1);
+        i = enumerate(run.used);
+        continue;
+      }
+    }
+
     if (/^[1-8][1-8]$/.test(word) && isValidFdi(word) && !quantity(i)) {
       push(word, i, i);
     }
@@ -535,10 +547,23 @@ function parseToothPhrase(utterance: string, dentition: Dentition): ParsedTooth 
     }
   }
 
-  // A bare two-digit FDI with no "tooth" in front ("sixteen, recurrent caries").
-  const bareCode = text.match(/(?:^|[^\p{L}\p{N}])([1-8][1-8])(?![\p{L}\p{N}])/u);
-  if (bareCode && isValidFdi(bareCode[1])) {
-    parsed.explicitFdi = bareCode[1];
+  // A bare two-digit FDI with no "tooth" in front ("16, recurrent caries"). A
+  // date or a quantity is not one: "le 15 mai", "dans 16 jours", "36 ans".
+  for (const bare of text.matchAll(/(?:^|[^\p{L}\p{N}])([1-8][1-8])(?![\p{L}\p{N}])/gu)) {
+    if (!isValidFdi(bare[1])) continue;
+    const codeStart = (bare.index ?? 0) + bare[0].length - bare[1].length;
+    const codeEnd = codeStart + bare[1].length;
+    if (QUANTITY_AFTER.test(text.slice(codeEnd)) || QUANTITY_BEFORE.test(text.slice(0, codeStart))) continue;
+    parsed.explicitFdi = bare[1];
+    parsed.explicitWasBare = true;
+    return parsed;
+  }
+
+  // A code the mention scanner reads that the patterns above do not: "seize
+  // carie", "dix-sept amalgame" — number words opening the utterance.
+  const mentioned = findToothMentions(utterance).find(mention => mention.valid);
+  if (mentioned) {
+    parsed.explicitFdi = mentioned.fdi;
     parsed.explicitWasBare = true;
     return parsed;
   }

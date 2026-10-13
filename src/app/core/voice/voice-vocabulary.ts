@@ -2,6 +2,7 @@ import { WAKE_WORD } from './voice-wake';
 import { NO_SUCH_TOOTH_QUESTION, SEVERAL_TEETH_QUESTION } from './voice-grammar';
 import { findingLabel } from './clinical-lexicon';
 import { VoiceContextSnapshot, entityString, stagedFindingCodes } from './voice-intent.model';
+import { InputLanguage } from './language-filter';
 
 /**
  * The words a session listens for, in the two languages its dentists use —
@@ -100,10 +101,10 @@ export const FINDING_TERMS: Readonly<Record<string, { fr: string[]; en: string[]
   normal: { fr: ['rien à signaler', 'saine'], en: ['normal', 'healthy'] },
 };
 
-const SURFACE_TERMS = [
-  'occlusale', 'mésiale', 'distale', 'vestibulaire', 'linguale', 'palatine',
-  'occlusal', 'mesial', 'distal', 'buccal', 'lingual',
-];
+const SURFACE_TERMS: Readonly<Record<SpokenLanguage, string[]>> = {
+  fr: ['occlusale', 'mésiale', 'distale', 'vestibulaire', 'linguale', 'palatine'],
+  en: ['occlusal', 'mesial', 'distal', 'buccal', 'lingual'],
+};
 
 const SURFACE_FR: Record<string, string> = {
   occlusal: 'occlusale', mesial: 'mésiale', distal: 'distale', buccal: 'vestibulaire',
@@ -149,11 +150,20 @@ export const COMMAND_EXAMPLES: ReadonlyArray<{ intent: string; fr: string; en: s
   { intent: 'voice.session.end', fr: 'fin de l\'examen', en: 'end examination' },
 ];
 
-const VOCABULARY_HINT = [
-  ...COMMAND_EXAMPLES.flatMap(example => [example.fr, example.en]),
-  ...Object.values(FINDING_TERMS).flatMap(terms => [...terms.fr, ...terms.en]),
-  ...SURFACE_TERMS,
-].join('; ');
+/** One language's whole vocabulary, as the recogniser is told it. */
+function vocabularyFor(language: SpokenLanguage): string[] {
+  return [
+    ...COMMAND_EXAMPLES.map(example => example[language]),
+    ...Object.values(FINDING_TERMS).flatMap(terms => terms[language]),
+    ...SURFACE_TERMS[language],
+  ];
+}
+
+const VOCABULARY_HINT: Readonly<Record<'fr' | 'en' | 'both', string>> = {
+  fr: vocabularyFor('fr').join('; '),
+  en: vocabularyFor('en').join('; '),
+  both: [...vocabularyFor('fr'), ...vocabularyFor('en')].join('; '),
+};
 
 /**
  * What the recogniser is told to expect for one clip: the wake word, the
@@ -167,9 +177,15 @@ const VOCABULARY_HINT = [
  * personal data is the simplest way to meet the data-minimisation duty.
  */
 export function speechHints(snapshot: VoiceContextSnapshot): string {
+  const locale = snapshot.locale.toLowerCase();
+  // The words of the language the doctor chose, and only those: a recogniser
+  // told to expect English terms hears English in a Darija sentence, and every
+  // word it invents in another language is one the language filter then has to
+  // catch. Arabic dictation keeps both, for the Latin terms said inside it.
+  const language = locale.startsWith('fr') ? 'fr' : locale.startsWith('en') ? 'en' : 'both';
   const parts = [WAKE_WORD];
-  if (snapshot.selectedFdi) parts.push(`dent ${snapshot.selectedFdi}`);
-  parts.push(VOCABULARY_HINT);
+  if (snapshot.selectedFdi) parts.push(language === 'en' ? `tooth ${snapshot.selectedFdi}` : `dent ${snapshot.selectedFdi}`);
+  parts.push(VOCABULARY_HINT[language]);
   return parts.join('; ');
 }
 
@@ -276,6 +292,35 @@ export function expiryWarning(minutes: number, language: SpokenLanguage): Spoken
     : `Your login expires in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}. `
       + 'Finish the examination, then sign in again.';
   return { text, locale: synthesisLocale(language) };
+}
+
+const LANGUAGE_NAMES: Readonly<Record<InputLanguage, Record<SpokenLanguage, string>>> = {
+  fr: { fr: 'français', en: 'French' },
+  en: { fr: 'anglais', en: 'English' },
+  ar: { fr: 'arabe', en: 'Arabic' },
+};
+
+/**
+ * Said when something that sounded like a command was dropped for being in
+ * another language than the one chosen. A doctor who cannot look at the screen
+ * would otherwise see only that nothing happened — which is exactly the failure
+ * "the consultation is running but my commands do not arrive" describes.
+ */
+export function languageIgnored(selected: InputLanguage, language: SpokenLanguage): Spoken {
+  const name = LANGUAGE_NAMES[selected][language];
+  const text = language === 'fr'
+    ? `Dictée réglée sur ${name} : phrase ignorée. Pour changer, dites Calypso, puis la langue.`
+    : `Dictation is set to ${name}: sentence ignored. To change it, say Calypso, then the language.`;
+  return { text, locale: synthesisLocale(language) };
+}
+
+/** Said when the doctor changed the dictation language by voice. */
+export function languageSwitched(selected: InputLanguage, language: SpokenLanguage): Spoken {
+  const name = LANGUAGE_NAMES[selected][language];
+  return {
+    text: language === 'fr' ? `Dictée en ${name}.` : `Dictation in ${name}.`,
+    locale: synthesisLocale(language),
+  };
 }
 
 /** Longer than this and a read-back is a monologue; the words are on screen. */

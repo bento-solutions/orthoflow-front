@@ -7,6 +7,8 @@ import {
   CommitConsultationResultDto,
   ConsultationConfigDto,
   ConsultationDto,
+  ConsultationLinePayload,
+  ConsultationLogDto,
   ExtractionResponseDto,
 } from './consultation.model';
 
@@ -48,8 +50,8 @@ export class ConsultationApiService {
    * Reads the conversation so far and says what it established. Also saves the
    * transcript, so a crash loses at most the last few seconds.
    */
-  extract(id: string, transcript: string): Observable<ExtractionResponseDto> {
-    return this.http.post<ExtractionResponseDto>(`${this.base}/${id}/extract`, { transcript });
+  extract(id: string, transcript: string, lines: ConsultationLinePayload[] = []): Observable<ExtractionResponseDto> {
+    return this.http.post<ExtractionResponseDto>(`${this.base}/${id}/extract`, { transcript, lines });
   }
 
   /** The doctor called the consultation: the chart commands start to work. */
@@ -58,8 +60,13 @@ export class ConsultationApiService {
   }
 
   /** Recording stops; the doctor reviews. */
-  end(id: string, transcript: string): Observable<ConsultationDto> {
-    return this.http.post<ConsultationDto>(`${this.base}/${id}/end`, { transcript });
+  end(id: string, transcript: string, lines: ConsultationLinePayload[] = []): Observable<ConsultationDto> {
+    return this.http.post<ConsultationDto>(`${this.base}/${id}/end`, { transcript, lines });
+  }
+
+  /** The consultation log: what was said and when, the commands, what the doctor validated. */
+  log(id: string): Observable<ConsultationLogDto> {
+    return this.http.get<ConsultationLogDto>(`${this.base}/${id}/log`);
   }
 
   /** Saves what the doctor validated. `saved: false` means a chart finding failed and nothing was written. */

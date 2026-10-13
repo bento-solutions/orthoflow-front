@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
@@ -21,9 +21,11 @@ import {
   DocumentInput,
   printHtml,
 } from './consultation-documents';
-import { isBeginExaminationPhrase } from './consultation-phrases';
+import { isBeginExaminationCommand, isBeginExaminationPhrase } from './consultation-phrases';
 import { chartLine } from './consultation-chart';
-import { CommitConsultationDto, ConsultationDto, ConsultationConfigDto, InsuranceFormIssuedDto } from './consultation.model';
+import {
+  CommitConsultationDto, ConsultationDto, ConsultationConfigDto, ConsultationLinePayload, InsuranceFormIssuedDto,
+} from './consultation.model';
 import { VoiceApiService } from '../voice/voice-api.service';
 import { VoiceOrchestratorService } from '../voice/voice-orchestrator.service';
 import { VoiceSessionService } from '../voice/voice-session.service';
@@ -43,17 +45,23 @@ import { Patient } from '../models/patient.model';
 /**
  * A recorded consultation, from the first word to the printed paper.
  *
- * ── The three phases ────────────────────────────────────────────────────
+ * ── The phases, and what is always on ───────────────────────────────────
  *
- * **Intake.** The microphone is open and *everything* said is kept — the
- * doctor's questions and the patient's answers. Nothing is a command. Every few
- * seconds the transcript is sent to the server, which reads it and proposes
- * what matters: who the patient is, allergies, history, what they are taking.
+ * **From the first second, the microphone is both things at once**: it keeps
+ * everything said (the doctor's questions, the patient's answers — read every
+ * few seconds, so the side panel fills in who the patient is, allergies,
+ * history, what they take) *and* it is listening for chart commands, exactly as
+ * in a dictated examination: "dent 16, carie", "la 13 et 14 amalgame", or
+ * anything after "Calypso", staged and read back. There is no spoken step the
+ * doctor must remember before the chart starts to listen. An earlier version
+ * had one — commands were ignored until "Calypso, consultation" — and a doctor
+ * who believed the consultation was running while their commands went nowhere
+ * lost findings without a sound.
  *
- * **Examination.** The doctor calls the consultation ("Calypso, consultation",
- * or the button). From here the wake-word commands for the dental chart work
- * exactly as in a dictated examination — they are the same commands, staged and
- * read back — while the conversation keeps being kept and read.
+ * **Intake → examination** is therefore only a label that says whether a chart
+ * command has been given yet: the first staged command moves it (silently), and
+ * "Calypso, consultation" still does so on request. It changes nothing about
+ * what is heard.
  *
  * **Review.** The doctor ends it ("fin de la consultation"). The microphone
  * stops and everything the system caught is put in front of them: each item is
@@ -73,9 +81,12 @@ export type ConsultationPhase = 'intake' | 'examination' | 'review' | 'saved';
 export interface TranscriptLine {
   id: number;
   text: string;
+  /** When it was heard (ms since the epoch); 0 for a line restored from a consultation that was never timed. */
   at: number;
   /** Typed in, not heard. */
   typed: boolean;
+  /** The phase it was said in: it decides whether the log shows it as the intake or the examination. */
+  phase: 'INTAKE' | 'EXAMINATION';
 }
 
 /** What a finished consultation keeps for printing and for the saved screen. */
@@ -127,14 +138,14 @@ export function extractionInterval(transcriptChars: number, consecutiveFailures:
 
 const SPOKEN = {
   fr: {
-    started: 'Enregistrement démarré.',
-    examination: 'Consultation commencée. Dites Calypso avant une commande.',
+    started: 'Consultation démarrée. Les commandes sont actives.',
+    examination: 'Consultation en cours. Les commandes sont actives.',
     ended: 'Consultation terminée. Relisez et validez à l’écran.',
     saved: 'Consultation enregistrée.',
   },
   en: {
-    started: 'Recording started.',
-    examination: 'Consultation started. Say Calypso before a command.',
+    started: 'Consultation started. Commands are active.',
+    examination: 'Consultation running. Commands are active.',
     ended: 'Consultation ended. Please review and validate on screen.',
     saved: 'Consultation saved.',
   },
@@ -274,6 +285,17 @@ export class ConsultationService {
   /** Who {@link loadConfig}'s answer is for; undefined when it should be asked again. */
   private configUser: string | null | undefined = undefined;
 
+  constructor() {
+    // The first command of the consultation moves the label from "intake" to
+    // "examination", without a word: it records when the chart was first
+    // spoken to, and changes nothing about what is heard.
+    effect(() => {
+      if (this.phase() === 'intake' && this.voice.buffered().length > 0) {
+        untracked(() => void this.beginExamination({ announce: false }));
+      }
+    });
+  }
+
   // ── Availability ────────────────────────────────────────────────────
 
   /**
@@ -372,7 +394,7 @@ export class ConsultationService {
       }
     }
     if (dto.status === 'REVIEW') {
-      this.voice.setTranscriptListener(null);
+      this.releaseVoice();
       // The report the doctor was editing came back with the rest of their
       // review; writing a fresh narrative over it would lose their words.
       if (!fromStoredReview(dto.reviewState)) await this.regenerateReport();
@@ -388,8 +410,7 @@ export class ConsultationService {
     const microphone = this.voice.openMicrophone();
     try {
       await microphone;
-      this.voice.setTranscriptListener(text => this.onHeard(text));
-      this.voice.setConversationOnly(this.phase() === 'intake');
+      this.holdVoice();
       await this.voice.startExaminationMode({ announce: false });
     } catch {
       this.voice.stopListening();
@@ -403,8 +424,7 @@ export class ConsultationService {
   detach(): void {
     this.flushReviewSave();
     this.clearExtractTimer();
-    this.voice.setTranscriptListener(null);
-    this.voice.setConversationOnly(false);
+    this.releaseVoice();
     this.sessions.setRouting(null);
     this.consultationSignal.set(null);
     this.linesSignal.set([]);
@@ -428,7 +448,7 @@ export class ConsultationService {
 
   private attach(dto: ConsultationDto): void {
     this.consultationSignal.set(dto);
-    this.linesSignal.set(this.linesOf(dto.transcript));
+    this.linesSignal.set(this.restoreLines(dto));
     // What the doctor had decided, when there is any: the server's draft is
     // already folded into it, and rebuilding from the draft alone would undo
     // every validation, correction and removal. The next reading merges as usual.
@@ -450,15 +470,54 @@ export class ConsultationService {
       end: options => this.end(options),
       abandon: () => this.abandon(),
     });
-    if (dto.status === 'INTAKE' || dto.status === 'EXAMINATION') {
-      this.voice.setTranscriptListener(text => this.onHeard(text));
-      this.voice.setConversationOnly(dto.status === 'INTAKE');
-    }
+    if (dto.status === 'INTAKE' || dto.status === 'EXAMINATION') this.holdVoice();
   }
 
-  private linesOf(transcript: string | null): TranscriptLine[] {
-    return (transcript ?? '').split('\n').map(text => text.trim()).filter(Boolean)
-      .map(text => ({ id: this.nextLineId++, text, at: 0, typed: false }));
+  /** The conversation is kept, and the consultation's own phrases are its to answer. */
+  private holdVoice(): void {
+    this.voice.setTranscriptListener(text => this.onHeard(text));
+    this.voice.setHandledElsewhere(text => isBeginExaminationCommand(text));
+  }
+
+  private releaseVoice(): void {
+    this.voice.setTranscriptListener(null);
+    this.voice.setHandledElsewhere(null);
+  }
+
+  /**
+   * The conversation as the server holds it. A line keeps its number and its
+   * time, so what is sent again after a crash is recognised as already stored;
+   * one from before lines were timed has neither, and is never sent as a timed
+   * line (it stays in the transcript text only).
+   */
+  private restoreLines(dto: ConsultationDto): TranscriptLine[] {
+    if (dto.lines?.length) {
+      const restored = dto.lines.map(line => ({
+        id: line.seq,
+        text: line.text,
+        at: line.at ? Date.parse(line.at) : 0,
+        typed: line.typed,
+        phase: line.phase ?? (dto.status === 'INTAKE' ? 'INTAKE' as const : 'EXAMINATION' as const),
+      }));
+      this.nextLineId = Math.max(this.nextLineId, ...restored.map(line => line.id + 1));
+      return restored;
+    }
+    return (dto.transcript ?? '').split('\n').map(text => text.trim()).filter(Boolean)
+      .map(text => ({
+        id: this.nextLineId++, text, at: 0, typed: false,
+        phase: dto.status === 'INTAKE' ? 'INTAKE' as const : 'EXAMINATION' as const,
+      }));
+  }
+
+  /** The lines with a known time, as the server stores them. */
+  private timedLines(): ConsultationLinePayload[] {
+    return this.linesSignal().filter(line => line.at > 0).map(line => ({
+      seq: line.id,
+      at: new Date(line.at).toISOString(),
+      phase: line.phase,
+      typed: line.typed,
+      text: line.text,
+    }));
   }
 
   // ── The conversation ────────────────────────────────────────────────
@@ -471,18 +530,20 @@ export class ConsultationService {
   private onHeard(text: string, typed = false): void {
     const clean = text.trim();
     if (!clean || !this.isRecording()) return;
-    this.linesSignal.update(lines => [...lines, { id: this.nextLineId++, text: clean, at: Date.now(), typed }]);
+    this.linesSignal.update(lines => [...lines, {
+      id: this.nextLineId++, text: clean, at: Date.now(), typed,
+      phase: this.phase() === 'intake' ? 'INTAKE' : 'EXAMINATION',
+    }]);
     this.sessions.touchSession();
     this.scheduleExtraction();
 
-    // In the intake nothing else is listening for orders, so this is the place.
-    // In the examination the voice pipeline owns "fin de la consultation".
-    if (this.phase() === 'intake') {
-      if (isStopPhrase(clean)) {
-        void this.end({ waitForClips: false });
-      } else if (isBeginExaminationPhrase(clean)) {
-        void this.beginExamination();
-      }
+    // Ending is also the voice pipeline's to hear, and it does, with or without
+    // the wake word; this is the safety net for a question left open that would
+    // otherwise swallow it, and for a line that was typed. Ending twice is a no-op.
+    if (isStopPhrase(clean)) {
+      void this.end({ waitForClips: false });
+    } else if (isBeginExaminationPhrase(clean)) {
+      void this.beginExamination();
     }
   }
 
@@ -520,7 +581,7 @@ export class ConsultationService {
     this.inFlight = true;
     this.extractingSignal.set(true);
     try {
-      const response = await firstValueFrom(this.api.extract(consultation.id, this.transcript()));
+      const response = await firstValueFrom(this.api.extract(consultation.id, this.transcript(), this.timedLines()));
       // A reading of only the end of a long conversation cannot drop what was
       // said at its start: it corrects and adds, nothing more.
       this.reviewSignal.update(state => mergeDraft(state, response.draft, { partial: response.truncated }));
@@ -545,17 +606,25 @@ export class ConsultationService {
 
   // ── Phases ──────────────────────────────────────────────────────────
 
-  /** The doctor called the consultation: the chart commands start to work. */
-  async beginExamination(): Promise<void> {
+  /**
+   * Marks the examination as begun. The chart was already listening; this
+   * records when it was first spoken to, and — asked for out loud — says that
+   * commands are active, which is what the doctor who called it wants to hear.
+   */
+  async beginExamination(options: { announce?: boolean } = {}): Promise<void> {
+    const announce = options.announce !== false;
     const consultation = this.consultationSignal();
-    if (!consultation || this.phase() !== 'intake' || this.busySignal()) return;
+    if (!consultation || !this.isRecording() || this.busySignal()) return;
+    if (this.phase() === 'examination') {
+      if (announce) this.say('examination');
+      return;
+    }
     this.busySignal.set(true);
     try {
       this.consultationSignal.set(await firstValueFrom(this.api.beginExamination(consultation.id)));
-      this.voice.setConversationOnly(false);
-      this.say('examination');
+      if (announce) this.say('examination');
     } catch (error) {
-      this.toast.error(this.describe(error, 'CONSULTATION.ERROR_PHASE'));
+      if (announce) this.toast.error(this.describe(error, 'CONSULTATION.ERROR_PHASE'));
     } finally {
       this.busySignal.set(false);
     }
@@ -577,10 +646,9 @@ export class ConsultationService {
     this.clearExtractTimer();
     try {
       await this.sessions.end({ waitForClips: options.waitForClips, direct: true });
-      this.voice.setTranscriptListener(null);
-      this.voice.setConversationOnly(false);
+      this.releaseVoice();
 
-      this.consultationSignal.set(await firstValueFrom(this.api.end(consultation.id, this.transcript())));
+      this.consultationSignal.set(await firstValueFrom(this.api.end(consultation.id, this.transcript(), this.timedLines())));
       // One last, complete reading of the finished conversation.
       this.dirty = true;
       await this.extractNow();
@@ -739,7 +807,7 @@ export class ConsultationService {
       const chartLines = this.includedChartLines();
       this.consultationSignal.set(result.consultation);
       await this.sessions.finishExternally();
-      this.voice.setTranscriptListener(null);
+      this.releaseVoice();
       this.sessions.setRouting(null);
 
       // Reload what the save changed, then keep the patient as saved for the printouts.

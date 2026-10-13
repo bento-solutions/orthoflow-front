@@ -99,6 +99,33 @@ export function expandElisions(text: string): string {
   return text.replace(/\b([cdjlmnst]|qu|jusqu|lorsqu|puisqu)['’‘`´]/giu, '$1 ');
 }
 
+/** How many spellings one pattern may expand to — a guard, the lexicon's own groups are small. */
+const MAX_EXPANSIONS = 64;
+
+/**
+ * Writes out every choice in a regex's non-capturing groups: `infect(?:ion|ed)`
+ * becomes `infection` and `infected`, `couronne(?:s)?` becomes both with and
+ * without. Innermost groups first, so nesting works; anything it cannot read is
+ * left as it is.
+ */
+export function expandAlternations(source: string): string[] {
+  const group = /\(\?:([^()]*)\)(\?)?/.exec(source);
+  if (!group) return [source];
+  const head = source.slice(0, group.index);
+  const tail = source.slice(group.index + group[0].length);
+  const choices = group[1].split('|');
+  if (group[2]) choices.push('');
+
+  const out: string[] = [];
+  for (const choice of choices) {
+    for (const rest of expandAlternations(head + choice + tail)) {
+      out.push(rest);
+      if (out.length >= MAX_EXPANSIONS) return out;
+    }
+  }
+  return out;
+}
+
 /**
  * Every literal word the clinical lexicon's patterns can match, harvested
  * from the regex sources themselves.
@@ -118,26 +145,32 @@ export function clinicalVocabulary(): ReadonlySet<string> {
   const words = new Set<string>();
   for (const finding of FINDINGS) {
     for (const pattern of finding.patterns) {
-      // Regex syntax has to be reduced to letters without breaking words
-      // apart. The subtle one is the character class: the lexicon writes
-      // `r[ée]currente`, so deleting `[ée]` would yield "r" and "currente"
-      // and the word "recurrente" would never enter the vocabulary at all —
-      // which is precisely the word this whole module exists to match.
-      // Collapsing the class to its first alternative keeps it whole.
-      const literal = pattern.source
-        // `\b` is zero-width: it marks a boundary, it does not separate one.
-        .replace(/\\b/g, '')
-        .replace(/\[\^?([^\]])[^\]]*\]/g, '$1')
-        // `\s`, `\w`, `\d` and friends genuinely do separate words.
-        .replace(/\\[a-zA-Z]/g, ' ')
-        .replace(/\{[^}]*\}/g, ' ')
-        // Alternation and grouping separate alternatives, not letters.
-        .replace(/[(){}|?*+.^$\\\/]/g, ' ');
+      // A group of alternatives — `infect(?:ion|ed)` — has to be written out
+      // before the letters are read, or "infection" is never a word at all and
+      // "infectione" has nothing to be repaired to: stripping the group's
+      // punctuation leaves "infect" and two stray syllables.
+      for (const source of expandAlternations(pattern.source)) {
+        // Regex syntax has to be reduced to letters without breaking words
+        // apart. The subtle one is the character class: the lexicon writes
+        // `r[ée]currente`, so deleting `[ée]` would yield "r" and "currente"
+        // and the word "recurrente" would never enter the vocabulary at all —
+        // which is precisely the word this whole module exists to match.
+        // Collapsing the class to its first alternative keeps it whole.
+        const literal = source
+          // `\b` is zero-width: it marks a boundary, it does not separate one.
+          .replace(/\\b/g, '')
+          .replace(/\[\^?([^\]])[^\]]*\]/g, '$1')
+          // `\s`, `\w`, `\d` and friends genuinely do separate words.
+          .replace(/\\[a-zA-Z]/g, ' ')
+          .replace(/\{[^}]*\}/g, ' ')
+          // Alternation and grouping separate alternatives, not letters.
+          .replace(/[(){}|?*+.^$\\\/]/g, ' ');
 
-      for (const match of literal.matchAll(/[a-zà-öø-ÿ]+/giu)) {
-        const word = foldAccents(match[0]);
-        if (word.length >= MIN_LENGTH && !STOPWORDS.has(word) && !NUMBER_WORDS.has(word)) {
-          words.add(word);
+        for (const match of literal.matchAll(/[a-zà-öø-ÿ]+/giu)) {
+          const word = foldAccents(match[0]);
+          if (word.length >= MIN_LENGTH && !STOPWORDS.has(word) && !NUMBER_WORDS.has(word)) {
+            words.add(word);
+          }
         }
       }
     }

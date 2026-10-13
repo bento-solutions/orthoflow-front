@@ -98,10 +98,69 @@ export interface ExtractionResponseDto {
   truncated: boolean;
 }
 
+/** One utterance of a consultation, as the server keeps it. */
+export interface ConsultationLineDto {
+  seq: number;
+  /** When it was heard; null only on a consultation recorded before lines were timed. */
+  at: string | null;
+  phase: 'INTAKE' | 'EXAMINATION' | null;
+  /** Typed by the doctor, not heard. */
+  typed: boolean;
+  text: string;
+}
+
+/** What the browser sends of a line: the same, with the time always known. */
+export interface ConsultationLinePayload {
+  seq: number;
+  at: string;
+  phase: 'INTAKE' | 'EXAMINATION';
+  typed: boolean;
+  text: string;
+}
+
+/** One command the examination understood, as the audit trail kept it. */
+export interface ConsultationLogCommandDto {
+  id: string;
+  occurredAt: string;
+  /** What was said; null where the deployment does not keep command utterances. */
+  transcript: string | null;
+  intent: string;
+  /** JSON of the resolved entities. */
+  entities: string | null;
+  resolver: string;
+  confidence: number | null;
+  confirmationStatus: 'AUTO' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED' | 'PENDING';
+  outcome: 'EXECUTED' | 'REJECTED' | 'FAILED' | 'CLARIFICATION' | 'UNDONE';
+  targetType: string | null;
+  previousValue: string | null;
+  newValue: string | null;
+  errorMessage: string | null;
+  undoneAt: string | null;
+}
+
+/** The consultation log: what was said and when, the commands, and what the doctor validated. */
+export interface ConsultationLogDto {
+  consultationId: string;
+  patientId: string;
+  status: ConsultationStatus;
+  locale: string | null;
+  patientInformedAt: string;
+  startedAt: string;
+  examinationStartedAt: string | null;
+  endedAt: string | null;
+  completedAt: string | null;
+  /** False when this deployment erases the conversation on save: `lines` is then empty. */
+  transcriptKept: boolean;
+  lines: ConsultationLineDto[];
+  commands: ConsultationLogCommandDto[];
+  reviewed: CommitConsultationDto | null;
+  report: string | null;
+}
+
 export interface ConsultationConfigDto {
   enabled: boolean;
   modelExtraction: boolean;
-  /** The raw conversation is kept in the patient's file once saved (testing deployments only). */
+  /** The timestamped conversation is kept in the patient's file once saved, for the doctor to check later. */
   retainTranscript: boolean;
 }
 
@@ -115,6 +174,8 @@ export interface ConsultationDto {
   patientInformedAt: string;
   /** Null in a list. */
   transcript: string | null;
+  /** The same conversation line by line with the time of each; null in a list, absent from an older server. */
+  lines?: ConsultationLineDto[] | null;
   draft: ConsultationDraftDto | null;
   /** The doctor's decisions on the panel so far (see `StoredReview`); null in a list and once saved. */
   reviewState?: unknown | null;

@@ -1,0 +1,13 @@
+<svg width="136" height="200" viewBox="0 0 136 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="t47b-enamel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F0ECE3"/></linearGradient>
+    <linearGradient id="t47b-dentin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EFDFC7"/><stop offset="1" stop-color="#DFC9A8"/></linearGradient>
+    <linearGradient id="t47b-dentin-back" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E2D0B2"/><stop offset="1" stop-color="#D2B992"/></linearGradient>
+  </defs>
+  <path d="M32.5 66.04 C31.8 76.3 31 92.68 31.2 115.36 C31.4 136.78 33.2 154.42 35 168.28 C37.2 183.4 41.5 185.92 45 185.92 C48.5 185.92 49.5 181.51 50.5 173.32 C51.5 165.13 53 153.16 54.5 140.56 C56 127.96 62 114.73 66 112.84 C70 114.73 71.5 127.96 73 140.56 C74.5 153.16 76 165.76 77 175.84 C78 185.92 79.5 192.85 84 192.85 C88.5 192.85 92 185.29 93.5 177.1 C95 168.91 98.5 150.64 100 138.04 C101.5 125.44 104.6 95.2 104 66.04 C84 71.32 52.5 71.32 32.5 66.04 Z" fill="url(#t47b-dentin)"/>
+  <path d="M32.5 66.04 C31.8 76.3 31 92.68 31.2 115.36 C31.4 136.78 33.2 154.42 35 168.28 C37.2 183.4 41.5 185.92 45 185.92 C48.5 185.92 49.5 181.51 50.5 173.32 C51.5 165.13 53 153.16 54.5 140.56 C56 127.96 62 114.73 66 112.84 C70 114.73 71.5 127.96 73 140.56 C74.5 153.16 76 165.76 77 175.84 C78 185.92 79.5 192.85 84 192.85 C88.5 192.85 92 185.29 93.5 177.1 C95 168.91 98.5 150.64 100 138.04 C101.5 125.44 104.6 95.2 104 66.04" fill="none" stroke="#1A1A1A" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32.5 66.04 C30.3 58.78 28.5 50.86 28.5 42.28 C28.5 33.7 31 25.45 34.5 20.17 C38.7 13.83 49.5 7.96 53.5 7.96 C57.5 7.96 63.5 14.23 67 20.83 C70.5 14.23 81.5 6.64 85.5 6.64 C89.5 6.64 98 10.27 101 16.21 C104.5 23.14 108 35.02 108 44.26 C108 53.5 106 60.1 104 66.04 C84 71.32 52.5 71.32 32.5 66.04 Z" fill="url(#t47b-enamel)"/>
+  <path d="M32.5 66.04 C30.3 58.78 28.5 50.86 28.5 42.28 C28.5 33.7 31 25.45 34.5 20.17 C38.7 13.83 49.5 7.96 53.5 7.96 C57.5 7.96 63.5 14.23 67 20.83 C70.5 14.23 81.5 6.64 85.5 6.64 C89.5 6.64 98 10.27 101 16.21 C104.5 23.14 108 35.02 108 44.26 C108 53.5 106 60.1 104 66.04" fill="none" stroke="#1A1A1A" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32.5 66.04 C52.5 71.32 84 71.32 104 66.04" fill="none" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M67 20.83 C66.4 28.42 66.2 36.34 66.9 44.26" fill="none" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

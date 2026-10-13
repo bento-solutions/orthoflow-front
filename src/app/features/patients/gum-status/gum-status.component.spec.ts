@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PeriodontalAssessment, PeriodontalStatus } from '../../../core/models/clinical-record.model';
 import { ClinicalRecordService } from '../../../core/services/clinical-record.service';
+import { PerioChartService } from '../../../core/services/perio-chart.service';
 import { expectNoA11yViolations } from '../../../testing/axe';
 import { screenMocks } from '../../../testing/screen-mocks';
 import { GumStatusComponent } from './gum-status.component';
@@ -31,7 +32,12 @@ describe('GumStatusComponent', () => {
     mocks = screenMocks();
     TestBed.configureTestingModule({
       imports: [GumStatusComponent, TranslateModule.forRoot()],
-      providers: [{ provide: ClinicalRecordService, useValue: records }, ...mocks.providers],
+      providers: [
+        { provide: ClinicalRecordService, useValue: records },
+        // the probing chart has its own spec; here it only has to find nothing
+        { provide: PerioChartService, useValue: { list: () => of([]), listDeleted: () => of([]) } },
+        ...mocks.providers,
+      ],
     });
     const fixture = TestBed.createComponent(GumStatusComponent);
     fixture.componentRef.setInput('patientId', 'p1');

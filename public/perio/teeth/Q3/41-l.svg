@@ -1,0 +1,13 @@
+<svg width="76" height="200" viewBox="0 0 76 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="t41l-enamel" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F0ECE3"/></linearGradient>
+    <linearGradient id="t41l-dentin" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#EFDFC7"/><stop offset="1" stop-color="#DFC9A8"/></linearGradient>
+    <linearGradient id="t41l-dentin-back" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#E2D0B2"/><stop offset="1" stop-color="#D2B992"/></linearGradient>
+  </defs>
+  <path d="M23.3 133.96 C23.43 118.66 24.42 98.5 26.11 74.56 C27.79 50.62 31 31.97 34.26 19.12 C36.97 8.41 39.03 8.41 41.74 19.12 C45 31.97 48.21 50.62 49.89 74.56 C51.58 98.5 52.57 118.66 52.7 133.96 C46.05 128.68 29.95 128.68 23.3 133.96 Z" fill="url(#t41l-dentin)"/>
+  <path d="M23.3 133.96 C23.43 118.66 24.42 98.5 26.11 74.56 C27.79 50.62 31 31.97 34.26 19.12 C36.97 8.41 39.03 8.41 41.74 19.12 C45 31.97 48.21 50.62 49.89 74.56 C51.58 98.5 52.57 118.66 52.7 133.96" fill="none" stroke="#1A1A1A" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M23.3 133.96 C22.33 139.35 21.32 145.31 20.4 151.12 C18.5 163.08 17 174.4 17 178.84 C17 183.79 18.16 192.37 23.12 196 C32.05 196 43.95 196 52.88 196 C57.84 192.37 59 183.79 59 178.84 C59 174.4 57.5 163.08 55.6 151.12 C54.68 145.31 53.67 139.35 52.7 133.96 C46.05 128.68 29.95 128.68 23.3 133.96 Z" fill="url(#t41l-enamel)"/>
+  <path d="M23.3 133.96 C22.33 139.35 21.32 145.31 20.4 151.12 C18.5 163.08 17 174.4 17 178.84 C17 183.79 18.16 192.37 23.12 196 C32.05 196 43.95 196 52.88 196 C57.84 192.37 59 183.79 59 178.84 C59 174.4 57.5 163.08 55.6 151.12 C54.68 145.31 53.67 139.35 52.7 133.96" fill="none" stroke="#1A1A1A" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M23.3 133.96 C29.95 128.68 46.05 128.68 52.7 133.96" fill="none" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M20.4 151.12 C28.9 157.72 47.1 157.72 55.6 151.12" fill="none" stroke="#1A1A1A" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

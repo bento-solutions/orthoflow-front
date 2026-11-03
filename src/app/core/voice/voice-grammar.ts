@@ -1039,6 +1039,48 @@ const selectTooth: GrammarRule = {
   },
 };
 
+/**
+ * The ways of saying how the 3D chart should be arranged. The whole sentence has to be the
+ * request: "carie occlusale" is a finding, and a dictation must never move the view. The words
+ * "vue" or "view" are required for the same reason, since a surface said alone is an answer
+ * to something else.
+ */
+const VIEW_LEAD = '(?:(?:montre(?:\\s+moi)?|affiche|passe\\s+(?:en|a|à)|va\\s+(?:en|a|à)|reviens?\\s+(?:en|a|à)|retour\\s+(?:en|a|à)|show(?:\\s+me)?|switch\\s+to|go\\s+to|back\\s+to|change\\s+to)\\s+)?(?:(?:la|les|the)\\s+)?';
+
+const CHART_VIEWS: ReadonlyArray<{ view: string; words: RegExp }> = [
+  { view: 'overview', words: /^(?:vue\s+d\s+ensemble|vue\s+panoramique|vue\s+g[ée]n[ée]rale|vue\s+normale|vue\s+vestibulaire|vue\s+de\s+face|overview|panoramic(?:\s+view)?|full\s+chart|buccal\s+view|front\s+view)$/iu },
+  { view: 'occlusal', words: /^(?:vue\s+occlusale|vue\s+de\s+dessus|faces\s+occlusales|occlusal\s+(?:view|surfaces?)|biting\s+surfaces?|top\s+view)$/iu },
+  { view: 'lingual', words: /^(?:vue\s+linguale|vue\s+palatine|faces\s+linguales|faces\s+palatines|lingual\s+(?:view|surfaces?)|palatal\s+(?:view|surfaces?)|inside\s+view)$/iu },
+  { view: 'arch', words: /^(?:vue\s+(?:en\s+)?arcades?|vue\s+des\s+arcades|arcades|vue\s+en\s+bouche|arch(?:es)?(?:\s+view)?|natural\s+view)$/iu },
+];
+
+const setChartView: GrammarRule = {
+  id: 'grammar.chart.setView',
+  match: (raw, text) => {
+    const words = text.replace(new RegExp(`^${VIEW_LEAD}`, 'iu'), '');
+    const found = CHART_VIEWS.find(({ words: pattern }) => pattern.test(words));
+    return found ? intent('chart.setView', { view: found.view }, CONFIDENCE_EXACT, raw) : null;
+  },
+};
+
+const ZOOM_OUT = /^(?:d[ée]zoome[rz]?|d[ée]zoom|zoom\s+arri[èe]re|zoom\s+out|(?:(?:reviens?\s+(?:a|à)|retour\s+(?:a|à)|montre|back\s+to|show)\s+)?(?:toute\s+la\s+bouche|(?:the\s+)?whole\s+mouth|(?:the\s+)?full\s+mouth))$/iu;
+const ZOOM_IN = /^(?:zoome[rz]?|zoom|gros\s+plan|agrandi[st]?|rapproche|close\s*up|magnify|enlarge)(?:\s|$)/iu;
+
+const zoomChart: GrammarRule = {
+  id: 'grammar.chart.zoom',
+  match: (raw, text, context) => {
+    if (ZOOM_OUT.test(text)) return intent('chart.zoomTooth', {}, CONFIDENCE_EXACT, raw);
+    if (!ZOOM_IN.test(text)) return null;
+    const tooth = resolveTooth(raw, context.dentition);
+    if (tooth.kind === 'ambiguous') return ask(tooth.question, raw, toothOptions(tooth));
+    const fdi = tooth.kind === 'resolved' ? tooth.fdi : context.selectedFdi;
+    if (!fdi) {
+      return ask('Which tooth is that for?', raw, [], { intent: 'chart.zoomTooth', entities: {}, awaiting: 'fdi' });
+    }
+    return intent('chart.zoomTooth', { fdi }, CONFIDENCE_STRONG, raw);
+  },
+};
+
 const readBalance: GrammarRule = {
   id: 'grammar.query.balance',
   match: (raw, text, context) => {
@@ -1182,6 +1224,8 @@ export const GRAMMAR_RULES: GrammarRule[] = [
   patientNarrative,
   addNote,
   scheduleFollowUp,
+  setChartView,
+  zoomChart,
   selectTooth,
   readToothFindings,
   readBalance,

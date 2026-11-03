@@ -4420,6 +4420,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/patients/{patientId}/clinical-record/passport/chart.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["chartPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patients/{patientId}/clinical-record/findings": {
         parameters: {
             query?: never;
@@ -8633,15 +8649,15 @@ export interface components {
             sort?: string[];
         };
         PageStockMovementResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StockMovementResponse"][];
@@ -8651,12 +8667,12 @@ export interface components {
             empty?: boolean;
         };
         PageableObject: {
-            paged?: boolean;
-            unpaged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
             /** Format: int32 */
             pageSize?: number;
+            paged?: boolean;
+            unpaged?: boolean;
             /** Format: int64 */
             offset?: number;
             sort?: components["schemas"]["SortObject"][];
@@ -9059,15 +9075,15 @@ export interface components {
             daysOverdue?: number;
         };
         PagePatientResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientResponse"][];
@@ -9413,6 +9429,36 @@ export interface components {
             reaction?: string;
             severity?: string;
         };
+        PassportChart: {
+            dentition?: string;
+            teeth?: components["schemas"]["PassportChartTooth"][];
+            legend?: components["schemas"]["PassportChartEntry"][];
+        };
+        PassportChartEntry: {
+            key?: string;
+            group?: string;
+            symbol?: string;
+            code?: string;
+            name?: string;
+            actCode?: string;
+            outcome?: string;
+            uses?: components["schemas"]["PassportChartUse"][];
+        };
+        PassportChartTooth: {
+            fdi?: string;
+            status?: string;
+            keys?: string[];
+            done?: boolean;
+            owed?: boolean;
+        };
+        PassportChartUse: {
+            teeth?: string[];
+            surfaces?: string[];
+            /** Format: date */
+            date?: string;
+            origin?: string;
+            provider?: string;
+        };
         PassportClinic: {
             name?: string;
             city?: string;
@@ -9480,6 +9526,7 @@ export interface components {
             planned?: components["schemas"]["PassportWork"][];
             log?: components["schemas"]["PassportWork"][];
             gums?: components["schemas"]["PassportGum"][];
+            chart?: components["schemas"]["PassportChart"];
         };
         Account: {
             /** Format: uuid */
@@ -9505,15 +9552,15 @@ export interface components {
             balance?: number;
         };
         PagePatientDirectoryRow: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PatientDirectoryRow"][];
@@ -9612,15 +9659,15 @@ export interface components {
             unhandledReplies?: number;
         };
         PageLogRow: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LogRow"][];
@@ -9673,15 +9720,15 @@ export interface components {
             email?: string;
         };
         PageInvoiceResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["InvoiceResponse"][];
@@ -19025,6 +19072,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TreatmentPassport"];
+                };
+            };
+        };
+    };
+    chartPdf: {
+        parameters: {
+            query?: {
+                lang?: string;
+            };
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
                 };
             };
         };

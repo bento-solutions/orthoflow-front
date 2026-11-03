@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, model, output, signal } from '@angular/core';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -195,7 +195,8 @@ import { SurfacePickerComponent } from './surface-picker.component';
     .act:hover { background: var(--action-tint); }
     .act.danger { color: var(--status-critical-text); }
     .act.danger:hover { background: var(--danger-tint); }
-    .empty { margin: 0; font-size: .8125rem; color: var(--text-muted); }
+    /* The page-wide .empty is a large centred state; here it is one quiet line. */
+    .empty { display: block; margin: 0; padding: 0; text-align: start; font-size: .8125rem; color: var(--text-muted); }
     .field { display: flex; flex-direction: column; gap: .25rem; margin-bottom: .625rem; }
     .field-label { font-size: .75rem; font-weight: 600; color: var(--text); }
     .field-hint { font-size: .6875rem; color: var(--text-muted); }
@@ -215,6 +216,8 @@ export class ToothDetailComponent {
   readonly fdi = input.required<string>();
   /** Active findings of the whole patient, as the dossier already holds them. */
   readonly findings = input<ToothFinding[]>([]);
+  /** The face or faces the next finding is on. Two-way so the 3D chart can set it from a click on the tooth. */
+  readonly surface = model<string | null>(null);
   readonly changed = output<void>();
 
   private readonly records = inject(ClinicalRecordService);
@@ -226,7 +229,6 @@ export class ToothDetailComponent {
   protected readonly today = new Date().toISOString().slice(0, 10);
 
   protected readonly code = signal('');
-  protected readonly surface = signal<string | null>(null);
   protected readonly origin = signal<FindingOrigin>('THIS_CLINIC');
   protected provider = '';
   protected performedOn = '';
@@ -287,7 +289,8 @@ export class ToothDetailComponent {
 
   protected pick(code: string): void {
     this.code.set(code);
-    this.surface.set(null);
+    // A face already picked on the tooth stays for a finding that can have one.
+    if (!findingOption(code)?.surfaces) this.surface.set(null);
   }
 
   protected add(): void {

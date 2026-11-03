@@ -18,7 +18,7 @@ export interface DentalChartResponse {
   updatedAt: string;
 }
 
-export type ToothUpdateSource = '2d' | '3d_top' | '3d_frontal' | '3d_internal' | '3d_roots';
+export type ToothUpdateSource = '2d' | '3d';
 
 @Injectable({
   providedIn: 'root'

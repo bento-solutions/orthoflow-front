@@ -11,11 +11,12 @@ import { SpeechFeedbackService } from '../../../core/voice/speech-feedback.servi
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { COMMAND_EXAMPLES, spokenFindingLabel, spokenLanguage } from '../../../core/voice/voice-vocabulary';
 import { entityString, stagedFindingCodes } from '../../../core/voice/voice-intent.model';
+import { stagedToothFindings } from '../../../core/voice/voice-chart-marks';
 import { findingKind } from '../../../core/voice/clinical-lexicon';
 import { describeFdi } from '../../../core/voice/tooth-lexicon';
-import { DentalChartComponent } from '../../../features/dental-chart/dental-chart.component';
+import { Dental3dChartComponent } from '../../../features/dental-3d/dental-3d-chart.component';
 import { SessionReviewComponent } from '../../../features/patients/session-review/session-review.component';
-import { DentalChartState, ToothState } from '../../../core/models/patient.model';
+import { DentalChartState } from '../../../core/models/patient.model';
 import { ToothFinding } from '../../../core/models/clinical-record.model';
 import { PatientTreatment } from '../../../core/models/patient-treatment.model';
 
@@ -64,7 +65,7 @@ interface ToothGroup {
 @Component({
   selector: 'app-voice-session-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, DentalChartComponent, SessionReviewComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, Dental3dChartComponent, SessionReviewComponent],
   template: `
     <section class="vs" [attr.data-phase]="phase()">
       <header class="vs-head">
@@ -318,18 +319,20 @@ interface ToothGroup {
             }
           </div>
           @if (chart(); as state) {
-            <app-dental-chart
-              [chartType]="state.chartType"
-              [patientId]="state.patientId"
-              [teeth]="state.teeth"
-              [interactive]="true"
-              [statusMenu]="false"
-              [patientTreatments]="treatments()"
-              [findings]="findings()"
-              [stagedTeeth]="phase() === 'saved' ? [] : stagedTeeth()"
-              [focusFdi]="phase() === 'saved' ? null : focusFdi()"
-              (toothSelected)="onToothSelected($event)"
-            />
+            @defer (on immediate) {
+              <app-dental-3d-chart
+                [chart]="state"
+                [findings]="findings()"
+                [treatments]="treatments()"
+                [staged]="phase() === 'saved' ? [] : stagedFindings()"
+                [focusFdi]="phase() === 'saved' ? null : focusFdi()"
+                [selected]="phase() === 'saved' ? null : focusFdi()"
+                [sidePanel]="false"
+                (selectedChange)="onToothPicked($event)"
+              />
+            } @placeholder {
+              <div class="vs-chart-placeholder" aria-hidden="true"></div>
+            }
           }
           @if (phase() === 'live' || phase() === 'interrupted') {
             <p class="vs-hint">{{ 'VOICE.TAP_TOOTH_HINT' | translate }}</p>
@@ -541,6 +544,7 @@ interface ToothGroup {
     .swatch.staged { border-color: #d97706; }
     .swatch.focus { border-color: #0e7490; box-shadow: 0 0 3px rgba(14, 116, 144, .9); }
     .vs-hint { margin: .25rem 0 0; font-size: .8125rem; color: rgb(var(--ink-500)); line-height: 1.4; }
+    .vs-chart-placeholder { height: clamp(22rem, 58vh, 40rem); border-radius: .75rem; background: var(--surface-hover); }
     .vs-empty { margin: .5rem 0 0; font-size: .875rem; color: rgb(var(--ink-600)); }
     .vs-subtitle { margin: .75rem 0 .25rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: rgb(var(--ink-500)); }
 
@@ -666,6 +670,8 @@ export class VoiceSessionPanelComponent {
     .map(entry => entityString(entry.entities, 'fdi'))
     .filter((fdi): fdi is string => !!fdi))]);
 
+  stagedFindings = computed(() => stagedToothFindings(this.voice.buffered()));
+
   /** Newest tooth first — the one just dictated is the one to check. */
   groups = computed(() => {
     const teeth = new Map<string, ToothGroup>();
@@ -716,11 +722,11 @@ export class VoiceSessionPanelComponent {
   }
 
   /** A tap tells the assistant what "that tooth" means. */
-  onToothSelected(tooth: ToothState): void {
-    this.selectTooth(tooth.id);
+  onToothPicked(fdi: string | null): void {
+    this.selectTooth(fdi);
   }
 
-  selectTooth(fdi: string): void {
+  selectTooth(fdi: string | null): void {
     this.voice.clearHighlight();
     this.context.selectTooth(fdi);
   }

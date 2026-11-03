@@ -16,6 +16,7 @@ import { Treatment } from '../../../core/models/stock.model';
 import { PrescriptionEditorComponent } from '../../../shared/components/prescription/prescription-editor.component';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { ModalComponent } from '../../../shared/ui/modal.component';
+import { TreatmentSummaryComponent } from '../treatment-log/treatment-chart.component';
 
 const STATUS_PILL: Record<InsuranceFormStatus, string> = {
   TO_PRINT: 'pill-attention', PRINTED: 'pill-idle', HANDED_OVER: 'pill-ok', VOID: 'pill-critical',
@@ -56,7 +57,7 @@ export function actLines(acts: readonly ActDraft[]): InsuranceFormLineInput[] {
 @Component({
   selector: 'app-patient-documents',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent, PrescriptionEditorComponent],
+  imports: [DatePipe, DecimalPipe, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent, PrescriptionEditorComponent, TreatmentSummaryComponent],
   template: `
     <div class="space-y-6">
       @if (canForms()) {
@@ -134,6 +135,10 @@ export function actLines(acts: readonly ActDraft[]): InsuranceFormLineInput[] {
       }
 
       @if (canPrescriptions()) {
+        <section class="card p-4">
+          <app-treatment-summary [patientId]="patientId()" />
+        </section>
+
         <section class="card p-4" aria-labelledby="rx-title">
           <header class="mb-3 flex flex-wrap items-start justify-between gap-2">
             <h2 id="rx-title" class="section-title !mb-0">{{ 'RX.TITLE' | translate }}</h2>

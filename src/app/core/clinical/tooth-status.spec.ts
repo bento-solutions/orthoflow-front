@@ -8,14 +8,13 @@ import {
   odontogramPatternDefs,
   toothOverlays,
   toothPaint,
-  toothStatusHex,
 } from './tooth-status';
 import { ADULT_TEETH, ToothStatus } from '../models/patient.model';
 import { ToothFinding } from '../models/clinical-record.model';
 
 /**
  * The odontogram palette is written as literal rgb() triplets because the PDF
- * export path (html2canvas + jsPDF) cannot resolve CSS custom properties.
+ * printed chart and the 3D chart cannot resolve CSS custom properties.
  * That is a deliberate duplication, and this test is what stops it from
  * becoming a drift.
  *
@@ -80,7 +79,6 @@ describe('status coverage', () => {
 
   it('paints a sound tooth with nothing at all', () => {
     expect(toothPaint('present').fill).toBe('transparent');
-    expect(toothStatusHex('present')).toBeNull();
   });
 
   it('paints absence grey, not red', () => {
@@ -88,14 +86,12 @@ describe('status coverage', () => {
        red would read as "treat this". See the note in tooth-status.ts. */
     for (const status of ['extracted', 'missing'] as ToothStatus[]) {
       expect(toothPaint(status).fill).toContain('absent');
-      expect(toothStatusHex(status)).toBe(0x7d8e93);
     }
   });
 
   it('gives pathology and existing work different colour families', () => {
-    expect(toothStatusHex('caries')).not.toBe(toothStatusHex('crown'));
-    expect(toothStatusHex('caries')).toBe(0xe64545);
-    expect(toothStatusHex('crown')).toBe(0x2f8fa2);
+    expect(FAMILY_PAINT.condition.solid).toBe('rgb(230 69 69)');
+    expect(FAMILY_PAINT.existing.solid).toBe('rgb(47 143 162)');
   });
 
   it('distinguishes statuses inside a family by geometry, not only colour', () => {

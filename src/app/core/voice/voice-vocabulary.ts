@@ -146,6 +146,8 @@ export const COMMAND_EXAMPLES: ReadonlyArray<{ intent: string; fr: string; en: s
   { intent: 'clinical.addAllergy', fr: 'allergie à la pénicilline', en: 'allergy to penicillin' },
   { intent: 'clinical.addMedicalHistory', fr: 'antécédents médicaux : diabète', en: 'medical history: diabetes' },
   { intent: 'chart.readTooth', fr: 'lis la dent 16', en: 'what is on tooth 16' },
+  { intent: 'chart.setView', fr: 'vue occlusale', en: 'occlusal view' },
+  { intent: 'chart.zoomTooth', fr: 'zoom sur la dent 16', en: 'zoom on tooth 16' },
   { intent: 'voice.session.summary', fr: 'montre les constatations', en: 'show me today\'s findings' },
   { intent: 'voice.session.end', fr: 'fin de l\'examen', en: 'end examination' },
 ];

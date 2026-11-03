@@ -820,3 +820,46 @@ describe('corrections that say what was wrong', () => {
     expect(result.kind === 'intent' && result.intent.intent).not.toBe('chart.moveFindings');
   });
 });
+
+describe('the 3D chart view by voice', () => {
+  const context = (overrides: Partial<VoiceContextSnapshot> = {}): VoiceContextSnapshot => ({
+    patientId: 'p', patientName: 'P', dentition: 'adult', module: 'patient-dossier', route: '/patients/p',
+    selectedFdi: null, sessionId: 's', locale: 'fr-FR', recentIntents: [], recentUtterances: [], lastWrite: null,
+    ...overrides,
+  });
+  const intentOf = (utterance: string, ctx = context()) => {
+    const result = resolveWithGrammar(utterance, ctx);
+    return result.kind === 'intent' ? { id: result.intent.intent, entities: result.intent.entities } : result.kind;
+  };
+
+  it.each([
+    ['vue occlusale', 'occlusal'], ['montre la vue occlusale', 'occlusal'], ['occlusal view', 'occlusal'], ['show me the biting surfaces', 'occlusal'],
+    ['vue linguale', 'lingual'], ['vue palatine', 'lingual'], ['lingual view', 'lingual'],
+    ["vue d'ensemble", 'overview'], ['vue panoramique', 'overview'], ['back to the overview', 'overview'],
+    ['vue des arcades', 'arch'], ['montre les arcades', 'arch'], ['show the arches', 'arch'],
+  ])('"%s" arranges the chart as %s', (utterance, view) => {
+    expect(intentOf(utterance)).toEqual({ id: 'chart.setView', entities: { view } });
+  });
+
+  it.each(['dent 16 carie occlusale', 'carie occlusale sur la 26', 'tooth 36 occlusal caries'])(
+    'dictation is never taken for a view change: "%s"', (utterance) => {
+      const result = intentOf(utterance);
+      expect(result).toMatchObject({ id: 'chart.addToothFindings' });
+    });
+
+  it('zooms on the tooth named', () => {
+    expect(intentOf('zoom sur la dent 16')).toEqual({ id: 'chart.zoomTooth', entities: { fdi: '16' } });
+    expect(intentOf('zoom on tooth 26')).toEqual({ id: 'chart.zoomTooth', entities: { fdi: '26' } });
+    expect(intentOf('gros plan sur la 36')).toEqual({ id: 'chart.zoomTooth', entities: { fdi: '36' } });
+  });
+
+  it('zooms on the tooth in hand when none is named, and asks when there is none', () => {
+    expect(intentOf('zoom', context({ selectedFdi: '46' }))).toEqual({ id: 'chart.zoomTooth', entities: { fdi: '46' } });
+    expect(intentOf('zoom')).toBe('clarification');
+  });
+
+  it.each(['dézoome', 'zoom arrière', 'zoom out', 'toute la bouche', 'whole mouth', 'back to the whole mouth'])(
+    '"%s" goes back to the whole mouth', (utterance) => {
+      expect(intentOf(utterance)).toEqual({ id: 'chart.zoomTooth', entities: {} });
+    });
+});

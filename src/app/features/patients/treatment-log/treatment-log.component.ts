@@ -5,6 +5,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PassportWork } from '../../../core/api/contract';
 import { findingLabel } from '../../../core/clinical/finding-options';
 import { surfaceShorthand } from '../../../core/clinical/tooth-surfaces';
+import { TreatmentChartComponent } from './treatment-chart.component';
 import { LanguageService } from '../../../core/services/language.service';
 import { PassportLanguage, TreatmentPassportService } from '../../../core/services/treatment-passport.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -22,7 +23,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
 @Component({
   selector: 'app-treatment-log',
   standalone: true,
-  imports: [FormsModule, DatePipe, TranslateModule],
+  imports: [FormsModule, DatePipe, TranslateModule, TreatmentChartComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="head">
@@ -46,6 +47,9 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
         <button type="button" class="btn primary" [disabled]="!consent || busy()" (click)="pdf()">
           <span class="material-icons" aria-hidden="true">picture_as_pdf</span>{{ 'TREATMENT_LOG.PDF' | translate }}
         </button>
+        <button type="button" class="btn" [disabled]="!consent || busy()" (click)="chartPdf()">
+          <span class="material-icons" aria-hidden="true">grid_on</span>{{ 'TREATMENT_CHART.DOWNLOAD' | translate }}
+        </button>
         <button type="button" class="btn" [disabled]="!consent || busy()" (click)="json()">
           <span class="material-icons" aria-hidden="true">data_object</span>{{ 'TREATMENT_LOG.JSON' | translate }}
         </button>
@@ -58,6 +62,11 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
     }
 
     @if (service.passport(); as p) {
+      <section class="block">
+        <h3>{{ 'TREATMENT_CHART.TITLE' | translate }}</h3>
+        <app-treatment-chart [passport]="p" />
+      </section>
+
       <section class="block">
         <h3>{{ 'TREATMENT_LOG.ALERTS' | translate }}</h3>
         @if (p.allergies?.length || p.medicalHistory?.length) {
@@ -146,7 +155,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
     }
   `,
   styles: [`
-    :host { display: block; max-width: 52rem; }
+    :host { display: block; max-width: 64rem; }
     .head h2 { margin: 0; font-size: 1.125rem; }
     .sub { margin: .25rem 0 1rem; color: var(--text-muted); font-size: .875rem; }
     h3 { margin: 0 0 .5rem; font-size: .9375rem; }
@@ -223,6 +232,10 @@ export class TreatmentLogComponent {
 
   protected pdf(): Promise<void> {
     return this.hand(() => this.service.downloadPdf(this.patientId(), this.language));
+  }
+
+  protected chartPdf(): Promise<void> {
+    return this.hand(() => this.service.downloadChartPdf(this.patientId(), this.language));
   }
 
   protected json(): Promise<void> {

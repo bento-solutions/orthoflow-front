@@ -21,12 +21,16 @@ export class TreatmentPassportService {
   private readonly passportSignal = signal<TreatmentPassport | null>(null);
   private readonly loadingSignal = signal(false);
   private readonly failedSignal = signal(false);
+  private loadedFor: string | null = null;
 
   readonly passport = this.passportSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
   readonly failed = this.failedSignal.asReadonly();
 
   load(patientId: string): void {
+    // Another patient's chart must not stay on screen while this one's is on its way.
+    if (this.loadedFor !== patientId) this.passportSignal.set(null);
+    this.loadedFor = patientId;
     this.loadingSignal.set(true);
     this.failedSignal.set(false);
     this.http.get<TreatmentPassport>(api(`/patients/${patientId}/clinical-record/passport`))
@@ -38,6 +42,11 @@ export class TreatmentPassportService {
           this.failedSignal.set(true);
         },
       });
+  }
+
+  /** The dental chart and its legend on their own page, recorded like any copy that leaves the system. */
+  downloadChartPdf(patientId: string, lang: PassportLanguage): Promise<void> {
+    return this.downloads.download(`/patients/${patientId}/clinical-record/passport/chart.pdf`, { lang }, 'dental-chart.pdf');
   }
 
   downloadPdf(patientId: string, lang: PassportLanguage): Promise<void> {

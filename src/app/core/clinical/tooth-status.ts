@@ -48,9 +48,9 @@
    the per-tooth report and in the PDF legend.
 
    ── Colours are literal, on purpose ─────────────────────────────────────
-   These are `rgb()` triplets rather than `var(--critical-500)` because the
-   PDF export rasterises the chart through html2canvas and draws the legend
-   through jsPDF, and neither resolves custom properties. `tooth-status.spec`
+   These are `rgb()` triplets rather than `var(--critical-500)` because they are
+   read outside CSS too: the 3D chart hands them to the graphics card, and the
+   printed chart (OdontogramRenderer on the server) mirrors them. `tooth-status.spec`
    parses `src/tokens.css` and fails if any value here drifts from its token.
    ========================================================================= */
 
@@ -85,7 +85,7 @@ export interface FamilyPaint {
   readonly text: string;
   /** Pill/chip ground for legends and pickers. The `-50` tint step. */
   readonly tint: string;
-  /** Flat colour for contexts that cannot carry a pattern (3D meshes). */
+  /** Flat colour: legend dots, surface marks, and the wash under the 3D chart's patterns. */
   readonly solid: string;
 }
 
@@ -169,6 +169,11 @@ export const TREATMENT_PLAN_INK = {
   ACTIVE: `rgb(${CAUTION_600})`,
   PLANNED: `rgb(${PETROL_500})`,
 } as const;
+
+/** Dictated, not yet saved. Amber reads as "pending" beside every status family. */
+export const VOICE_STAGED_INK = '#d97706';
+/** The tooth the last voice command was about. */
+export const VOICE_FOCUS_INK = '#0e7490';
 
 /**
  * Planned work is drawn *over* whatever the tooth already is, never instead
@@ -304,23 +309,6 @@ export function toothPaint(status: ToothStatus): ToothPaint {
     stroke: paint.ink,
     strokeWidth: '1.4',
   };
-}
-
-/**
- * Three.js takes a flat colour per mesh — a WebGL material cannot carry the
- * 2D chart's pattern channel. The 3D viewer therefore renders the family
- * colour only, and relies on its own selection panel for the exact status.
- * Returned as `0xRRGGBB` for `Color.setHex`.
- */
-export function toothStatusHex(status: ToothStatus): number | null {
-  const def = toothStatusDefinition(status);
-  if (def.family === 'sound') return null; /* keep the natural enamel material */
-  const [r, g, b] = FAMILY_PAINT[def.family].solid
-    .replace(/[^\d\s]/g, '')
-    .trim()
-    .split(/\s+/)
-    .map(Number);
-  return (r << 16) | (g << 8) | b;
 }
 
 /**

@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PatientService } from '../services/patient.service';
 import { DentalChartService } from '../services/dental-chart.service';
+import { DENTITION_VIEWS, Dental3dViewService, DentitionView } from '../services/dental-3d-view.service';
 import { ScheduleService } from '../services/schedule.service';
 import { InvoiceService } from '../../features/billing/services/invoice.service';
 import { ClinicalRecordService } from '../services/clinical-record.service';
@@ -39,11 +40,19 @@ import {
  * for a few seconds afterwards; a voice write to a clinical record without an
  * undo is a liability (§4).
  */
+const VIEW_WORDS: Readonly<Record<DentitionView, { fr: string; en: string }>> = {
+  overview: { fr: `d'ensemble`, en: 'Overview' },
+  occlusal: { fr: 'occlusale', en: 'Occlusal' },
+  lingual: { fr: 'linguale', en: 'Lingual' },
+  arch: { fr: 'des arcades', en: 'Arch' },
+};
+
 @Injectable({ providedIn: 'root' })
 export class VoiceCommandsService {
   private registry = inject(VoiceCommandRegistryService);
   private clinical = inject(ClinicalRecordService);
   private chart = inject(DentalChartService);
+  private chartView = inject(Dental3dViewService);
   private patients = inject(PatientService);
   private schedule = inject(ScheduleService);
   private invoices = inject(InvoiceService);
@@ -229,6 +238,15 @@ export class VoiceCommandsService {
 
   // ── Dental chart ────────────────────────────────────────────────────
 
+  /** Said aloud rather than left silent: a doctor who cannot see the screen must not think it obeyed. */
+  private chartNotShown(): VoiceCommandResult {
+    return {
+      ok: false,
+      message: 'The 3D chart is not on screen. It is on the Overview tab.',
+      spokenFr: `Le schéma 3D n'est pas à l'écran. Il est dans l'onglet Vue d'ensemble.`,
+    };
+  }
+
   private chartCommands(): VoiceCommand[] {
     return [
       {
@@ -394,6 +412,42 @@ export class VoiceCommandsService {
           const fdi = String(entities['fdi']);
           this.context.selectTooth(fdi);
           return { ok: true, message: `Tooth ${fdi} — ${describeFdi(fdi)}`, spokenFr: `Dent ${fdi}.`, highlightFdi: fdi };
+        },
+      },
+      {
+        id: 'chart.setView',
+        description: 'Change how the teeth are arranged on the 3D chart: overview (all teeth, crowns and roots), occlusal (biting surfaces), lingual (tongue side) or arch (the arches as in the mouth)',
+        risk: 'SAFE',
+        requiresPatient: true,
+        args: { view: 'overview, occlusal, lingual or arch' },
+        examples: ['occlusal view', 'vue linguale', 'show the arches'],
+        preview: (entities) => `Show the ${String(entities['view'])} view`,
+        execute: async (entities) => {
+          const view = String(entities['view']) as DentitionView;
+          if (!DENTITION_VIEWS.includes(view)) {
+            return { ok: false, message: `There is no ${view} view.`, spokenFr: `Cette vue n'existe pas.` };
+          }
+          if (!this.chartView.mounted()) return this.chartNotShown();
+          this.chartView.zoomedFdi.set(null);
+          this.chartView.view.set(view);
+          return { ok: true, message: `${VIEW_WORDS[view].en} view.`, spokenFr: `Vue ${VIEW_WORDS[view].fr}.` };
+        },
+      },
+      {
+        id: 'chart.zoomTooth',
+        description: 'Close in on one tooth on the 3D chart, or with no tooth go back to the whole mouth',
+        risk: 'SAFE',
+        requiresPatient: true,
+        args: { fdi: 'FDI tooth code; omit for the whole mouth' },
+        examples: ['zoom on tooth 16', 'zoom sur la 26', 'whole mouth'],
+        preview: (entities) => (entities['fdi'] ? `Zoom on tooth ${entities['fdi']}` : 'Back to the whole mouth'),
+        execute: async (entities) => {
+          if (!this.chartView.mounted()) return this.chartNotShown();
+          const fdi = entities['fdi'] ? String(entities['fdi']) : null;
+          this.chartView.zoomedFdi.set(fdi);
+          if (!fdi) return { ok: true, message: 'The whole mouth.', spokenFr: 'Toute la bouche.' };
+          this.context.selectTooth(fdi);
+          return { ok: true, message: `Tooth ${fdi}, close up.`, spokenFr: `Dent ${fdi}, en gros plan.`, highlightFdi: fdi };
         },
       },
       {

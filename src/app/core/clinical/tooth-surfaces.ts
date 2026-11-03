@@ -131,3 +131,32 @@ export function zonesOf(fdi: string, value: string | null | undefined): Set<Surf
   }
   return zones;
 }
+
+/** What a surface mark is painted with. */
+export type SurfaceMarkFamily = 'condition' | 'existing' | 'planned';
+
+/**
+ * Per tooth, what each part of the five-part drawing shows. A part takes the strongest
+ * thing recorded there: pathology over work in place over work still owed, because the
+ * doctor scanning the chart needs the problem to show even where a restoration also exists.
+ */
+export function surfaceMarks(
+  findings: readonly { readonly fdi?: string; readonly kind: string; readonly surface?: string | null }[],
+): Map<string, Map<SurfaceZone, SurfaceMarkFamily>> {
+  const rank: Readonly<Record<SurfaceMarkFamily, number>> = { planned: 1, existing: 2, condition: 3 };
+  const byTooth = new Map<string, Map<SurfaceZone, SurfaceMarkFamily>>();
+  for (const f of findings) {
+    if (!f.surface || !f.fdi) continue;
+    const family: SurfaceMarkFamily | null = f.kind === 'CONDITION' ? 'condition'
+      : f.kind === 'EXISTING' ? 'existing'
+      : f.kind === 'TREATMENT_REQUIRED' ? 'planned' : null;
+    if (!family) continue;
+    const zones = byTooth.get(f.fdi) ?? new Map<SurfaceZone, SurfaceMarkFamily>();
+    for (const zone of zonesOf(f.fdi, f.surface)) {
+      const current = zones.get(zone);
+      if (!current || rank[family] > rank[current]) zones.set(zone, family);
+    }
+    if (zones.size) byTooth.set(f.fdi, zones);
+  }
+  return byTooth;
+}

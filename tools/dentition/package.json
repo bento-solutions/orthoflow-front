@@ -1,0 +1,13 @@
+{
+  "name": "orthoflow-dentition-bake",
+  "private": true,
+  "type": "module",
+  "description": "Turns the source dentition model into the small GLB files the 3D chart loads. Run by hand when the source or the bake changes; never part of the app build.",
+  "scripts": {
+    "bake": "node bake.mjs"
+  },
+  "devDependencies": {
+    "jpeg-js": "0.4.4",
+    "meshoptimizer": "0.22.0"
+  }
+}

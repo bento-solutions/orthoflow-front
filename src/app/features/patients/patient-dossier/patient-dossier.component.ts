@@ -7,12 +7,13 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
 import { CommandRegistryService } from '../../../core/services/command-registry.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { DentalChartService } from '../../../core/services/dental-chart.service';
+import { Dental3dViewService } from '../../../core/services/dental-3d-view.service';
 import { ScheduleService } from '../../../core/services/schedule.service';
-import { Patient, DentalChartState, DentalChartType, ToothState, Appointment } from '../../../core/models/patient.model';
-import { DentalChartComponent } from '../../dental-chart/dental-chart.component';
+import { Patient, DentalChartState, DentalChartType, Appointment } from '../../../core/models/patient.model';
 import { GumStatusComponent } from '../gum-status/gum-status.component';
 import { TreatmentLogComponent } from '../treatment-log/treatment-log.component';
-import { Dental3DCanvasComponent } from '../../dental-3d-canvas/dental-3d-canvas.component';
+import { TreatmentSummaryComponent } from '../treatment-log/treatment-chart.component';
+import { Dental3dChartComponent } from '../../dental-3d/dental-3d-chart.component';
 import { InvoiceService } from '../../billing/services/invoice.service';
 import { Invoice } from '../../billing/models/billing.model';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -23,6 +24,7 @@ import { PatientTreatment, PatientTreatmentConsumable, PatientTreatmentStatus } 
 import { Treatment, StockItem } from '../../../core/models/stock.model';
 import { ClinicalRecordService } from '../../../core/services/clinical-record.service';
 import { VoiceContextService } from '../../../core/voice/voice-context.service';
+import { stagedToothFindings } from '../../../core/voice/voice-chart-marks';
 import { VoiceOrchestratorService } from '../../../core/voice/voice-orchestrator.service';
 import { VoiceSessionService } from '../../../core/voice/voice-session.service';
 import { VoiceSessionPanelComponent } from '../../../shared/components/voice/voice-session-panel.component';
@@ -41,7 +43,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [CommonModule, RouterModule, DentalChartComponent, Dental3DCanvasComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, ConsultationLogComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent, PatientPhotosComponent, GumStatusComponent, TreatmentLogComponent],
+  imports: [CommonModule, RouterModule, Dental3dChartComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, ConsultationLogComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent, PatientPhotosComponent, GumStatusComponent, TreatmentLogComponent, TreatmentSummaryComponent],
   template: `
     <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive()" [class.has-consultation]="consultation.visible()">
       @if (patientService.currentPatient(); as patient) {
@@ -255,22 +257,23 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                   </div>
                 </div>
                 <div class="summary-card dental-chart-card">
-                  <div class="chart-card-header">
-                    <h3>{{ 'DENTAL_CHART.TITLE' | translate }}</h3>
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="showDentalChartFullscreen.set(!showDentalChartFullscreen())">
-                      <span class="material-icons">{{ showDentalChartFullscreen() ? 'close_fullscreen' : 'open_in_full' }}</span>
-                    </button>
-                  </div>
+                  <h3>{{ 'DENTAL_3D.TITLE' | translate }}</h3>
                   @if (dentalChartState(); as chart) {
-                    <app-dental-chart
-                      [chartType]="chart.chartType"
-                      [patientId]="chart.patientId"
-                      [teeth]="chart.teeth"
-                      [interactive]="true"
-                      [patientTreatments]="patientTreatments()"
-                      [findings]="clinicalRecordService.findings()"
-                      (toothSelected)="onToothSelected($event)"
-                    />
+                    <!-- three.js and the model load only when the chart comes into view. -->
+                    @defer (on viewport; prefetch on idle) {
+                      <app-dental-3d-chart
+                        [chart]="chart"
+                        [findings]="clinicalRecordService.findings()"
+                        [treatments]="patientTreatments()"
+                        [staged]="stagedFindings()"
+                        [focusFdi]="voiceFocusFdi()"
+                        [selected]="selectedToothForTreatments()"
+                        (selectedChange)="onToothSelected3D($event)"
+                        (assignTreatment)="openAssignModalFrom3D($event)"
+                      />
+                    } @placeholder {
+                      <div class="chart-placeholder" aria-hidden="true"></div>
+                    }
                   }
                 </div>
               </div>
@@ -567,20 +570,11 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                   </section>
                 }
                 @case ('treatments') {
-                  <div class="treatments-layout-3d">
-                    <!-- Interactive 3D canvas. The treatment tracker is
-                         projected into the canvas' own side panel, so that
-                         panel shows the patient's treatments while no tooth
-                         is selected instead of sitting empty. -->
-                    <div class="chart-sidebar-3d">
-                      @if (dentalChartState(); as chart) {
-                        <app-dental-3d-canvas
-                          [patientId]="patient.id"
-                          [initialTeeth]="chart.teeth"
-                          (toothSelected)="onToothSelected3D($event)"
-                          (openAssignModal)="openAssignModalFrom3D($event)"
-                        >
-                    <div class="treatments-tracker" canvasIdlePanel>
+                  <div class="treatments-summary">
+                    <section class="summary-card summary-chart">
+                      <app-treatment-summary [patientId]="patient.id" [version]="patientTreatments()" />
+                    </section>
+                    <div class="treatments-tracker">
                       <div class="tracker-header">
                         <h2>Patient Clinical Treatments</h2>
                         <button type="button" class="btn btn-primary" (click)="openAssignModal()">
@@ -641,133 +635,11 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                         }
                       </div>
                     </div>
-                        </app-dental-3d-canvas>
-                      }
-                    </div>
                   </div>
                 }
               }
             </div>
 
-            <!-- Custom Modal Backdrop -->
-            @if (showAssignModal()) {
-              <div class="modal-backdrop" (click)="closeAssignModal()">
-                <div class="modal-card" (click)="$event.stopPropagation()">
-                  <header class="modal-header">
-                    <h3>{{ isEditingTreatment() ? 'Edit Treatment Assignment' : 'Assign Treatment Procedure' }}</h3>
-                    <button type="button" class="btn btn-ghost btn-icon" [attr.aria-label]="'COMMON.CLOSE' | translate" (click)="closeAssignModal()">
-                      <span class="material-icons" aria-hidden="true">close</span>
-                    </button>
-                  </header>
-
-                  <div class="modal-body">
-                    <div class="form-grid">
-                      <!-- Select Treatment -->
-                      <div class="form-group col-span-2">
-                        <label>Select Treatment Setup *</label>
-                        <select [(ngModel)]="formTreatmentId" (ngModelChange)="onTreatmentSelected($event)" [disabled]="isEditingTreatment()" class="select">
-                          <option value="" disabled>-- Choose a predefined treatment --</option>
-                          @for (t of availableTreatments(); track t.id) {
-                            <option [value]="t.id">{{ t.name }} ({{ t.code }})</option>
-                          }
-                        </select>
-                      </div>
-
-                      <!-- Teeth comma separated -->
-                      <div class="form-group">
-                        <label>Assigned Teeth (FDI numbers separated by comma) *</label>
-                        <input type="text" [(ngModel)]="formTeeth" placeholder="e.g. 11, 12, 13" class="input">
-                      </div>
-
-                      <!-- Doctor Name -->
-                      <div class="form-group">
-                        <label>Assigned Doctor *</label>
-                        <input type="text" [(ngModel)]="formDoctorName" class="input">
-                      </div>
-
-                      <!-- Status -->
-                      <div class="form-group">
-                        <label>Status</label>
-                        <select [(ngModel)]="formStatus" class="select">
-                          <option value="PLANNED">PLANNED</option>
-                          <option value="ACTIVE">ACTIVE</option>
-                          <option value="COMPLETED">COMPLETED</option>
-                          <option value="CANCELLED">CANCELLED</option>
-                        </select>
-                      </div>
-
-                      <!-- Progress Slider -->
-                      <div class="form-group">
-                        <label>Progress ({{ formProgress }}%)</label>
-                        <div class="flex items-center gap-2">
-                          <input type="range" min="0" max="100" step="5" [(ngModel)]="formProgress" class="flex-1">
-                        </div>
-                      </div>
-
-                      <!-- Start Date -->
-                      <div class="form-group">
-                        <label>Start Date</label>
-                        <input type="date" [(ngModel)]="formStartDate" class="input">
-                      </div>
-
-                      <!-- End Date -->
-                      <div class="form-group">
-                        <label>End Date</label>
-                        <input type="date" [(ngModel)]="formEndDate" class="input">
-                      </div>
-
-                      <!-- Notes -->
-                      <div class="form-group col-span-2">
-                        <label>Clinical Notes</label>
-                        <textarea [(ngModel)]="formNotes" placeholder="Describe clinical symptoms or execution details..." class="textarea"></textarea>
-                      </div>
-
-                      <!-- Predefined Materials / Consumables -->
-                      <div class="form-group col-span-2">
-                        <div class="flex justify-between items-center mb-2">
-                          <span class="font-bold text-slate-700 text-sm">Material Consumption Settings</span>
-                          <button type="button" class="btn btn-secondary btn-sm" (click)="addConsumableToForm()">
-                            <span class="material-icons">add</span> Add Material
-                          </button>
-                        </div>
-                        
-                        <div class="consumables-editor bg-slate-50 p-3 rounded-xl border border-slate-200">
-                          @if (formConsumables.length > 0) {
-                            @for (c of formConsumables; track $index) {
-                              <div class="consumable-editor-row">
-                                <div class="item-select">
-                                  <select [(ngModel)]="c.stockItem" class="select">
-                                    @for (item of availableStockItems(); track item.id) {
-                                      <option [ngValue]="item">{{ item.name }} (SKU: {{ item.sku }})</option>
-                                    }
-                                  </select>
-                                </div>
-                                <div class="item-qty">
-                                  <input type="number" step="any" [(ngModel)]="c.quantityUsed" class="input" style="width: 80px;">
-                                  <span class="text-xs text-slate-500 ms-1">{{ c.stockItem.unitLabel || 'Units' }}</span>
-                                </div>
-                                <div class="item-actions">
-                                  <button type="button" class="btn btn-ghost btn-icon" (click)="removeConsumableFromForm($index)">
-                                    <span class="material-icons text-sm text-red-600">delete</span>
-                                  </button>
-                                </div>
-                              </div>
-                            }
-                          } @else {
-                            <p class="text-slate-500 text-xs italic text-center p-2">No materials configured for consumption in this session.</p>
-                          }
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <footer class="modal-footer mt-4">
-                    <button type="button" class="btn btn-secondary" (click)="closeAssignModal()">Cancel</button>
-                    <button type="button" class="btn btn-primary" (click)="savePatientTreatment()">Save Assignment</button>
-                  </footer>
-                </div>
-              </div>
-            }
           }
           @case ('financial') {
             <div class="tab-pane" role="tabpanel" id="dossier-panel-financial" aria-labelledby="dossier-tab-financial" tabindex="0">
@@ -781,6 +653,126 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
           }
         }
       </main>
+
+        <!-- Custom Modal Backdrop -->
+        @if (showAssignModal()) {
+          <div class="modal-backdrop" (click)="closeAssignModal()">
+            <div class="modal-card" (click)="$event.stopPropagation()">
+              <header class="modal-header">
+                <h3>{{ isEditingTreatment() ? 'Edit Treatment Assignment' : 'Assign Treatment Procedure' }}</h3>
+                <button type="button" class="btn btn-ghost btn-icon" [attr.aria-label]="'COMMON.CLOSE' | translate" (click)="closeAssignModal()">
+                  <span class="material-icons" aria-hidden="true">close</span>
+                </button>
+              </header>
+
+              <div class="modal-body">
+                <div class="form-grid">
+                  <!-- Select Treatment -->
+                  <div class="form-group col-span-2">
+                    <label>Select Treatment Setup *</label>
+                    <select [(ngModel)]="formTreatmentId" (ngModelChange)="onTreatmentSelected($event)" [disabled]="isEditingTreatment()" class="select">
+                      <option value="" disabled>-- Choose a predefined treatment --</option>
+                      @for (t of availableTreatments(); track t.id) {
+                        <option [value]="t.id">{{ t.name }} ({{ t.code }})</option>
+                      }
+                    </select>
+                  </div>
+
+                  <!-- Teeth comma separated -->
+                  <div class="form-group">
+                    <label>Assigned Teeth (FDI numbers separated by comma) *</label>
+                    <input type="text" [(ngModel)]="formTeeth" placeholder="e.g. 11, 12, 13" class="input">
+                  </div>
+
+                  <!-- Doctor Name -->
+                  <div class="form-group">
+                    <label>Assigned Doctor *</label>
+                    <input type="text" [(ngModel)]="formDoctorName" class="input">
+                  </div>
+
+                  <!-- Status -->
+                  <div class="form-group">
+                    <label>Status</label>
+                    <select [(ngModel)]="formStatus" class="select">
+                      <option value="PLANNED">PLANNED</option>
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="COMPLETED">COMPLETED</option>
+                      <option value="CANCELLED">CANCELLED</option>
+                    </select>
+                  </div>
+
+                  <!-- Progress Slider -->
+                  <div class="form-group">
+                    <label>Progress ({{ formProgress }}%)</label>
+                    <div class="flex items-center gap-2">
+                      <input type="range" min="0" max="100" step="5" [(ngModel)]="formProgress" class="flex-1">
+                    </div>
+                  </div>
+
+                  <!-- Start Date -->
+                  <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="date" [(ngModel)]="formStartDate" class="input">
+                  </div>
+
+                  <!-- End Date -->
+                  <div class="form-group">
+                    <label>End Date</label>
+                    <input type="date" [(ngModel)]="formEndDate" class="input">
+                  </div>
+
+                  <!-- Notes -->
+                  <div class="form-group col-span-2">
+                    <label>Clinical Notes</label>
+                    <textarea [(ngModel)]="formNotes" placeholder="Describe clinical symptoms or execution details..." class="textarea"></textarea>
+                  </div>
+
+                  <!-- Predefined Materials / Consumables -->
+                  <div class="form-group col-span-2">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="font-bold text-slate-700 text-sm">Material Consumption Settings</span>
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="addConsumableToForm()">
+                        <span class="material-icons">add</span> Add Material
+                      </button>
+                    </div>
+                    
+                    <div class="consumables-editor bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      @if (formConsumables.length > 0) {
+                        @for (c of formConsumables; track $index) {
+                          <div class="consumable-editor-row">
+                            <div class="item-select">
+                              <select [(ngModel)]="c.stockItem" class="select">
+                                @for (item of availableStockItems(); track item.id) {
+                                  <option [ngValue]="item">{{ item.name }} (SKU: {{ item.sku }})</option>
+                                }
+                              </select>
+                            </div>
+                            <div class="item-qty">
+                              <input type="number" step="any" [(ngModel)]="c.quantityUsed" class="input" style="width: 80px;">
+                              <span class="text-xs text-slate-500 ms-1">{{ c.stockItem.unitLabel || 'Units' }}</span>
+                            </div>
+                            <div class="item-actions">
+                              <button type="button" class="btn btn-ghost btn-icon" (click)="removeConsumableFromForm($index)">
+                                <span class="material-icons text-sm text-red-600">delete</span>
+                              </button>
+                            </div>
+                          </div>
+                        }
+                      } @else {
+                        <p class="text-slate-500 text-xs italic text-center p-2">No materials configured for consumption in this session.</p>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <footer class="modal-footer mt-4">
+                <button type="button" class="btn btn-secondary" (click)="closeAssignModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" (click)="savePatientTreatment()">Save Assignment</button>
+              </footer>
+            </div>
+          </div>
+        }
       } @else {
         <div class="loading">
           <p>{{ 'COMMON.LOADING' | translate }}</p>
@@ -1098,24 +1090,11 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
       grid-column: 1 / -1;
     }
 
-    .chart-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.5rem;
-    }
-
-    .chart-card-header h3 {
-      margin: 0;
-    }
-
-    .chart-card-header .btn-sm {
-      padding: 0.25rem;
-      min-width: unset;
-    }
-
-    .chart-card-header .btn-sm .material-icons {
-      font-size: 1.1rem;
+    /* The height of the stage below, so nothing moves when the chart arrives. */
+    .chart-placeholder {
+      height: clamp(22rem, 58vh, 40rem);
+      border-radius: 0.75rem;
+      background: var(--surface-hover);
     }
 
     /* Treatments Layout */
@@ -1200,6 +1179,16 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
       padding: 0.15rem 0.4rem;
       border-radius: 9999px;
       border: 1px solid rgb(var(--ink-300));
+    }
+
+    .treatments-summary {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .summary-chart {
+      padding: 1.5rem;
     }
 
     .treatments-tracker {
@@ -1792,6 +1781,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   patientService = inject(PatientService);
   private chartService = inject(DentalChartService);
+  private chartView = inject(Dental3dViewService);
   private invoiceService = inject(InvoiceService);
   private translate = inject(TranslateService);
   private scheduleService = inject(ScheduleService);
@@ -1843,7 +1833,6 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   voiceStarting = signal(false);
 
   activeTab = signal('overview');
-  showDentalChartFullscreen = signal(false);
   private elementRef = inject(ElementRef);
 
   setActiveTab(id: string): void {
@@ -1892,10 +1881,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     }, 0);
   }
 
-  /**
-   * Reactive dental chart state — automatically reflects any changes made in the 3D viewer
-   * because ThreeDentalSyncService now writes back to DentalChartService on every update.
-   */
+  /** The chart as the server last gave it. Findings change it; DentalChartService re-reads it. */
   dentalChartState = computed(() => this.chartService.currentChart());
 
   patientInvoices = signal<Invoice[]>([]);
@@ -2165,6 +2151,9 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (patient) => {
+          // How the last patient's mouth was being looked at says nothing about this one's.
+          this.chartView.reset();
+          this.selectedToothForTreatments.set(null);
           this.chartService.loadChart(patient.id, patient.dateOfBirth);
           this.loadPatientBilling(patient.id);
           this.loadPatientTreatments(patient.id);
@@ -2219,18 +2208,17 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     });
   }
 
-  onToothSelected(tooth: ToothState) {
-    // dentalChartState is now a computed signal, no manual refresh needed.
-    this.selectedToothForTreatments.set(tooth.id);
-    // Selecting by hand is also how the doctor tells the assistant what
-    // "that tooth" refers to, so the next dictated finding needs no tooth name.
-    this.voiceContext.selectTooth(tooth.id);
-  }
-
-  onToothSelected3D(toothId: string) {
+  onToothSelected3D(toothId: string | null) {
     this.selectedToothForTreatments.set(toothId);
+    // Selecting by hand is also how the doctor tells the assistant what "that tooth"
+    // refers to, so the next dictated finding needs no tooth name.
     this.voiceContext.selectTooth(toothId);
   }
+
+  /** While a session runs, what it has heard is drawn on the chart wherever the doctor is looking. */
+  stagedFindings = computed(() => stagedToothFindings(this.voice.buffered()));
+
+  voiceFocusFdi = computed(() => (this.voiceSession.isActive() ? this.voice.highlightedFdi() : null));
 
   openAssignModalFrom3D(toothId: string) {
     this.selectedToothForTreatments.set(toothId);

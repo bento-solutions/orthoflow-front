@@ -955,6 +955,14 @@ export const CHILD_SVG_PATHS = `
         style="font-size:10.13467216px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans">
         <tspan x="64.637154" y="217.08217">85</tspan>
     </text>
+    <text xml:space="preserve" x="126.20" y="100.53336"
+        style="font-size:10.13467216px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans">
+        <tspan x="126.20" y="100.53336">51</tspan>
+    </text>
+    <text xml:space="preserve" x="102.30" y="110.66804"
+        style="font-size:10.13467216px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans">
+        <tspan x="102.30" y="110.66804">52</tspan>
+    </text>
 `;
 
 export const ADULT_SVG = SVG_HEADER + ADULT_SVG_PATHS + SVG_FOOTER;

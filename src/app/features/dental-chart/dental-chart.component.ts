@@ -12,28 +12,27 @@ import {
   ToothOverlay,
   TOOTH_STATUS_GROUPS,
   TREATMENT_PLAN_INK,
+  VOICE_FOCUS_INK,
+  VOICE_STAGED_INK,
   odontogramPatternDefs,
   toothOverlays,
   toothPaint,
   toothStatusDefinition,
-  toothStatusHex,
 } from '../../core/clinical/tooth-status';
 
-import { SURFACE_ZONES, SURFACE_ZONE_PATH, SurfaceZone, zonesOf } from '../../core/clinical/tooth-surfaces';
+import { SURFACE_ZONES, SURFACE_ZONE_PATH, surfaceMarks } from '../../core/clinical/tooth-surfaces';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastService } from '../../core/services/toast.service';
 
 import { FormsModule } from '@angular/forms';
 import { ToothDetailComponent } from './tooth-detail/tooth-detail.component';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 @Component({
   selector: 'app-dental-chart',
   standalone: true,
   imports: [CommonModule, TranslateModule, FormsModule, ToothDetailComponent],
   template: `
-    <div class="dental-chart-wrapper" (click)="closeStatusMenu()">
+    <div class="dental-chart-wrapper" [class.summary]="summary" (click)="closeStatusMenu()">
       <div class="chart-header">
         <div class="header-left">
           <span class="chart-type-badge" [class.adult]="chartType === 'adult'" [class.child]="chartType === 'child'">
@@ -50,7 +49,7 @@ import html2canvas from 'html2canvas';
             }
           </span>
         </div>
-        <div class="header-right" *ngIf="interactive">
+        <div class="header-right" *ngIf="interactive && !summary">
           <button type="button" class="btn-icon-sm" (click)="copyStateString($event)" [title]="'DENTAL_CHART.COPY_STATE' | translate" [attr.aria-label]="'DENTAL_CHART.COPY_STATE' | translate">
             <span class="material-icons" aria-hidden="true">content_copy</span>
           </button>
@@ -123,6 +122,7 @@ import html2canvas from 'html2canvas';
       </div>
       }
 
+      @if (!summary) {
       <div class="chart-footer">
         <div class="legend">
           @for (group of statusGroups; track group.family) {
@@ -151,9 +151,6 @@ import html2canvas from 'html2canvas';
             <span class="note-count" *ngIf="teethWithNotes.length > 0">{{ teethWithNotes.length }}</span>
           </div>
           <div class="toggle-right">
-            <button type="button" class="btn-export-sm" (click)="exportReport($event)" [title]="'DENTAL_CHART.EXPORT_REPORT' | translate" [attr.aria-label]="'DENTAL_CHART.EXPORT_REPORT' | translate">
-              <span class="material-icons" aria-hidden="true">picture_as_pdf</span>
-            </button>
             <span class="material-icons toggle-arrow">{{ showReport ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
           </div>
         </button>
@@ -181,6 +178,7 @@ import html2canvas from 'html2canvas';
           }
         </div>
       </div>
+      }
     </div>
 
   `,
@@ -204,6 +202,17 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
    * means — a picker covering the chart mid-dictation hides what it verifies.
    */
   @Input() statusMenu = true;
+  /**
+   * The chart as part of a treatment summary: to read, with its legend beside it.
+   * Only the drawing, without the picker, the short key or the observations list.
+   */
+  @Input() summary = false;
+  /** Legend letters to draw beside each tooth. */
+  @Input() toothKeys: Readonly<Record<string, readonly string[]>> = {};
+  /** Teeth that have had treatment administered: ringed, as in the printed chart. */
+  @Input() doneTeeth: readonly string[] = [];
+  /** Teeth to pick out, from pointing at a line of the legend. */
+  @Input() highlightTeeth: readonly string[] = [];
 
   @Output() toothSelected = new EventEmitter<ToothState>();
   @Output() toothHovered = new EventEmitter<ToothState | null>();
@@ -244,11 +253,6 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     })),
   }));
 
-  /** Flat view of statusGroups, kept for the reset button and PDF export. */
-  private get statusOptions(): { value: ToothStatus; label: string; color: string }[] {
-    return this.statusGroups.flatMap((g) => g.options);
-  }
-
   readonly plannedColor = PLANNED_PAINT.solid;
 
   /** fdi → active planned/hidden-condition findings, recomputed on teeth/findings change. */
@@ -277,7 +281,7 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     if (changes['findings'] || changes['teeth']) {
       this.overlays = toothOverlays(this.findings ?? []);
     }
-    const repaintKeys = ['teeth', 'patientTreatments', 'findings', 'stagedTeeth', 'focusFdi'];
+    const repaintKeys = ['teeth', 'patientTreatments', 'findings', 'stagedTeeth', 'focusFdi', 'toothKeys', 'doneTeeth', 'highlightTeeth'];
     if (repaintKeys.some(key => changes[key]) && this.chartContainer) {
       setTimeout(() => this.repaint(), 0);
     }
@@ -300,9 +304,24 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     this.clearVoiceMarks();
     this.applyAllToothColors();
     this.applyTreatmentIndicators();
+    this.applyDoneRings();
     this.applyOverlays();
     this.applySurfaceMarks();
+    this.applyToothKeys();
     this.applyVoiceMarks();
+    this.applyHighlights();
+    this.cropToTeeth();
+  }
+
+  /** In a summary the drawing fills its space: a child's smaller arches read as large as an adult's, as they print. */
+  private cropToTeeth() {
+    if (!this.summary) return;
+    const svg = this.chartContainer?.nativeElement.querySelector('svg');
+    if (!svg || svg.dataset['cropped'] === this.chartType) return;
+    const box = svg.getBBox();
+    if (!box.width || !box.height) return;
+    svg.setAttribute('viewBox', `${box.x - 6} ${box.y - 6} ${box.width + 12} ${box.height + 12}`);
+    svg.dataset['cropped'] = this.chartType;
   }
 
   private updateSvgContent() {
@@ -490,181 +509,6 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     }
   }
 
-  async exportReport(event: MouseEvent) {
-    event.stopPropagation();
-    const container = this.chartContainer.nativeElement;
-    
-    const doc = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let y = 20;
-
-    // Header
-    doc.setFontSize(22);
-    doc.setTextColor(79, 70, 229); // Indigo-600
-    doc.text('ORTHOFLOW', pageWidth / 2, y, { align: 'center' });
-    y += 8;
-    
-    doc.setFontSize(14);
-    doc.setTextColor(15, 23, 42); // Slate-900
-    doc.text('DENTAL CLINICAL REPORT', pageWidth / 2, y, { align: 'center' });
-    y += 12;
-
-    doc.setFontSize(10);
-    doc.setTextColor(100, 116, 139); // Slate-500
-    doc.text(`Patient ID: ${this.patientId || 'N/A'}`, 20, y);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - 20, y, { align: 'right' });
-    y += 5;
-    doc.text(`Chart Type: ${this.chartType.toUpperCase()}`, 20, y);
-    y += 10;
-
-    // Capture Chart
-    try {
-      const chartCanvas = await html2canvas(container, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        logging: false,
-        useCORS: true
-      });
-      const chartImgData = chartCanvas.toDataURL('image/png');
-      const chartWidth = 120; // mm
-      const chartHeight = (chartCanvas.height * chartWidth) / chartCanvas.width;
-      doc.addImage(chartImgData, 'PNG', (pageWidth - chartWidth) / 2, y, chartWidth, chartHeight);
-      y += chartHeight + 15;
-    } catch (err) {
-      console.error('Failed to capture dental chart SVG', err);
-      doc.setTextColor(239, 68, 68);
-      doc.text('Error: Could not render dental chart figure.', 20, y);
-      y += 10;
-    }
-
-    // Legend Section
-    doc.setFontSize(12);
-    doc.setTextColor(15, 23, 42);
-    doc.text('EXPLANATORY LEGEND', 20, y);
-    doc.setDrawColor(79, 70, 229);
-    doc.line(20, y + 2, 60, y + 2);
-    y += 10;
-
-    doc.setFontSize(8);
-    let x = 20;
-    const colWidth = 45;
-    this.statusOptions.forEach((opt) => {
-      if (opt.value === 'present') return;
-      
-      if (x + colWidth > pageWidth - 10) {
-        x = 20;
-        y += 6;
-      }
-      
-      // Color dot — jsPDF wants r,g,b numbers, not the `rgb()` CSS syntax
-      // `opt.color` carries for the on-screen swatch, so read the same
-      // family colour back out as a hex triplet.
-      const hex = toothStatusHex(opt.value) ?? 0x64748b;
-      doc.setFillColor((hex >> 16) & 255, (hex >> 8) & 255, hex & 255);
-      doc.circle(x + 2, y - 1, 1.5, 'F');
-      
-      // Label
-      doc.setTextColor(71, 85, 105);
-      doc.text(this.translate.instant(opt.label), x + 6, y);
-      x += colWidth;
-    });
-    y += 15;
-
-    // Observations Section
-    doc.setFontSize(12);
-    doc.setTextColor(15, 23, 42);
-    doc.text('CLINICAL OBSERVATIONS', 20, y);
-    doc.line(20, y + 2, 70, y + 2);
-    y += 10;
-
-    if (this.teethWithNotes.length === 0) {
-      doc.setFontSize(10);
-      doc.setTextColor(148, 163, 184);
-      doc.text('No specific observations recorded for this patient.', 20, y);
-    } else {
-      for (const t of this.teethWithNotes) {
-        if (y > 260) {
-          doc.addPage();
-          y = 20;
-        }
-        
-        doc.setFontSize(10);
-        doc.setTextColor(79, 70, 229);
-        doc.text(`TOOTH #${t.id} - ${this.getToothName(t.id).toUpperCase()}`, 20, y);
-        y += 5;
-        
-        doc.setFontSize(8);
-        doc.setTextColor(100, 116, 139);
-        doc.text(`STATUS: ${this.translate.instant(this.getToothStatusLabel(t.id))}`, 20, y);
-        y += 5;
-
-        doc.setFontSize(10);
-        doc.setTextColor(30, 41, 59);
-        const splitNote = doc.splitTextToSize(t.notes || '', pageWidth - 40);
-        doc.text(splitNote, 20, y);
-        y += (splitNote.length * 5) + 8;
-      }
-    }
-
-    // Treatments Section
-    if (this.patientTreatments && this.patientTreatments.length > 0) {
-      if (y > 230) {
-        doc.addPage();
-        y = 20;
-      } else {
-        y += 10;
-      }
-      doc.setFontSize(12);
-      doc.setTextColor(15, 23, 42);
-      doc.text('CLINICAL TREATMENTS HISTORY', 20, y);
-      doc.setDrawColor(79, 70, 229);
-      doc.line(20, y + 2, 90, y + 2);
-      y += 10;
-
-      for (const t of this.patientTreatments) {
-        if (y > 250) {
-          doc.addPage();
-          y = 20;
-        }
-
-        doc.setFontSize(10);
-        doc.setTextColor(79, 70, 229);
-        doc.text(`${t.treatment.name} (Teeth: ${t.teeth})`, 20, y);
-        y += 5;
-
-        doc.setFontSize(8);
-        doc.setTextColor(100, 116, 139);
-        doc.text(`Status: ${t.status} | Progress: ${t.progress}% | Doctor: ${t.doctorName || 'N/A'}`, 20, y);
-        y += 4;
-
-        if (t.notes) {
-          doc.setTextColor(30, 41, 59);
-          const splitNote = doc.splitTextToSize(`Notes: ${t.notes}`, pageWidth - 40);
-          doc.text(splitNote, 20, y);
-          y += (splitNote.length * 4.5);
-        }
-
-        if (t.consumables && t.consumables.length > 0) {
-          doc.setFontSize(8);
-          doc.setTextColor(100, 116, 139);
-          const materials = t.consumables.map(c => `${c.stockItem.name} (${c.quantityUsed} ${c.stockItem.unitLabel || 'Units'})`).join(', ');
-          const splitMaterials = doc.splitTextToSize(`Materials Consumed: ${materials}`, pageWidth - 40);
-          doc.text(splitMaterials, 20, y);
-          y += (splitMaterials.length * 4.5);
-        }
-
-        y += 5;
-      }
-    }
-
-    // Footer on last page
-    doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184);
-    doc.text('Generated by OrthoFlow Dental Management System', pageWidth / 2, 285, { align: 'center' });
-
-    doc.save(`dental_report_${this.patientId || 'patient'}_${new Date().getTime()}.pdf`);
-  }
-
   get teethWithNotes(): ToothState[] {
     return Object.values(this.teeth || {}).filter(t => t.notes && t.notes.trim() !== '');
   }
@@ -721,30 +565,7 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
   }
 
   getToothName(toothId: string): string {
-    const id = parseInt(toothId);
-    const names: Record<number, string> = {
-      11: 'Upper Right Central Incisor', 12: 'Upper Right Lateral Incisor', 13: 'Upper Right Canine',
-      14: 'Upper Right 1st Premolar', 15: 'Upper Right 2nd Premolar', 16: 'Upper Right 1st Molar',
-      17: 'Upper Right 2nd Molar', 18: 'Upper Right 3rd Molar (Wisdom)',
-      21: 'Upper Left Central Incisor', 22: 'Upper Left Lateral Incisor', 23: 'Upper Left Canine',
-      24: 'Upper Left 1st Premolar', 25: 'Upper Left 2nd Premolar', 26: 'Upper Left 1st Molar',
-      27: 'Upper Left 2nd Molar', 28: 'Upper Left 3rd Molar (Wisdom)',
-      31: 'Lower Left Central Incisor', 32: 'Lower Left Lateral Incisor', 33: 'Lower Left Canine',
-      34: 'Lower Left 1st Premolar', 35: 'Lower Left 2nd Premolar', 36: 'Lower Left 1st Molar',
-      37: 'Lower Left 2nd Molar', 38: 'Lower Left 3rd Molar (Wisdom)',
-      41: 'Lower Right Central Incisor', 42: 'Lower Right Lateral Incisor', 43: 'Lower Right Canine',
-      44: 'Lower Right 1st Premolar', 45: 'Lower Right 2nd Premolar', 46: 'Lower Right 1st Molar',
-      47: 'Lower Right 2nd Molar', 48: 'Lower Right 3rd Molar (Wisdom)',
-      51: 'Upper Right Primary Central', 52: 'Upper Right Primary Lateral', 53: 'Upper Right Primary Canine',
-      54: 'Upper Right Primary 1st Molar', 55: 'Upper Right Primary 2nd Molar',
-      61: 'Upper Left Primary Central', 62: 'Upper Left Primary Lateral', 63: 'Upper Left Primary Canine',
-      64: 'Upper Left Primary 1st Molar', 65: 'Upper Left Primary 2nd Molar',
-      71: 'Lower Left Primary Central', 72: 'Lower Left Primary Lateral', 73: 'Lower Left Primary Canine',
-      74: 'Lower Left Primary 1st Molar', 75: 'Lower Left Primary 2nd Molar',
-      81: 'Lower Right Primary Central', 82: 'Lower Right Primary Lateral', 83: 'Lower Right Primary Canine',
-      84: 'Lower Right Primary 1st Molar', 85: 'Lower Right Primary 2nd Molar'
-    };
-    return names[id] || 'Unknown Tooth';
+    return this.translate.instant(`TOOTH_NAME.${toothId}`);
   }
 
   copyStateString(event: MouseEvent) {
@@ -785,6 +606,105 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
         }
       });
     });
+  }
+
+  /** Administered treatment rings the tooth in green, as on the printed chart. Drawn before work still owed, which has the last word. */
+  private applyDoneRings() {
+    const prefix = this.getToothPrefix();
+    for (const fdi of this.doneTeeth ?? []) {
+      const el = this.chartContainer?.nativeElement.querySelector(`.${prefix}${fdi}-parent`) as HTMLElement | null;
+      if (!el) continue;
+      el.style.stroke = TREATMENT_PLAN_INK.COMPLETED;
+      el.style.strokeWidth = '2.4px';
+    }
+  }
+
+  /**
+   * The legend's letters, on the inside of the arch where there is room, square to the arch at
+   * that tooth: straight at the centre they would drift past the neighbour and read as its
+   * letters. The arch is taken as an ellipse through the teeth. The printed chart does the same
+   * (OdontogramRenderer on the server).
+   */
+  private applyToothKeys() {
+    const svg = this.chartContainer?.nativeElement.querySelector('svg');
+    if (!svg) return;
+    svg.querySelectorAll('.odo-tooth-key').forEach((n) => n.remove());
+    const keys = Object.entries(this.toothKeys ?? {}).filter(([, letters]) => letters.length);
+    if (!keys.length) return;
+
+    const prefix = this.getToothPrefix();
+    const CENTRE_X = 145;
+    const parents = [...svg.querySelectorAll<SVGGraphicsElement>(`[class*="${prefix}"][class*="-parent"]`)];
+    const centres = parents.map((el) => {
+      const box = el.getBBox();
+      const fdi = el.getAttribute('class')?.match(new RegExp(`${prefix}(\\d+)`))?.[1] ?? '';
+      return { fdi, x: box.x + box.width / 2, y: box.y + box.height / 2, box };
+    });
+    const isUpper = (fdi: string) => ['1', '2', '5', '6'].includes(fdi.charAt(0));
+    const arch = (upper: boolean) => {
+      const teeth = centres.filter((c) => isUpper(c.fdi) === upper);
+      const ys = teeth.map((c) => c.y);
+      const backY = upper ? Math.max(...ys) : Math.min(...ys);
+      const frontY = upper ? Math.min(...ys) : Math.max(...ys);
+      return { backY, halfHeight: Math.max(Math.abs(backY - frontY), 1), halfWidth: Math.max(1, ...teeth.map((c) => Math.abs(c.x - CENTRE_X))) };
+    };
+    const arches = { upper: arch(true), lower: arch(false) };
+
+    for (const [fdi, letters] of keys) {
+      const tooth = centres.find((c) => c.fdi === fdi);
+      if (!tooth) continue;
+      const { backY, halfHeight, halfWidth } = isUpper(fdi) ? arches.upper : arches.lower;
+      let dx = -(tooth.x - CENTRE_X) / (halfWidth * halfWidth);
+      // Flattened toward the side: down the arch the neighbour is above and below, not beside.
+      let dy = -(tooth.y - backY) / (halfHeight * halfHeight) * 0.55;
+      const length = Math.max(Math.hypot(dx, dy), 1e-9);
+      dx /= length;
+      dy /= length;
+      const label = letters.join('\u2009');
+      const halfWidth2 = label.length * 1.9 + 1.5;
+      const halfHeight2 = 3.9;
+      const reach = Math.abs(dx) * (tooth.box.width / 2 + halfWidth2) + Math.abs(dy) * (tooth.box.height / 2 + halfHeight2) + 1.2;
+      const x = tooth.x + dx * reach;
+      const y = tooth.y + dy * reach;
+      // In a small pill of its own: the letters of neighbouring teeth must not read as one group.
+      const pill = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      pill.setAttribute('class', 'odo-tooth-key');
+      pill.setAttribute('x', String(x - halfWidth2));
+      pill.setAttribute('y', String(y - halfHeight2));
+      pill.setAttribute('width', String(halfWidth2 * 2));
+      pill.setAttribute('height', String(halfHeight2 * 2));
+      pill.setAttribute('rx', '1.7');
+      pill.setAttribute('fill', '#ffffff');
+      pill.setAttribute('stroke', '#103843');
+      pill.setAttribute('stroke-width', '0.45');
+      pill.setAttribute('pointer-events', 'none');
+      svg.appendChild(pill);
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('class', 'odo-tooth-key');
+      text.setAttribute('x', String(x));
+      text.setAttribute('y', String(y + 2.2));
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('font-size', '6.2');
+      text.setAttribute('font-weight', '700');
+      text.setAttribute('fill', '#103843');
+      text.setAttribute('pointer-events', 'none');
+      text.textContent = label;
+      svg.appendChild(text);
+    }
+  }
+
+  /** Draws attention to the teeth a line of the legend is about. */
+  private applyHighlights() {
+    const prefix = this.getToothPrefix();
+    for (const fdi of this.highlightTeeth ?? []) {
+      const el = this.chartContainer?.nativeElement.querySelector(`.${prefix}${fdi}-parent`) as HTMLElement | null;
+      if (!el) continue;
+      el.dataset['odoVoice'] = 'highlight';
+      el.style.stroke = VOICE_FOCUS_INK;
+      el.style.strokeWidth = '3.5px';
+      el.style.strokeDasharray = 'none';
+      el.style.filter = 'drop-shadow(0 0 3px rgba(14, 116, 144, 0.8))';
+    }
   }
 
   /**
@@ -868,21 +788,7 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     svg.querySelectorAll('.odo-surface-mark').forEach((n) => n.remove());
     const prefix = this.getToothPrefix();
 
-    const byTooth = new Map<string, Map<SurfaceZone, 'condition' | 'existing' | 'planned'>>();
-    const rank = { planned: 1, existing: 2, condition: 3 } as const;
-    for (const f of this.findings ?? []) {
-      if (f.status !== 'ACTIVE' || !f.surface) continue;
-      const family = f.kind === 'CONDITION' ? 'condition'
-        : f.kind === 'EXISTING' ? 'existing'
-        : f.kind === 'TREATMENT_REQUIRED' ? 'planned' : null;
-      if (!family) continue;
-      const zones = byTooth.get(f.fdi) ?? new Map<SurfaceZone, 'condition' | 'existing' | 'planned'>();
-      for (const zone of zonesOf(f.fdi, f.surface)) {
-        const current = zones.get(zone);
-        if (!current || rank[family] > rank[current]) zones.set(zone, family);
-      }
-      byTooth.set(f.fdi, zones);
-    }
+    const byTooth = surfaceMarks((this.findings ?? []).filter((f) => f.status === 'ACTIVE'));
 
     const ink = {
       condition: FAMILY_PAINT.condition.solid,
@@ -985,8 +891,3 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     }
   }
 }
-
-/** Dictated, not yet saved. Amber reads as "pending" beside every status family. */
-const VOICE_STAGED_INK = '#d97706';
-/** The tooth the last command was about. */
-const VOICE_FOCUS_INK = '#0e7490';

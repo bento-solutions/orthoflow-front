@@ -13,6 +13,8 @@ import { INSURANCE_FORM_STATUSES, MISSING_FIELDS } from './services/insurance-fo
 import { PRESCRIPTION_CATEGORIES } from './services/prescriptions-api.service';
 import { PHOTO_STAGES } from './services/clinical-photo-api.service';
 import { VIEW_GROUPS } from '../features/patients/patient-photos/patient-photos.component';
+import { DENTITION_VIEWS } from './services/dental-3d-view.service';
+import { ADULT_TEETH, CHILD_TEETH } from './models/patient.model';
 import { FINDING_KIND_ORDER, FINDING_OPTIONS } from './clinical/finding-options';
 import { SURFACE_ORDER } from './clinical/tooth-surfaces';
 import { INPUT_LANGUAGES } from './voice/language-filter';
@@ -41,6 +43,12 @@ const has = (key: string): boolean => {
 };
 
 const FAMILIES: Record<string, readonly string[]> = {
+  'DENTAL_3D.VIEW_NAME': DENTITION_VIEWS,
+  'DENTAL_3D.VIEW_HINT': DENTITION_VIEWS,
+  'DENTAL_3D.GROUP': ['CONDITION', 'PLANNED', 'EXISTING', 'ABSENT'],
+  'DENTAL_3D.LEGEND': ['EXISTING', 'CONDITION', 'PLANNED', 'ABSENT', 'LESION', 'RING_COMPLETED', 'RING_ACTIVE', 'RING_PLANNED'],
+  'TOOTH_NAME': [...ADULT_TEETH, ...CHILD_TEETH],
+  'TREATMENT_CHART.GROUP': ['DONE', 'CONDITION', 'PLANNED', 'WATCH', 'ABSENT'],
   'INSURANCE.STATUS': INSURANCE_FORM_STATUSES,
   'INSURANCE.EMPTY': INSURANCE_FORM_STATUSES,
   'INSURANCE.PURPOSE': ['EXECUTION', 'PRIOR_AGREEMENT'],

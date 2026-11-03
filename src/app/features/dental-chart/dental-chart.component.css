@@ -117,7 +117,6 @@
 
 .btn-icon-sm:focus-visible,
 .close-btn:focus-visible,
-.btn-export-sm:focus-visible,
 .report-toggle:focus-visible,
 .status-option:focus-visible,
 .btn-reset:focus-visible {
@@ -129,7 +128,11 @@
   font-size: 1.1rem;
 }
 
+/* The drawing is black on white in every theme: its lines and patterns are made for paper,
+   and they mean what the printed chart means. */
 .svg-container {
+  background: #ffffff;
+  border-radius: 10px;
   width: 100%;
   max-width: 320px;
   margin: 0 auto;
@@ -445,32 +448,6 @@
   gap: 0.75rem;
 }
 
-.btn-export-sm {
-  background: var(--surface);
-  border: 1px solid rgb(var(--ink-200));
-  color: rgb(var(--petrol-600));
-  padding: 0.25rem;
-  min-width: 44px;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  transition: all 0.2s;
-}
-
-.btn-export-sm:hover {
-  background: rgb(var(--petrol-50));
-  border-color: rgb(var(--petrol-600));
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.1);
-}
-
-.btn-export-sm .material-icons {
-  font-size: 1.1rem;
-}
-
 .toggle-arrow {
   color: rgb(var(--ink-500));
   font-size: 1.25rem;
@@ -579,3 +556,7 @@
   min-height: 0;
   padding-inline-end: .25rem;
 }
+
+/* Keeps the printed chart's look in the summary, with no card of its own inside the page's. */
+.dental-chart-wrapper.summary { padding: 0; gap: .5rem; background: transparent; }
+.dental-chart-wrapper.summary .svg-container { max-width: none; }

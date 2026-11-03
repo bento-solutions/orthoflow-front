@@ -149,33 +149,6 @@ export class DentalChartService {
   }
 
   /**
-   * Returns all teeth for the currently active chart (used by ThreeDentalSyncService to seed 3D state).
-   * Returns an empty object if no chart is currently loaded.
-   */
-  getAllTeeth(): Record<string, ToothState> {
-    return this.currentChart()?.teeth ?? {};
-  }
-
-  /**
-   * Update a single tooth on the currently active chart without requiring a patientId.
-   * Called by ThreeDentalSyncService to bridge 3D → 2D chart state.
-   * No-op if no chart is currently loaded.
-   */
-  updateTooth(toothId: string, partial: { status?: ToothStatus; notes?: string }, source: ToothUpdateSource = '3d_top'): void {
-    const chart = this.currentChart();
-    if (!chart) return;
-
-    const existing = chart.teeth[toothId] ?? { id: toothId, status: 'present' as ToothStatus };
-    const updatedTooth: ToothState = {
-      ...existing,
-      ...(partial.status !== undefined ? { status: partial.status } : {}),
-      ...(partial.notes !== undefined ? { notes: partial.notes } : {}),
-    };
-
-    this.updateToothStatus(chart.patientId, toothId, updatedTooth.status, updatedTooth.notes, source);
-  }
-
-  /**
    * Get a tooth's current state.
    */
   getToothState(patientId: string, toothId: string): ToothState | undefined {

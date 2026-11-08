@@ -1,0 +1,13 @@
+{
+  "name": "orthoflow-a11y-audit",
+  "private": true,
+  "type": "module",
+  "description": "Scans every screen of a running OrthoFlow for WCAG 2.2 A/AA failures. Run by hand against a local stack; never part of the app build.",
+  "scripts": {
+    "audit": "node audit.mjs"
+  },
+  "devDependencies": {
+    "axe-core": "4.13.0",
+    "playwright-core": "1.56.1"
+  }
+}

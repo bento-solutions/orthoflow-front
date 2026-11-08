@@ -48,3 +48,5 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 tools/dentition/node_modules
+tools/a11y/node_modules
+tools/a11y/a11y-report.json

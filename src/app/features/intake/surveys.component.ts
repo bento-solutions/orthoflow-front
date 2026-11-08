@@ -55,7 +55,7 @@ export function shares(distribution: readonly number[]): number[] {
         <section class="mb-5 grid gap-3 md:grid-cols-3" [attr.aria-busy]="report.loading()">
           <div class="tile p-4"><p class="kpi-label">{{ 'SURV.RESPONSES' | translate }}</p><p class="kpi-value">{{ r.summary.responses | num: 0 }}</p></div>
           <div class="tile p-4"><p class="kpi-label">{{ 'SURV.AVERAGE' | translate }}</p>
-            <p class="kpi-value">{{ r.summary.average | num: 1 }} <span class="text-base font-normal text-ink-500">/ 5</span></p><p class="text-lg text-caution-500" aria-hidden="true">{{ stars(r.summary.average) }}</p></div>
+            <p class="kpi-value">{{ r.summary.average | num: 1 }} <span class="text-base font-normal text-ink-500">/ 5</span></p><p class="text-lg text-caution-700" aria-hidden="true">{{ stars(r.summary.average) }}</p></div>
           <div class="tile p-4"><p class="kpi-label">{{ 'SURV.CALLBACKS' | translate }}</p><p class="kpi-value" [class.text-critical-700]="r.summary.callBacksPending > 0">{{ r.summary.callBacksPending | num: 0 }}</p></div>
         </section>
         <section class="card mb-5 p-4" [attr.aria-label]="'SURV.SPREAD' | translate">
@@ -75,7 +75,7 @@ export function shares(distribution: readonly number[]): number[] {
             <li class="flex items-start gap-3 px-4 py-3">
               <div class="min-w-0 flex-1">
                 <p class="flex flex-wrap items-center gap-x-2 text-sm">
-                  <span class="text-lg text-caution-500" aria-hidden="true">{{ stars(row.rating) }}</span><span class="sr-only">{{ row.rating }} / 5</span>
+                  <span class="text-lg text-caution-700" aria-hidden="true">{{ stars(row.rating) }}</span><span class="sr-only">{{ row.rating }} / 5</span>
                   @if (row.patientId) { <a class="font-semibold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/patients', row.patientId]">{{ row.patientName }}</a> } @else { <span class="font-semibold">{{ row.patientName }}</span> }
                   @if (row.practitionerName) { <span class="text-ink-500">· {{ row.practitionerName }}</span> }
                   @if (row.callMe) { <span class="pill pill-critical pill-nodot">{{ 'SURV.CALL_ME' | translate }}</span> }

@@ -1,21 +1,22 @@
 import { Component, signal, computed, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { StockService, StockItemRequestPayload } from '../../../../core/services/stock.service';
 import {
   StockItem, StockCategory, Supplier, StockMovement, MovementType,
   STOCK_CATEGORIES, MOVEMENT_TYPES
 } from '../../../../core/models/stock.model';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
 @Component({
   selector: 'app-stock-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, RouterLink],
+  imports: [RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       
@@ -35,22 +36,22 @@ import { ToastService } from '../../../../core/services/toast.service';
 
       <!-- Module Navigation Pills -->
       <div class="flex flex-wrap gap-2 bg-ortho-navy/[0.03] p-1.5 rounded-xl border border-ortho-navy/5 max-w-max font-semibold text-xs">
-        <a routerLink="/stock" class="px-4 py-2 rounded-lg transition bg-white text-ink-900 shadow-sm">
+        <a routerLink="/stock" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
           {{ "STOCK.CATALOG" | translate }}
         </a>
-        <a routerLink="/stock/procurement" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
+        <a routerLink="/stock/procurement" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
           {{ "STOCK.PROCUREMENT" | translate }}
         </a>
-        <a routerLink="/stock/direct-sales" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
+        <a routerLink="/stock/direct-sales" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
           {{ "STOCK.SALES" | translate }}
         </a>
-        <a routerLink="/stock/treatment-sessions" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
+        <a routerLink="/stock/treatment-sessions" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
           {{ "STOCK.TREATMENT_SESSIONS" | translate }}
         </a>
-        <a routerLink="/stock/leakage" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
+        <a routerLink="/stock/leakage" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
           {{ "STOCK.LEAKAGE" | translate }}
         </a>
-        <a routerLink="/stock/forecast" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
+        <a routerLink="/stock/forecast" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
           {{ "STOCK.FORECAST" | translate }}
         </a>
       </div>
@@ -71,41 +72,41 @@ import { ToastService } from '../../../../core/services/toast.service';
 
         <!-- {{ "STOCK.OUT_OF_STOCK" | translate }} -->
         <div class="bg-white p-5 rounded-2xl border border-ortho-navy/5 shadow-sm hover:shadow transition flex items-center gap-4">
-          <div class="p-3 bg-red-50 text-red-600 rounded-xl" [class.animate-pulse]="kpiOutOfStock() > 0">
+          <div class="p-3 bg-red-50 text-red-700 rounded-xl" [class.animate-pulse]="kpiOutOfStock() > 0">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
           </div>
           <div>
             <div class="text-xs text-ink-500 font-semibold uppercase tracking-wider">{{ "STOCK.OUT_OF_STOCK" | translate }}</div>
-            <div class="text-2xl font-bold" [class.text-red-600]="kpiOutOfStock() > 0" [class.text-ink-900]="kpiOutOfStock() === 0">{{ kpiOutOfStock() }}</div>
+            <div class="text-2xl font-bold" [class.text-red-700]="kpiOutOfStock() > 0" [class.text-ink-900]="kpiOutOfStock() === 0">{{ kpiOutOfStock() }}</div>
           </div>
         </div>
 
         <!-- {{ "STOCK.LOW_STOCK" | translate }} -->
         <div class="bg-white p-5 rounded-2xl border border-ortho-navy/5 shadow-sm hover:shadow transition flex items-center gap-4">
-          <div class="p-3 bg-amber-50 text-amber-500 rounded-xl">
+          <div class="p-3 bg-amber-50 text-amber-700 rounded-xl">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
           </div>
           <div>
             <div class="text-xs text-ink-500 font-semibold uppercase tracking-wider">{{ "STOCK.LOW_STOCK" | translate }}</div>
-            <div class="text-2xl font-bold" [class.text-amber-500]="kpiLowStock() > 0" [class.text-ink-900]="kpiLowStock() === 0">{{ kpiLowStock() }}</div>
+            <div class="text-2xl font-bold" [class.text-amber-700]="kpiLowStock() > 0" [class.text-ink-900]="kpiLowStock() === 0">{{ kpiLowStock() }}</div>
           </div>
         </div>
 
         <!-- Valuation -->
         <div class="bg-white p-5 rounded-2xl border border-ortho-navy/5 shadow-sm hover:shadow transition flex items-center gap-4">
-          <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+          <div class="p-3 bg-emerald-50 text-emerald-700 rounded-xl">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
           </div>
           <div>
             <div class="text-xs text-ink-500 font-semibold uppercase tracking-wider">{{ "STOCK.VALUATION" | translate }}</div>
-            <div class="text-2xl font-bold text-emerald-600">{{ kpiValuation() | number:'1.2-2' }} DH</div>
+            <div class="text-2xl font-bold text-emerald-700">{{ kpiValuation() | number:'1.2-2' }} DH</div>
           </div>
         </div>
 
       </div>
 
       <!-- Navigation Tabs -->
-      <div class="border-b border-ortho-navy/10 flex gap-6">
+      <div class="border-b border-ortho-navy/10 flex flex-wrap gap-x-6 gap-y-1">
         <button type="button" (click)="activeTab.set('catalog')" class="pb-3 text-sm font-semibold transition" [class.text-ink-900]="activeTab() === 'catalog'" [class.border-b-2]="activeTab() === 'catalog'" [class.border-petrol-600]="activeTab() === 'catalog'" [class.text-ink-500]="activeTab() !== 'catalog'">
           {{ "STOCK.CATALOG" | translate }}
         </button>
@@ -133,11 +134,11 @@ import { ToastService } from '../../../../core/services/toast.service';
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               </span>
               <input
-                id="catalog-search"
+                id="catalog-search" [attr.aria-label]="'STOCK.UI.SEARCH_CATALOG' | translate"
                 type="text"
                 [ngModel]="catalogSearchValue"
                 (ngModelChange)="onCatalogSearchChange($event)"
-                placeholder="Search by name or SKU..."
+                [placeholder]="'STOCK.UI.SEARCH_CATALOG' | translate"
                 class="w-full ps-10 pe-4 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition"
               />
             </div>
@@ -162,26 +163,26 @@ import { ToastService } from '../../../../core/services/toast.service';
             <table class="w-full text-left border-collapse text-sm">
               <thead>
                 <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
-                  <th class="p-4 cursor-pointer select-none hover:text-ink-900 transition group" (click)="sortCatalog('sku')">
-                    <span class="flex items-center gap-1">SKU / Code <span class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','sku') }}</span></span>
+                  <th scope="col" class="p-4" [attr.aria-sort]="ariaSort('catalog','sku')">
+                    <button type="button" class="sort-button group" (click)="sortCatalog('sku')">{{ 'STOCK.UI.SKU_CODE' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','sku') }}</span></button>
                   </th>
-                  <th class="p-4 cursor-pointer select-none hover:text-ink-900 transition group" (click)="sortCatalog('name')">
-                    <span class="flex items-center gap-1">Item Name <span class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','name') }}</span></span>
+                  <th scope="col" class="p-4" [attr.aria-sort]="ariaSort('catalog','name')">
+                    <button type="button" class="sort-button group" (click)="sortCatalog('name')">{{ 'STOCK.UI.ITEM_NAME' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','name') }}</span></button>
                   </th>
-                  <th class="p-4 cursor-pointer select-none hover:text-ink-900 transition group" (click)="sortCatalog('category')">
-                    <span class="flex items-center gap-1">Category <span class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','category') }}</span></span>
+                  <th scope="col" class="p-4" [attr.aria-sort]="ariaSort('catalog','category')">
+                    <button type="button" class="sort-button group" (click)="sortCatalog('category')">{{ 'STOCK.UI.CATEGORY' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','category') }}</span></button>
                   </th>
-                  <th class="p-4 text-center cursor-pointer select-none hover:text-ink-900 transition group" (click)="sortCatalog('currentStock')">
-                    <span class="flex items-center justify-center gap-1">Available Stock <span class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','currentStock') }}</span></span>
+                  <th scope="col" class="p-4 text-center" [attr.aria-sort]="ariaSort('catalog','currentStock')">
+                    <button type="button" class="sort-button group justify-center" (click)="sortCatalog('currentStock')">{{ 'STOCK.UI.AVAILABLE' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','currentStock') }}</span></button>
                   </th>
-                  <th class="p-4 text-right cursor-pointer select-none hover:text-ink-900 transition group" (click)="sortCatalog('purchasePrice')">
-                    <span class="flex items-center justify-end gap-1">Unit cost <span class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','purchasePrice') }}</span></span>
+                  <th scope="col" class="p-4 text-right" [attr.aria-sort]="ariaSort('catalog','purchasePrice')">
+                    <button type="button" class="sort-button group justify-end" (click)="sortCatalog('purchasePrice')">{{ 'STOCK.UI.UNIT_COST' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','purchasePrice') }}</span></button>
                   </th>
-                  <th class="p-4 text-right cursor-pointer select-none hover:text-ink-900 transition group" (click)="sortCatalog('pricePerUse')">
-                    <span class="flex items-center justify-end gap-1">Usage Cost <span class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','pricePerUse') }}</span></span>
+                  <th scope="col" class="p-4 text-right" [attr.aria-sort]="ariaSort('catalog','pricePerUse')">
+                    <button type="button" class="sort-button group justify-end" (click)="sortCatalog('pricePerUse')">{{ 'STOCK.UI.USAGE_COST' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','pricePerUse') }}</span></button>
                   </th>
-                  <th class="p-4">Supplier</th>
-                  <th class="p-4 text-right">Actions</th>
+                  <th scope="col" class="p-4">{{ 'STOCK.UI.SUPPLIER' | translate }}</th>
+                  <th scope="col" class="p-4 text-right">{{ 'COMMON.ACTIONS' | translate }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-ortho-navy/5">
@@ -198,7 +199,7 @@ import { ToastService } from '../../../../core/services/toast.service';
                     </td>
                     <td class="p-4 text-center">
                       <div class="flex items-center justify-center gap-2">
-                        <span class="font-bold" [class.text-red-600]="item.currentStock === 0" [class.text-amber-500]="item.currentStock > 0 && item.currentStock <= item.minimumStock" [class.text-emerald-600]="item.currentStock > item.minimumStock">
+                        <span class="font-bold" [class.text-red-700]="item.currentStock === 0" [class.text-amber-700]="item.currentStock > 0 && item.currentStock <= item.minimumStock" [class.text-emerald-700]="item.currentStock > item.minimumStock">
                           @if (item.packCount > 0) {
                             <!-- Nobody counts a shelf in millilitres: lead with the bottles. -->
                             <span class="block">{{ item.packCount }} × {{ item.unitLabel }}</span>
@@ -210,28 +211,28 @@ import { ToastService } from '../../../../core/services/toast.service';
                           }
                           @if (item.usesPerUnit > 1) {
                             <span class="ms-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold bg-petrol-50 text-petrol-700"
-                                  title="Uses on the unit in service">{{ item.usesOnCurrentUnit }}/{{ item.usesPerUnit }}</span>
+                                  [title]="'STOCK.UI.USES_IN_SERVICE' | translate">{{ item.usesOnCurrentUnit }}/{{ item.usesPerUnit }}</span>
                           }
                         </span>
                         @if (item.currentStock === 0) {
-                          <span class="px-1.5 py-0.5 text-[9px] font-bold bg-red-50 text-red-600 rounded border border-red-200 uppercase">Empty</span>
+                          <span class="px-1.5 py-0.5 text-[9px] font-bold bg-red-50 text-red-700 rounded border border-red-200 uppercase">{{ 'STOCK.UI.EMPTY' | translate }}</span>
                         } @else if (item.currentStock <= item.minimumStock) {
-                          <span class="px-1.5 py-0.5 text-[9px] font-bold bg-amber-50 text-amber-600 rounded border border-amber-200 uppercase">Low</span>
+                          <span class="px-1.5 py-0.5 text-[9px] font-bold bg-amber-50 text-amber-700 rounded border border-amber-200 uppercase">{{ 'STOCK.UI.LOW' | translate }}</span>
                         }
                       </div>
                     </td>
                     <td class="p-4 text-right font-medium text-ink-700">{{ item.purchasePrice | number:'1.2-2' }} DH <span class="text-[10px] text-ink-500">/{{ item.unitSize }}</span></td>
-                    <td class="p-4 text-right font-medium text-emerald-600">{{ item.pricePerUse | number:'1.4-4' }} DH</td>
+                    <td class="p-4 text-right font-medium text-emerald-700">{{ item.pricePerUse | number:'1.4-4' }} DH</td>
                     <td class="p-4 text-ink-500 font-medium">{{ item.supplier?.name || 'N/A' }}</td>
                     <td class="p-4 text-right">
                       <div class="flex items-center justify-end gap-2">
-                        <button type="button" (click)="openAdjustmentModal(item)" class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition border border-emerald-100">
-                          Adjust
+                        <button type="button" (click)="openAdjustmentModal(item)" class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition border border-emerald-100">
+                          {{ 'STOCK.UI.ADJUST' | translate }}
                         </button>
                         <button type="button" (click)="openEditModal(item)" [attr.aria-label]="('COMMON.EDIT' | translate) + ' — ' + item.name" [title]="'COMMON.EDIT' | translate" class="p-1 hover:bg-ortho-navy/5 text-ink-500 hover:text-ink-900 rounded-lg transition">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
                         </button>
-                        <button type="button" (click)="deleteItem(item)" [attr.aria-label]="('COMMON.DELETE' | translate) + ' — ' + item.name" [title]="'COMMON.DELETE' | translate" class="p-1 hover:bg-red-50 text-red-600/60 hover:text-red-600 rounded-lg transition">
+                        <button type="button" (click)="deleteItem(item)" [attr.aria-label]="('COMMON.DELETE' | translate) + ' — ' + item.name" [title]="'COMMON.DELETE' | translate" class="p-1 hover:bg-red-50 text-red-700/60 hover:text-red-700 rounded-lg transition">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
                       </div>
@@ -239,7 +240,7 @@ import { ToastService } from '../../../../core/services/toast.service';
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="9" class="p-8 text-center text-ink-500">No stock catalog items found.</td>
+                    <td colspan="9" class="p-8 text-center text-ink-500">{{ 'STOCK.UI.NO_ITEMS' | translate }}</td>
                   </tr>
                 }
               </tbody>
@@ -255,8 +256,8 @@ import { ToastService } from '../../../../core/services/toast.service';
           <!-- Movements filter bar -->
           <div class="p-4 border-b border-ortho-navy/5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-ortho-navy/[0.01]">
             <div class="flex items-center gap-2">
-              <h3 class="text-base font-bold text-ink-900">Stock {{ "STOCK.MOVEMENTS" | translate }}</h3>
-              <span class="text-xs text-ink-500 font-medium hidden md:inline">Real-time consumption &amp; inventory additions log.</span>
+              <h2 class="text-base font-bold text-ink-900">{{ "STOCK.MOVEMENTS" | translate }}</h2>
+              <span class="text-xs text-ink-500 font-medium hidden md:inline">{{ 'STOCK.UI.MOVES_SUBTITLE' | translate }}</span>
             </div>
             <div class="flex flex-col sm:flex-row items-center gap-3">
               <div class="relative w-full sm:w-64">
@@ -264,16 +265,16 @@ import { ToastService } from '../../../../core/services/toast.service';
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 </span>
                 <input
-                  id="movements-search"
+                  id="movements-search" [attr.aria-label]="'STOCK.UI.SEARCH_MOVES' | translate"
                   type="text"
                   [ngModel]="movSearchValue"
                   (ngModelChange)="onMovSearchChange($event)"
-                  placeholder="Search item name, SKU, ref..."
+                  [placeholder]="'STOCK.UI.SEARCH_MOVES' | translate"
                   class="w-full ps-9 pe-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition"
                 />
               </div>
               <select
-                id="movements-type"
+                id="movements-type" [attr.aria-label]="'COMMON.TYPE' | translate"
                 [ngModel]="movType()"
                 (ngModelChange)="onMovTypeChange($event)"
                 class="px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm bg-white focus:outline-none focus:border-petrol-600 transition w-full sm:w-auto"
@@ -289,28 +290,28 @@ import { ToastService } from '../../../../core/services/toast.service';
             <table class="w-full text-left border-collapse text-sm">
               <thead>
                 <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
-                  <th class="p-4 cursor-pointer select-none hover:text-ink-900 transition group" (click)="sortMovements('createdAt')">
-                    <span class="flex items-center gap-1">Timestamp <span class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','createdAt') }}</span></span>
+                  <th scope="col" class="p-4" [attr.aria-sort]="ariaSort('mov','createdAt')">
+                    <button type="button" class="sort-button group" (click)="sortMovements('createdAt')">{{ 'STOCK.UI.TIMESTAMP' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','createdAt') }}</span></button>
                   </th>
-                  <th class="p-4 cursor-pointer select-none hover:text-ink-900 transition group" (click)="sortMovements('stockItem')">
-                    <span class="flex items-center gap-1">Item Name / SKU <span class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','stockItem') }}</span></span>
+                  <th scope="col" class="p-4" [attr.aria-sort]="ariaSort('mov','stockItem')">
+                    <button type="button" class="sort-button group" (click)="sortMovements('stockItem')">{{ 'STOCK.UI.ITEM_AND_CODE' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','stockItem') }}</span></button>
                   </th>
-                  <th class="p-4 cursor-pointer select-none hover:text-ink-900 transition group" (click)="sortMovements('movementType')">
-                    <span class="flex items-center gap-1">Type <span class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','movementType') }}</span></span>
+                  <th scope="col" class="p-4" [attr.aria-sort]="ariaSort('mov','movementType')">
+                    <button type="button" class="sort-button group" (click)="sortMovements('movementType')">{{ 'COMMON.TYPE' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','movementType') }}</span></button>
                   </th>
-                  <th class="p-4 text-center cursor-pointer select-none hover:text-ink-900 transition group" (click)="sortMovements('quantity')">
-                    <span class="flex items-center justify-center gap-1">Qty Delta <span class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','quantity') }}</span></span>
+                  <th scope="col" class="p-4 text-center" [attr.aria-sort]="ariaSort('mov','quantity')">
+                    <button type="button" class="sort-button group justify-center" (click)="sortMovements('quantity')">{{ 'STOCK.UI.QTY_DELTA' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','quantity') }}</span></button>
                   </th>
-                  <th class="p-4 text-center cursor-pointer select-none hover:text-ink-900 transition group" (click)="sortMovements('quantityBefore')">
-                    <span class="flex items-center justify-center gap-1">Before <span class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','quantityBefore') }}</span></span>
+                  <th scope="col" class="p-4 text-center" [attr.aria-sort]="ariaSort('mov','quantityBefore')">
+                    <button type="button" class="sort-button group justify-center" (click)="sortMovements('quantityBefore')">{{ 'STOCK.UI.BEFORE' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','quantityBefore') }}</span></button>
                   </th>
-                  <th class="p-4 text-center cursor-pointer select-none hover:text-ink-900 transition group" (click)="sortMovements('quantityAfter')">
-                    <span class="flex items-center justify-center gap-1">After <span class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','quantityAfter') }}</span></span>
+                  <th scope="col" class="p-4 text-center" [attr.aria-sort]="ariaSort('mov','quantityAfter')">
+                    <button type="button" class="sort-button group justify-center" (click)="sortMovements('quantityAfter')">{{ 'STOCK.UI.AFTER' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','quantityAfter') }}</span></button>
                   </th>
-                  <th class="p-4 cursor-pointer select-none hover:text-ink-900 transition group" (click)="sortMovements('sourceReference')">
-                    <span class="flex items-center gap-1">Source Reference <span class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','sourceReference') }}</span></span>
+                  <th scope="col" class="p-4" [attr.aria-sort]="ariaSort('mov','sourceReference')">
+                    <button type="button" class="sort-button group" (click)="sortMovements('sourceReference')">{{ 'STOCK.UI.SOURCE_REF' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('mov','sourceReference') }}</span></button>
                   </th>
-                  <th class="p-4">Notes</th>
+                  <th scope="col" class="p-4">{{ 'COMMON.NOTES' | translate }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-ortho-navy/5">
@@ -319,14 +320,14 @@ import { ToastService } from '../../../../core/services/toast.service';
                     <td class="p-4 text-xs font-mono text-ink-600">{{ mov.createdAt | date:'yyyy-MM-dd HH:mm:ss' }}</td>
                     <td class="p-4">
                       <div class="font-bold text-ink-900">{{ mov.stockItem?.name }}</div>
-                      <div class="text-[10px] text-ink-500">SKU: {{ mov.stockItem?.sku }}</div>
+                      <div class="text-[10px] text-ink-500">{{ 'STOCK.UI.SKU' | translate }} {{ mov.stockItem?.sku }}</div>
                     </td>
                     <td class="p-4">
                       <span class="px-2.5 py-1 text-[11px] font-semibold rounded-full border" [ngClass]="getMovementTypeClasses(mov.movementType)">
                         {{ mov.movementType }}
                       </span>
                     </td>
-                    <td class="p-4 text-center font-bold" [class.text-emerald-600]="isAddition(mov.movementType)" [class.text-red-600]="!isAddition(mov.movementType)">
+                    <td class="p-4 text-center font-bold" [class.text-emerald-700]="isAddition(mov.movementType)" [class.text-red-700]="!isAddition(mov.movementType)">
                       {{ isAddition(mov.movementType) ? '+' : '-' }}{{ mov.quantity }}
                     </td>
                     <td class="p-4 text-center text-ink-600 font-medium">{{ mov.quantityBefore }}</td>
@@ -341,7 +342,7 @@ import { ToastService } from '../../../../core/services/toast.service';
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="8" class="p-8 text-center text-ink-500">No stock movement logs found.</td>
+                    <td colspan="8" class="p-8 text-center text-ink-500">{{ 'STOCK.UI.NO_MOVES' | translate }}</td>
                   </tr>
                 }
               </tbody>
@@ -356,11 +357,11 @@ import { ToastService } from '../../../../core/services/toast.service';
           
           <div class="p-4 border-b border-ortho-navy/5 flex items-center justify-between bg-ortho-navy/[0.01]">
             <div>
-              <h3 class="text-base font-bold text-ink-900">{{ "STOCK.SUPPLIER" | translate }}</h3>
-              <p class="text-xs text-ink-500">Manage dental equipment suppliers and wholesale providers.</p>
+              <h2 class="text-base font-bold text-ink-900">{{ "STOCK.SUPPLIER" | translate }}</h2>
+              <p class="text-xs text-ink-500">{{ 'STOCK.UI.SUPPLIERS_SUBTITLE' | translate }}</p>
             </div>
             <button type="button" (click)="openAddSupplierModal()" class="px-3.5 py-1.5 text-xs font-semibold bg-petrol-600 text-white hover:bg-petrol-700 transition rounded-xl shadow-sm">
-              Add Supplier
+              {{ 'STOCK.UI.ADD_SUPPLIER' | translate }}
             </button>
           </div>
 
@@ -368,12 +369,12 @@ import { ToastService } from '../../../../core/services/toast.service';
             <table class="w-full text-left border-collapse text-sm">
               <thead>
                 <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
-                  <th class="p-4">Company Name</th>
-                  <th class="p-4">Contact Person</th>
-                  <th class="p-4">Email</th>
-                  <th class="p-4">Phone Number</th>
-                  <th class="p-4">Corporate Address</th>
-                  <th class="p-4 text-right">Actions</th>
+                  <th scope="col" class="p-4">{{ 'STOCK.UI.COMPANY' | translate }}</th>
+                  <th scope="col" class="p-4">{{ 'STOCK.UI.CONTACT_PERSON' | translate }}</th>
+                  <th scope="col" class="p-4">{{ 'STOCK.UI.EMAIL' | translate }}</th>
+                  <th scope="col" class="p-4">{{ 'STOCK.UI.PHONE' | translate }}</th>
+                  <th scope="col" class="p-4">{{ 'STOCK.UI.ADDRESS' | translate }}</th>
+                  <th scope="col" class="p-4 text-right">{{ 'COMMON.ACTIONS' | translate }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-ortho-navy/5">
@@ -389,7 +390,7 @@ import { ToastService } from '../../../../core/services/toast.service';
                         <button type="button" (click)="openEditSupplierModal(sup)" [attr.aria-label]="('COMMON.EDIT' | translate) + ' — ' + sup.name" [title]="'COMMON.EDIT' | translate" class="p-1 hover:bg-ortho-navy/5 text-ink-500 hover:text-ink-900 rounded-lg transition">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
                         </button>
-                        <button type="button" (click)="deleteSupplier(sup)" [attr.aria-label]="('COMMON.DELETE' | translate) + ' — ' + sup.name" [title]="'COMMON.DELETE' | translate" class="p-1 hover:bg-red-50 text-red-600/60 hover:text-red-600 rounded-lg transition">
+                        <button type="button" (click)="deleteSupplier(sup)" [attr.aria-label]="('COMMON.DELETE' | translate) + ' — ' + sup.name" [title]="'COMMON.DELETE' | translate" class="p-1 hover:bg-red-50 text-red-700/60 hover:text-red-700 rounded-lg transition">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
                       </div>
@@ -397,7 +398,7 @@ import { ToastService } from '../../../../core/services/toast.service';
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="6" class="p-8 text-center text-ink-500">No suppliers registered.</td>
+                    <td colspan="6" class="p-8 text-center text-ink-500">{{ 'STOCK.UI.NO_SUPPLIERS' | translate }}</td>
                   </tr>
                 }
               </tbody>
@@ -417,23 +418,23 @@ import { ToastService } from '../../../../core/services/toast.service';
               <div class="p-6 border-b border-ortho-navy/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-ortho-navy/[0.01]">
                 <div>
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="px-2.5 py-0.5 bg-blue-50 text-blue-600 border border-blue-100 font-mono text-xs font-bold rounded-lg uppercase">
+                    <span class="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 font-mono text-xs font-bold rounded-lg uppercase">
                       {{ activeCountSession().status }}
                     </span>
-                    <h3 class="text-lg font-bold text-ink-900 leading-none">Active Physical Counting Session</h3>
+                    <h2 class="text-lg font-bold text-ink-900 leading-none">{{ 'STOCK.UI.COUNT_ACTIVE' | translate }}</h2>
                   </div>
-                  <p class="text-xs text-ink-500 font-semibold">Theoretical stock snapshot frozen on: <span class="font-bold text-ink-500">{{ activeCountSession().createdAt | date:'yyyy-MM-dd HH:mm' }}</span></p>
+                  <p class="text-xs text-ink-500 font-semibold">{{ 'STOCK.UI.FROZEN_ON' | translate }} <span class="font-bold text-ink-500">{{ activeCountSession().createdAt | date:'yyyy-MM-dd HH:mm' }}</span></p>
                 </div>
                 
                 <div class="flex items-center gap-2">
-                  <button type="button" (click)="cancelReconciliation()" class="px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 font-semibold rounded-xl text-xs transition">
-                    Cancel Session
+                  <button type="button" (click)="cancelReconciliation()" class="px-4 py-2 border border-red-200 text-red-700 hover:bg-red-50 font-semibold rounded-xl text-xs transition">
+                    {{ 'STOCK.UI.CANCEL_COUNT' | translate }}
                   </button>
                   <button type="button" (click)="saveDraftCounts()" class="px-4 py-2 border border-ortho-navy/10 hover:bg-gray-50 text-ink-600 font-semibold rounded-xl text-xs transition">
-                    Save Draft
+                    {{ 'STOCK.UI.SAVE_DRAFT' | translate }}
                   </button>
                   <button type="button" (click)="postReconciliation()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs transition shadow-sm">
-                    Post Count & Reconcile
+                    {{ 'STOCK.UI.POST_COUNT' | translate }}
                   </button>
                 </div>
               </div>
@@ -443,14 +444,14 @@ import { ToastService } from '../../../../core/services/toast.service';
                 <table class="w-full text-left border-collapse text-sm">
                   <thead>
                     <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
-                      <th class="p-4">SKU</th>
-                      <th class="p-4">Item Name</th>
-                      <th class="p-4 text-center">Theoretical Qty</th>
-                      <th class="p-4 text-center" style="width: 150px;">Physical Count</th>
-                      <th class="p-4 text-center">Qty Variance</th>
-                      <th class="p-4 text-right">Unit Price</th>
-                      <th class="p-4 text-right">Cost Variance</th>
-                      <th class="p-4">Notes / Remarks</th>
+                      <th scope="col" class="p-4">{{ 'STOCK.UI.SKU' | translate }}</th>
+                      <th scope="col" class="p-4">{{ 'STOCK.UI.ITEM_NAME' | translate }}</th>
+                      <th scope="col" class="p-4 text-center">{{ 'STOCK.UI.THEORETICAL' | translate }}</th>
+                      <th scope="col" class="p-4 text-center" style="width: 150px;">{{ 'STOCK.UI.PHYSICAL' | translate }}</th>
+                      <th scope="col" class="p-4 text-center">{{ 'STOCK.UI.QTY_VARIANCE' | translate }}</th>
+                      <th scope="col" class="p-4 text-right">{{ 'STOCK.UI.UNIT_PRICE' | translate }}</th>
+                      <th scope="col" class="p-4 text-right">{{ 'STOCK.UI.COST_VARIANCE' | translate }}</th>
+                      <th scope="col" class="p-4">{{ 'STOCK.UI.REMARKS' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-ortho-navy/5 font-medium">
@@ -460,23 +461,23 @@ import { ToastService } from '../../../../core/services/toast.service';
                         <td class="p-4 text-ink-900 font-bold">{{ line.stockItem.name }}</td>
                         <td class="p-4 text-center font-mono text-ink-500">{{ line.theoreticalQuantity }}</td>
                         <td class="p-4 text-center">
-                          <input type="number" [(ngModel)]="physicalCountsMap[line.stockItem.id].physicalQuantity" min="0" step="any" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-center font-mono text-xs focus:outline-none focus:border-petrol-600 bg-white" />
+                          <input [attr.aria-label]="'STOCK.UI.PHYSICAL' | translate" type="number" [(ngModel)]="physicalCountsMap[line.stockItem.id].physicalQuantity" min="0" step="any" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-center font-mono text-xs focus:outline-none focus:border-petrol-600 bg-white" />
                         </td>
                         <td class="p-4 text-center font-mono">
                           @let qVar = calculateLineVariance(line.theoreticalQuantity, line.stockItem.id);
-                          <span class="px-2 py-0.5 rounded text-xs font-bold" [ngClass]="qVar > 0 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : qVar < 0 ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-gray-50 text-gray-400 border border-gray-100'">
+                          <span class="px-2 py-0.5 rounded text-xs font-bold" [ngClass]="qVar > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : qVar < 0 ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-gray-50 text-gray-400 border border-gray-100'">
                             {{ qVar > 0 ? '+' : '' }}{{ qVar }}
                           </span>
                         </td>
                         <td class="p-4 text-right text-ink-500">{{ line.stockItem.purchasePrice | number:'1.2-2' }} DH</td>
                         <td class="p-4 text-right font-bold font-mono">
                           @let cVar = calculateLineCostVariance(line.theoreticalQuantity, line.stockItem.purchasePrice, line.stockItem.id);
-                          <span [ngClass]="cVar > 0 ? 'text-emerald-600' : cVar < 0 ? 'text-red-600' : 'text-ink-500'">
+                          <span [ngClass]="cVar > 0 ? 'text-emerald-700' : cVar < 0 ? 'text-red-700' : 'text-ink-500'">
                             {{ cVar > 0 ? '+' : '' }}{{ cVar | number:'1.2-2' }} DH
                           </span>
                         </td>
                         <td class="p-4">
-                          <input type="text" [(ngModel)]="physicalCountsMap[line.stockItem.id].notes" placeholder="Reason for variance..." class="w-full px-2 py-1 border border-ortho-navy/10 rounded text-xs bg-white" />
+                          <input [attr.aria-label]="'STOCK.UI.REMARKS' | translate" type="text" [(ngModel)]="physicalCountsMap[line.stockItem.id].notes" [placeholder]="'STOCK.UI.VARIANCE_REASON' | translate" class="w-full px-2 py-1 border border-ortho-navy/10 rounded text-xs bg-white" />
                         </td>
                       </tr>
                     }
@@ -486,17 +487,17 @@ import { ToastService } from '../../../../core/services/toast.service';
 
               <!-- Cumulative Impact Bar -->
               <div class="p-4 bg-gray-50 border-t border-ortho-navy/5 flex items-center justify-between font-bold text-xs text-ink-900 uppercase tracking-wider">
-                <span>Running Session Variance Summaries</span>
+                <span>{{ 'STOCK.UI.VARIANCE_SUMMARY' | translate }}</span>
                 <div class="flex items-center gap-6 font-mono normal-case">
                   <div>
-                    <span class="text-ink-500 uppercase text-[10px] tracking-wide block">Total Quantity Variance</span>
-                    <span class="text-sm font-extrabold" [ngClass]="getRunningVarianceSum().qty > 0 ? 'text-emerald-600' : getRunningVarianceSum().qty < 0 ? 'text-red-600' : 'text-ink-900'">
+                    <span class="text-ink-500 uppercase text-[10px] tracking-wide block">{{ 'STOCK.UI.TOTAL_QTY_VARIANCE' | translate }}</span>
+                    <span class="text-sm font-extrabold" [ngClass]="getRunningVarianceSum().qty > 0 ? 'text-emerald-700' : getRunningVarianceSum().qty < 0 ? 'text-red-700' : 'text-ink-900'">
                       {{ getRunningVarianceSum().qty > 0 ? '+' : '' }}{{ getRunningVarianceSum().qty }}
                     </span>
                   </div>
                   <div>
-                    <span class="text-ink-500 uppercase text-[10px] tracking-wide block">Financial Cost Impact</span>
-                    <span class="text-sm font-extrabold" [ngClass]="getRunningVarianceSum().cost > 0 ? 'text-emerald-600' : getRunningVarianceSum().cost < 0 ? 'text-red-600' : 'text-ink-900'">
+                    <span class="text-ink-500 uppercase text-[10px] tracking-wide block">{{ 'STOCK.UI.COST_IMPACT' | translate }}</span>
+                    <span class="text-sm font-extrabold" [ngClass]="getRunningVarianceSum().cost > 0 ? 'text-emerald-700' : getRunningVarianceSum().cost < 0 ? 'text-red-700' : 'text-ink-900'">
                       {{ getRunningVarianceSum().cost > 0 ? '+' : '' }}{{ getRunningVarianceSum().cost | number:'1.2-2' }} DH
                     </span>
                   </div>
@@ -512,38 +513,38 @@ import { ToastService } from '../../../../core/services/toast.service';
               <!-- Setup session card -->
               <div class="bg-white p-6 rounded-2xl border border-ortho-navy/5 shadow-sm space-y-4">
                 <div>
-                  <h3 class="text-lg font-bold text-ink-900">New Counting Session</h3>
-                  <p class="text-xs text-ink-500">Freezes active theoretical quantities and starts physical inventory entry.</p>
+                  <h2 class="text-lg font-bold text-ink-900">{{ 'STOCK.UI.NEW_COUNT' | translate }}</h2>
+                  <p class="text-xs text-ink-500">{{ 'STOCK.UI.NEW_COUNT_HINT' | translate }}</p>
                 </div>
 
                 <div class="space-y-2">
-                  <label class="block text-[10px] font-bold text-ink-500 uppercase">Session Notes / Instructions</label>
-                  <textarea [(ngModel)]="reconciliationNotes" placeholder="e.g. Q2 Physical count & shrinkage reconciliation..." rows="3" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs bg-white focus:outline-none focus:border-petrol-600 transition"></textarea>
+                  <label for="stock-dashboard-reconciliationNotes" class="block text-[10px] font-bold text-ink-500 uppercase">{{ 'STOCK.UI.COUNT_NOTES' | translate }}</label>
+                  <textarea id="stock-dashboard-reconciliationNotes" [(ngModel)]="reconciliationNotes" [placeholder]="'STOCK.UI.COUNT_NOTES_HINT' | translate" rows="3" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs bg-white focus:outline-none focus:border-petrol-600 transition"></textarea>
                 </div>
 
                 <button type="button" (click)="startCountSession()" class="w-full py-2.5 bg-petrol-600 text-white hover:bg-petrol-700 font-semibold rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-2">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
-                  Freeze Stock & Start Counting
+                  {{ 'STOCK.UI.START_COUNT' | translate }}
                 </button>
               </div>
 
               <!-- Past Sessions List -->
               <div class="lg:col-span-2 bg-white rounded-2xl border border-ortho-navy/5 shadow-sm overflow-hidden flex flex-col">
                 <div class="p-4 border-b border-ortho-navy/5 bg-ortho-navy/[0.01]">
-                  <h3 class="text-base font-bold text-ink-900">Reconciliation Session History</h3>
-                  <p class="text-xs text-ink-500">View past counting logs, physical audit histories, and accounting posting details.</p>
+                  <h2 class="text-base font-bold text-ink-900">{{ 'STOCK.UI.COUNT_HISTORY' | translate }}</h2>
+                  <p class="text-xs text-ink-500">{{ 'STOCK.UI.COUNT_HISTORY_HINT' | translate }}</p>
                 </div>
 
                 <div class="overflow-x-auto flex-1">
                   <table class="w-full text-left border-collapse text-sm">
                     <thead>
                       <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
-                        <th class="p-4">Session ID</th>
-                        <th class="p-4">Status</th>
-                        <th class="p-4">Frozen Date</th>
-                        <th class="p-4 text-center">Qty Variance</th>
-                        <th class="p-4 text-right">Cost Variance</th>
-                        <th class="p-4">Validated By</th>
+                        <th scope="col" class="p-4">{{ 'STOCK.UI.COUNT_ID' | translate }}</th>
+                        <th scope="col" class="p-4">{{ 'COMMON.STATUS' | translate }}</th>
+                        <th scope="col" class="p-4">{{ 'STOCK.UI.FROZEN_DATE' | translate }}</th>
+                        <th scope="col" class="p-4 text-center">{{ 'STOCK.UI.QTY_VARIANCE' | translate }}</th>
+                        <th scope="col" class="p-4 text-right">{{ 'STOCK.UI.COST_VARIANCE' | translate }}</th>
+                        <th scope="col" class="p-4">{{ 'STOCK.UI.VALIDATED_BY' | translate }}</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-ortho-navy/5 font-semibold">
@@ -551,22 +552,22 @@ import { ToastService } from '../../../../core/services/toast.service';
                         <tr class="hover:bg-ortho-navy/[0.01] transition text-xs font-semibold">
                           <td class="p-4 font-mono text-ink-900">{{ sess.sessionNumber || sess.id.substring(0,8) }}</td>
                           <td class="p-4">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border" [ngClass]="sess.status === 'VALIDATED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border" [ngClass]="sess.status === 'VALIDATED' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'">
                               {{ sess.status }}
                             </span>
                           </td>
                           <td class="p-4 text-ink-500">{{ sess.createdAt | date:'yyyy-MM-dd HH:mm' }}</td>
-                          <td class="p-4 text-center font-mono" [ngClass]="sess.totalQuantityVariance > 0 ? 'text-emerald-600' : sess.totalQuantityVariance < 0 ? 'text-red-600' : 'text-ink-500'">
+                          <td class="p-4 text-center font-mono" [ngClass]="sess.totalQuantityVariance > 0 ? 'text-emerald-700' : sess.totalQuantityVariance < 0 ? 'text-red-700' : 'text-ink-500'">
                             {{ sess.totalQuantityVariance > 0 ? '+' : '' }}{{ sess.totalQuantityVariance || 0 }}
                           </td>
-                          <td class="p-4 text-right font-bold font-mono" [ngClass]="sess.totalCostVariance > 0 ? 'text-emerald-600' : sess.totalCostVariance < 0 ? 'text-red-600' : 'text-ink-500'">
+                          <td class="p-4 text-right font-bold font-mono" [ngClass]="sess.totalCostVariance > 0 ? 'text-emerald-700' : sess.totalCostVariance < 0 ? 'text-red-700' : 'text-ink-500'">
                             {{ sess.totalCostVariance > 0 ? '+' : '' }}{{ (sess.totalCostVariance || 0) | number:'1.2-2' }} DH
                           </td>
                           <td class="p-4 text-ink-500">{{ sess.validatedBy || '-' }}</td>
                         </tr>
                       } @empty {
                         <tr>
-                          <td colspan="6" class="p-8 text-center text-ink-500">No physical count sessions found.</td>
+                          <td colspan="6" class="p-8 text-center text-ink-500">{{ 'STOCK.UI.NO_COUNTS' | translate }}</td>
                         </tr>
                       }
                     </tbody>
@@ -585,10 +586,10 @@ import { ToastService } from '../../../../core/services/toast.service';
       <!-- Add/Edit Stock Item Modal -->
       @if (showItemModal()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ortho-navy/60 backdrop-blur-sm">
-          <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in">
+          <div appDialog="stock-item-title" (dialogClosed)="closeItemModal()" class="bg-white rounded-2xl max-w-lg w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in">
             <div class="px-6 py-4 border-b border-ortho-navy/5 flex items-center justify-between bg-ortho-navy/[0.01]">
-              <h3 class="text-lg font-bold text-ink-900">{{ editMode() ? 'Edit Stock Item' : 'Add Stock Item' }}</h3>
-              <button type="button" (click)="closeItemModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
+              <h2 id="stock-item-title" class="text-lg font-bold text-ink-900">{{ (editMode() ? 'STOCK.UI.EDIT_ITEM' : 'STOCK.UI.ADD_ITEM') | translate }}</h2>
+              <button [attr.aria-label]="'COMMON.CLOSE' | translate" type="button" (click)="closeItemModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -596,28 +597,28 @@ import { ToastService } from '../../../../core/services/toast.service';
             <form (submit)="saveItem()" class="p-6 space-y-4">
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Item Name *</label>
-                  <input type="text" [(ngModel)]="itemForm.name" name="name" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                  <label for="stock-dashboard-itemForm-name" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.ITEM_NAME' | translate }} <span aria-hidden="true">*</span></label>
+                  <input id="stock-dashboard-itemForm-name" type="text" [(ngModel)]="itemForm.name" name="name" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">SKU Code *</label>
-                  <input type="text" [(ngModel)]="itemForm.sku" name="sku" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition font-mono uppercase bg-white" />
+                  <label for="stock-dashboard-itemForm-sku" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.SKU_FIELD' | translate }} <span aria-hidden="true">*</span></label>
+                  <input id="stock-dashboard-itemForm-sku" type="text" [(ngModel)]="itemForm.sku" name="sku" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition font-mono uppercase bg-white" />
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Category *</label>
-                  <select [(ngModel)]="itemForm.category" name="category" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white">
+                  <label for="stock-dashboard-itemForm-category" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.CATEGORY' | translate }} <span aria-hidden="true">*</span></label>
+                  <select id="stock-dashboard-itemForm-category" [(ngModel)]="itemForm.category" name="category" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white">
                     @for (cat of stockCategoriesNoAll; track cat.value) {
                       <option [value]="cat.value">{{ cat.label }}</option>
                     }
                   </select>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Supplier *</label>
-                  <select [(ngModel)]="selectedSupplierId" name="supplierId" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white">
-                    <option [value]="null">No Supplier</option>
+                  <label for="stock-dashboard-selectedSupplierId" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.SUPPLIER' | translate }} <span aria-hidden="true">*</span></label>
+                  <select id="stock-dashboard-selectedSupplierId" [(ngModel)]="selectedSupplierId" name="supplierId" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white">
+                    <option [value]="null">{{ 'STOCK.UI.NO_SUPPLIER' | translate }}</option>
                     @for (sup of suppliers(); track sup.id) {
                       <option [value]="sup.id">{{ sup.name }}</option>
                     }
@@ -627,51 +628,51 @@ import { ToastService } from '../../../../core/services/toast.service';
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">
-                    {{ editMode() ? 'Current Stock' : 'Opening Stock *' }}
+                  <label for="stock-dashboard-itemForm-currentStock" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">
+                    {{ (editMode() ? 'STOCK.UI.CURRENT_STOCK' : 'STOCK.UI.OPENING_STOCK') | translate }}
                   </label>
-                  <input type="number" [(ngModel)]="itemForm.currentStock" name="currentStock" [required]="!editMode()" [disabled]="editMode()" min="0" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white disabled:bg-slate-100 disabled:text-slate-500" />
+                  <input id="stock-dashboard-itemForm-currentStock" type="number" [(ngModel)]="itemForm.currentStock" name="currentStock" [required]="!editMode()" [disabled]="editMode()" min="0" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white disabled:bg-slate-100 disabled:text-slate-500" />
                   @if (editMode()) {
-                    <p class="mt-1 text-xs text-ink-500">Use the Adjustment action to change stock on an existing item.</p>
+                    <p class="mt-1 text-xs text-ink-500">{{ 'STOCK.UI.USE_ADJUST' | translate }}</p>
                   }
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Minimum Alert Qty *</label>
-                  <input type="number" [(ngModel)]="itemForm.minimumStock" name="minimumStock" required min="0" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                  <label for="stock-dashboard-itemForm-minimumStock" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.MIN_ALERT' | translate }} <span aria-hidden="true">*</span></label>
+                  <input id="stock-dashboard-itemForm-minimumStock" type="number" [(ngModel)]="itemForm.minimumStock" name="minimumStock" required min="0" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Bulk Purchase Price (DH) *</label>
-                  <input type="number" step="0.01" [(ngModel)]="itemForm.purchasePrice" name="purchasePrice" required min="0" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                  <label for="stock-dashboard-itemForm-purchasePrice" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.BULK_PRICE' | translate }} <span aria-hidden="true">*</span></label>
+                  <input id="stock-dashboard-itemForm-purchasePrice" type="number" step="0.01" [(ngModel)]="itemForm.purchasePrice" name="purchasePrice" required min="0" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Units per Pack Size *</label>
-                  <input type="number" [(ngModel)]="itemForm.unitSize" name="unitSize" required min="1" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                  <label for="stock-dashboard-itemForm-unitSize" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.PACK_SIZE' | translate }} <span aria-hidden="true">*</span></label>
+                  <input id="stock-dashboard-itemForm-unitSize" type="number" [(ngModel)]="itemForm.unitSize" name="unitSize" required min="1" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Unit of Measurement (UOM) *</label>
-                  <select [ngModel]="itemForm.unitOfMeasure" (ngModelChange)="chooseUnit($event)" name="unitOfMeasure" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white">
+                  <label for="stock-dashboard-itemForm-unitOfMeasure" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.UOM' | translate }} <span aria-hidden="true">*</span></label>
+                  <select id="stock-dashboard-itemForm-unitOfMeasure" [ngModel]="itemForm.unitOfMeasure" (ngModelChange)="chooseUnit($event)" name="unitOfMeasure" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white">
                     @for (u of unitOptions; track u.value) {
                       <option [value]="u.value">{{ u.label }}</option>
                     }
                   </select>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Uses per unit</label>
-                  <input type="number" [(ngModel)]="itemForm.usesPerUnit" name="usesPerUnit" min="1" max="1000" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                  <label for="stock-dashboard-itemForm-usesPerUnit" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.USES_PER_UNIT' | translate }}</label>
+                  <input id="stock-dashboard-itemForm-usesPerUnit" type="number" [(ngModel)]="itemForm.usesPerUnit" name="usesPerUnit" min="1" max="1000" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
                   <p class="mt-1 text-[10px] text-ink-500">
-                    How many times one unit can be used before it is spent. Leave at 1 for anything used up the first time.
+                    {{ 'STOCK.UI.USES_PER_UNIT_HINT' | translate }}
                   </p>
                 </div>
                 <div class="flex items-center pt-5">
                   <label class="flex items-center gap-2 text-xs font-bold text-ink-500 uppercase tracking-wide cursor-pointer select-none">
                     <input type="checkbox" [(ngModel)]="itemForm.decimalSupported" name="decimalSupported" class="w-4 h-4 rounded border-gray-300 text-ink-900 focus:ring-petrol-500" />
-                    Decimal Qty Support
+                    {{ 'STOCK.UI.DECIMALS' | translate }}
                   </label>
                 </div>
               </div>
@@ -684,8 +685,8 @@ import { ToastService } from '../../../../core/services/toast.service';
                    StockItemResponse/Request fields), not before. -->
 
               <div class="flex items-center justify-end gap-3 pt-4 border-t border-ortho-navy/5">
-                <button type="button" (click)="closeItemModal()" class="px-4 py-2 border border-ortho-navy/10 rounded-xl text-sm font-semibold hover:bg-gray-50 transition text-ink-600">Cancel</button>
-                <button type="submit" class="px-5 py-2 bg-petrol-600 text-white rounded-xl text-sm font-semibold hover:bg-petrol-700 transition shadow-sm">Save Item</button>
+                <button type="button" (click)="closeItemModal()" class="px-4 py-2 border border-ortho-navy/10 rounded-xl text-sm font-semibold hover:bg-gray-50 transition text-ink-600">{{ 'COMMON.CANCEL' | translate }}</button>
+                <button type="submit" class="px-5 py-2 bg-petrol-600 text-white rounded-xl text-sm font-semibold hover:bg-petrol-700 transition shadow-sm">{{ 'STOCK.UI.SAVE_ITEM' | translate }}</button>
               </div>
             </form>
           </div>
@@ -695,20 +696,20 @@ import { ToastService } from '../../../../core/services/toast.service';
       <!-- Manual Stock Adjustment Modal -->
       @if (showAdjustmentModal()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ortho-navy/60 backdrop-blur-sm">
-          <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in">
+          <div appDialog="stock-adjust-title" (dialogClosed)="closeAdjustmentModal()" class="bg-white rounded-2xl max-w-md w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in">
             <div class="px-6 py-4 border-b border-ortho-navy/5 flex items-center justify-between bg-ortho-navy/[0.01]">
-              <h3 class="text-lg font-bold text-ink-900">Stock Adjustment</h3>
-              <button type="button" (click)="closeAdjustmentModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
+              <h2 id="stock-adjust-title" class="text-lg font-bold text-ink-900">{{ 'STOCK.UI.ADJUSTMENT' | translate }}</h2>
+              <button [attr.aria-label]="'COMMON.CLOSE' | translate" type="button" (click)="closeAdjustmentModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
             
             <form (submit)="saveAdjustment()" class="p-6 space-y-4">
               <div>
-                <span class="text-xs text-ink-500 font-bold block mb-1 uppercase tracking-wider">Stock Item</span>
+                <span class="text-xs text-ink-500 font-bold block mb-1 uppercase tracking-wider">{{ 'STOCK.UI.STOCK_ITEM' | translate }}</span>
                 <span class="font-bold text-ink-900 block text-base">{{ selectedItem()?.name }}</span>
                 <span class="text-xs text-ink-500 block font-medium">
-                  Current Stock: {{ selectedItem()?.currentStock }} {{ selectedItem()?.unitSymbol || selectedItem()?.unit || 'units' }}
+                  {{ 'STOCK.UI.CURRENT_STOCK' | translate }} : {{ selectedItem()?.currentStock }} {{ selectedItem()?.unitSymbol || selectedItem()?.unit || ('STOCK.UI.UNITS' | translate) }}
                   @if ((selectedItem()?.packCount ?? 0) > 0) {
                     <span class="text-ink-900 font-bold">({{ selectedItem()?.packCount }} × {{ selectedItem()?.unitLabel }})</span>
                   }
@@ -716,18 +717,18 @@ import { ToastService } from '../../../../core/services/toast.service';
               </div>
               
               <div>
-                <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Adjustment Delta (Positive to add, Negative to deduct) *</label>
-                <input type="number" [(ngModel)]="adjustmentQty" name="adjustmentQty" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" placeholder="e.g. 10 or -5" />
+                <label for="stock-dashboard-adjustmentQty" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.ADJUST_DELTA' | translate }} <span aria-hidden="true">*</span></label>
+                <input id="stock-dashboard-adjustmentQty" type="number" [(ngModel)]="adjustmentQty" name="adjustmentQty" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" [placeholder]="'STOCK.UI.ADJUST_DELTA_HINT' | translate" />
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Reason for adjustment *</label>
-                <textarea [(ngModel)]="adjustmentReason" required rows="3" name="reason" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white placeholder-ortho-navy/30" placeholder="e.g. Correcting inventory count discrepancies, manual correction..."></textarea>
+                <label for="stock-dashboard-adjustmentReason" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.ADJUST_REASON' | translate }} <span aria-hidden="true">*</span></label>
+                <textarea id="stock-dashboard-adjustmentReason" [(ngModel)]="adjustmentReason" required rows="3" name="reason" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white placeholder-ortho-navy/30" [placeholder]="'STOCK.UI.ADJUST_REASON_HINT' | translate"></textarea>
               </div>
 
               <div class="flex items-center justify-end gap-3 pt-4 border-t border-ortho-navy/5">
-                <button type="button" (click)="closeAdjustmentModal()" class="px-4 py-2 border border-ortho-navy/10 rounded-xl text-sm font-semibold hover:bg-gray-50 transition text-ink-600">Cancel</button>
-                <button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition shadow-sm">Confirm Adjustment</button>
+                <button type="button" (click)="closeAdjustmentModal()" class="px-4 py-2 border border-ortho-navy/10 rounded-xl text-sm font-semibold hover:bg-gray-50 transition text-ink-600">{{ 'COMMON.CANCEL' | translate }}</button>
+                <button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition shadow-sm">{{ 'STOCK.UI.CONFIRM_ADJUST' | translate }}</button>
               </div>
             </form>
           </div>
@@ -737,44 +738,44 @@ import { ToastService } from '../../../../core/services/toast.service';
       <!-- Add/Edit Supplier Modal -->
       @if (showSupplierModal()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ortho-navy/60 backdrop-blur-sm">
-          <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in">
+          <div appDialog="stock-supplier-title" (dialogClosed)="closeSupplierModal()" class="bg-white rounded-2xl max-w-md w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in">
             <div class="px-6 py-4 border-b border-ortho-navy/5 flex items-center justify-between bg-ortho-navy/[0.01]">
-              <h3 class="text-lg font-bold text-ink-900">{{ editSupplierMode() ? 'Edit Supplier' : 'Register Supplier' }}</h3>
-              <button type="button" (click)="closeSupplierModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
+              <h2 id="stock-supplier-title" class="text-lg font-bold text-ink-900">{{ (editSupplierMode() ? 'STOCK.UI.EDIT_SUPPLIER' : 'STOCK.UI.REGISTER_SUPPLIER') | translate }}</h2>
+              <button [attr.aria-label]="'COMMON.CLOSE' | translate" type="button" (click)="closeSupplierModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
             
             <form (submit)="saveSupplier()" class="p-6 space-y-4">
               <div>
-                <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Company Name *</label>
-                <input type="text" [(ngModel)]="supplierForm.name" name="name" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                <label for="stock-dashboard-supplierForm-name" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.COMPANY' | translate }} <span aria-hidden="true">*</span></label>
+                <input id="stock-dashboard-supplierForm-name" type="text" [(ngModel)]="supplierForm.name" name="name" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Contact Name</label>
-                <input type="text" [(ngModel)]="supplierForm.contactName" name="contactName" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                <label for="stock-dashboard-supplierForm-contactName" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.CONTACT_NAME' | translate }}</label>
+                <input id="stock-dashboard-supplierForm-contactName" type="text" [(ngModel)]="supplierForm.contactName" name="contactName" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
               </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Email</label>
-                  <input type="email" [(ngModel)]="supplierForm.email" name="email" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                  <label for="stock-dashboard-supplierForm-email" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.EMAIL' | translate }}</label>
+                  <input id="stock-dashboard-supplierForm-email" type="email" [(ngModel)]="supplierForm.email" name="email" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Phone Number</label>
-                  <input type="text" [(ngModel)]="supplierForm.phone" name="phone" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                  <label for="stock-dashboard-supplierForm-phone" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.PHONE' | translate }}</label>
+                  <input id="stock-dashboard-supplierForm-phone" type="text" [(ngModel)]="supplierForm.phone" name="phone" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">Corporate Address</label>
-                <textarea [(ngModel)]="supplierForm.address" name="address" rows="2" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white"></textarea>
+                <label for="stock-dashboard-supplierForm-address" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.ADDRESS' | translate }}</label>
+                <textarea id="stock-dashboard-supplierForm-address" [(ngModel)]="supplierForm.address" name="address" rows="2" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white"></textarea>
               </div>
 
               <div class="flex items-center justify-end gap-3 pt-4 border-t border-ortho-navy/5">
-                <button type="button" (click)="closeSupplierModal()" class="px-4 py-2 border border-ortho-navy/10 rounded-xl text-sm font-semibold hover:bg-gray-50 transition text-ink-600">Cancel</button>
-                <button type="submit" class="px-5 py-2 bg-petrol-600 text-white rounded-xl text-sm font-semibold hover:bg-petrol-700 transition shadow-sm">Save Supplier</button>
+                <button type="button" (click)="closeSupplierModal()" class="px-4 py-2 border border-ortho-navy/10 rounded-xl text-sm font-semibold hover:bg-gray-50 transition text-ink-600">{{ 'COMMON.CANCEL' | translate }}</button>
+                <button type="submit" class="px-5 py-2 bg-petrol-600 text-white rounded-xl text-sm font-semibold hover:bg-petrol-700 transition shadow-sm">{{ 'STOCK.UI.SAVE_SUPPLIER' | translate }}</button>
               </div>
             </form>
           </div>
@@ -794,6 +795,7 @@ import { ToastService } from '../../../../core/services/toast.service';
   `]
 })
 export class StockDashboardComponent implements OnInit, OnDestroy {
+  private readonly translate = inject(TranslateService);
   private stockService = inject(StockService);
   private confirmDialog = inject(ConfirmDialogService);
   private toast = inject(ToastService);
@@ -983,6 +985,14 @@ export class StockDashboardComponent implements OnInit, OnDestroy {
    * Returns the sort icon character for a given table + column.
    * Active column shows solid arrow; inactive shows neutral double-arrow.
    */
+  /** The sorted column says so itself: the arrow in it is only for the eye. */
+  ariaSort(table: 'catalog' | 'mov', column: string): 'ascending' | 'descending' | 'none' {
+    const activeCol = table === 'catalog' ? this.catalogSortBy() : this.movSortBy();
+    const activeDir = table === 'catalog' ? this.catalogSortDir() : this.movSortDir();
+    if (activeCol !== column) return 'none';
+    return activeDir === 'ASC' ? 'ascending' : 'descending';
+  }
+
   getSortIcon(table: 'catalog' | 'mov', column: string): string {
     const activeCol = table === 'catalog' ? this.catalogSortBy() : this.movSortBy();
     const activeDir = table === 'catalog' ? this.catalogSortDir() : this.movSortDir();
@@ -1055,7 +1065,7 @@ export class StockDashboardComponent implements OnInit, OnDestroy {
 
     this.stockService.updateCountSessionLines(session.id, payload).subscribe({
       next: () => {
-        this.toast.success('Draft counts saved successfully!');
+        this.toast.success(this.translate.instant('STOCK.UI.DRAFT_SAVED'));
         this.loadReconciliationData();
       },
       error: (err) => {
@@ -1069,8 +1079,8 @@ export class StockDashboardComponent implements OnInit, OnDestroy {
     if (!session) return;
 
     const confirmed = await this.confirmDialog.confirm(
-      'Are you sure you want to validate and POST these physical counts? This will adjust your inventory balances immediately.',
-      { danger: true, confirmLabel: 'Post & Adjust Inventory' }
+      this.translate.instant('STOCK.UI.POST_CONFIRM'),
+      { danger: true, confirmLabel: this.translate.instant('STOCK.UI.POST_ADJUST') }
     );
     if (!confirmed) return;
 
@@ -1084,7 +1094,7 @@ export class StockDashboardComponent implements OnInit, OnDestroy {
       next: () => {
         this.stockService.validateCountSession(session.id, 'Admin User').subscribe({
           next: () => {
-            this.toast.success('Physical count reconciliation validated and posted successfully! Stock balances updated.');
+            this.toast.success(this.translate.instant('STOCK.UI.POSTED'));
             this.loadAllData();
           },
           error: (err) => {
@@ -1103,14 +1113,14 @@ export class StockDashboardComponent implements OnInit, OnDestroy {
     if (!session) return;
 
     const confirmed = await this.confirmDialog.confirm(
-      'Are you sure you want to cancel this physical count session? All entered counts will be lost.',
-      { danger: true, confirmLabel: 'Cancel Session' }
+      this.translate.instant('STOCK.UI.COUNT_CANCEL_CONFIRM'),
+      { danger: true, confirmLabel: this.translate.instant('STOCK.UI.CANCEL_COUNT') }
     );
     if (!confirmed) return;
 
     this.stockService.cancelCountSession(session.id).subscribe({
       next: () => {
-        this.toast.info('Physical count session cancelled.');
+        this.toast.info(this.translate.instant('STOCK.UI.COUNT_CANCELLED'));
         this.loadReconciliationData();
       },
       error: (err) => {
@@ -1216,14 +1226,14 @@ export class StockDashboardComponent implements OnInit, OnDestroy {
 
   async deleteItem(item: StockItem) {
     const confirmed = await this.confirmDialog.confirm(
-      `Are you sure you want to delete '${item.name}' from the catalog?`,
-      { danger: true, confirmLabel: 'Delete' }
+      this.translate.instant('STOCK.UI.ITEM_DELETE_CONFIRM', { name: item.name }),
+      { danger: true, confirmLabel: this.translate.instant('COMMON.DELETE') }
     );
     if (!confirmed) return;
 
     this.stockService.deleteStockItem(item.id).subscribe({
       next: () => {
-        this.toast.success('Item deleted from catalog.');
+        this.toast.success(this.translate.instant('STOCK.UI.ITEM_DELETED'));
         this.reloadCatalog();
       },
       error: (err) => {
@@ -1304,14 +1314,14 @@ export class StockDashboardComponent implements OnInit, OnDestroy {
 
   async deleteSupplier(supplier: Supplier) {
     const confirmed = await this.confirmDialog.confirm(
-      `Are you sure you want to delete supplier '${supplier.name}'?`,
-      { danger: true, confirmLabel: 'Delete' }
+      this.translate.instant('STOCK.UI.SUPPLIER_DELETE_CONFIRM', { name: supplier.name }),
+      { danger: true, confirmLabel: this.translate.instant('COMMON.DELETE') }
     );
     if (!confirmed) return;
 
     this.stockService.deleteSupplier(supplier.id).subscribe({
       next: () => {
-        this.toast.success('Supplier deleted.');
+        this.toast.success(this.translate.instant('STOCK.UI.SUPPLIER_DELETED'));
         this.loadAllData();
       },
       error: (err) => {
@@ -1329,13 +1339,13 @@ export class StockDashboardComponent implements OnInit, OnDestroy {
   getMovementTypeClasses(type: MovementType): string {
     switch (type) {
       case 'IN':
-        return 'bg-emerald-50 text-emerald-600 border-emerald-200';
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
       case 'OUT':
-        return 'bg-red-50 text-red-600 border-red-200';
+        return 'bg-red-50 text-red-700 border-red-200';
       case 'ADJUSTMENT':
-        return 'bg-blue-50 text-blue-600 border-blue-200';
+        return 'bg-blue-50 text-blue-700 border-blue-200';
       case 'RETURN':
-        return 'bg-amber-50 text-amber-500 border-amber-200';
+        return 'bg-amber-50 text-amber-700 border-amber-200';
       case 'WRITE_OFF':
         return 'bg-gray-50 text-gray-500 border-gray-200';
       default:

@@ -27,7 +27,8 @@ export class ToastService {
     this.push(message, 'success', durationMs);
   }
 
-  error(message: string, durationMs = 7000): void {
+  /** Stays until dismissed: seven seconds is not long enough for everyone to read why something failed. */
+  error(message: string, durationMs = 0): void {
     this.push(message, 'error', durationMs);
   }
 

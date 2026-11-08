@@ -1,4 +1,4 @@
-<main id="top" class="w-full bg-[#f8fafc]">
+<main id="top" class="w-full bg-app-bg">
   <!-- Hero Section -->
   <section class="relative overflow-hidden bg-white px-4 py-12 sm:px-6 sm:py-20">
     <div class="absolute inset-0 bg-[radial-gradient(#caf0f8_1px,transparent_1px)] [background-size:40px_40px] opacity-20"></div>
@@ -25,7 +25,7 @@
           </span>
 
           <h1 class="mt-6 text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight text-ink-900">
-            {{ 'LANDING.RELIABLE_SOFTWARE' | translate }} <span class="text-ortho-teal">{{ 'LANDING.CARE' | translate }}</span>
+            {{ 'LANDING.RELIABLE_SOFTWARE' | translate }} <span class="text-petrol-700">{{ 'LANDING.CARE' | translate }}</span>
           </h1>
 
           <p class="mt-6 text-lg leading-relaxed text-ink-500">
@@ -46,7 +46,7 @@
         <div id="webapp" class="relative">
           <div class="absolute -right-10 -top-10 h-72 w-72 rounded-full bg-ortho-teal/10 blur-3xl"></div>
           <div class="tile overflow-hidden rounded-2xl bg-white p-2 shadow-2xl transition-all duration-700 hover:scale-[1.02]">
-            <div class="flex h-[400px] rounded-xl overflow-hidden bg-[#f8fafc]">
+            <div class="flex h-[400px] rounded-xl overflow-hidden bg-app-bg">
                <!-- Mock Sidebar -->
                <div class="w-16 flex-col border-r border-ortho-navy/5 bg-white hidden sm:flex">
                 <div class="h-12 flex items-center justify-center border-b border-ortho-navy/5">
@@ -81,7 +81,7 @@
   </section>
 
   <!-- Features Grid -->
-  <section id="features" class="bg-[#f8fafc] px-4 py-20 sm:px-6">
+  <section id="features" class="bg-app-bg px-4 py-20 sm:px-6">
     <div class="mx-auto max-w-7xl">
       <div class="mb-16 text-center">
         <h2 class="text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl">{{ 'LANDING.ONE_PLACE' | translate }}</h2>
@@ -108,8 +108,8 @@
       <div class="grid gap-12 sm:grid-cols-3">
         @for (stat of stats; track stat.key) {
           <div class="text-center">
-            <strong class="block text-5xl font-bold tracking-tight text-ortho-sky">{{ stat.value }}</strong>
-            <span class="mt-2 block text-sm font-bold uppercase tracking-widest text-white/40">{{ stat.key | translate }}</span>
+            <strong class="block text-5xl font-bold tracking-tight text-white">{{ stat.value }}</strong>
+            <span class="mt-2 block text-sm font-bold uppercase tracking-widest text-white">{{ stat.key | translate }}</span>
           </div>
         }
       </div>
@@ -131,11 +131,11 @@
         </div>
         <nav class="flex flex-wrap gap-x-8 gap-y-4">
           @for (link of footerLinks; track link) {
-            <a href="#" class="text-sm font-semibold text-ink-500 hover:text-ortho-teal transition-colors">{{ link }}</a>
+            <a href="#" class="text-sm font-semibold text-ink-500 hover:text-petrol-700 transition-colors">{{ link }}</a>
           }
         </nav>
       </div>
-      <div class="mt-12 text-center text-xs text-ink-400">
+      <div class="mt-12 text-center text-xs text-ink-500">
         © 2024 OrthoFlow Inc. All rights reserved.
       </div>
     </div>

@@ -7,11 +7,13 @@ import { Observable, BehaviorSubject, map, tap, finalize, switchMap, shareReplay
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Injectable({
   providedIn: 'root'
 })
 export class InvoiceService {
+  private readonly translate = inject(TranslateService);
   private http = inject(HttpClient);
   private toast = inject(ToastService);
   private auth = inject(AuthService);
@@ -67,7 +69,7 @@ export class InvoiceService {
         error: (err) => {
           console.error('Failed to refresh billing data', err);
           this.errorSignal.set('Failed to load billing data.');
-          this.toast.error('Could not load billing data. Please try again.');
+          this.toast.error(this.translate.instant('BILLING.FORM.LOAD_FAILED'));
         }
       });
   }

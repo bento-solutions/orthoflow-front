@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../../core/services/api-error.service';
 import { PracticeProfileService } from '../../../core/services/practice-profile.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -51,9 +51,9 @@ const hhmm = (t: string | null | undefined): string => (t ?? '').slice(0, 5);
       <div class="table-wrap"><div class="table-scroll">
         <table class="data-table">
           <thead><tr>
-            <th>{{ 'SET.HOURS.DAY' | translate }}</th><th>{{ 'SET.HOURS.CLOSED' | translate }}</th>
-            <th>{{ 'SET.HOURS.OPENS' | translate }}</th><th>{{ 'SET.HOURS.CLOSES' | translate }}</th>
-            <th>{{ 'SET.HOURS.BREAK_FROM' | translate }}</th><th>{{ 'SET.HOURS.BREAK_TO' | translate }}</th>
+            <th scope="col">{{ 'SET.HOURS.DAY' | translate }}</th><th scope="col">{{ 'SET.HOURS.CLOSED' | translate }}</th>
+            <th scope="col">{{ 'SET.HOURS.OPENS' | translate }}</th><th scope="col">{{ 'SET.HOURS.CLOSES' | translate }}</th>
+            <th scope="col">{{ 'SET.HOURS.BREAK_FROM' | translate }}</th><th scope="col">{{ 'SET.HOURS.BREAK_TO' | translate }}</th>
           </tr></thead>
           <tbody>
             @for (d of days(); track d.weekday; let i = $index) {
@@ -79,6 +79,7 @@ const hhmm = (t: string | null | undefined): string => (t ?? '').slice(0, 5);
   `,
 })
 export class OpeningHoursComponent {
+  private readonly translate = inject(TranslateService);
   private readonly profile = inject(PracticeProfileService);
   private readonly errors = inject(ApiErrors);
   private readonly toast = inject(ToastService);
@@ -107,7 +108,7 @@ export class OpeningHoursComponent {
           breakStart: d.breakStart || undefined, breakEnd: d.breakEnd || undefined,
         })),
       });
-      this.toast.success('✓');
+      this.toast.success(this.translate.instant('COMMON.SAVED'));
     } catch (error) {
       this.errors.report(error);
     } finally {

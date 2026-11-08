@@ -39,6 +39,12 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    /* What the keyboard lands on must not end up under the sticky header (WCAG 2.4.11). */
+    scroll-padding-top: 5rem;
+  }
+  /* The dossier's own header is taller, and stays too, from the width at which it sticks. */
+  @media (min-width: 769px) {
+    html:has(.dossier-header) { scroll-padding-top: 16rem; }
   }
 
   body {
@@ -64,6 +70,10 @@
     font-weight: 700;
     letter-spacing: -0.011em;
     margin: 0;
+    /* A long French word in a large title is wider than a phone: it breaks rather than push
+       the page sideways (WCAG 1.4.10), hyphenated where the language allows. */
+    overflow-wrap: break-word;
+    hyphens: auto;
   }
 
   /* Tighter tracking as type gets larger — large text set at body tracking
@@ -74,6 +84,11 @@
 
   p { margin: 0; }
 
+  /* A grid item will not shrink below what is inside it unless told it may: without this, one wide
+     table pushes the whole page past the edge of a phone, its own scrollbar never coming into play. */
+  :where(.grid) > * { min-width: 0; }
+  select { max-width: 100%; }
+
   /* One focus ring for the entire product. `!important` is deliberate: the
      codebase still carries ~84 component-level `outline: none` rules, and
      the ring has to survive every one of them (WCAG 2.4.7). */
@@ -83,14 +98,28 @@
     border-radius: var(--radius-xs);
   }
 
+  /* Focus is sent here after a page change. It is a place to start from, not a control. */
+  main[tabindex='-1']:focus-visible { outline: none !important; }
+
   /* On the dark sidebar the standard ring would not clear 3:1. */
   .on-inverse :where(a, button, [tabindex]):focus-visible {
     outline-color: var(--focus-ring-inverse) !important;
   }
 
+  /* Windows High Contrast replaces every colour, so what only a background said has to be said
+     another way: which item is current, which option is on. */
+  @media (forced-colors: active) {
+    .nav-link-active, .seg-item[aria-pressed='true'], .tab[aria-selected='true'], .tab.is-active,
+    [aria-pressed='true'], [aria-selected='true'], [aria-current='page'] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+    .btn, .input, .select, .textarea, .card { border: 1px solid ButtonBorder; }
+  }
+
   ::selection {
     background: rgb(var(--petrol-200));
-    color: rgb(var(--petrol-900));
+    color: rgb(var(--petrol-800));
   }
 
   ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -187,6 +216,12 @@
       transform var(--dur-1) var(--ease-out);
   }
 
+  /* At 320px wide a long label has to wrap, or the page scrolls sideways (WCAG 1.4.10). */
+  @media (max-width: 480px) {
+    .btn { white-space: normal; line-height: 1.2; text-align: center; }
+    .data-table thead th { white-space: normal; }
+  }
+
   /* 1px is the whole gesture. The old `active:scale-95` was a consumer-app
      flourish; a 1px depress reads as a physical button without the bounce. */
   .btn:not(:disabled):active { transform: translateY(1px); }
@@ -255,7 +290,7 @@
      reads as quiet until hovered, so it is hard to hit by accident. */
   .btn-danger-ghost {
     background: transparent;
-    color: rgb(var(--critical-600));
+    color: rgb(var(--critical-700));
     border-color: transparent;
   }
   .btn-danger-ghost:not(:disabled):hover {
@@ -353,9 +388,10 @@
   }
   .page-actions {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--space-2);
-    flex-shrink: 0;
+    max-width: 100%;
   }
 
   /* ── Status pills ───────────────────────────────────────────────────── */
@@ -407,7 +443,7 @@
      that produces bad data. */
   .label-required::after {
     content: '*';
-    color: rgb(var(--critical-600));
+    color: rgb(var(--critical-700));
     margin-inline-start: 0.1875rem;
   }
 
@@ -563,6 +599,22 @@
   .row-clickable:hover { box-shadow: inset 3px 0 0 var(--action); }
   [dir='rtl'] .row-clickable:hover { box-shadow: inset -3px 0 0 var(--action); }
 
+  /* A sortable column's heading is a button that still looks like the heading it is. */
+  .sort-button {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    text-align: inherit;
+    cursor: pointer;
+    user-select: none;
+  }
+  .sort-button:hover { color: var(--text); }
+
   /* Money and counts right-align so magnitudes compare down the column. */
   .cell-num { text-align: end; font-variant-numeric: tabular-nums; }
   .cell-actions { text-align: end; white-space: nowrap; }
@@ -611,6 +663,7 @@
 
   .seg {
     display: inline-flex;
+    flex-wrap: wrap;
     padding: 3px;
     gap: 2px;
     background: var(--surface-sunken);

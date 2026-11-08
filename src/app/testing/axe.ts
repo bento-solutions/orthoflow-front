@@ -9,9 +9,9 @@ import axe from 'axe-core';
  */
 export async function expectNoA11yViolations(element: Element): Promise<void> {
   const results = await axe.run(element, {
-    // 'best-practice' rules are noisy opinions, not WCAG failures — scoped
-    // to the two rulesets the audit actually measured against (WCAG 2.1 AA).
-    runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] },
+    // 'best-practice' rules are noisy opinions, not WCAG failures: tools/a11y/audit.mjs reports
+    // those for a whole page. A component on its own is held to WCAG 2.2 A and AA.
+    runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] },
   });
 
   if (results.violations.length > 0) {

@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, inject, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, computed } from '@angular/core';
 import { Router, NavigationEnd, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs/operators';
@@ -55,27 +55,30 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
   imports: [TranslateModule, IconComponent, NotificationBellComponent, RouterLink, CanDirective],
   template: `
     <header
-      class="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-ink-100 bg-surface/85 px-4 backdrop-blur-md md:px-6"
+      class="z-20 flex min-h-16 flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-ink-100 bg-surface/85 px-4 py-2 backdrop-blur-md md:sticky md:top-0 md:h-16 md:flex-nowrap md:px-6 md:py-0"
     >
       <div class="flex min-w-0 items-center gap-2">
         <button
           type="button"
           (click)="menuToggle.emit()"
-          class="btn btn-ghost btn-icon md:hidden"
+          class="btn btn-ghost btn-icon shrink-0 md:hidden"
+          data-menu-toggle
           [attr.aria-label]="'NAV.MAIN' | translate"
+          [attr.aria-expanded]="menuOpen"
         >
           <app-icon name="menu" [size]="20" />
         </button>
 
         <div class="min-w-0">
-          <h1 class="truncate text-lg font-bold leading-tight tracking-[-0.014em] text-ink-900">
+          <!-- Which part of the product this is. The screen's own heading is its h1. -->
+          <p class="truncate text-lg font-bold leading-tight tracking-[-0.014em] text-ink-900">
             {{ sectionTitle() | translate }}
-          </h1>
+          </p>
           <p class="truncate text-xs font-medium text-ink-500">{{ today() }}</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-1 sm:gap-2">
         <!-- Search is the command palette's affordance. Showing the shortcut
              on the control is how the shortcut gets learned. -->
         <button
@@ -83,11 +86,11 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
           (click)="commandRegistry.open()"
           data-tour="search"
           class="hidden items-center gap-2 rounded-md border border-ink-200 bg-app-bg px-2.5 py-1.5 text-sm text-ink-500 transition-colors duration-1 ease-out hover:border-ink-300 hover:text-ink-900 lg:flex"
-          [attr.aria-label]="'COMMON.OPEN_SEARCH' | translate"
+          aria-keyshortcuts="Meta+K Control+K"
         >
           <app-icon name="search" [size]="15" />
           <span class="pe-6">{{ 'COMMON.SEARCH' | translate }}</span>
-          <kbd class="kbd">⌘K</kbd>
+          <kbd class="kbd" aria-hidden="true">⌘K</kbd>
         </button>
 
         <button
@@ -119,7 +122,8 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
         <div class="mx-1 hidden h-6 w-px bg-ink-200 sm:block"></div>
 
         <!-- Account -->
-        <a routerLink="/account" class="flex items-center gap-2.5 rounded-md py-0.5 pe-1 hover:bg-ink-50" [attr.aria-label]="'NAV.ACCOUNT' | translate">
+        <a routerLink="/account" class="flex items-center gap-2.5 rounded-md py-0.5 pe-1 hover:bg-ink-50">
+          <span class="sr-only">{{ 'NAV.ACCOUNT' | translate }}</span>
           <div
             class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-petrol-100 text-xs font-bold text-petrol-700"
             aria-hidden="true"
@@ -149,6 +153,8 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
   `,
 })
 export class HeaderComponent {
+  /** Whether the navigation drawer is out, on a screen small enough to have one. */
+  @Input() menuOpen = false;
   @Output() menuToggle = new EventEmitter<void>();
 
   private auth = inject(AuthService);

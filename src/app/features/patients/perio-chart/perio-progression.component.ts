@@ -5,6 +5,7 @@ import { ApexOptions, NgApexchartsModule } from 'ng-apexcharts';
 import { map } from 'rxjs';
 import { PerioChartListItem } from '../../../core/clinical/perio/perio.model';
 import { Trend, hasProgression, progressionPoints, trendsOf } from './perio-progression';
+import { describedChart } from '../../../core/utils/chart-summary';
 
 /* ApexCharts is configured in JavaScript and cannot read CSS custom properties: the grey of the axes and
    gridlines is mirrored here from tokens.css (ink-500, ink-100). */
@@ -92,7 +93,7 @@ export class PerioProgressionComponent {
     this.lang();
     return trendsOf(points).map((trend) => ({
       key: trend.key,
-      options: {
+      options: describedChart(this.translate.instant(`PERIO.PROGRESSION.${trend.key}_TITLE`), {
         series: trend.series.map((s) => ({ name: this.translate.instant(`PERIO.PROGRESSION.METRIC_${s.metric}`), data: [...s.values] })),
         colors: trend.series.map((s) => s.color),
         chart: {
@@ -113,7 +114,7 @@ export class PerioProgressionComponent {
         grid: { borderColor: INK_100, strokeDashArray: 4, padding: { left: 8, right: 8, top: 0 }, xaxis: { lines: { show: false } } },
         tooltip: { theme: 'light', y: { formatter: (v: number) => (v == null ? '—' : `${v}${trend.unit === '%' ? '%' : ' mm'}`) } },
         legend: { show: trend.series.length > 1, position: 'bottom', fontSize: '12px', markers: { size: 6 } },
-      } as ApexOptions,
+      } as ApexOptions),
     }));
   });
 }

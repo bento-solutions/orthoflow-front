@@ -2,7 +2,7 @@ import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CabinetService, CabinetInfo } from '../../core/services/cabinet.service';
 import { AuthApiService } from '../../core/services/auth-api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -30,11 +30,11 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
         
         <!-- Language selector -->
         <div class="flex gap-2 text-xs font-semibold text-slate-500">
-          <button type="button" (click)="changeLang('fr')" class="hover:text-ink-900" [class.text-ink-900]="isLang('fr')">FR</button>
-          <span>|</span>
-          <button type="button" (click)="changeLang('en')" class="hover:text-ink-900" [class.text-ink-900]="isLang('en')">EN</button>
-          <span>|</span>
-          <button type="button" (click)="changeLang('ar')" class="hover:text-ink-900" [class.text-ink-900]="isLang('ar')">AR</button>
+          <button type="button" lang="fr" aria-label="Français" [attr.aria-pressed]="isLang('fr')" (click)="changeLang('fr')" class="hover:text-ink-900" [class.text-ink-900]="isLang('fr')">FR</button>
+          <span aria-hidden="true">|</span>
+          <button type="button" lang="en" aria-label="English" [attr.aria-pressed]="isLang('en')" (click)="changeLang('en')" class="hover:text-ink-900" [class.text-ink-900]="isLang('en')">EN</button>
+          <span aria-hidden="true">|</span>
+          <button type="button" lang="ar" aria-label="العربية" [attr.aria-pressed]="isLang('ar')" (click)="changeLang('ar')" class="hover:text-ink-900" [class.text-ink-900]="isLang('ar')">AR</button>
         </div>
       </header>
 
@@ -47,10 +47,10 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
             <div class="step-container flex-1 flex flex-col justify-between py-4 text-center">
               <div class="my-auto space-y-4">
                 <h1 class="welcome-hello text-4xl font-extrabold text-ink-900 dark:text-white tracking-tight">
-                  Hello
+                  {{ 'ONBOARDING.UI.HELLO' | translate }}
                 </h1>
                 <p class="welcome-sub text-lg text-slate-500 dark:text-slate-500 font-medium px-4">
-                  Welcome to your OrthoFlow experience.
+                  {{ 'ONBOARDING.UI.WELCOME' | translate }}
                 </p>
               </div>
               <button 
@@ -58,7 +58,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                 (click)="nextStep()"
                 class="w-full py-3.5 bg-petrol-600 text-white font-bold rounded-xl shadow-md hover:bg-petrol-700 hover:shadow-lg transition-all active:scale-[0.98] shrink-0"
               >
-                Get Started
+                {{ 'ONBOARDING.UI.GET_STARTED' | translate }}
               </button>
             </div>
           }
@@ -68,8 +68,8 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
             <div class="step-container flex-1 flex flex-col justify-between overflow-hidden">
               <div class="space-y-4 overflow-y-auto pe-1">
                 <div>
-                  <h2 class="text-xl font-bold text-ink-900 dark:text-white tracking-tight">Who are you?</h2>
-                  <p class="text-xs text-slate-500 mt-0.5">Select your primary role to configure your clinical account workspace.</p>
+                  <h2 class="text-xl font-bold text-ink-900 dark:text-white tracking-tight">{{ 'ONBOARDING.UI.WHO' | translate }}</h2>
+                  <p class="text-xs text-slate-500 mt-0.5">{{ 'ONBOARDING.UI.WHO_HINT' | translate }}</p>
                 </div>
 
                 <div class="grid grid-cols-1 gap-3 py-2">
@@ -93,8 +93,8 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                     </div>
                     <div>
-                      <p class="font-bold text-sm text-slate-900 dark:text-white" [class.text-ink-900]="selectedRole() === 'doctor'">Orthodontist / Doctor</p>
-                      <p class="text-xs text-slate-500 mt-0.5">Manage patient files, plan dental treatments, &amp; issue invoices.</p>
+                      <p class="font-bold text-sm text-slate-900 dark:text-white" [class.text-ink-900]="selectedRole() === 'doctor'">{{ 'ONBOARDING.UI.ROLE_DOCTOR' | translate }}</p>
+                      <p class="text-xs text-slate-500 mt-0.5">{{ 'ONBOARDING.UI.ROLE_DOCTOR_HINT' | translate }}</p>
                     </div>
                   </button>
 
@@ -118,8 +118,8 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-3-3.87"></path><path d="M9 21v-2a4 4 0 0 0-4-4H3a4 4 0 0 0-4 4v2"></path><circle cx="6" cy="7" r="4"></circle><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                     </div>
                     <div>
-                      <p class="font-bold text-sm text-slate-900 dark:text-white" [class.text-ink-900]="selectedRole() === 'assistant'">Clinical Assistant</p>
-                      <p class="text-xs text-slate-500 mt-0.5">Manage patient scheduling, administrative paperwork &amp; intake reports.</p>
+                      <p class="font-bold text-sm text-slate-900 dark:text-white" [class.text-ink-900]="selectedRole() === 'assistant'">{{ 'ONBOARDING.UI.ROLE_ASSISTANT' | translate }}</p>
+                      <p class="text-xs text-slate-500 mt-0.5">{{ 'ONBOARDING.UI.ROLE_ASSISTANT_HINT' | translate }}</p>
                     </div>
                   </button>
                 </div>
@@ -133,7 +133,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                   [disabled]="!selectedRole()"
                   class="btn-primary px-6 py-3 bg-petrol-600 hover:bg-petrol-700 text-white font-bold rounded-xl flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none transition-all active:scale-[0.98]"
                 >
-                  Continue
+                  {{ 'ONBOARDING.UI.CONTINUE' | translate }}
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                 </button>
               </div>
@@ -145,8 +145,8 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
             <div class="step-container flex-1 flex flex-col justify-between overflow-hidden">
               <div class="space-y-4 overflow-y-auto pe-1">
                 <div>
-                  <h2 class="text-xl font-bold text-ink-900 dark:text-white tracking-tight">Create Your Account</h2>
-                  <p class="text-xs text-slate-500 mt-0.5">This is how you'll sign in to OrthoFlow going forward.</p>
+                  <h2 class="text-xl font-bold text-ink-900 dark:text-white tracking-tight">{{ 'ONBOARDING.UI.CREATE_ACCOUNT' | translate }}</h2>
+                  <p class="text-xs text-slate-500 mt-0.5">{{ 'ONBOARDING.UI.CREATE_ACCOUNT_HINT' | translate }}</p>
                 </div>
 
                 @if (accountError()) {
@@ -158,7 +158,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                         (click)="goToLogin()"
                         class="w-full py-2 bg-red-700 hover:bg-red-800 text-white font-bold rounded-lg text-xs transition-all active:scale-[0.98]"
                       >
-                        Go to Login
+                        {{ 'ONBOARDING.UI.GO_TO_LOGIN' | translate }}
                       </button>
                     }
                   </div>
@@ -167,30 +167,30 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                 <div class="space-y-3.5">
                   <div class="grid grid-cols-2 gap-3">
                     <div class="space-y-1.5">
-                      <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">First Name *</label>
-                      <input type="text" [(ngModel)]="accountFirstName" placeholder="Amine"
+                      <label for="onboarding-accountFirstName" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.FIRST_NAME' | translate }} <span aria-hidden="true">*</span></label>
+                      <input id="onboarding-accountFirstName" type="text" [(ngModel)]="accountFirstName" placeholder="Amine"
                         class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm outline-none transition-all focus:border-ortho-sky focus:ring-4 focus:ring-ortho-sky/5 text-slate-900 dark:text-white" />
                     </div>
                     <div class="space-y-1.5">
-                      <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Last Name *</label>
-                      <input type="text" [(ngModel)]="accountLastName" placeholder="El Mansouri"
+                      <label for="onboarding-accountLastName" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.LAST_NAME' | translate }} <span aria-hidden="true">*</span></label>
+                      <input id="onboarding-accountLastName" type="text" [(ngModel)]="accountLastName" placeholder="El Mansouri"
                         class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm outline-none transition-all focus:border-ortho-sky focus:ring-4 focus:ring-ortho-sky/5 text-slate-900 dark:text-white" />
                     </div>
                   </div>
                   <div class="space-y-1.5">
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Email *</label>
-                    <input type="email" [(ngModel)]="accountEmail" placeholder="doctor@orthoflow.com" autocomplete="username"
+                    <label for="onboarding-accountEmail" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.EMAIL' | translate }} <span aria-hidden="true">*</span></label>
+                    <input id="onboarding-accountEmail" type="email" [(ngModel)]="accountEmail" placeholder="doctor@orthoflow.com" autocomplete="username"
                       class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm outline-none transition-all focus:border-ortho-sky focus:ring-4 focus:ring-ortho-sky/5 text-slate-900 dark:text-white" />
                   </div>
                   <div class="grid grid-cols-2 gap-3">
                     <div class="space-y-1.5">
-                      <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Password *</label>
-                      <input type="password" [(ngModel)]="accountPassword" placeholder="At least 10 characters" autocomplete="new-password"
+                      <label for="onboarding-accountPassword" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.PASSWORD' | translate }} <span aria-hidden="true">*</span></label>
+                      <input id="onboarding-accountPassword" type="password" [(ngModel)]="accountPassword" [placeholder]="'AUTH.PASSWORD_MIN_HINT' | translate" autocomplete="new-password"
                         class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm outline-none transition-all focus:border-ortho-sky focus:ring-4 focus:ring-ortho-sky/5 text-slate-900 dark:text-white" />
                     </div>
                     <div class="space-y-1.5">
-                      <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Confirm Password *</label>
-                      <input type="password" [(ngModel)]="accountPasswordConfirm" placeholder="Re-enter password" autocomplete="new-password"
+                      <label for="onboarding-accountPasswordConfirm" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.CONFIRM_PASSWORD' | translate }} <span aria-hidden="true">*</span></label>
+                      <input id="onboarding-accountPasswordConfirm" type="password" [(ngModel)]="accountPasswordConfirm" [placeholder]="'AUTH.PASSWORD_REPEAT_HINT' | translate" autocomplete="new-password"
                         class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm outline-none transition-all focus:border-ortho-sky focus:ring-4 focus:ring-ortho-sky/5 text-slate-900 dark:text-white" />
                     </div>
                   </div>
@@ -201,11 +201,11 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
               <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex justify-between shrink-0">
                 <button type="button" (click)="prevStep()"
                   class="px-5 py-3 border border-slate-200 dark:border-slate-800 text-slate-500 rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-900 transition-all active:scale-[0.98]">
-                  Back
+                  {{ 'COMMON.BACK' | translate }}
                 </button>
                 <button type="button" (click)="validateAccountStep() && nextStep()"
                   class="btn-primary px-6 py-3 bg-petrol-600 hover:bg-petrol-700 text-white font-bold rounded-xl flex items-center gap-2 transition-all active:scale-[0.98]">
-                  Continue
+                  {{ 'ONBOARDING.UI.CONTINUE' | translate }}
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                 </button>
               </div>
@@ -217,33 +217,34 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
             <div class="step-container flex-1 flex flex-col justify-between overflow-hidden">
               <div class="space-y-4 overflow-y-auto pe-1">
                 <div>
-                  <h2 class="text-xl font-bold text-ink-900 dark:text-white tracking-tight">Cabinet Identity</h2>
-                  <p class="text-xs text-slate-500 mt-0.5">Choose your branding, which will appear on patient files and invoices.</p>
+                  <h2 class="text-xl font-bold text-ink-900 dark:text-white tracking-tight">{{ 'ONBOARDING.UI.IDENTITY' | translate }}</h2>
+                  <p class="text-xs text-slate-500 mt-0.5">{{ 'ONBOARDING.UI.IDENTITY_HINT' | translate }}</p>
                 </div>
 
                 <!-- Input fields container -->
                 <div class="space-y-3.5">
                   <!-- Name of Cabinet -->
                   <div class="space-y-1.5">
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Cabinet Name *</label>
-                    <input 
+                    <label for="onboarding-cabinetName" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.CABINET_NAME' | translate }} <span aria-hidden="true">*</span></label>
+                    <input id="onboarding-cabinetName" 
                       type="text" 
                       [(ngModel)]="cabinetName"
-                      placeholder="My Clinic Name"
+                      [placeholder]="'ONBOARDING.UI.CABINET_NAME_HINT' | translate"
                       class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm outline-none transition-all focus:border-ortho-sky focus:ring-4 focus:ring-ortho-sky/5 text-slate-900 dark:text-white" 
                     />
                   </div>
 
                   <!-- Logo Upload with Neat Preview -->
                   <div class="space-y-1.5">
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Cabinet Logo</label>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.LOGO' | translate }}</label>
                     <div class="flex items-center gap-4 p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
                       <!-- Live Preview Thumbnail Box -->
                       <div class="relative group h-16 w-16 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden flex items-center justify-center shadow-inner shrink-0">
                         @if (logoPreview()) {
-                          <img [src]="logoPreview()" alt="Cabinet Logo" class="h-full w-full object-contain" />
+                          <img [src]="logoPreview()" [alt]="'ONBOARDING.UI.LOGO' | translate" class="h-full w-full object-contain" />
                           <button 
                             (click)="removeLogo()" 
+                            [attr.aria-label]="'COMMON.DELETE' | translate"
                             type="button"
                             class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
                           >
@@ -257,11 +258,11 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                       </div>
 
                       <div class="flex-1 text-left space-y-1">
-                        <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">Upload your logo image</p>
-                        <p class="text-[10px] text-slate-500">PNG, JPG or SVG formats</p>
+                        <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ 'ONBOARDING.UI.UPLOAD_LOGO' | translate }}</p>
+                        <p class="text-[10px] text-slate-500">{{ 'ONBOARDING.UI.LOGO_FORMATS' | translate }}</p>
                         <div class="pt-0.5">
                           <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all">
-                            Browse File
+                            {{ 'ONBOARDING.UI.BROWSE' | translate }}
                             <input 
                               type="file" 
                               accept="image/*" 
@@ -283,7 +284,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                   (click)="prevStep()"
                   class="px-5 py-3 border border-slate-200 dark:border-slate-800 text-slate-500 rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-900 transition-all active:scale-[0.98]"
                 >
-                  Back
+                  {{ 'COMMON.BACK' | translate }}
                 </button>
                 <button 
                   type="button" 
@@ -291,7 +292,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                   [disabled]="!cabinetName().trim()"
                   class="btn-primary px-6 py-3 bg-petrol-600 hover:bg-petrol-700 text-white font-bold rounded-xl flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none transition-all active:scale-[0.98]"
                 >
-                  Next
+                  {{ 'ONBOARDING.UI.NEXT' | translate }}
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                 </button>
               </div>
@@ -304,17 +305,17 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
               <div class="space-y-4 overflow-y-auto pe-1">
                 <div>
                   <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-ink-900 dark:text-white tracking-tight">Enterprise Info</h2>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Optional</span>
+                    <h2 class="text-xl font-bold text-ink-900 dark:text-white tracking-tight">{{ 'ONBOARDING.UI.ENTERPRISE' | translate }}</h2>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'COMMON.OPTIONAL' | translate }}</span>
                   </div>
-                  <p class="text-xs text-slate-500 mt-0.5">These can be changed later at any time in Settings.</p>
+                  <p class="text-xs text-slate-500 mt-0.5">{{ 'ONBOARDING.UI.ENTERPRISE_HINT' | translate }}</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 py-1">
                   <!-- ICE -->
                   <div class="space-y-1">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">ICE (Morocco Corporate ID)</label>
-                    <input 
+                    <label for="onboarding-ice" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.ICE' | translate }}</label>
+                    <input id="onboarding-ice" 
                       type="text" 
                       [(ngModel)]="ice"
                       placeholder="001234567..."
@@ -324,8 +325,8 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
 
                   <!-- VAT -->
                   <div class="space-y-1">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">VAT / TVA</label>
-                    <input 
+                    <label for="onboarding-vat" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.VAT' | translate }}</label>
+                    <input id="onboarding-vat" 
                       type="text" 
                       [(ngModel)]="vat"
                       placeholder="MA-98765"
@@ -335,8 +336,8 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
 
                   <!-- Patente -->
                   <div class="space-y-1">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Patente (Tax ID)</label>
-                    <input 
+                    <label for="onboarding-patente" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.PATENTE' | translate }}</label>
+                    <input id="onboarding-patente" 
                       type="text" 
                       [(ngModel)]="patente"
                       placeholder="34567890"
@@ -346,8 +347,8 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
 
                   <!-- Tel -->
                   <div class="space-y-1">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Telephone</label>
-                    <input 
+                    <label for="onboarding-tel" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.PHONE' | translate }}</label>
+                    <input id="onboarding-tel" 
                       type="tel" 
                       [(ngModel)]="tel"
                       placeholder="+212 522-000000"
@@ -357,22 +358,22 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
 
                   <!-- Address -->
                   <div class="col-span-2 space-y-1">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Address</label>
-                    <input 
+                    <label for="onboarding-address" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.ADDRESS' | translate }}</label>
+                    <input id="onboarding-address" 
                       type="text" 
                       [(ngModel)]="address"
-                      placeholder="Street, City, Country"
+                      [placeholder]="'ONBOARDING.UI.ADDRESS_HINT' | translate"
                       class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs outline-none transition-all focus:border-ortho-sky text-slate-800 dark:text-white" 
                     />
                   </div>
 
                   <!-- RIB -->
                   <div class="col-span-2 space-y-1">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">RIB (Bank account details)</label>
-                    <input 
+                    <label for="onboarding-rib" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.RIB' | translate }}</label>
+                    <input id="onboarding-rib" 
                       type="text" 
                       [(ngModel)]="rib"
-                      placeholder="24-digit Bank Account Details"
+                      [placeholder]="'ONBOARDING.UI.RIB_HINT' | translate"
                       class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs outline-none transition-all focus:border-ortho-sky text-slate-800 dark:text-white text-center font-mono" 
                     />
                   </div>
@@ -386,7 +387,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                   (click)="prevStep()"
                   class="px-5 py-3 border border-slate-200 dark:border-slate-800 text-slate-500 rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-900 transition-all active:scale-[0.98]"
                 >
-                  Back
+                  {{ 'COMMON.BACK' | translate }}
                 </button>
                 <button
                   type="button"
@@ -394,14 +395,14 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                   [disabled]="submitting()"
                   class="px-6 py-3 bg-ortho-teal hover:bg-ortho-teal/90 text-white font-bold rounded-xl flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
                 >
-                  {{ submitting() ? 'Setting up…' : 'Complete Setup' }}
+                  {{ (submitting() ? 'ONBOARDING.UI.SETTING_UP' : 'ONBOARDING.UI.COMPLETE') | translate }}
                   @if (!submitting()) {
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   }
                 </button>
               </div>
               @if (accountError()) {
-                <p class="text-xs text-red-600 text-center pt-2">{{ accountError() }}</p>
+                <p class="text-xs text-red-700 text-center pt-2">{{ accountError() }}</p>
               }
             </div>
           }
@@ -431,15 +432,15 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
             </div>
             
             <div class="space-y-2">
-              <h2 class="text-2xl font-extrabold tracking-tight text-ink-900 dark:text-white">Setup Completed!</h2>
+              <h2 class="text-2xl font-extrabold tracking-tight text-ink-900 dark:text-white">{{ 'ONBOARDING.UI.DONE' | translate }}</h2>
               <p class="text-xs text-slate-500 dark:text-slate-500 leading-relaxed px-4">
-                Your clinical workspace has been configured successfully. Let's redirect you to the main screen.
+                {{ 'ONBOARDING.UI.DONE_HINT' | translate }}
               </p>
             </div>
 
             <div class="pt-4 flex flex-col items-center gap-3">
               <div class="h-6 w-6 animate-spin rounded-full border-2 border-solid border-petrol-600 dark:border-ortho-sky border-r-transparent" role="status"></div>
-              <span class="text-[10px] text-slate-500 dark:text-slate-500 tracking-wider uppercase">Loading Workspace...</span>
+              <span class="text-[10px] text-slate-500 dark:text-slate-500 tracking-wider uppercase">{{ 'ONBOARDING.UI.LOADING' | translate }}</span>
             </div>
           </div>
         </div>
@@ -499,6 +500,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
   `]
 })
 export class OnboardingComponent {
+  private readonly translate = inject(TranslateService);
   private cabinetService = inject(CabinetService);
   private languageService = inject(LanguageService);
   private toast = inject(ToastService);
@@ -560,19 +562,19 @@ export class OnboardingComponent {
   validateAccountStep(): boolean {
     this.accountError.set(null);
     if (!this.accountFirstName().trim() || !this.accountLastName().trim()) {
-      this.accountError.set('First and last name are required.');
+      this.accountError.set(this.translate.instant('ONBOARDING.UI.NAME_REQUIRED'));
       return false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.accountEmail().trim())) {
-      this.accountError.set('Enter a valid email address.');
+      this.accountError.set(this.translate.instant('ONBOARDING.UI.EMAIL_INVALID'));
       return false;
     }
     if (this.accountPassword().length < 10) {
-      this.accountError.set('Password must be at least 10 characters.');
+      this.accountError.set(this.translate.instant('ONBOARDING.UI.PASSWORD_SHORT'));
       return false;
     }
     if (this.accountPassword() !== this.accountPasswordConfirm()) {
-      this.accountError.set('Passwords do not match.');
+      this.accountError.set(this.translate.instant('ONBOARDING.UI.PASSWORD_MISMATCH'));
       return false;
     }
     return true;
@@ -606,7 +608,7 @@ export class OnboardingComponent {
           next: () => this.finishOnboarding(),
           error: () => {
             this.submitting.set(false);
-            this.accountError.set('Account created, but automatic sign-in failed. Please log in manually.');
+            this.accountError.set(this.translate.instant('ONBOARDING.UI.SIGNIN_FAILED'));
             this.router.navigate(['/login']);
           }
         });
@@ -631,17 +633,17 @@ export class OnboardingComponent {
    */
   private describeRegisterError(err: { status?: number; error?: { detail?: string } }): string {
     if (err.status === 0) {
-      return 'Could not reach the server. Make sure the backend is running, then try again.';
+      return this.translate.instant('ONBOARDING.UI.SERVER_UNREACHABLE');
     }
     if (err.status === 409) {
-      return err.error?.detail || 'A user with this email already exists. Please log in instead.';
+      return err.error?.detail || this.translate.instant('ONBOARDING.UI.EMAIL_TAKEN');
     }
     if (err.status === 401) {
       // Bootstrap-only endpoint: once any account exists, unauthenticated
       // registration is rejected regardless of which email was submitted.
-      return 'An account already exists for this workspace. Please log in instead.';
+      return this.translate.instant('ONBOARDING.UI.WORKSPACE_TAKEN');
     }
-    return err.error?.detail || 'Could not create your account. Please try again.';
+    return err.error?.detail || this.translate.instant('ONBOARDING.UI.CREATE_FAILED');
   }
 
   private finishOnboarding(): void {

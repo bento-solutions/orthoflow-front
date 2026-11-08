@@ -177,6 +177,13 @@ type Mode = 'live' | 'edit';
                   }
                 </div>
               </div>
+              <!-- Everything dragging does, without dragging. -->
+              <div class="flex gap-1" role="group" [attr.aria-label]="'FD.WR.MOVE' | translate">
+                <button type="button" class="btn btn-secondary btn-sm btn-icon" [attr.aria-label]="'FD.WR.MOVE_LEFT' | translate" (click)="nudge(s, -GRID, 0)"><app-icon name="chevron-left" [size]="14" /></button>
+                <button type="button" class="btn btn-secondary btn-sm btn-icon" [attr.aria-label]="'FD.WR.MOVE_RIGHT' | translate" (click)="nudge(s, GRID, 0)"><app-icon name="chevron-right" [size]="14" /></button>
+                <button type="button" class="btn btn-secondary btn-sm btn-icon" [attr.aria-label]="'FD.WR.MOVE_UP' | translate" (click)="nudge(s, 0, -GRID)"><app-icon name="chevron-up" [size]="14" /></button>
+                <button type="button" class="btn btn-secondary btn-sm btn-icon" [attr.aria-label]="'FD.WR.MOVE_DOWN' | translate" (click)="nudge(s, 0, GRID)"><app-icon name="chevron-down" [size]="14" /></button>
+              </div>
               <button type="button" class="btn btn-secondary btn-sm" (click)="rotate(s)">
                 <app-icon name="refresh" [size]="14" /> {{ 'FD.WR.ROTATE' | translate }}
               </button>
@@ -234,6 +241,11 @@ type Mode = 'live' | 'edit';
                   [class.is-colliding]="collisions().has(m.key)"
                   class="module"
                   (pointerdown)="startDrag($event, m)"
+                  [attr.tabindex]="mode() === 'edit' ? 0 : null"
+                  [attr.role]="mode() === 'edit' ? 'button' : null"
+                  [attr.aria-pressed]="mode() === 'edit' ? selectedKey() === m.key : null"
+                  [attr.aria-label]="mode() === 'edit' ? moduleLabel(m) : null"
+                  (keydown)="onModuleKey($event, m)"
                 >
                   <!-- Hit area first, so thin outlines are still easy to grab. -->
                   <rect
@@ -254,7 +266,11 @@ type Mode = 'live' | 'edit';
                       class="seat seat-taken"
                       (pointerenter)="hovered.set(s)"
                       (pointerleave)="hovered.set(null)"
+                      (focus)="hovered.set(s)"
+                      (blur)="hovered.set(null)"
                       (click)="onSeatClick(s)"
+                      (keydown.enter)="onSeatClick(s)"
+                      (keydown.space)="$event.preventDefault(); onSeatClick(s)"
                       role="button"
                       tabindex="0"
                       [attr.aria-label]="s.occupant.patientName"
@@ -264,7 +280,8 @@ type Mode = 'live' | 'edit';
                     </g>
                   } @else if (assigningFor()) {
                     <!-- Assignment in progress: free seats light up and become targets. -->
-                    <circle class="seat seat-free-target" r="11" (click)="placeHere(s)" role="button" tabindex="0"
+                    <circle class="seat seat-free-target" r="11" (click)="placeHere(s)"
+                            (keydown.enter)="placeHere(s)" (keydown.space)="$event.preventDefault(); placeHere(s)" role="button" tabindex="0"
                             [attr.aria-label]="'FD.WR.ASSIGN_HERE' | translate" />
                   } @else {
                     <circle class="seat seat-free" r="3.5" />
@@ -575,6 +592,27 @@ export class WaitingRoomDesignerComponent {
     this.drag = { key: m.key, dx: p.x - m.x, dy: p.y - m.y };
     (event.target as Element).setPointerCapture?.(event.pointerId);
     event.preventDefault();
+  }
+
+  /** Arrows move the piece of furniture a square at a time; Enter or Space picks it, for the buttons above the plan. */
+  protected onModuleKey(event: KeyboardEvent, m: PlacedModule): void {
+    if (this.mode() !== 'edit') return;
+    const steps: Record<string, readonly [number, number]> = {
+      ArrowLeft: [-GRID, 0], ArrowRight: [GRID, 0], ArrowUp: [0, -GRID], ArrowDown: [0, GRID],
+    };
+    const step = steps[event.key];
+    if (!step && event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    this.selectedKey.set(m.key);
+    if (step) this.nudge(m, step[0], step[1]);
+  }
+
+  protected nudge(m: PlacedModule, dx: number, dy: number): void {
+    this.patch(m.key, (cur) => ({ ...cur, ...clampToRoom({ x: cur.x + dx, y: cur.y + dy }, rotatedSize(cur.kind, cur.seats, cur.rotation)) }));
+  }
+
+  protected moduleLabel(m: PlacedModule): string {
+    return `${this.translate.instant(`FD.WR.KIND.${m.kind}`)}, ${this.translate.instant('FD.WR.SEATS', { count: m.seats })}`;
   }
 
   protected onPointerMove(event: PointerEvent): void {

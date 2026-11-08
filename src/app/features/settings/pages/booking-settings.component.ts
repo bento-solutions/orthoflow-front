@@ -94,7 +94,7 @@ export class BookingSettingsComponent {
     try {
       const body: Req<'BookingSettings'> = this.f.value();
       this.f.reset(await firstValueFrom(this.http.put<Settings>(api('/booking/settings'), body)));
-      this.toast.success('✓');
+      this.toast.success(this.translate.instant('COMMON.SAVED'));
     } catch (error) {
       this.errors.report(error);
     } finally {
@@ -104,7 +104,7 @@ export class BookingSettingsComponent {
 
   protected async copy(p: Purpose): Promise<void> {
     await navigator.clipboard?.writeText(this.links()[p] ?? '').catch(() => undefined);
-    this.toast.success('✓');
+    this.toast.success(this.translate.instant('COMMON.SAVED'));
   }
 
   protected async rotate(p: Purpose): Promise<void> {

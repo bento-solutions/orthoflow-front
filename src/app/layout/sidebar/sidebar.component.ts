@@ -37,13 +37,15 @@ interface NavItem {
   standalone: true,
   imports: [RouterLink, RouterLinkActive, TranslateModule, IconComponent],
   template: `
-    <aside
+    <nav
       class="sidebar on-inverse sticky top-0 z-20 flex h-screen flex-col bg-petrol-900"
       [class.sidebar-collapsed]="isCollapsed()"
+      [attr.aria-label]="'NAV.MAIN' | translate"
     >
       <!-- Brand -->
       <div class="flex h-16 shrink-0 items-center gap-3 overflow-hidden border-b border-white/10 px-4">
         <div
+          aria-hidden="true"
           class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-petrol-600 text-base font-extrabold text-white ring-1 ring-white/15"
         >
           @if (cabinet.cabinetInfo()?.logoUrl) {
@@ -67,19 +69,19 @@ interface NavItem {
       </div>
 
       <!-- Navigation -->
-      <nav
+      <div
         class="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3"
         data-tour="nav"
-        [attr.aria-label]="'NAV.MAIN' | translate"
       >
         @for (group of visibleGroups(); track group.key) {
-          <p class="nav-section" [class.sr-only]="isCollapsed()">{{ group.key | translate }}</p>
-          <ul class="space-y-0.5">
+          <p class="nav-section" [id]="'nav-group-' + $index" [class.sr-only]="isCollapsed()">{{ group.key | translate }}</p>
+          <ul class="space-y-0.5" role="list" [attr.aria-labelledby]="'nav-group-' + $index">
             @for (item of group.items; track item.path) {
               <li>
                 <a
                   [routerLink]="item.path"
                   routerLinkActive="nav-link-active"
+                  ariaCurrentWhenActive="page"
                   [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
                   class="nav-link"
                   [title]="isCollapsed() ? (item.key | translate) : ''"
@@ -91,14 +93,14 @@ interface NavItem {
                     [class.-translate-x-2]="isCollapsed()"
                   >{{ item.key | translate }}</span>
                   @if (count(item.badge); as n) {
-                    <span class="nav-badge" [attr.aria-label]="n + ''">{{ n > 99 ? '99+' : n }}</span>
+                    <span class="nav-badge">{{ n > 99 ? '99+' : n }}</span>
                   }
                 </a>
               </li>
             }
           </ul>
         }
-      </nav>
+      </div>
 
       <!-- Collapse -->
       <div class="shrink-0 border-t border-white/10 p-2">
@@ -117,7 +119,7 @@ interface NavItem {
           </span>
         </button>
       </div>
-    </aside>
+    </nav>
   `,
 })
 export class SidebarComponent {

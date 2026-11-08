@@ -18,6 +18,7 @@ import {
   RawShaderMaterial,
   RGBAFormat,
   Scene,
+  Spherical,
   SphereGeometry,
   Triangle,
   UnsignedByteType,
@@ -67,6 +68,8 @@ const PATTERN_PITCH = 34;
 const PATTERN_PITCH_ZOOMED = 110;
 /** How far a tooth's number stands from its crown, in model units. */
 const LABEL_CLEARANCE = 0.085;
+/** Pixels from the top of the stage to the number of the tooth in close-up. */
+const ZOOMED_LABEL_TOP = 18;
 const VIEW_MS = 520;
 const CAMERA_MS = 460;
 
@@ -715,6 +718,17 @@ export class DentitionEngine {
     this.invalidate();
   }
 
+  /** Turns the view around what is framed, in radians: what dragging does, for a keyboard or a button. */
+  rotateBy(azimuth: number, polar: number): void {
+    const target = this.controls.target;
+    const orbit = new Spherical().setFromVector3(this.camera.position.clone().sub(target));
+    orbit.theta = Math.min(this.controls.maxAzimuthAngle, Math.max(this.controls.minAzimuthAngle, orbit.theta + azimuth));
+    orbit.phi = Math.min(this.controls.maxPolarAngle, Math.max(this.controls.minPolarAngle, orbit.phi + polar));
+    this.startCamera(target.clone().add(new Vector3().setFromSpherical(orbit)), target.clone(), true);
+    this.setMoved(true);
+    this.invalidate();
+  }
+
   private applyOutlines(): void {
     const place = (outline: Mesh, fdi: string | null) => {
       const tooth = fdi ? this.active?.byFdi.get(fdi) : undefined;
@@ -821,9 +835,10 @@ export class DentitionEngine {
       distance = fitDistance(layout.halfWidth, layout.halfHeight, FOV, aspect);
       direction = layout.cameraDirection.clone();
     }
-    this.startCamera(target.clone().add(direction.multiplyScalar(distance)), target, animate);
+    // Before the camera moves: with no animation it gets there at once, and the old limits would hold it back.
     this.controls.maxDistance = distance * 2.2;
     this.controls.minDistance = distance * 0.12;
+    this.startCamera(target.clone().add(direction.multiplyScalar(distance)), target, animate);
     this.setMoved(!!tooth);
   }
 
@@ -943,6 +958,11 @@ export class DentitionEngine {
     this.camera.updateMatrixWorld();
     const rows = this.view !== 'arch';
     for (const tooth of set.teeth) {
+      if (tooth.fdi === this.zoomedFdi) {
+        // Alone in the frame, its number keeps one place above it: the keyboard's focus is on it.
+        events.place(tooth.fdi, this.width / 2, ZOOMED_LABEL_TOP, 1);
+        continue;
+      }
       if (!tooth.mesh.visible || this.zoomedFdi) {
         events.place(tooth.fdi, -9999, -9999, 0);
         continue;

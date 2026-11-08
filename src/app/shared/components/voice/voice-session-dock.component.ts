@@ -97,7 +97,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
       background: var(--surface); color: rgb(var(--ink-900)); font-weight: 700; font-size: .875rem;
     }
     .dock-end:disabled { opacity: .7; cursor: default; }
-    .dock-end .material-icons { font-size: 1.125rem; color: rgb(var(--critical-600)); }
+    .dock-end .material-icons { font-size: 1.125rem; color: rgb(var(--critical-700)); }
 
     .dock button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 

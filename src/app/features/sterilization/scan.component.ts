@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, afterNextRender, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -35,7 +35,7 @@ export function loadableItems(basket: readonly SterilItem[]): SterilItem[] {
         <h2 class="text-base font-bold text-ink-900">{{ 'STER.SCAN.TITLE' | translate }}</h2>
         <form class="flex gap-2" (ngSubmit)="submitCode()">
           <label class="field flex-1"><span class="sr-only">{{ 'STER.SCAN.CODE' | translate }}</span>
-            <input class="input" name="code" autocomplete="off" autofocus [placeholder]="'STER.SCAN.CODE' | translate" [ngModel]="code()" (ngModelChange)="code.set($event)" /></label>
+            <input #codeField class="input" name="code" autocomplete="off" [placeholder]="'STER.SCAN.CODE' | translate" [ngModel]="code()" (ngModelChange)="code.set($event)" /></label>
           <button type="submit" class="btn btn-primary" [disabled]="busy() || !code().trim()">{{ 'STER.SCAN.FIND' | translate }}</button>
         </form>
         <button type="button" class="btn btn-secondary w-full" [attr.aria-pressed]="camera()" (click)="camera.set(!camera())"><app-icon name="camera" [size]="16" /> {{ (camera() ? 'STER.SCAN.STOP_CAMERA' : 'STER.SCAN.START_CAMERA') | translate }}</button>
@@ -71,6 +71,13 @@ export function loadableItems(basket: readonly SterilItem[]): SterilItem[] {
   `,
 })
 export class ScanComponent {
+  private readonly codeField = viewChild.required<ElementRef<HTMLInputElement>>('codeField');
+
+  constructor() {
+    // The whole page is this field: a scanner types into whatever has focus.
+    afterNextRender(() => this.codeField().nativeElement.focus());
+  }
+
   private readonly api = inject(SterilizationApi);
   private readonly errors = inject(ApiErrors);
   private readonly handoff = inject(SterilizationHandoff);

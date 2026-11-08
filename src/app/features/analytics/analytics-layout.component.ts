@@ -16,9 +16,9 @@ import { ANALYTICS_TABS } from './analytics-tabs';
         <p class="page-sub">{{ 'ANA.SUBTITLE' | translate }}</p>
       </div>
     </div>
-    <nav class="tabs mb-6 overflow-x-auto" role="tablist" [attr.aria-label]="'COMMON.ANALYTICS' | translate">
+    <nav class="tabs mb-6 overflow-x-auto" [attr.aria-label]="'COMMON.ANALYTICS' | translate">
       @for (tab of visible(); track tab.path) {
-        <a class="tab whitespace-nowrap" role="tab" [routerLink]="tab.path" routerLinkActive="is-active" #rla="routerLinkActive" [attr.aria-selected]="rla.isActive">{{ tab.key | translate }}</a>
+        <a class="tab whitespace-nowrap" [routerLink]="tab.path" routerLinkActive="is-active" ariaCurrentWhenActive="page">{{ tab.key | translate }}</a>
       }
     </nav>
     <router-outlet />

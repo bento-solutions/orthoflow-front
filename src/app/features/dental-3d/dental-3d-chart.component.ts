@@ -3,30 +3,27 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { DentalChartType, DentalChartState, ToothStatus } from '../../core/models/patient.model';
+import { DentalChartState, ToothStatus } from '../../core/models/patient.model';
 import { ToothFinding } from '../../core/models/clinical-record.model';
 import { PatientTreatment } from '../../core/models/patient-treatment.model';
 import { findingLabel } from '../../core/clinical/finding-options';
 import { PAINT_ZONES, PaintZone, StagedFinding, ToothPaint, paintChart, surfaceOfZone } from '../../core/clinical/tooth-paint';
-import { SURFACE_LETTER, SURFACE_ZONES, SURFACE_ZONE_PATH, SurfaceZone, ToothSurface, formatSurface, parseSurface, surfaceMarks } from '../../core/clinical/tooth-surfaces';
+import { SURFACE_LETTER, SURFACE_ZONES, SURFACE_ZONE_PATH, SurfaceZone, ToothSurface, formatSurface, parseSurface, surfaceMarks, surfaceShorthand } from '../../core/clinical/tooth-surfaces';
 import { FAMILY_PAINT, PLANNED_PAINT, TREATMENT_PLAN_INK, toothStatusLabelKey } from '../../core/clinical/tooth-status';
+import { ToothNumberTyping, stepInGrid, toothGrid } from '../../core/clinical/tooth-grid';
+import { AnnouncerService } from '../../core/services/announcer.service';
 import { DENTITION_VIEWS, Dental3dViewService, DentitionView } from '../../core/services/dental-3d-view.service';
 import { ClinicalRecordService } from '../../core/services/clinical-record.service';
 import { DentalChartService } from '../../core/services/dental-chart.service';
+import { ChartKeysComponent } from '../dental-chart/chart-keys.component';
 import { DentalChartComponent } from '../dental-chart/dental-chart.component';
 import { ToothDetailComponent } from '../dental-chart/tooth-detail/tooth-detail.component';
 import { DentitionEngine, DentitionHit, FACES, ToothFace, dentitionEngine, webGl2Available } from './dentition-engine';
 
-const ROWS: Record<DentalChartType, readonly (readonly string[])[]> = {
-  adult: [
-    ['18', '17', '16', '15', '14', '13', '12', '11', '21', '22', '23', '24', '25', '26', '27', '28'],
-    ['48', '47', '46', '45', '44', '43', '42', '41', '31', '32', '33', '34', '35', '36', '37', '38'],
-  ],
-  child: [
-    ['55', '54', '53', '52', '51', '61', '62', '63', '64', '65'],
-    ['85', '84', '83', '82', '81', '71', '72', '73', '74', '75'],
-  ],
-};
+/** One press of a turn key or button: enough to see it has turned, small enough to stop where wanted. */
+const TURN_STEP = Math.PI / 12;
+
+let nextId = 1;
 
 interface HoverCard {
   readonly fdi: string;
@@ -55,7 +52,7 @@ interface SummaryGroup {
 @Component({
   selector: 'app-dental-3d-chart',
   standalone: true,
-  imports: [FormsModule, TranslateModule, DentalChartComponent, ToothDetailComponent],
+  imports: [FormsModule, TranslateModule, ChartKeysComponent, DentalChartComponent, ToothDetailComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (fallback()) {
@@ -91,16 +88,25 @@ interface SummaryGroup {
               </div>
             }
             <div class="d3-tools">
-              @if (view.zoomedFdi()) {
-                <button type="button" class="d3-back" (click)="view.zoomedFdi.set(null)">
-                  <span class="material-icons" aria-hidden="true">arrow_back</span>{{ 'DENTAL_3D.WHOLE_MOUTH' | translate }}
-                </button>
-              } @else if (selected(); as fdi) {
+              @if (!view.zoomedFdi() && selected(); as fdi) {
                 <button type="button" class="d3-tool" [title]="'DENTAL_3D.ZOOM_TOOTH' | translate: { fdi: fdi }"
-                  [attr.aria-label]="'DENTAL_3D.ZOOM_TOOTH' | translate: { fdi: fdi }" (click)="view.zoomedFdi.set(fdi)">
+                  [attr.aria-label]="'DENTAL_3D.ZOOM_TOOTH' | translate: { fdi: fdi }" (click)="enterCloseUp(fdi)">
                   <span class="material-icons" aria-hidden="true">center_focus_strong</span>
                 </button>
               }
+              <!-- Everything dragging does, without dragging. -->
+              <button type="button" class="d3-tool" [title]="'DENTAL_3D.TURN_LEFT' | translate" [attr.aria-label]="'DENTAL_3D.TURN_LEFT' | translate" (click)="turn(-1, 0)">
+                <span class="material-icons" aria-hidden="true">rotate_left</span>
+              </button>
+              <button type="button" class="d3-tool" [title]="'DENTAL_3D.TURN_RIGHT' | translate" [attr.aria-label]="'DENTAL_3D.TURN_RIGHT' | translate" (click)="turn(1, 0)">
+                <span class="material-icons" aria-hidden="true">rotate_right</span>
+              </button>
+              <button type="button" class="d3-tool" [title]="'DENTAL_3D.TURN_UP' | translate" [attr.aria-label]="'DENTAL_3D.TURN_UP' | translate" (click)="turn(0, -1)">
+                <span class="material-icons" aria-hidden="true">keyboard_arrow_up</span>
+              </button>
+              <button type="button" class="d3-tool" [title]="'DENTAL_3D.TURN_DOWN' | translate" [attr.aria-label]="'DENTAL_3D.TURN_DOWN' | translate" (click)="turn(0, 1)">
+                <span class="material-icons" aria-hidden="true">keyboard_arrow_down</span>
+              </button>
               <button type="button" class="d3-tool" [title]="'DENTAL_3D.ZOOM_IN' | translate" [attr.aria-label]="'DENTAL_3D.ZOOM_IN' | translate" (click)="engine()?.zoomBy(0.8)">
                 <span class="material-icons" aria-hidden="true">add</span>
               </button>
@@ -116,51 +122,65 @@ interface SummaryGroup {
           <div class="d3-stage" dir="ltr" role="group" [attr.aria-label]="'DENTAL_3D.STAGE' | translate" (keydown)="onKeydown($event)">
             <div class="d3-canvas" #canvasHost aria-hidden="true"></div>
 
-            @if (!view.zoomedFdi()) {
+            @if (view.zoomedFdi()) {
+              <!-- On the stage, where the corner is free: in the toolbar it would wrap it, and the stage would jump. -->
+              <button type="button" class="d3-back" dir="auto" (click)="leaveCloseUp()">
+                <span class="material-icons" aria-hidden="true">arrow_back</span>{{ 'DENTAL_3D.WHOLE_MOUTH' | translate }}
+              </button>
+            } @else {
               <div class="d3-sides" aria-hidden="true">
                 <span>{{ 'DENTAL_3D.PATIENT_RIGHT' | translate }}</span>
                 <span>{{ 'DENTAL_3D.PATIENT_LEFT' | translate }}</span>
               </div>
             }
 
-            <div class="d3-labels">
-              @for (fdi of allTeeth(); track fdi) {
-                <button #label type="button" class="d3-label" [attr.data-fdi]="fdi" [attr.data-state]="labelState(fdi)"
-                  [attr.data-ring]="paintOf(fdi)?.treatment"
-                  [class.selected]="selected() === fdi" [class.focus]="focusFdi() === fdi"
-                  [class.staged]="paintOf(fdi)?.staged" [class.planned]="paintOf(fdi)?.planned"
-                  [attr.aria-label]="labelAria(fdi)" [attr.aria-pressed]="selected() === fdi"
-                  [attr.tabindex]="roving() === fdi ? 0 : -1"
-                  (click)="select(fdi)" (dblclick)="view.zoomedFdi.set(fdi)"
-                  (pointerenter)="hoverFromLabel(fdi, $event)" (pointerleave)="hoverFromLabel(null, $event)" (focus)="roving.set(fdi)">
-                  <span class="d3-num">{{ fdi }}</span>
-                  @if (marksOf(fdi); as marks) {
-                    <svg class="d3-marks" viewBox="0 0 30 30" aria-hidden="true">
-                      @for (zone of surfaceZones; track zone) {
-                        <path [attr.d]="zonePaths[zone]" [attr.fill]="markFill(marks.get(zone))" stroke="#334155" stroke-width="1.6" />
+            <!-- A grid: one stop on Tab, and arrows from there, rather than thirty-two stops before the panel. -->
+            <div class="d3-labels" role="grid" [attr.aria-label]="'DENTAL_3D.TEETH' | translate" [attr.aria-describedby]="keysId">
+              @for (row of rows(); track $index; let upper = $first) {
+                <div role="row" [attr.aria-label]="(upper ? 'DENTAL_3D.UPPER_ARCH' : 'DENTAL_3D.LOWER_ARCH') | translate">
+                  @for (fdi of row; track fdi) {
+                    <button #label type="button" role="gridcell" class="d3-label" [attr.data-fdi]="fdi" [attr.data-state]="labelState(fdi)"
+                      [attr.data-ring]="paintOf(fdi)?.treatment"
+                      [class.selected]="selected() === fdi" [class.focus]="focusFdi() === fdi"
+                      [class.staged]="paintOf(fdi)?.staged" [class.planned]="paintOf(fdi)?.planned"
+                      [attr.aria-label]="labelAria(fdi)" [attr.aria-selected]="selected() === fdi"
+                      [attr.tabindex]="tabStop() === fdi ? 0 : -1"
+                      (click)="select(fdi)" (dblclick)="enterCloseUp(fdi)"
+                      (pointerenter)="hoverFromLabel(fdi, $event)" (pointerleave)="hoverFromLabel(null, $event)"
+                      (focus)="onLabelFocus(fdi)" (blur)="onLabelBlur()">
+                      <span class="d3-num">{{ fdi }}</span>
+                      @if (view.zoomedFdi() === fdi) { <span class="d3-name">{{ ('TOOTH_NAME.' + fdi) | translate }}</span> }
+                      @if (marksOf(fdi); as marks) {
+                        <svg class="d3-marks" viewBox="0 0 30 30" aria-hidden="true">
+                          @for (zone of surfaceZones; track zone) {
+                            <path [attr.d]="zonePaths[zone]" [attr.fill]="markFill(marks.get(zone))" stroke="#334155" stroke-width="1.6" />
+                          }
+                        </svg>
                       }
-                    </svg>
+                      @if (paintOf(fdi)?.flagged || paintOf(fdi)?.lesion) { <span class="d3-flag" aria-hidden="true"></span> }
+                    </button>
                   }
-                  @if (paintOf(fdi)?.flagged || paintOf(fdi)?.lesion) { <span class="d3-flag" aria-hidden="true"></span> }
-                </button>
+                </div>
               }
             </div>
 
-            <div class="d3-labels">
+            <div class="d3-labels" role="group" [attr.aria-label]="'DENTAL_3D.FACES' | translate">
               @if (view.zoomedFdi(); as zoomed) {
-                @for (face of faces; track face) {
+                @for (face of faces; track face; let i = $index) {
                   <button #faceLabel type="button" class="d3-face" [attr.data-face]="face"
                     [class.on]="pickedFaces().has(faceSurface(face, zoomed))"
+                    [attr.tabindex]="faceStop() === i ? 0 : -1"
                     [attr.aria-label]="('SURFACE.' + faceSurface(face, zoomed).toUpperCase()) | translate"
                     [attr.aria-pressed]="pickedFaces().has(faceSurface(face, zoomed))"
                     [title]="('SURFACE.' + faceSurface(face, zoomed).toUpperCase()) | translate"
+                    (focus)="faceStop.set(i)"
                     (click)="toggleFace(face, zoomed)">{{ faceLetter(face, zoomed) }}</button>
                 }
               }
             </div>
 
             @if (hoverCard(); as card) {
-              <div class="d3-tip" [style.transform]="'translate(' + card.left + 'px,' + card.top + 'px)'">
+              <div class="d3-tip" aria-hidden="true" [style.transform]="'translate(' + card.left + 'px,' + card.top + 'px)'">
                 <b>{{ card.title }}</b>
                 @if (card.zone) { <span class="d3-tip-zone">{{ card.zone }}</span> }
                 @for (line of card.lines; track line) { <span>{{ line }}</span> }
@@ -168,9 +188,12 @@ interface SummaryGroup {
             }
 
             @if (state() === 'loading') {
-              <div class="d3-overlay"><span class="d3-spinner" aria-hidden="true"></span>{{ 'DENTAL_3D.LOADING' | translate }}</div>
+              <div class="d3-overlay" role="status"><span class="d3-spinner" aria-hidden="true"></span>{{ 'DENTAL_3D.LOADING' | translate }}</div>
             }
           </div>
+
+          <p class="sr-only" [id]="keysId">{{ (view.zoomedFdi() ? 'DENTAL_3D.KEYS_CLOSE_UP' : 'DENTAL_3D.KEYS_MOUTH') | translate }}</p>
+          <app-chart-keys [closeUp]="!!view.zoomedFdi()" [faces]="closeUpLetters()" [detail]="sidePanel()" [turnable]="true" />
 
           <div class="d3-legend">
             <span class="d3-key"><i class="sw sw-existing"></i>{{ 'DENTAL_3D.LEGEND.EXISTING' | translate }}</span>
@@ -188,15 +211,15 @@ interface SummaryGroup {
           <p class="d3-credit">
             {{ 'DENTAL_3D.ILLUSTRATIVE' | translate }}
             @if (chart().chartType === 'child') { {{ 'DENTAL_3D.ILLUSTRATIVE_CHILD' | translate }} }
-            <a href="https://sketchfab.com/3d-models/permanent-dentition-2f69d7b59c3e4a6a8bcae041bd8e591b" target="_blank" rel="noopener noreferrer">“Permanent Dentition”</a>,
-            University of Dundee, School of Dentistry,
+            <a href="https://sketchfab.com/3d-models/permanent-dentition-2f69d7b59c3e4a6a8bcae041bd8e591b" target="_blank" rel="noopener noreferrer" lang="en">“Permanent Dentition”</a>,
+            <span lang="en">University of Dundee, School of Dentistry</span>,
             <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>
             {{ 'DENTAL_3D.ADAPTED' | translate }}
           </p>
         </div>
 
         @if (sidePanel()) {
-          <aside class="d3-panel" [attr.aria-label]="'DENTAL_3D.PANEL' | translate">
+          <aside #panel class="d3-panel" [attr.aria-label]="'DENTAL_3D.PANEL' | translate" (keydown.escape)="backFromPanel($event)">
             @if (selected(); as fdi) {
               <header class="d3-panel-head">
                 <span class="d3-panel-fdi">{{ fdi }}</span>
@@ -204,7 +227,7 @@ interface SummaryGroup {
                   <h3>{{ ('TOOTH_NAME.' + fdi) | translate }}</h3>
                   <p>{{ statusLabel(fdi) | translate }}</p>
                 </div>
-                <button type="button" class="d3-tool" [attr.aria-label]="'COMMON.CLOSE' | translate" (click)="select(null)">
+                <button type="button" class="d3-tool" [attr.aria-label]="'COMMON.CLOSE' | translate" (click)="closePanel(fdi)">
                   <span class="material-icons" aria-hidden="true">close</span>
                 </button>
               </header>
@@ -240,7 +263,7 @@ interface SummaryGroup {
                   <h4 [attr.data-kind]="group.kind">{{ group.key | translate }}</h4>
                   <div class="d3-chips">
                     @for (fdi of group.teeth; track fdi) {
-                      <button type="button" class="d3-chip" [attr.aria-label]="'TOOTH_NAME.' + fdi | translate" (click)="select(fdi)">{{ fdi }}</button>
+                      <button type="button" class="d3-chip" [attr.aria-label]="fdi + ', ' + ('TOOTH_NAME.' + fdi | translate)" (click)="select(fdi); focusLabel(fdi)">{{ fdi }}</button>
                     }
                   </div>
                 </section>
@@ -289,10 +312,14 @@ export class Dental3dChartComponent {
   private readonly records = inject(ClinicalRecordService);
   private readonly translate = inject(TranslateService);
   private readonly zone = inject(NgZone);
+  private readonly announcer = inject(AnnouncerService);
+
+  protected readonly keysId = `d3-keys-${nextId++}`;
 
   private readonly canvasHost = viewChild<ElementRef<HTMLDivElement>>('canvasHost');
   private readonly labelRefs = viewChildren<ElementRef<HTMLButtonElement>>('label');
   private readonly faceRefs = viewChildren<ElementRef<HTMLButtonElement>>('faceLabel');
+  private readonly panelRef = viewChild<ElementRef<HTMLElement>>('panel');
   private labels = new Map<string, HTMLButtonElement>();
   private readonly placed = new Map<string, number>();
 
@@ -300,7 +327,14 @@ export class Dental3dChartComponent {
   protected readonly state = signal<'loading' | 'ready' | 'failed'>('loading');
   protected readonly fallback = signal(false);
   protected readonly moved = signal(false);
-  protected readonly roving = signal<string | null>(null);
+  private readonly roving = signal<string | null>(null);
+  /** The one tooth Tab lands on. In close-up it can only be the tooth in the frame: the others are off the stage. */
+  protected readonly tabStop = computed(() => {
+    const teeth = this.allTeeth();
+    const known = (fdi: string | null) => (fdi && teeth.includes(fdi) ? fdi : null);
+    return known(this.view.zoomedFdi()) ?? known(this.roving()) ?? known(this.selected()) ?? teeth[0];
+  });
+  protected readonly faceStop = signal(0);
   protected readonly pickedSurface = signal<string | null>(null);
   private readonly hover = signal<{ hit: DentitionHit | null; fdi: string; x: number; y: number } | null>(null);
 
@@ -309,7 +343,7 @@ export class Dental3dChartComponent {
   protected readonly surfaceZones = SURFACE_ZONES;
   protected readonly zonePaths = SURFACE_ZONE_PATH;
 
-  private readonly rows = computed(() => ROWS[this.chart().chartType]);
+  protected readonly rows = computed(() => toothGrid(this.chart().chartType));
   protected readonly allTeeth = computed(() => this.rows().flat());
   protected readonly stagedTeeth = computed(() => [...new Set(this.staged().map((s) => s.fdi))]);
 
@@ -368,6 +402,8 @@ export class Dental3dChartComponent {
     const hover = this.hover();
     if (!hover) return null;
     const { fdi, hit, x, y } = hover;
+    // From the keyboard, the card stands for pointing at a tooth among the others; alone in the frame it would only cover it.
+    if (!hit && this.view.zoomedFdi()) return null;
     const stage = this.canvasHost()?.nativeElement.getBoundingClientRect();
     if (!stage) return null;
     const left = Math.min(Math.max(x - stage.left + 14, 4), stage.width - 230);
@@ -441,6 +477,12 @@ export class Dental3dChartComponent {
 
   protected readonly pickedFaces = computed(() => new Set(parseSurface(this.pickedSurface())));
 
+  /** Only where a face can be picked: without the panel, in the voice session, there is nothing to pick it for. */
+  protected readonly closeUpLetters = computed(() => {
+    const fdi = this.view.zoomedFdi();
+    return fdi && this.sidePanel() ? this.faces.map((face) => this.faceLetter(face, fdi)) : [];
+  });
+
   private readonly pickedZones = computed<PaintZone[]>(() =>
     parseSurface(this.pickedSurface()).map((surface) => (surface === 'incisal' ? 'occlusal' : surface)));
 
@@ -460,7 +502,7 @@ export class Dental3dChartComponent {
       this.zone.runOutsideAngular(() => engine.attach(canvasHost, {
         hover: (hit, x, y) => this.hover.set(hit ? { hit, fdi: hit.fdi, x, y } : null),
         click: (hit) => this.onCanvasClick(hit),
-        doubleClick: (hit) => this.view.zoomedFdi.set(hit.fdi),
+        doubleClick: (hit) => this.enterCloseUp(hit.fdi),
         place: (fdi, x, y, facing) => this.placeLabel(fdi, x, y, facing),
         placeFace: (face, x, y, facing) => this.placeFace(face, x, y, facing),
         moved: (moved) => this.moved.set(moved),
@@ -593,6 +635,40 @@ export class Dental3dChartComponent {
   protected reset(): void {
     this.view.zoomedFdi.set(null);
     this.engine()?.resetCamera();
+    // The button goes disabled under the keyboard's focus, and focus would be lost with it.
+    this.focusLabel(this.tabStop());
+  }
+
+  protected turn(azimuth: number, polar: number): void {
+    this.engine()?.rotateBy(azimuth * TURN_STEP, polar * TURN_STEP);
+  }
+
+  protected enterCloseUp(fdi: string): void {
+    this.select(fdi);
+    this.view.zoomedFdi.set(fdi);
+    this.focusLabel(fdi);
+    this.announcer.announce(this.translate.instant('DENTAL_3D.ZOOMED', { fdi, name: this.translate.instant(`TOOTH_NAME.${fdi}`) }));
+  }
+
+  protected leaveCloseUp(): void {
+    const fdi = this.view.zoomedFdi();
+    this.view.zoomedFdi.set(null);
+    if (fdi) this.focusLabel(fdi);
+    this.announcer.announce(this.translate.instant('DENTAL_3D.ZOOMED_OUT'));
+  }
+
+  protected closePanel(fdi: string): void {
+    this.select(null);
+    this.focusLabel(fdi);
+  }
+
+  /** Escape from the panel goes back to the tooth it is about, which stays selected. */
+  protected backFromPanel(event: Event): void {
+    const fdi = this.selected();
+    if (!fdi) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.focusLabel(fdi);
   }
 
   protected paintOf(fdi: string): ToothPaint | undefined {
@@ -613,9 +689,19 @@ export class Dental3dChartComponent {
     return null;
   }
 
+  /** What the eye gets from the tooth's colours, its rings and its marks. */
   protected labelAria(fdi: string): string {
-    const lines = (this.activeByTooth().get(fdi) ?? []).map((f) => findingLabel(this.translate, f.findingCode ?? ''));
-    return [`${fdi}, ${this.translate.instant(`TOOTH_NAME.${fdi}`)}`, ...lines].join(', ');
+    const paint = this.paintOf(fdi);
+    return [
+      `${fdi}, ${this.translate.instant(`TOOTH_NAME.${fdi}`)}`,
+      ...(paint?.absent ? [this.translate.instant('DENTAL_3D.LEGEND.ABSENT')] : []),
+      ...(this.activeByTooth().get(fdi) ?? []).map((f) => {
+        const label = findingLabel(this.translate, f.findingCode ?? '');
+        return f.surface ? `${label} ${surfaceShorthand(f.surface)}` : label;
+      }),
+      ...(paint?.staged ? [this.translate.instant('VOICE.LEGEND_STAGED')] : []),
+      ...(paint?.treatment ? [this.translate.instant(`DENTAL_3D.LEGEND.RING_${paint.treatment}`)] : []),
+    ].join(', ');
   }
 
   protected statusLabel(fdi: string): string {
@@ -635,54 +721,152 @@ export class Dental3dChartComponent {
 
   /* ── Keyboard ─────────────────────────────────────────────────────────── */
 
-  private typed = '';
-  private typedAt = 0;
+  private readonly typing = new ToothNumberTyping();
 
+  /**
+   * Arrows go from tooth to tooth, Enter goes further in and Escape comes back out, one level at
+   * a time: the whole mouth, the tooth in close-up, its panel. The keys that are handled stop
+   * here, because Enter and Escape also answer a pending voice confirmation at the window.
+   */
   protected onKeydown(event: KeyboardEvent): void {
-    if ((event.target as HTMLElement).closest('input, textarea, select')) return;
-    const current = this.roving() ?? this.selected() ?? this.rows()[0][0];
+    const target = event.target as HTMLElement;
+    if (target.closest('input, textarea, select') || event.ctrlKey && !['Home', 'End'].includes(event.key) || event.metaKey || event.altKey) return;
+    if (this.handleKey(event, target)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+
+  private handleKey(event: KeyboardEvent, target: HTMLElement): boolean {
+    const onFace = target.closest<HTMLElement>('.d3-face');
+    const onTooth = target.closest<HTMLElement>('.d3-label')?.dataset['fdi'];
+    const zoomed = this.view.zoomedFdi();
+    const current = onTooth ?? zoomed ?? this.tabStop();
+
     switch (event.key) {
-      case 'ArrowRight': this.moveFocus(current, 1, 0); break;
-      case 'ArrowLeft': this.moveFocus(current, -1, 0); break;
-      case 'ArrowDown': this.moveFocus(current, 0, 1); break;
-      case 'ArrowUp': this.moveFocus(current, 0, -1); break;
+      case 'Enter':
+        // A face is a plain button, and Enter presses it.
+        if (!onTooth) return false;
+        if (zoomed === onTooth) return this.focusPanel();
+        this.enterCloseUp(onTooth);
+        return true;
       case 'Escape':
-        if (this.view.zoomedFdi()) this.view.zoomedFdi.set(null);
-        else this.select(null);
-        break;
-      default:
-        if (/^\d$/.test(event.key)) { this.typeDigit(event.key); break; }
-        return;
+        return this.stepBack(!!onFace, current);
+      case '+':
+      case '=':
+        this.engine()?.zoomBy(0.8);
+        return true;
+      case '-':
+        this.engine()?.zoomBy(1.25);
+        return true;
     }
-    event.preventDefault();
+
+    if (onFace && event.key.startsWith('Arrow')) {
+      this.moveAmongFaces(event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1);
+      return true;
+    }
+    if (event.shiftKey && event.key.startsWith('Arrow')) {
+      const across = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
+      const down = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0;
+      this.turn(across, down);
+      return true;
+    }
+
+    const next = stepInGrid(this.keyboardGrid(), current, event.key, event.ctrlKey);
+    if (next) {
+      this.goToTooth(next);
+      return true;
+    }
+
+    if (/^\d$/.test(event.key)) {
+      const typed = this.typing.type(event.key, this.allTeeth(), performance.now());
+      if (typed) {
+        this.goToTooth(typed);
+        if (!zoomed) this.select(typed);
+      }
+      return true;
+    }
+    return !!zoomed && this.pickFaceByLetter(event.key, zoomed);
   }
 
-  private moveFocus(fdi: string, across: number, down: number): void {
-    const rows = this.rows();
-    const row = rows.findIndex((r) => r.includes(fdi));
-    if (row < 0) return;
-    const nextRow = Math.min(rows.length - 1, Math.max(0, row + down));
-    const column = rows[row].indexOf(fdi);
-    const nextColumn = Math.min(rows[nextRow].length - 1, Math.max(0, column + across));
-    this.focusLabel(rows[nextRow][nextColumn]);
+  /** Arrows follow what is on screen, and a screen taller than wide stands the teeth in four rows. */
+  private keyboardGrid() {
+    const stage = this.canvasHost()?.nativeElement;
+    return toothGrid(this.chart().chartType, !!stage && stage.clientHeight > stage.clientWidth);
   }
 
-  /** Typing "16" goes to tooth 16: the shortest way there for anyone with a keyboard. */
-  private typeDigit(digit: string): void {
-    const now = performance.now();
-    this.typed = now - this.typedAt < 900 ? this.typed + digit : digit;
-    this.typedAt = now;
-    if (this.typed.length < 2) return;
-    const fdi = this.typed;
-    this.typed = '';
-    if (this.allTeeth().includes(fdi)) {
-      this.focusLabel(fdi);
+  /** In close-up the camera comes along, so walking the teeth shows each one up close in turn. */
+  private goToTooth(fdi: string): void {
+    if (this.view.zoomedFdi()) {
       this.select(fdi);
+      this.view.zoomedFdi.set(fdi);
     }
+    this.focusLabel(fdi);
   }
 
-  private focusLabel(fdi: string): void {
+  private stepBack(fromFace: boolean, fdi: string): boolean {
+    if (fromFace) {
+      this.focusLabel(fdi);
+      return true;
+    }
+    if (this.view.zoomedFdi()) {
+      this.leaveCloseUp();
+      return true;
+    }
+    if (this.moved()) {
+      this.reset();
+      return true;
+    }
+    if (this.selected()) {
+      this.select(null);
+      return true;
+    }
+    return false;
+  }
+
+  private moveAmongFaces(delta: number): void {
+    const faces = this.faceRefs();
+    const next = (this.faceStop() + delta + faces.length) % faces.length;
+    this.faceStop.set(next);
+    faces[next]?.nativeElement.focus({ preventScroll: true });
+  }
+
+  private pickFaceByLetter(key: string, fdi: string): boolean {
+    if (!this.sidePanel()) return false;
+    const face = this.faces.find((f) => this.faceLetter(f, fdi) === key.toUpperCase());
+    if (!face) return false;
+    this.toggleFace(face, fdi);
+    return true;
+  }
+
+  /** The panel's first field is what the doctor came for: what to record on this tooth. */
+  private focusPanel(): boolean {
+    const panel = this.panelRef()?.nativeElement;
+    const field = panel?.querySelector<HTMLElement>('select') ?? panel?.querySelector<HTMLElement>('input, textarea, button');
+    field?.focus();
+    return !!field;
+  }
+
+  protected focusLabel(fdi: string): void {
     this.roving.set(fdi);
-    this.labels.get(fdi)?.focus();
+    // The stage clips what is off it and would scroll to reach it; the camera brings it in instead.
+    this.labels.get(fdi)?.focus({ preventScroll: true });
+    // Whatever scrolling is needed is the page's, to keep the whole stage clear of its sticky header.
+    this.canvasHost()?.nativeElement.scrollIntoView({ block: 'nearest' });
+  }
+
+  /** Whoever cannot point sees on the tooth, and on a card beside it, what pointing would show. */
+  protected onLabelFocus(fdi: string): void {
+    this.roving.set(fdi);
+    const engine = this.engine();
+    engine?.hoverTooth(fdi);
+    const at = this.positions.get(fdi);
+    const stage = this.canvasHost()?.nativeElement.getBoundingClientRect();
+    if (at && stage && !this.view.zoomedFdi()) this.hover.set({ hit: null, fdi, x: stage.left + at.x, y: stage.top + at.y });
+  }
+
+  protected onLabelBlur(): void {
+    this.engine()?.hoverTooth(null);
+    this.hover.set(null);
   }
 }

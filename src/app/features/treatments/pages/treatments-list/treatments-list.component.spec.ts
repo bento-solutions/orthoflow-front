@@ -51,7 +51,7 @@ describe('TreatmentsListComponent — NGAP act', () => {
 
   it('shows the act and its cotation on the card, and nothing for a treatment without one', async () => {
     const fixture = await open();
-    const cards = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('h3')).map(h => h.closest('div.flex-col')?.textContent ?? '');
+    const cards = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('h2')).map(h => h.closest('div.flex-col')?.textContent ?? '');
     expect(cards.find(c => c.includes('Bague'))).toContain('D629');
     expect(cards.find(c => c.includes('Bague'))).toContain('D 90');
     expect(cards.find(c => c.includes('Consultation'))).not.toContain('TREATMENTS.ACT_CODE');

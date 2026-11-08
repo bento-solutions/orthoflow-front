@@ -27,7 +27,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
     <ul class="card divide-y divide-ink-100" [attr.aria-busy]="inbox.loading()">
       @for (m of inbox.data(); track m.id) {
         <li class="flex items-start gap-3 px-4 py-3">
-          <span class="mt-0.5 text-ink-400" aria-hidden="true"><app-icon name="message" [size]="18" /></span>
+          <span class="mt-0.5 text-ink-500" aria-hidden="true"><app-icon name="message" [size]="18" /></span>
           <div class="min-w-0 flex-1">
             <p class="text-sm font-semibold text-ink-900">
               @if (m.patientId) { <a class="no-underline hover:text-petrol-700" [routerLink]="['/patients', m.patientId]">{{ m.patientName }}</a> } @else { {{ 'COM.INBOX.UNKNOWN' | translate }} }

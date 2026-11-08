@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../../core/services/api-error.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { LanguageService } from '../../../core/services/language.service';
@@ -55,7 +55,7 @@ export function describeDevice(userAgent: string | null | undefined): string {
           <span class="label">{{ 'COMMON.LANGUAGE' | translate }}</span>
           <div class="seg" role="group" [attr.aria-label]="'COMMON.LANGUAGE' | translate">
             @for (l of languages; track l.code) {
-              <button type="button" class="seg-item" [class.is-active]="language.currentLang() === l.code" [attr.aria-pressed]="language.currentLang() === l.code" (click)="setLanguage(l.code)">{{ l.label }}</button>
+              <button type="button" class="seg-item" [attr.lang]="l.code" [class.is-active]="language.currentLang() === l.code" [attr.aria-pressed]="language.currentLang() === l.code" (click)="setLanguage(l.code)">{{ l.label }}</button>
             }
           </div>
         </div>
@@ -97,7 +97,7 @@ export function describeDevice(userAgent: string | null | undefined): string {
       </div>
       <div class="table-wrap"><div class="table-scroll">
         <table class="data-table">
-          <thead><tr><th>{{ 'SET.ACCOUNT.DEVICE' | translate }}</th><th>IP</th><th>{{ 'SET.ACCOUNT.SIGNED_IN' | translate }}</th><th>{{ 'SET.ACCOUNT.LAST_SEEN' | translate }}</th><th></th></tr></thead>
+          <thead><tr><th scope="col">{{ 'SET.ACCOUNT.DEVICE' | translate }}</th><th scope="col">IP</th><th scope="col">{{ 'SET.ACCOUNT.SIGNED_IN' | translate }}</th><th scope="col">{{ 'SET.ACCOUNT.LAST_SEEN' | translate }}</th><th scope="col"><span class="sr-only">{{ 'COMMON.ACTIONS' | translate }}</span></th></tr></thead>
           <tbody>
             @for (s of sessions.data(); track s.id) {
               <tr>
@@ -117,6 +117,7 @@ export function describeDevice(userAgent: string | null | undefined): string {
   `,
 })
 export class AccountComponent {
+  private readonly translate = inject(TranslateService);
   private readonly auth = inject(AuthService);
   private readonly admin = inject(UserAdminService);
   private readonly errors = inject(ApiErrors);
@@ -159,7 +160,7 @@ export class AccountComponent {
     try {
       await this.admin.changePassword(this.pw.value().current, this.pw.value().next);
       this.pw.reset({ current: '', next: '', confirm: '' });
-      this.toast.success('✓');
+      this.toast.success(this.translate.instant('COMMON.SAVED'));
       await this.sessions.load(() => this.admin.sessions());
     } catch (error) {
       this.errors.report(error);

@@ -1,6 +1,7 @@
 import { Component, ElementRef, effect, input, output, viewChild } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { IconComponent } from './icon.component';
+import { focusablesIn, keepTabInside } from './dialog.directive';
 
 let nextId = 1;
 
@@ -73,7 +74,7 @@ export class ModalComponent {
         // The first field of the form, not the close button that happens to come first in the page.
         queueMicrotask(() => {
           const body = this.body()?.nativeElement;
-          (this.focusables(body ?? panel)[0] ?? this.focusables(panel)[0] ?? panel).focus();
+          (focusablesIn(body ?? panel)[0] ?? focusablesIn(panel)[0] ?? panel).focus();
         });
       } else if (this.opener) {
         this.opener.focus?.();
@@ -92,29 +93,6 @@ export class ModalComponent {
       return;
     }
     const panel = this.panel()?.nativeElement;
-    if (!panel) {
-      return;
-    }
-    const items = this.focusables(panel);
-    if (items.length === 0) {
-      event.preventDefault();
-      return;
-    }
-    const first = items[0];
-    const last = items[items.length - 1];
-    const active = document.activeElement;
-    if (event.shiftKey && (active === first || active === panel)) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && active === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
-
-  private focusables(root: HTMLElement): HTMLElement[] {
-    return Array.from(
-      root.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'),
-    ).filter(el => !el.hidden && !el.closest('[hidden], [aria-hidden="true"]') && (el as HTMLInputElement).type !== 'hidden');
+    if (panel) keepTabInside(event, panel);
   }
 }

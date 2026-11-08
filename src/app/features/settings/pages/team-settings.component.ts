@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../../core/services/api-error.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Practitioner, PractitionerInput, PractitionerService, SPECIALTIES, UnmatchedName } from '../../../core/services/practitioner.service';
@@ -47,13 +47,13 @@ const EMPTY: Form = { displayName: '', specialty: 'ORTHODONTICS', color: '#2563e
           <table class="data-table">
             <thead>
               <tr>
-                <th class="w-10"></th>
-                <th>{{ 'COMMON.NAME' | translate }}</th>
-                <th>{{ 'SET.TEAM.SPECIALTY' | translate }}</th>
-                <th>INPE</th>
-                <th>{{ 'SET.TEAM.LOGIN' | translate }}</th>
-                <th>{{ 'COMMON.STATUS' | translate }}</th>
-                <th class="cell-actions">{{ 'COMMON.ACTIONS' | translate }}</th>
+                <th scope="col" class="w-10"><span class="sr-only">{{ 'COMMON.ACTIONS' | translate }}</span></th>
+                <th scope="col">{{ 'COMMON.NAME' | translate }}</th>
+                <th scope="col">{{ 'SET.TEAM.SPECIALTY' | translate }}</th>
+                <th scope="col">INPE</th>
+                <th scope="col">{{ 'SET.TEAM.LOGIN' | translate }}</th>
+                <th scope="col">{{ 'COMMON.STATUS' | translate }}</th>
+                <th scope="col" class="cell-actions">{{ 'COMMON.ACTIONS' | translate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -97,7 +97,7 @@ const EMPTY: Form = { displayName: '', specialty: 'ORTHODONTICS', color: '#2563e
         <div class="table-wrap">
           <div class="table-scroll">
             <table class="data-table">
-              <thead><tr><th>{{ 'SET.TEAM.UNMATCHED_NAME' | translate }}</th><th class="cell-num">{{ 'SET.TEAM.UNMATCHED_ROWS' | translate }}</th><th>{{ 'COMMON.PRACTITIONER' | translate }}</th><th></th></tr></thead>
+              <thead><tr><th scope="col">{{ 'SET.TEAM.UNMATCHED_NAME' | translate }}</th><th scope="col" class="cell-num">{{ 'SET.TEAM.UNMATCHED_ROWS' | translate }}</th><th scope="col">{{ 'COMMON.PRACTITIONER' | translate }}</th><th scope="col"><span class="sr-only">{{ 'COMMON.ACTIONS' | translate }}</span></th></tr></thead>
               <tbody>
                 @for (u of unmatched(); track u.doctorName) {
                   <tr>
@@ -168,6 +168,7 @@ const EMPTY: Form = { displayName: '', specialty: 'ORTHODONTICS', color: '#2563e
   `,
 })
 export class TeamSettingsComponent {
+  private readonly translate = inject(TranslateService);
   private readonly practitioners = inject(PractitionerService);
   private readonly admin = inject(UserAdminService);
   private readonly permissions = inject(PermissionService);
@@ -263,7 +264,7 @@ export class TeamSettingsComponent {
   protected async resolve(u: UnmatchedName): Promise<void> {
     try {
       const { updated } = await this.practitioners.resolveUnmatched(u.doctorName, this.choice()[u.doctorName]);
-      this.toast.success(`${updated}`);
+      this.toast.success(this.translate.instant('SET.TEAM.RESOLVED', { count: updated }));
       await this.reload();
     } catch (error) {
       this.errors.report(error);

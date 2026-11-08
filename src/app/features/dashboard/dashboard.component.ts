@@ -14,6 +14,7 @@ import { ScheduleService } from '../../core/services/schedule.service';
 import { Appointment } from '../../core/models/patient.model';
 import { IconComponent, IconName } from '../../shared/ui/icon.component';
 import { StatusPillComponent } from '../../shared/ui/status-pill.component';
+import { describedChart } from '../../core/utils/chart-summary';
 
 /* ApexCharts is configured in JavaScript and cannot resolve CSS custom
    properties, so these three token values are mirrored here. They are the
@@ -59,6 +60,7 @@ export type ChartOptions = {
     IconComponent, StatusPillComponent,
   ],
   template: `
+    <h1 class="sr-only">{{ 'COMMON.OVERVIEW' | translate }}</h1>
     <div class="space-y-6 anim-rise">
 
       <!-- ── Key figures ──────────────────────────────────────────────────
@@ -79,7 +81,7 @@ export type ChartOptions = {
                 class="grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors duration-2 ease-out"
                 [class]="kpi.tone === 'attention'
                   ? 'bg-caution-50 text-caution-700'
-                  : 'bg-petrol-50 text-petrol-600 group-hover:bg-petrol-100'"
+                  : 'bg-petrol-50 text-petrol-700 group-hover:bg-petrol-100'"
               >
                 <app-icon [name]="kpi.icon" [size]="16" />
               </span>
@@ -166,7 +168,7 @@ export type ChartOptions = {
                   <a [routerLink]="item.link" class="flex items-start gap-3 px-4 py-3 transition-colors duration-1 ease-out hover:bg-ink-50">
                     <span
                       class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-md"
-                      [class]="item.tone === 'critical' ? 'bg-critical-50 text-critical-600' : 'bg-caution-50 text-caution-700'"
+                      [class]="item.tone === 'critical' ? 'bg-critical-50 text-critical-700' : 'bg-caution-50 text-caution-700'"
                     >
                       <app-icon [name]="item.icon" [size]="14" />
                     </span>
@@ -180,7 +182,7 @@ export type ChartOptions = {
             </ul>
           } @else {
             <div class="empty">
-              <span class="empty-icon bg-positive-50 text-positive-600">
+              <span class="empty-icon bg-positive-50 text-positive-700">
                 <app-icon name="check-circle" [size]="20" />
               </span>
               <p class="empty-title">{{ 'DASHBOARD.ALL_CLEAR' | translate }}</p>
@@ -255,7 +257,7 @@ export type ChartOptions = {
                   <app-icon [name]="action.icon" [size]="16" />
                 </span>
                 <span class="flex-1 text-sm font-semibold text-ink-900">{{ action.key | translate }}</span>
-                <span class="text-ink-300 transition-transform duration-2 ease-out group-hover:translate-x-0.5 group-hover:text-petrol-600 rtl:group-hover:-translate-x-0.5">
+                <span class="text-ink-300 transition-transform duration-2 ease-out group-hover:translate-x-0.5 group-hover:text-petrol-700 rtl:group-hover:-translate-x-0.5">
                   <app-icon name="chevron-right" [size]="16" />
                 </span>
               </a>
@@ -452,7 +454,7 @@ export class DashboardComponent implements OnInit {
       new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(2026, m, 1)),
     );
 
-    return {
+    return describedChart(this.t('DASHBOARD.PATIENT_ANALYTICS'), {
       series: [{ name: this.t('DASHBOARD.SERIES_ADMISSIONS'), data: isQuarterly ? quarterly : monthly }],
       chart: {
         height: 300,
@@ -493,7 +495,7 @@ export class DashboardComponent implements OnInit {
         type: 'gradient',
         gradient: { shadeIntensity: 1, opacityFrom: 0.28, opacityTo: 0.02, stops: [0, 100] },
       },
-    };
+    });
   });
 
   /* `currentLang` is a plain property, so the locale has to be tracked

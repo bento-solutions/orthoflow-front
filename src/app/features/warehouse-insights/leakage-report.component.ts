@@ -44,7 +44,7 @@ import { LeakageByDoctor, LeakageReport, WarehouseInsightsApi } from './warehous
           <div class="tile p-4">
             <p class="text-2xs font-bold uppercase tracking-wider text-ink-500">{{ k.key | translate }}</p>
             <p class="mt-1 text-2xl font-extrabold tabular-nums" [class.text-critical-700]="k.alarm">{{ k.value }}</p>
-            <p class="mt-0.5 text-2xs text-ink-400">{{ k.hint | translate }}</p>
+            <p class="mt-0.5 text-2xs text-ink-500">{{ k.hint | translate }}</p>
           </div>
         }
       </section>
@@ -77,13 +77,13 @@ import { LeakageByDoctor, LeakageReport, WarehouseInsightsApi } from './warehous
               <div class="table-wrap px-5 pb-4"><div class="table-scroll">
                 <table class="data-table">
                   <thead><tr>
-                    <th>{{ 'WH.LEAK.ITEM' | translate }}</th>
-                    <th class="text-end">{{ 'WH.LEAK.EXPECTED' | translate }}</th>
-                    <th class="text-end">{{ 'WH.LEAK.TOLERATED' | translate }}</th>
-                    <th class="text-end">{{ 'WH.LEAK.ACTUAL' | translate }}</th>
-                    <th class="text-end">{{ 'WH.LEAK.EXPLAINED' | translate }}</th>
-                    <th class="text-end">{{ 'WH.LEAK.UNEXPLAINED' | translate }}</th>
-                    <th class="text-end">{{ 'WH.LEAK.COST' | translate }}</th>
+                    <th scope="col">{{ 'WH.LEAK.ITEM' | translate }}</th>
+                    <th scope="col" class="text-end">{{ 'WH.LEAK.EXPECTED' | translate }}</th>
+                    <th scope="col" class="text-end">{{ 'WH.LEAK.TOLERATED' | translate }}</th>
+                    <th scope="col" class="text-end">{{ 'WH.LEAK.ACTUAL' | translate }}</th>
+                    <th scope="col" class="text-end">{{ 'WH.LEAK.EXPLAINED' | translate }}</th>
+                    <th scope="col" class="text-end">{{ 'WH.LEAK.UNEXPLAINED' | translate }}</th>
+                    <th scope="col" class="text-end">{{ 'WH.LEAK.COST' | translate }}</th>
                   </tr></thead>
                   <tbody>
                     @for (l of d.lines; track l.stockItemId) {
@@ -119,10 +119,10 @@ import { LeakageByDoctor, LeakageReport, WarehouseInsightsApi } from './warehous
           <div class="table-wrap"><div class="table-scroll">
             <table class="data-table">
               <thead><tr>
-                <th>{{ 'WH.LEAK.ITEM' | translate }}</th>
-                <th>{{ 'WH.LEAK.SOURCE' | translate }}</th>
-                <th class="text-end">{{ 'WH.LEAK.QUANTITY' | translate }}</th>
-                <th class="text-end">{{ 'WH.LEAK.COST' | translate }}</th>
+                <th scope="col">{{ 'WH.LEAK.ITEM' | translate }}</th>
+                <th scope="col">{{ 'WH.LEAK.SOURCE' | translate }}</th>
+                <th scope="col" class="text-end">{{ 'WH.LEAK.QUANTITY' | translate }}</th>
+                <th scope="col" class="text-end">{{ 'WH.LEAK.COST' | translate }}</th>
               </tr></thead>
               <tbody>
                 @for (u of r.unattributed; track $index) {

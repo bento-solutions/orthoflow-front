@@ -7,18 +7,19 @@ import { CommandRegistryService, Command } from '../../../core/services/command-
 import { LanguageService } from '../../../core/services/language.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { PatientDirectoryApi } from '../../../features/patients/patient-directory-api.service';
+import { DialogDirective } from '../../ui/dialog.directive';
 
 @Component({
   selector: 'app-command-palette',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, TranslateModule, DialogDirective],
   template: `
     @if (registry.isOpen()) {
       <div class="palette-backdrop" (click)="close()">
         <div
           class="palette-panel"
-          role="dialog"
-          aria-modal="true"
+          appDialog
+          (dialogClosed)="close()"
           [attr.aria-label]="'CMD.TITLE' | translate"
           (click)="$event.stopPropagation()"
         >
@@ -33,22 +34,30 @@ import { PatientDirectoryApi } from '../../../features/patients/patient-director
               (ngModelChange)="onQueryChange($event)"
               (keydown)="onKeydown($event)"
               autocomplete="off"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded="true"
+              aria-controls="palette-results"
+              [attr.aria-activedescendant]="grouped().length ? 'palette-option-' + activeIndex() : null"
               [attr.aria-label]="'CMD.TITLE' | translate"
             />
-            <kbd class="palette-esc">Esc</kbd>
+            <kbd class="palette-esc" aria-hidden="true">Esc</kbd>
           </div>
 
           @if (grouped().length === 0) {
             <div class="palette-empty">{{ 'CMD.EMPTY' | translate }}</div>
           } @else {
-            <div class="palette-results" role="listbox">
+            <div class="palette-results" id="palette-results" role="listbox" [attr.aria-label]="'CMD.TITLE' | translate">
               @for (group of grouped(); track group.category) {
-                <div class="palette-group-label">{{ categoryLabel(group.category) }}</div>
+                <div role="group" [attr.aria-label]="categoryLabel(group.category)">
+                <div class="palette-group-label" aria-hidden="true">{{ categoryLabel(group.category) }}</div>
                 @for (cmd of group.commands; track cmd.id) {
                   <button
                     type="button"
                     class="palette-item"
                     role="option"
+                    tabindex="-1"
+                    [id]="'palette-option-' + flatIndex(cmd)"
                     [class.active]="flatIndex(cmd) === activeIndex()"
                     [attr.aria-selected]="flatIndex(cmd) === activeIndex()"
                     (mouseenter)="activeIndex.set(flatIndex(cmd))"
@@ -63,11 +72,12 @@ import { PatientDirectoryApi } from '../../../features/patients/patient-director
                     </span>
                   </button>
                 }
+                </div>
               }
             </div>
           }
 
-          <div class="palette-footer">
+          <div class="palette-footer" aria-hidden="true">
             <span><kbd>↑</kbd><kbd>↓</kbd> {{ 'CMD.NAVIGATE' | translate }}</span>
             <span><kbd>Enter</kbd> {{ 'CMD.SELECT' | translate }}</span>
             <span><kbd>Esc</kbd> {{ 'CMD.CLOSE' | translate }}</span>
@@ -118,7 +128,7 @@ import { PatientDirectoryApi } from '../../../features/patients/patient-director
     }
     .palette-esc {
       font-size: 0.7rem;
-      color: rgb(var(--ink-400));
+      color: rgb(var(--ink-500));
       border: 1px solid rgb(var(--ink-200));
       border-radius: 4px;
       padding: 0.1rem 0.4rem;
@@ -126,7 +136,7 @@ import { PatientDirectoryApi } from '../../../features/patients/patient-director
     .palette-empty {
       padding: 2rem 1.25rem;
       text-align: center;
-      color: rgb(var(--ink-400));
+      color: rgb(var(--ink-500));
       font-size: 0.875rem;
     }
     .palette-results {
@@ -138,7 +148,7 @@ import { PatientDirectoryApi } from '../../../features/patients/patient-director
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: rgb(var(--ink-400));
+      color: rgb(var(--ink-500));
       padding: 0.5rem 0.75rem 0.25rem;
     }
     .palette-item {
@@ -158,7 +168,7 @@ import { PatientDirectoryApi } from '../../../features/patients/patient-director
     .palette-item.active {
       background: rgb(var(--petrol-50));
     }
-    .item-icon { color: rgb(var(--petrol-900)); font-size: 20px; }
+    .item-icon { color: rgb(var(--petrol-800)); font-size: 20px; }
     .item-text { display: flex; flex-direction: column; min-width: 0; }
     .item-label { font-size: 0.875rem; font-weight: 600; }
     .item-desc { font-size: 0.75rem; color: rgb(var(--ink-500)); }
@@ -168,7 +178,7 @@ import { PatientDirectoryApi } from '../../../features/patients/patient-director
       padding: 0.6rem 1.25rem;
       border-top: 1px solid rgb(var(--ink-200));
       font-size: 0.7rem;
-      color: rgb(var(--ink-400));
+      color: rgb(var(--ink-500));
     }
     .palette-footer kbd {
       border: 1px solid rgb(var(--ink-200));

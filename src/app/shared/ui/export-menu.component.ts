@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, inject, input, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, inject, input, signal, effect, viewChild } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiErrors } from '../../core/services/api-error.service';
 import { DownloadService, QueryValue } from '../../core/services/download.service';
@@ -21,16 +21,16 @@ const LABEL: Record<ExportFormat, string> = { pdf: 'PDF', xlsx: 'Excel', csv: 'C
   imports: [TranslateModule, IconComponent],
   template: `
     <div class="relative inline-block">
-      <button type="button" class="btn btn-secondary btn-sm" (click)="toggle()" [disabled]="busy()" aria-haspopup="menu" [attr.aria-expanded]="open()">
+      <button #trigger type="button" class="btn btn-secondary btn-sm" (click)="toggle()" [disabled]="busy()" aria-haspopup="menu" [attr.aria-expanded]="open()">
         <app-icon name="download" [size]="15" />
         {{ 'COMMON.EXPORT' | translate }}
         <app-icon name="chevron-down" [size]="14" />
       </button>
       @if (open()) {
-        <ul role="menu" class="absolute end-0 z-30 mt-1 min-w-32 overflow-hidden rounded-md border border-ink-200 bg-surface py-1 shadow-lg">
+        <ul #menu role="menu" [attr.aria-label]="'COMMON.EXPORT' | translate" (keydown)="onMenuKeydown($event)" class="absolute end-0 z-30 mt-1 min-w-32 overflow-hidden rounded-md border border-ink-200 bg-surface py-1 shadow-lg">
           @for (format of formats(); track format) {
             <li role="none">
-              <button type="button" role="menuitem" class="block w-full px-3 py-1.5 text-start text-sm text-ink-900 hover:bg-ink-50" (click)="run(format)">
+              <button type="button" role="menuitem" tabindex="-1" class="block w-full px-3 py-1.5 text-start text-sm text-ink-900 hover:bg-ink-50" (click)="run(format)">
                 {{ labels[format] }}
               </button>
             </li>
@@ -56,8 +56,28 @@ export class ExportMenuComponent {
   private readonly language = inject(LanguageService);
   private readonly host = inject(ElementRef<HTMLElement>);
 
+  private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('trigger');
+  private readonly menu = viewChild<ElementRef<HTMLElement>>('menu');
+
+  constructor() {
+    // A menu takes focus when it opens, and arrows go through it from there.
+    effect(() => this.menu()?.nativeElement.querySelector('button')?.focus());
+  }
+
   protected toggle(): void {
     this.open.update(v => !v);
+  }
+
+  protected onMenuKeydown(event: KeyboardEvent): void {
+    const items = Array.from(this.menu()?.nativeElement.querySelectorAll('button') ?? []);
+    const at = items.indexOf(document.activeElement as HTMLButtonElement);
+    const go: Record<string, number> = { ArrowDown: at + 1, ArrowUp: at - 1 + items.length, Home: 0, End: items.length - 1 };
+    if (event.key in go) {
+      event.preventDefault();
+      items[go[event.key] % items.length]?.focus();
+    } else if (event.key === 'Tab') {
+      this.open.set(false);
+    }
   }
 
   protected async run(format: ExportFormat): Promise<void> {
@@ -85,6 +105,8 @@ export class ExportMenuComponent {
 
   @HostListener('keydown.escape')
   protected onEscape(): void {
+    if (!this.open()) return;
     this.open.set(false);
+    this.trigger().nativeElement.focus();
   }
 }

@@ -37,7 +37,7 @@ import { ModalComponent } from '../../shared/ui/modal.component';
               <td>{{ a.advanceDate | date: 'mediumDate' }}</td>
               <td class="font-semibold">{{ a.practitionerName }}@if (a.notes) { <span class="block text-xs font-normal text-ink-500">{{ a.notes }}</span> }</td>
               <td class="cell-num">{{ a.amount | money }}</td>
-              <td class="cell-num font-semibold" [class.text-ink-400]="a.outstanding === 0">{{ a.outstanding | money }}</td>
+              <td class="cell-num font-semibold" [class.text-ink-500]="a.outstanding === 0">{{ a.outstanding | money }}</td>
               <td>{{ a.method || '—' }}</td>
               <td class="cell-actions">
                 @if (a.outstanding === a.amount) {

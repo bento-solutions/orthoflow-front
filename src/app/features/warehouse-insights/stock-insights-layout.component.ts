@@ -32,6 +32,7 @@ import { TranslateModule } from '@ngx-translate/core';
           [routerLink]="t.path"
           [routerLinkActiveOptions]="{ exact: true }"
           routerLinkActive="bg-white text-ink-900 shadow-sm"
+          ariaCurrentWhenActive="page"
           class="rounded-lg px-4 py-2 text-ink-600 transition hover:bg-white/50 hover:text-ink-900"
         >
           {{ t.key | translate }}

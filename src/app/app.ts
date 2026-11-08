@@ -4,10 +4,13 @@ import { LanguageService } from './core/services/language.service';
 import { ToastContainerComponent } from './shared/components/toast/toast-container.component';
 import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
 import { CommandPaletteComponent } from './shared/components/command-palette/command-palette.component';
+import { LiveRegionComponent } from './shared/components/live-region/live-region.component';
 import { CommandRegistryService } from './core/services/command-registry.service';
 import { registerAppCommands } from './core/services/register-app-commands';
 import { HelpPanelService } from './core/services/help-panel.service';
 import { ThemeService } from './core/services/theme.service';
+import { ScrollRegionsService } from './core/services/scroll-regions.service';
+import { FocusRecoveryService } from './core/services/focus-recovery.service';
 import { VoiceCommandsService } from './core/voice/register-voice-commands';
 import { VoiceOrchestratorService } from './core/voice/voice-orchestrator.service';
 import { VoiceApiService } from './core/voice/voice-api.service';
@@ -21,6 +24,7 @@ import { assertLexiconMatches } from './core/voice/clinical-lexicon';
     ToastContainerComponent,
     ConfirmDialogComponent,
     CommandPaletteComponent,
+    LiveRegionComponent,
   ],
   // The voice HUD is deliberately *not* here. It used to be mounted at the
   // app root, which put a listening indicator and a live microphone on every
@@ -31,7 +35,8 @@ import { assertLexiconMatches } from './core/voice/clinical-lexicon';
   template: `<router-outlet />
     <app-toast-container />
     <app-confirm-dialog />
-    <app-command-palette />`,
+    <app-command-palette />
+    <app-live-region />`,
 })
 export class App {
   private voiceCommands = inject(VoiceCommandsService);
@@ -46,6 +51,8 @@ export class App {
     theme: ThemeService,
   ) {
     registerAppCommands(this.commandRegistry, this.router, help, theme);
+    inject(ScrollRegionsService).start();
+    inject(FocusRecoveryService).start();
     this.voiceCommands.registerAll();
     this.verifyLexicon();
   }

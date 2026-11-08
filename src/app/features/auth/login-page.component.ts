@@ -36,14 +36,14 @@ import { AuthLayoutComponent } from '../../shared/components/auth-layout/auth-la
             [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched"
           />
           @if (form.controls.email.invalid && form.controls.email.touched) {
-            <p class="text-xs text-red-600">{{ 'AUTH.EMAIL_ERROR' | translate }}</p>
+            <p class="text-xs text-red-700">{{ 'AUTH.EMAIL_ERROR' | translate }}</p>
           }
         </div>
 
         <div class="space-y-2">
           <div class="flex items-center justify-between">
             <label class="text-sm font-semibold text-ink-600" for="password">{{ 'AUTH.PASSWORD_LABEL' | translate }}</label>
-            <a routerLink="/forgot-password" class="text-sm font-semibold text-ortho-teal hover:underline">{{ 'AUTH.FORGOT_PASSWORD_LINK' | translate }}</a>
+            <a routerLink="/forgot-password" class="text-sm font-semibold text-petrol-700 hover:underline">{{ 'AUTH.FORGOT_PASSWORD_LINK' | translate }}</a>
           </div>
           <input
             id="password"
@@ -55,7 +55,7 @@ import { AuthLayoutComponent } from '../../shared/components/auth-layout/auth-la
             [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
           />
           @if (form.controls.password.invalid && form.controls.password.touched) {
-            <p class="text-xs text-red-600">{{ 'AUTH.PASSWORD_ERROR' | translate }}</p>
+            <p class="text-xs text-red-700">{{ 'AUTH.PASSWORD_ERROR' | translate }}</p>
           }
         </div>
 
@@ -70,8 +70,8 @@ import { AuthLayoutComponent } from '../../shared/components/auth-layout/auth-la
 
       @if (!isOnboarded()) {
         <p class="mt-6 text-center text-sm text-ink-600">
-          Setting up a new clinic?
-          <a routerLink="/onboarding" class="font-bold text-ortho-teal hover:underline">Get started</a>
+          {{ 'AUTH.NEW_CLINIC' | translate }}
+          <a routerLink="/onboarding" class="font-bold text-petrol-700 hover:underline">{{ 'AUTH.GET_STARTED' | translate }}</a>
         </p>
       }
     </app-auth-layout>

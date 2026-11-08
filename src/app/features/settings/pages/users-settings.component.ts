@@ -55,8 +55,8 @@ const GROUPS: ReadonlyArray<{ key: string; permissions: string[] }> = [
       <div class="table-wrap"><div class="table-scroll">
         <table class="data-table">
           <thead><tr>
-            <th>{{ 'COMMON.NAME' | translate }}</th><th>Email</th><th>{{ 'SET.USERS.ROLE' | translate }}</th>
-            <th>{{ 'SET.USERS.LAST_LOGIN' | translate }}</th><th>{{ 'COMMON.STATUS' | translate }}</th><th class="cell-actions">{{ 'COMMON.ACTIONS' | translate }}</th>
+            <th scope="col">{{ 'COMMON.NAME' | translate }}</th><th scope="col">Email</th><th scope="col">{{ 'SET.USERS.ROLE' | translate }}</th>
+            <th scope="col">{{ 'SET.USERS.LAST_LOGIN' | translate }}</th><th scope="col">{{ 'COMMON.STATUS' | translate }}</th><th scope="col" class="cell-actions">{{ 'COMMON.ACTIONS' | translate }}</th>
           </tr></thead>
           <tbody>
             @for (u of users.data(); track u.id) {
@@ -92,9 +92,9 @@ const GROUPS: ReadonlyArray<{ key: string; permissions: string[] }> = [
           <table class="data-table">
             <thead>
               <tr>
-                <th>{{ 'SET.PERMISSIONS.PERMISSION' | translate }}</th>
+                <th scope="col">{{ 'SET.PERMISSIONS.PERMISSION' | translate }}</th>
                 @for (role of roles; track role) {
-                  <th class="text-center">
+                  <th scope="col" class="text-center">
                     {{ 'SET.USERS.ROLES.' + role | translate }}
                     @if (m.customised.includes(role)) { <span class="pill pill-active pill-nodot ms-1">{{ 'SET.PERMISSIONS.CUSTOM' | translate }}</span> }
                   </th>
@@ -103,10 +103,10 @@ const GROUPS: ReadonlyArray<{ key: string; permissions: string[] }> = [
             </thead>
             <tbody>
               @for (group of groups; track group.key) {
-                <tr><th [attr.colspan]="roles.length + 1" class="bg-ink-50 text-start text-xs font-bold uppercase tracking-wide text-ink-600">{{ 'SET.PERMISSIONS.GROUP.' + group.key | translate }}</th></tr>
+                <tr><th scope="row" [attr.colspan]="roles.length + 1" class="bg-ink-50 text-start text-xs font-bold uppercase tracking-wide text-ink-600">{{ 'SET.PERMISSIONS.GROUP.' + group.key | translate }}</th></tr>
                 @for (p of group.permissions; track p) {
                   <tr>
-                    <td>{{ 'SET.PERMISSIONS.NAMES.' + p | translate }} <span class="mono text-2xs text-ink-400">{{ p }}</span></td>
+                    <td>{{ 'SET.PERMISSIONS.NAMES.' + p | translate }} <span class="mono text-2xs text-ink-500">{{ p }}</span></td>
                     @for (role of roles; track role) {
                       <td class="text-center">
                         <input type="checkbox" [checked]="draft()[role]?.has(p)" [disabled]="role === 'ADMIN' || !canManage()" (change)="toggle(role, p, $any($event.target).checked)"
@@ -243,7 +243,7 @@ export class UsersSettingsComponent {
       }
       this.setMatrix(latest);
       await this.permissions.load();
-      this.toast.success('✓');
+      this.toast.success(this.translate.instant('COMMON.SAVED'));
     } catch (error) {
       this.errors.report(error);
     } finally {
@@ -310,7 +310,7 @@ export class UsersSettingsComponent {
     const url = this.invite()?.inviteUrl;
     if (url) {
       await navigator.clipboard?.writeText(url).catch(() => undefined);
-      this.toast.success('✓');
+      this.toast.success(this.translate.instant('COMMON.SAVED'));
     }
   }
 }

@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../../core/services/api-error.service';
 import { PracticeProfileInput, PracticeProfileService } from '../../../core/services/practice-profile.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -34,7 +34,7 @@ const fromProfile = (p: Partial<Record<keyof Form, string | undefined>>): Form =
           <div class="flex items-center gap-4 sm:col-span-2">
             <div class="grid h-20 w-28 shrink-0 place-items-center overflow-hidden rounded-md border border-ink-200 bg-white">
               @if (profile.logoUrl()) { <img [src]="profile.logoUrl()" alt="" class="max-h-full max-w-full object-contain" /> }
-              @else { <span class="text-xs text-ink-400">{{ 'SET.PROFILE.NO_LOGO' | translate }}</span> }
+              @else { <span class="text-xs text-ink-500">{{ 'SET.PROFILE.NO_LOGO' | translate }}</span> }
             </div>
             <div>
               <label class="btn btn-secondary btn-sm cursor-pointer">
@@ -87,7 +87,7 @@ const fromProfile = (p: Partial<Record<keyof Form, string | undefined>>): Form =
             </select></label>
           <label class="field"><span class="label">{{ 'SET.PROFILE.DEFAULT_LANGUAGE' | translate }}</span>
             <select class="select" name="defaultLanguage" [ngModel]="f.value().defaultLanguage" (ngModelChange)="f.set('defaultLanguage', $event)">
-              <option value="fr">Français</option><option value="en">English</option><option value="ar">العربية</option>
+              <option value="fr" lang="fr">Français</option><option value="en" lang="en">English</option><option value="ar" lang="ar">العربية</option>
             </select>
             <span class="hint">{{ 'SET.PROFILE.DEFAULT_LANGUAGE_HINT' | translate }}</span></label>
         </div>
@@ -100,6 +100,7 @@ const fromProfile = (p: Partial<Record<keyof Form, string | undefined>>): Form =
   `,
 })
 export class PracticeProfileComponent {
+  private readonly translate = inject(TranslateService);
   protected readonly profile = inject(PracticeProfileService);
   private readonly errors = inject(ApiErrors);
   private readonly toast = inject(ToastService);
@@ -130,7 +131,7 @@ export class PracticeProfileComponent {
     this.saving.set(true);
     try {
       await this.profile.save(input);
-      this.toast.success('✓');
+      this.toast.success(this.translate.instant('COMMON.SAVED'));
     } catch (error) {
       this.errors.report(error);
     } finally {
@@ -146,12 +147,12 @@ export class PracticeProfileComponent {
       return;
     }
     if (file.size > 500 * 1024) {
-      this.toast.error('500 KB max');
+      this.toast.error(this.translate.instant('SET.LOGO_TOO_BIG'));
       return;
     }
     try {
       await this.profile.uploadLogo(file);
-      this.toast.success('✓');
+      this.toast.success(this.translate.instant('COMMON.SAVED'));
     } catch (error) {
       this.errors.report(error);
     }

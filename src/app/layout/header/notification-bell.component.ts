@@ -41,7 +41,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
                     <span class="min-w-0">
                       <span class="block truncate text-sm" [class.font-bold]="!n.read" [class.text-ink-900]="!n.read" [class.text-ink-600]="n.read">{{ n.subject }}</span>
                       <span class="line-clamp-2 block text-xs text-ink-500">{{ n.body }}</span>
-                      <span class="mt-0.5 block text-2xs text-ink-400">{{ n.createdAt | date: 'short' }}</span>
+                      <span class="mt-0.5 block text-2xs text-ink-500">{{ n.createdAt | date: 'short' }}</span>
                     </span>
                   </span>
                 </button>
@@ -88,6 +88,8 @@ export class NotificationBellComponent {
 
   @HostListener('keydown.escape')
   protected onEscape(): void {
+    if (!this.open()) return;
     this.open.set(false);
+    this.host.nativeElement.querySelector('button')?.focus();
   }
 }

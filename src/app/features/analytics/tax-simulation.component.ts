@@ -48,7 +48,7 @@ export function bandProblem(rows: BandRow[]): 'EMPTY' | 'ORDER' | 'RATE' | null 
   standalone: true,
   imports: [FormsModule, TranslateModule, MoneyPipe, PctPipe],
   template: `
-    <p class="mb-4 rounded-lg border border-caution-300 bg-caution-50 px-4 py-3 text-sm text-caution-900" role="note">{{ 'ANA.TAX.DISCLAIMER' | translate }}</p>
+    <p class="mb-4 rounded-lg border border-caution-300 bg-caution-50 px-4 py-3 text-sm text-caution-800" role="note">{{ 'ANA.TAX.DISCLAIMER' | translate }}</p>
 
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <label class="field w-auto"><span class="label">{{ 'ANA.TAX.YEAR' | translate }}</span>
@@ -68,7 +68,7 @@ export function bandProblem(rows: BandRow[]): 'EMPTY' | 'ORDER' | 'RATE' | null 
           <div class="space-y-3 p-4">
             <p class="text-sm text-ink-700"><span class="font-semibold">{{ 'ANA.TAX.SOURCE' | translate }}:</span> {{ s.source }}</p>
             <table class="table">
-              <thead><tr><th>{{ 'ANA.TAX.BAND' | translate }}</th><th class="text-end">{{ 'ANA.TAX.RATE' | translate }}</th></tr></thead>
+              <thead><tr><th scope="col">{{ 'ANA.TAX.BAND' | translate }}</th><th scope="col" class="text-end">{{ 'ANA.TAX.RATE' | translate }}</th></tr></thead>
               <tbody>
                 @for (b of s.brackets; track $index; let i = $index) {
                   <tr><td>{{ bandLabel(s.brackets, i) }}</td><td class="text-end tabular-nums">{{ b.ratePercent }} %</td></tr>
@@ -82,7 +82,7 @@ export function bandProblem(rows: BandRow[]): 'EMPTY' | 'ORDER' | 'RATE' | null 
         } @else if (editing() || canManage()) {
           <form class="space-y-4 p-4" (ngSubmit)="save()">
             <p class="text-xs text-ink-500">{{ 'ANA.TAX.NO_RATES_BUILT_IN' | translate }}</p>
-            <label class="field"><span class="label">{{ 'ANA.TAX.SOURCE' | translate }} *</span>
+            <label class="field"><span class="label">{{ 'ANA.TAX.SOURCE' | translate }} <span aria-hidden="true">*</span></span>
               <input class="input" type="text" name="source" maxlength="500" [ngModel]="source()" (ngModelChange)="source.set($event)" required />
               <span class="hint">{{ 'ANA.TAX.SOURCE_HINT' | translate }}</span></label>
 
@@ -149,7 +149,7 @@ export function bandProblem(rows: BandRow[]): 'EMPTY' | 'ORDER' | 'RATE' | null 
         </dl>
         <div class="overflow-x-auto px-4 pb-4">
           <table class="table">
-            <thead><tr><th>{{ 'ANA.TAX.BAND' | translate }}</th><th class="text-end">{{ 'ANA.TAX.RATE' | translate }}</th><th class="text-end">{{ 'ANA.TAX.IN_BAND' | translate }}</th><th class="text-end">{{ 'ANA.TAX.TAX' | translate }}</th></tr></thead>
+            <thead><tr><th scope="col">{{ 'ANA.TAX.BAND' | translate }}</th><th scope="col" class="text-end">{{ 'ANA.TAX.RATE' | translate }}</th><th scope="col" class="text-end">{{ 'ANA.TAX.IN_BAND' | translate }}</th><th scope="col" class="text-end">{{ 'ANA.TAX.TAX' | translate }}</th></tr></thead>
             <tbody>
               @for (b of r.bands; track $index) {
                 <tr><td>{{ bandRange(b.from ?? 0, b.upTo) }}</td><td class="text-end tabular-nums">{{ b.ratePercent }} %</td><td class="text-end tabular-nums">{{ b.amountInBand | money }}</td><td class="text-end tabular-nums">{{ b.tax | money }}</td></tr>

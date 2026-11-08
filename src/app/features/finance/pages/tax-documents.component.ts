@@ -50,7 +50,7 @@ const LANGS = ['fr', 'en', 'ar'] as const;
           @for (s of statuses; track s) { <option [value]="s">{{ 'STATUS.' + s | translate }}</option> }
         </select></label>
       <label class="flex items-center gap-1.5 pb-2 text-sm font-semibold text-ink-700"><input type="checkbox" [ngModel]="duplicatesOnly()" (ngModelChange)="duplicatesOnly.set($event)" /> {{ 'FIN.TAX.DUPLICATES_ONLY' | translate }}</label>
-      <span class="ms-auto flex gap-2">
+      <span class="ms-auto flex flex-wrap gap-2">
         <app-export-menu path="/tax-documents/export" [query]="exportQuery()" fallbackName="tax-documents" />
         <button *appCan="'BILLING_WRITE'" type="button" class="btn btn-primary btn-sm" (click)="openIssue()"><app-icon name="plus" [size]="15" /> {{ 'FIN.TAX.ISSUE' | translate }}</button>
       </span>

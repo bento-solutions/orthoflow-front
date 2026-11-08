@@ -16,9 +16,9 @@ import { PermissionService } from '../../core/services/permission.service';
         <p class="page-sub">{{ 'COM.SUBTITLE' | translate }}</p>
       </div>
     </div>
-    <nav class="tabs mb-6" role="tablist" [attr.aria-label]="'NAV.COMMUNICATION' | translate">
+    <nav class="tabs mb-6" [attr.aria-label]="'NAV.COMMUNICATION' | translate">
       @for (tab of tabs; track tab.path) {
-        <a class="tab whitespace-nowrap" role="tab" [routerLink]="tab.path" routerLinkActive="is-active" #rla="routerLinkActive" [attr.aria-selected]="rla.isActive">
+        <a class="tab whitespace-nowrap" [routerLink]="tab.path" routerLinkActive="is-active" ariaCurrentWhenActive="page">
           {{ tab.key | translate }}
           @if (tab.path === 'inbox' && counts.inbox() > 0) { <span class="ms-1.5 rounded-full bg-critical-500 px-1.5 text-2xs font-bold leading-4 text-white">{{ counts.inbox() }}</span> }
         </a>

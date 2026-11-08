@@ -40,7 +40,7 @@ import { AuthLayoutComponent } from '../../shared/components/auth-layout/auth-la
               [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched"
             />
             @if (form.controls.email.invalid && form.controls.email.touched) {
-              <p class="text-xs text-red-600">{{ 'AUTH.EMAIL_ERROR' | translate }}</p>
+              <p class="text-xs text-red-700">{{ 'AUTH.EMAIL_ERROR' | translate }}</p>
             }
           </div>
 
@@ -55,7 +55,7 @@ import { AuthLayoutComponent } from '../../shared/components/auth-layout/auth-la
       }
 
       <p class="mt-6 text-center text-sm text-ink-600">
-        <a routerLink="/login" class="font-bold text-ortho-teal hover:underline">{{ 'AUTH.BACK_TO_LOGIN' | translate }}</a>
+        <a routerLink="/login" class="font-bold text-petrol-700 hover:underline">{{ 'AUTH.BACK_TO_LOGIN' | translate }}</a>
       </p>
     </app-auth-layout>
   `,

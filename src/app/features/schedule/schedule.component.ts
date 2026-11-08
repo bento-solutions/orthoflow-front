@@ -14,23 +14,24 @@ import { PermissionService } from '../../core/services/permission.service';
 import { AgendaConfigService, APPOINTMENT_STATUSES, AppointmentType } from '../../core/services/agenda-config.service';
 import { LiveEventsService } from '../../core/services/live-events.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DialogDirective } from '../../shared/ui/dialog.directive';
 
 type CalendarView = 'day' | 'week' | 'month' | 'year';
 
 @Component({
   selector: 'app-schedule',
   standalone: true,
-  imports: [CommonModule, RouterModule, TranslateModule, ReactiveFormsModule, FormsModule],
+  imports: [DialogDirective, CommonModule, RouterModule, TranslateModule, ReactiveFormsModule, FormsModule],
   template: `
     <div class="schedule-container" [class.rtl]="translate.currentLang === 'ar'">
       <header class="schedule-header">
         <div class="header-left">
           <h1>{{ 'SCHEDULE.TITLE' | translate }}</h1>
-          <div class="view-switcher">
-            <button type="button" [class.active]="view() === 'day'" (click)="view.set('day')">{{ 'SCHEDULE.DAY' | translate }}</button>
-            <button type="button" [class.active]="view() === 'week'" (click)="view.set('week')">{{ 'SCHEDULE.WEEK' | translate }}</button>
-            <button type="button" [class.active]="view() === 'month'" (click)="view.set('month')">{{ 'SCHEDULE.MONTH' | translate }}</button>
-            <button type="button" [class.active]="view() === 'year'" (click)="view.set('year')">{{ 'SCHEDULE.YEAR' | translate }}</button>
+          <div class="view-switcher" role="group" [attr.aria-label]="'SCHEDULE.TITLE' | translate">
+            <button type="button" [class.active]="view() === 'day'" [attr.aria-pressed]="view() === 'day'" (click)="view.set('day')">{{ 'SCHEDULE.DAY' | translate }}</button>
+            <button type="button" [class.active]="view() === 'week'" [attr.aria-pressed]="view() === 'week'" (click)="view.set('week')">{{ 'SCHEDULE.WEEK' | translate }}</button>
+            <button type="button" [class.active]="view() === 'month'" [attr.aria-pressed]="view() === 'month'" (click)="view.set('month')">{{ 'SCHEDULE.MONTH' | translate }}</button>
+            <button type="button" [class.active]="view() === 'year'" [attr.aria-pressed]="view() === 'year'" (click)="view.set('year')">{{ 'SCHEDULE.YEAR' | translate }}</button>
           </div>
         </div>
 
@@ -53,18 +54,18 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
               }
             </select>
             <div class="search-box">
-              <span class="material-icons">search</span>
-              <input type="text" [placeholder]="'SCHEDULE.FILTER_PLACEHOLDER' | translate" (input)="onPatientFilter($event)" />
+              <span aria-hidden="true" class="material-icons">search</span>
+              <input [attr.aria-label]="'SCHEDULE.FILTER_PLACEHOLDER' | translate" type="text" [placeholder]="'SCHEDULE.FILTER_PLACEHOLDER' | translate" (input)="onPatientFilter($event)" />
             </div>
             <button type="button" class="btn btn-primary" (click)="openAddModal()">
-              <span class="material-icons">add</span>
+              <span aria-hidden="true" class="material-icons">add</span>
               {{ 'SCHEDULE.NEW_APPOINTMENT' | translate }}
             </button>
           </div>
         </div>
       </header>
 
-      <main class="calendar-body">
+      <div class="calendar-body">
         @switch (view()) {
           @case ('month') {
             <div class="month-view">
@@ -91,7 +92,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                     <button
                       type="button"
                       class="day-number"
-                      [attr.aria-label]="('SCHEDULE.ADD_APPOINTMENT_ON' | translate: { date: day.date.toDateString() })"
+                      [attr.aria-label]="('SCHEDULE.ADD_APPOINTMENT_ON' | translate: { date: day.date | date: 'fullDate' : undefined : translate.currentLang })"
                       (click)="openAddModal(day.date); $event.stopPropagation()"
                     >{{ day.date.getDate() }}</button>
                     <div class="day-events">
@@ -102,7 +103,6 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                           [class]="'event-pill ' + event.type.toLowerCase()"
                           [style.box-shadow]="barShadow(event)"
                           [attr.title]="eventTitle(event)"
-                          [attr.aria-label]="('SCHEDULE.VIEW_APPOINTMENT' | translate: { patient: getPatientName(event.patientId), time: formatTime(event.dateTime) })"
                           (click)="openEditModal(event); $event.stopPropagation()"
                         >
                           <span class="event-time">{{ formatTime(event.dateTime) }}</span>
@@ -135,8 +135,10 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                 @for (day of weekDays(); track day.date.toISOString()) {
                   <div class="week-day-column" [class.today]="day.isToday">
                     @for (hour of hours(); track hour) {
+                      <!-- A shortcut for the mouse: the new-appointment button does the same, day and hour included. -->
                       <div
                         class="hour-row"
+                        aria-hidden="true"
                         (click)="openAddModalWithTime(hour, day.date)"
                         (dragover)="onDragOver($event)"
                         (drop)="onDrop($event, day.date, hour)"
@@ -154,7 +156,6 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                         draggable="true"
                         tabindex="0"
                         role="button"
-                        [attr.aria-label]="('SCHEDULE.VIEW_APPOINTMENT' | translate: { patient: getPatientName(event.patientId), time: formatTime(event.dateTime) })"
                         (dragstart)="onDragStart($event, event)"
                         (dragend)="draggingId.set(null)"
                         (click)="openEditModal(event); $event.stopPropagation()"
@@ -186,7 +187,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                 (drop)="onDrop($event, currentDate(), null)"
               >
                 @for (hour of hours(); track hour) {
-                  <div class="hour-row" (click)="openAddModalWithTime(hour)"></div>
+                  <div class="hour-row" aria-hidden="true" (click)="openAddModalWithTime(hour)"></div>
                 }
                 @for (event of dayEvents(); track event.id) {
                   <div
@@ -200,7 +201,6 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                     draggable="true"
                     tabindex="0"
                     role="button"
-                    [attr.aria-label]="('SCHEDULE.VIEW_APPOINTMENT' | translate: { patient: getPatientName(event.patientId), time: formatTime(event.dateTime) })"
                     (dragstart)="onDragStart($event, event)"
                     (dragend)="draggingId.set(null)"
                     (click)="openEditModal(event)"
@@ -240,14 +240,14 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
              </div>
           }
         }
-      </main>
+      </div>
 
       <!-- Appointment Modal -->
       @if (showModal()) {
         <div class="modal-overlay" (click)="closeModal()">
-          <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-content" appDialog="appointment-title" (dialogClosed)="closeModal()" (click)="$event.stopPropagation()">
             <header class="modal-header">
-              <h2>{{ (editingAppointment() ? 'SCHEDULE.FORM.TITLE_EDIT' : 'SCHEDULE.FORM.TITLE_ADD') | translate }}</h2>
+              <h2 id="appointment-title">{{ (editingAppointment() ? 'SCHEDULE.FORM.TITLE_EDIT' : 'SCHEDULE.FORM.TITLE_ADD') | translate }}</h2>
               <button type="button" class="icon-btn" [attr.aria-label]="'SCHEDULE.CLOSE' | translate" (click)="closeModal()">
                 <span class="material-icons" aria-hidden="true">close</span>
               </button>
@@ -255,8 +255,8 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
             
             <form [formGroup]="appointmentForm" (ngSubmit)="saveAppointment()">
               <div class="form-group">
-                <label>{{ 'SCHEDULE.FORM.PATIENT' | translate }}</label>
-                <select formControlName="patientId">
+                <label for="schedule-patientId">{{ 'SCHEDULE.FORM.PATIENT' | translate }}</label>
+                <select id="schedule-patientId" formControlName="patientId">
                   <option value="">{{ 'SCHEDULE.FORM.SELECT_PATIENT' | translate }}</option>
                   @for (p of patientService.patients(); track p.id) {
                     <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
@@ -266,12 +266,12 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
 
               <div class="form-row">
                 <div class="form-group">
-                  <label>{{ 'SCHEDULE.FORM.DATE_TIME' | translate }}</label>
-                  <input type="datetime-local" formControlName="dateTime">
+                  <label for="schedule-dateTime">{{ 'SCHEDULE.FORM.DATE_TIME' | translate }}</label>
+                  <input id="schedule-dateTime" type="datetime-local" formControlName="dateTime">
                 </div>
                 <div class="form-group">
-                  <label>{{ 'COMMON.PRACTITIONER' | translate }}</label>
-                  <select formControlName="practitionerId">
+                  <label for="schedule-practitionerId">{{ 'COMMON.PRACTITIONER' | translate }}</label>
+                  <select id="schedule-practitionerId" formControlName="practitionerId">
                     <option value="">{{ 'SCHEDULE.FORM.NO_PRACTITIONER' | translate }}</option>
                     @for (p of practitioners.active(); track p.id) {
                       <option [value]="p.id">{{ p.displayName }}</option>
@@ -282,8 +282,8 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
 
               <div class="form-row">
                 <div class="form-group">
-                  <label>{{ 'SCHEDULE.FORM.TYPE' | translate }}</label>
-                  <select formControlName="appointmentTypeId" (change)="onTypeChange()">
+                  <label for="schedule-appointmentTypeId">{{ 'SCHEDULE.FORM.TYPE' | translate }}</label>
+                  <select id="schedule-appointmentTypeId" formControlName="appointmentTypeId" (change)="onTypeChange()">
                     <option value="">—</option>
                     @for (type of config.types(); track type.id) {
                       <option [value]="type.id">{{ config.label(type) }}</option>
@@ -291,8 +291,8 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                   </select>
                 </div>
                 <div class="form-group">
-                  <label>{{ 'SCHEDULE.FORM.STATUS' | translate }}</label>
-                  <select formControlName="status">
+                  <label for="schedule-status">{{ 'SCHEDULE.FORM.STATUS' | translate }}</label>
+                  <select id="schedule-status" formControlName="status">
                     @for (status of appointmentStatuses; track status) {
                       <option [value]="status">{{ 'SCHEDULE.STATUS.' + status | translate }}</option>
                     }
@@ -302,8 +302,8 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
 
               <div class="form-row">
                 <div class="form-group">
-                  <label>{{ 'SCHEDULE.FORM.CHAIR' | translate }}</label>
-                  <select formControlName="chairId">
+                  <label for="schedule-chairId">{{ 'SCHEDULE.FORM.CHAIR' | translate }}</label>
+                  <select id="schedule-chairId" formControlName="chairId">
                     <option value="">{{ 'SCHEDULE.FORM.NO_CHAIR' | translate }}</option>
                     @for (chair of scheduleService.chairs(); track chair.id) {
                       <option [value]="chair.id">{{ chair.name }}</option>
@@ -311,25 +311,25 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                   </select>
                 </div>
                 <div class="form-group">
-                  <label>{{ 'SCHEDULE.FORM.DURATION_MINUTES' | translate }}</label>
-                  <input type="number" min="5" step="5" formControlName="durationMinutes">
+                  <label for="schedule-durationMinutes">{{ 'SCHEDULE.FORM.DURATION_MINUTES' | translate }}</label>
+                  <input id="schedule-durationMinutes" type="number" min="5" step="5" formControlName="durationMinutes">
                 </div>
               </div>
 
               <div class="form-group">
-                <label>{{ 'SCHEDULE.FORM.APPLIANCE_STEP' | translate }}</label>
-                <input type="number" formControlName="applianceStep">
+                <label for="schedule-applianceStep">{{ 'SCHEDULE.FORM.APPLIANCE_STEP' | translate }}</label>
+                <input id="schedule-applianceStep" type="number" formControlName="applianceStep">
               </div>
 
               <div class="form-group">
-                <label>{{ 'SCHEDULE.FORM.NOTES' | translate }}</label>
-                <textarea formControlName="notes" rows="3"></textarea>
+                <label for="schedule-notes">{{ 'SCHEDULE.FORM.NOTES' | translate }}</label>
+                <textarea id="schedule-notes" formControlName="notes" rows="3"></textarea>
               </div>
 
               <footer class="modal-footer">
                 @if (editingAppointment()) {
                   <button type="button" class="btn btn-danger" (click)="deleteAppointment()">
-                    <span class="material-icons">delete</span>
+                    <span aria-hidden="true" class="material-icons">delete</span>
                     {{ 'COMMON.DELETE' | translate }}
                   </button>
                 }
@@ -621,7 +621,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .day-event-card.emergency { border-inline-start-color: rgb(var(--critical-500)); background: rgb(var(--critical-50)); }
     .day-event-card.dragging { opacity: 0.4; }
 
-    .card-time { font-weight: 700; color: rgb(var(--petrol-900)); font-size: 0.9rem; }
+    .card-time { font-weight: 700; color: rgb(var(--petrol-800)); font-size: 0.9rem; }
     .card-content .patient { display: block; font-weight: 700; color: rgb(var(--ink-900)); }
     .card-content .type { font-size: 0.75rem; color: rgb(var(--ink-500)); }
     .card-content .notes { font-size: 0.75rem; color: rgb(var(--ink-500)); margin: 0.25rem 0 0 0; }
@@ -632,7 +632,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       padding: 0.05rem 0.4rem;
       border-radius: 999px;
       background: rgb(var(--petrol-100));
-      color: rgb(var(--petrol-900));
+      color: rgb(var(--petrol-800));
       margin-inline-start: 0.35rem;
     }
 
@@ -663,7 +663,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .week-day-header.today { background: rgb(var(--petrol-50)); }
     .week-day-name { font-size: 0.7rem; font-weight: 600; color: rgb(var(--ink-500)); text-transform: uppercase; }
     .week-day-number { font-size: 1.1rem; font-weight: 700; color: rgb(var(--ink-900)); }
-    .week-day-header.today .week-day-number { color: rgb(var(--petrol-900)); }
+    .week-day-header.today .week-day-number { color: rgb(var(--petrol-800)); }
     .week-body {
       display: grid;
       grid-template-columns: 80px repeat(7, 1fr);
@@ -1100,14 +1100,14 @@ export class ScheduleComponent {
     const conflict = this.findConflict(appointment.patientId, newDate, appointment.id);
     if (conflict) {
       const proceed = await this.confirmDialog.confirm(
-        `${this.getPatientName(appointment.patientId)} already has an appointment at ${this.formatTime(conflict.dateTime)} on this day. Reschedule anyway?`,
-        { confirmLabel: 'Reschedule Anyway' }
+        this.translate.instant('SCHEDULE.UI.CONFLICT_RESCHEDULE', { patient: this.getPatientName(appointment.patientId), time: this.formatTime(conflict.dateTime) }),
+        { confirmLabel: this.translate.instant('SCHEDULE.UI.RESCHEDULE_ANYWAY') }
       );
       if (!proceed) return;
     }
 
     this.scheduleService.updateAppointment(appointment.id, { dateTime: newDate.toISOString() }).subscribe({
-      next: () => this.toast.success('Appointment rescheduled.'),
+      next: () => this.toast.success(this.translate.instant('SCHEDULE.UI.RESCHEDULED')),
       error: (err) => {
         console.error('Error rescheduling appointment', err);
         this.toast.error(err.error?.detail || err.error?.message || 'Could not reschedule the appointment.');
@@ -1174,8 +1174,8 @@ export class ScheduleComponent {
     const conflict = this.findConflict(data.patientId, new Date(data.dateTime), editing?.id);
     if (conflict) {
       const proceed = await this.confirmDialog.confirm(
-        `${this.getPatientName(data.patientId)} already has an appointment at ${this.formatTime(conflict.dateTime)} on this day. Schedule anyway?`,
-        { confirmLabel: 'Schedule Anyway' }
+        this.translate.instant('SCHEDULE.UI.CONFLICT_SCHEDULE', { patient: this.getPatientName(data.patientId), time: this.formatTime(conflict.dateTime) }),
+        { confirmLabel: this.translate.instant('SCHEDULE.UI.SCHEDULE_ANYWAY') }
       );
       if (!proceed) return;
     }
@@ -1186,7 +1186,7 @@ export class ScheduleComponent {
 
     obs.subscribe({
       next: () => {
-        this.toast.success(editing ? 'Appointment updated.' : 'Appointment scheduled.');
+        this.toast.success(this.translate.instant(editing ? 'SCHEDULE.UI.UPDATED' : 'SCHEDULE.UI.SCHEDULED'));
         this.closeModal();
       },
       error: async (err) => {
@@ -1199,7 +1199,7 @@ export class ScheduleComponent {
               ? this.scheduleService.updateAppointment(editing.id, { ...data, ignoreBlocks: true })
               : this.scheduleService.addAppointment({ ...data, ignoreBlocks: true });
             retry.subscribe({
-              next: () => { this.toast.success(editing ? 'Appointment updated.' : 'Appointment scheduled.'); this.closeModal(); },
+              next: () => { this.toast.success(this.translate.instant(editing ? 'SCHEDULE.UI.UPDATED' : 'SCHEDULE.UI.SCHEDULED')); this.closeModal(); },
               error: (e) => this.toast.error(e.error?.detail || 'Could not save the appointment. Please try again.')
             });
           }
@@ -1215,18 +1215,18 @@ export class ScheduleComponent {
     if (!app) return;
 
     const confirmed = await this.confirmDialog.confirm(
-      this.translate.instant('COMMON.DELETE_CONFIRM') || 'Are you sure?',
-      { danger: true, confirmLabel: 'Delete' }
+      this.translate.instant('COMMON.DELETE_CONFIRM'),
+      { danger: true, confirmLabel: this.translate.instant('COMMON.DELETE') }
     );
     if (confirmed) {
       this.scheduleService.deleteAppointment(app.id).subscribe({
         next: () => {
-          this.toast.success('Appointment deleted.');
+          this.toast.success(this.translate.instant('SCHEDULE.UI.DELETED'));
           this.closeModal();
         },
         error: (err) => {
           console.error('Error deleting appointment', err);
-          this.toast.error('Could not delete the appointment. Please try again.');
+          this.toast.error(this.translate.instant('SCHEDULE.UI.DELETE_FAILED'));
         }
       });
     }

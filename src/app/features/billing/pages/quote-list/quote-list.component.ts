@@ -21,7 +21,7 @@ import { InvoiceService } from '../../services/invoice.service';
           </div>
         </div>
         <button type="button" class="btn btn-primary">
-          <span class="material-icons">add</span>
+          <span aria-hidden="true" class="material-icons">add</span>
           {{ 'BILLING.NEW_QUOTE' | translate }}
         </button>
       </header>
@@ -31,13 +31,13 @@ import { InvoiceService } from '../../services/invoice.service';
         <table class="data-table">
           <thead>
             <tr>
-              <th>{{ 'BILLING.QUOTE_NUMBER' | translate }}</th>
-              <th>{{ 'PATIENTS.NAME' | translate }}</th>
-              <th>{{ 'COMMON.STATUS' | translate }}</th>
-              <th>{{ 'BILLING.ISSUE_DATE' | translate }}</th>
-              <th>{{ 'BILLING.EXPIRY_DATE' | translate }}</th>
-              <th>{{ 'COMMON.AMOUNT' | translate }}</th>
-              <th>{{ 'COMMON.ACTIONS' | translate }}</th>
+              <th scope="col">{{ 'BILLING.QUOTE_NUMBER' | translate }}</th>
+              <th scope="col">{{ 'PATIENTS.NAME' | translate }}</th>
+              <th scope="col">{{ 'COMMON.STATUS' | translate }}</th>
+              <th scope="col">{{ 'BILLING.ISSUE_DATE' | translate }}</th>
+              <th scope="col">{{ 'BILLING.EXPIRY_DATE' | translate }}</th>
+              <th scope="col">{{ 'COMMON.AMOUNT' | translate }}</th>
+              <th scope="col">{{ 'COMMON.ACTIONS' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -79,7 +79,7 @@ import { InvoiceService } from '../../services/invoice.service';
     .back-btn { background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: 12px; padding: 0.5rem; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; cursor: pointer; display: flex; color: rgb(var(--ink-500)); }
     .back-btn:focus-visible, .icon-btn:focus-visible, .btn-primary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
-    .quote-number { font-weight: 600; color: rgb(var(--petrol-900)); }
+    .quote-number { font-weight: 600; color: rgb(var(--petrol-800)); }
     
     .amount { font-weight: 700; color: rgb(var(--ink-900)); }
     .row-actions { display: flex; gap: 0.5rem; }

@@ -11,6 +11,7 @@ import { BreakdownComponent } from '../../../shared/ui/breakdown.component';
 import { ExportMenuComponent } from '../../../shared/ui/export-menu.component';
 import { PeriodPickerComponent } from '../../../shared/ui/period-picker.component';
 import { PracticeProfileService } from '../../../core/services/practice-profile.service';
+import { describedChart } from '../../../core/utils/chart-summary';
 
 /* ApexCharts is configured in JavaScript and cannot read CSS custom properties, so the
    series colours are mirrored here (petrol-500, positive-500, caution-500). */
@@ -93,7 +94,7 @@ export function equation(d: FinanceDashboard): EquationLine[] {
           <dl class="divide-y divide-ink-100 px-4 py-1 text-sm">
             @for (line of lines(); track line.key) {
               <div class="flex items-baseline justify-between gap-3 py-2" [class.font-bold]="line.sign === '='">
-                <dt class="text-ink-700"><span class="me-2 inline-block w-3 text-center text-ink-400" aria-hidden="true">{{ line.sign }}</span>{{ line.key | translate }}</dt>
+                <dt class="text-ink-700"><span class="me-2 inline-block w-3 text-center text-ink-500" aria-hidden="true">{{ line.sign }}</span>{{ line.key | translate }}</dt>
                 <dd class="tabular-nums" [class.text-critical-700]="line.sign === '=' && line.amount < 0" [class.text-positive-700]="line.sign === '=' && line.amount > 0">{{ line.amount | money }}</dd>
               </div>
             }
@@ -140,7 +141,7 @@ export class FinanceDashboardComponent {
     const currency = this.profile.currency();
     const points = d?.trend ?? [];
     const month = (key: string) => new Intl.DateTimeFormat(lang, { month: 'short', year: '2-digit' }).format(new Date(`${key.slice(0, 7)}-01T00:00:00`));
-    return {
+    return describedChart(this.translate.instant('FIN.DASH.TREND'), {
       series: [
         { name: this.translate.instant('FIN.DASH.PRODUCTION'), data: points.map(p => p.production) },
         { name: this.translate.instant('FIN.DASH.COLLECTIONS'), data: points.map(p => p.collections) },
@@ -156,7 +157,7 @@ export class FinanceDashboardComponent {
       grid: { borderColor: INK_100, strokeDashArray: 4, padding: { left: 8, right: 8, top: 0 }, xaxis: { lines: { show: false } } },
       tooltip: { theme: 'light', y: { formatter: (v: number) => formatMoney(v, currency, lang) } },
       legend: { position: 'top', horizontalAlign: 'left', fontSize: '12px', labels: { colors: INK_500 } },
-    };
+    });
   });
 
   constructor() {

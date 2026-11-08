@@ -65,7 +65,7 @@ export function eligible(items: readonly SterilItem[]): SterilItem[] {
         <select class="select w-auto" [ngModel]="result()" (ngModelChange)="result.set($event)">
           <option value="">{{ 'COMMON.ALL' | translate }}</option>@for (r of results; track r) { <option [value]="r">{{ 'STER.RESULTS.' + r | translate }}</option> }
         </select></label>
-      <span class="ms-auto flex gap-2">
+      <span class="ms-auto flex flex-wrap gap-2">
         <button type="button" class="btn btn-secondary btn-sm" (click)="autoclavesOpen.set(true)">{{ 'STER.CYCLES.AUTOCLAVES' | translate }}</button>
         <button type="button" class="btn btn-primary btn-sm" (click)="openNew()"><app-icon name="plus" [size]="15" /> {{ 'STER.CYCLES.NEW' | translate }}</button>
       </span>

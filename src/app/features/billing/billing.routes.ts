@@ -6,10 +6,12 @@ export const BILLING_ROUTES: Routes = [
     children: [
       {
         path: 'invoices',
+        title: 'BILLING.INVOICES',
         loadComponent: () => import('./pages/invoice-list/invoice-list.component').then(m => m.InvoiceListComponent),
       },
       {
         path: 'invoices/create',
+        title: 'BILLING.NEW_INVOICE',
         loadComponent: () => import('./pages/invoice-create/invoice-create.component').then(m => m.InvoiceCreateComponent),
       },
       {
@@ -21,6 +23,7 @@ export const BILLING_ROUTES: Routes = [
       },
       {
         path: 'invoices/:id',
+        title: 'BILLING.INVOICE_DETAIL',
         loadComponent: () => import('./pages/invoice-detail/invoice-detail.component').then(m => m.InvoiceDetailComponent),
       },
       {

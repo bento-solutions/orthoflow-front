@@ -5,7 +5,7 @@ import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { PatientService } from '../../../core/services/patient.service';
 import { PatientApiService } from '../../../core/services/patient-api.service';
 import { Patient } from '../../../core/models/patient.model';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { Insurer, PatientDirectoryApi } from '../patient-directory-api.service';
@@ -49,26 +49,26 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
                 <div class="form-group">
                   <label for="firstName">{{ 'PATIENTS.DOSSIER.FIRST_NAME' | translate }}</label>
                   <input id="firstName" formControlName="firstName" type="text" [placeholder]="'PATIENTS.DOSSIER.FIRST_NAME' | translate"
-                    [attr.aria-invalid]="isInvalid('firstName')" />
+                    [attr.aria-invalid]="isInvalid('firstName')" [attr.aria-describedby]="isInvalid('firstName') ? 'firstName-error' : null" required />
                   @if (isInvalid('firstName')) {
-                    <p class="field-error">{{ 'PATIENTS.DOSSIER.FIRST_NAME' | translate }} is required.</p>
+                    <p class="field-error" id="firstName-error" role="alert">{{ 'PATIENTS.DOSSIER.UI.FIELD_REQUIRED' | translate: { field: ('PATIENTS.DOSSIER.FIRST_NAME' | translate) } }}</p>
                   }
                 </div>
                 <div class="form-group">
                   <label for="lastName">{{ 'PATIENTS.DOSSIER.LAST_NAME' | translate }}</label>
                   <input id="lastName" formControlName="lastName" type="text" [placeholder]="'PATIENTS.DOSSIER.LAST_NAME' | translate"
-                    [attr.aria-invalid]="isInvalid('lastName')" />
+                    [attr.aria-invalid]="isInvalid('lastName')" [attr.aria-describedby]="isInvalid('lastName') ? 'lastName-error' : null" required />
                   @if (isInvalid('lastName')) {
-                    <p class="field-error">{{ 'PATIENTS.DOSSIER.LAST_NAME' | translate }} is required.</p>
+                    <p class="field-error" id="lastName-error" role="alert">{{ 'PATIENTS.DOSSIER.UI.FIELD_REQUIRED' | translate: { field: ('PATIENTS.DOSSIER.LAST_NAME' | translate) } }}</p>
                   }
                 </div>
                 <div class="form-group">
                   <label for="dateOfBirth">{{ 'PATIENTS.DOSSIER.DOB' | translate }}</label>
-                  <input id="dateOfBirth" formControlName="dateOfBirth" type="date" [attr.aria-invalid]="isInvalid('dateOfBirth')" />
+                  <input id="dateOfBirth" formControlName="dateOfBirth" type="date" [attr.aria-invalid]="isInvalid('dateOfBirth')" [attr.aria-describedby]="isInvalid('dateOfBirth') ? 'dateOfBirth-error' : null" required />
                   @if (patientForm.controls.dateOfBirth.hasError('futureDate') && patientForm.controls.dateOfBirth.touched) {
-                    <p class="field-error">Date of birth cannot be in the future.</p>
+                    <p class="field-error" id="dateOfBirth-error" role="alert">{{ 'PATIENTS.DOSSIER.UI.DOB_FUTURE' | translate }}</p>
                   } @else if (isInvalid('dateOfBirth')) {
-                    <p class="field-error">Date of birth is required.</p>
+                    <p class="field-error" id="dateOfBirth-error" role="alert">{{ 'PATIENTS.DOSSIER.UI.DOB_REQUIRED' | translate }}</p>
                   }
                 </div>
                 <div class="form-group">
@@ -84,12 +84,12 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
                   <input id="cin" formControlName="cin" type="text" [placeholder]="'PATIENTS.DOSSIER.CIN_PLACEHOLDER' | translate" />
                 </div>
                 <div class="form-group">
-                  <label for="guardianName">Guardian Name</label>
-                  <input id="guardianName" formControlName="guardianName" type="text" placeholder="For minor patients" />
+                  <label for="guardianName">{{ 'PATIENTS.DOSSIER.UI.GUARDIAN_NAME' | translate }}</label>
+                  <input id="guardianName" formControlName="guardianName" type="text" [placeholder]="'PATIENTS.DOSSIER.UI.FOR_MINORS' | translate" />
                 </div>
                 <div class="form-group">
-                  <label for="guardianPhone">Guardian Phone</label>
-                  <input id="guardianPhone" formControlName="guardianPhone" type="tel" placeholder="For minor patients" />
+                  <label for="guardianPhone">{{ 'PATIENTS.DOSSIER.UI.GUARDIAN_PHONE' | translate }}</label>
+                  <input id="guardianPhone" formControlName="guardianPhone" type="tel" [placeholder]="'PATIENTS.DOSSIER.UI.FOR_MINORS' | translate" />
                 </div>
                 @if (editMode) {
                   <div class="form-group">
@@ -110,17 +110,19 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
               <div class="inputs-grid">
                 <div class="form-group">
                   <label for="email">{{ 'PATIENTS.DOSSIER.EMAIL' | translate }} ({{ 'COMMON.OPTIONAL' | translate }})</label>
-                  <input id="email" formControlName="email" type="email" [placeholder]="'PATIENTS.DOSSIER.EMAIL_PLACEHOLDER' | translate" />
+                  <input id="email" formControlName="email" type="email" [placeholder]="'PATIENTS.DOSSIER.EMAIL_PLACEHOLDER' | translate"
+                    [attr.aria-invalid]="patientForm.controls.email.hasError('email') && patientForm.controls.email.touched"
+                    [attr.aria-describedby]="patientForm.controls.email.hasError('email') && patientForm.controls.email.touched ? 'email-error' : null" />
                   @if (patientForm.controls.email.hasError('email') && patientForm.controls.email.touched) {
-                    <p class="field-error">Enter a valid email address.</p>
+                    <p class="field-error" id="email-error" role="alert">{{ 'PATIENTS.DOSSIER.UI.EMAIL_INVALID' | translate }}</p>
                   }
                 </div>
                 <div class="form-group">
                   <label for="phone">{{ 'PATIENTS.DOSSIER.PHONE' | translate }}</label>
                   <input id="phone" formControlName="phone" type="tel" [placeholder]="'PATIENTS.DOSSIER.PHONE_PLACEHOLDER' | translate"
-                    [attr.aria-invalid]="isInvalid('phone')" />
+                    [attr.aria-invalid]="isInvalid('phone')" [attr.aria-describedby]="isInvalid('phone') ? 'phone-error' : null" required />
                   @if (isInvalid('phone')) {
-                    <p class="field-error">Phone number is required.</p>
+                    <p class="field-error" id="phone-error" role="alert">{{ 'PATIENTS.DOSSIER.UI.PHONE_REQUIRED' | translate }}</p>
                   }
                 </div>
                 <div class="form-group full-width">
@@ -265,9 +267,11 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
       border-bottom: 1px solid rgb(var(--ink-100));
     }
 
+    .inputs-grid > * { min-width: 0; }
+    .inputs-grid select { width: 100%; }
     .inputs-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
       gap: 1.5rem;
     }
 
@@ -284,7 +288,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
     .field-error {
       margin: 0;
       font-size: 0.8rem;
-      color: rgb(var(--critical-600));
+      color: rgb(var(--critical-700));
     }
 
     .consent-checkbox {
@@ -301,7 +305,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
     .consent-hint {
       margin: 0.5rem 0 0 1.7rem;
       font-size: 0.8rem;
-      color: rgb(var(--ink-400));
+      color: rgb(var(--ink-500));
     }
 
     .form-group label {
@@ -412,6 +416,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
   `]
 })
 export class PatientRegistrationComponent implements OnInit {
+  private readonly translate = inject(TranslateService);
   private fb = inject(FormBuilder);
   private patientService = inject(PatientService);
   private patientApi = inject(PatientApiService);
@@ -534,8 +539,8 @@ export class PatientRegistrationComponent implements OnInit {
       const duplicate = this.findPossibleDuplicate(patientData.firstName, patientData.lastName, patientData.dateOfBirth);
       if (duplicate) {
         const proceed = await this.confirmDialog.confirm(
-          `A patient named ${duplicate.firstName} ${duplicate.lastName} with the same date of birth already exists. Register anyway?`,
-          { confirmLabel: 'Register Anyway' }
+          this.translate.instant('PATIENTS.DOSSIER.UI.DUPLICATE_CONFIRM', { name: `${duplicate.firstName} ${duplicate.lastName}` }),
+          { confirmLabel: this.translate.instant('PATIENTS.DOSSIER.UI.REGISTER_ANYWAY') }
         );
         if (!proceed) return;
       }
@@ -544,18 +549,18 @@ export class PatientRegistrationComponent implements OnInit {
     if (this.editMode && this.patientId) {
       this.patientService.updatePatient(this.patientId, patientData).subscribe({
         next: () => {
-          this.toast.success('Patient updated.');
+          this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.PATIENT_UPDATED'));
           this.router.navigate(['/patients', this.patientId]);
         },
         error: (err) => {
           console.error('Error updating patient', err);
-          this.toast.error('Could not save changes. Please try again.');
+          this.toast.error(this.translate.instant('PATIENTS.DOSSIER.UI.SAVE_FAILED'));
         }
       });
     } else {
       this.patientService.addPatient(patientData).subscribe({
         next: (created) => {
-          this.toast.success('Patient registered.');
+          this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.PATIENT_REGISTERED'));
           if (consentGiven && created?.id) {
             // Best-effort: consent capture failing shouldn't block
             // registration completing, since the patient record itself
@@ -564,7 +569,7 @@ export class PatientRegistrationComponent implements OnInit {
             this.patientApi.recordConsent(created.id).subscribe({
               error: (err) => {
                 console.error('Error recording consent', err);
-                this.toast.error('Patient saved, but consent could not be recorded. Record it from Settings.');
+                this.toast.error(this.translate.instant('PATIENTS.DOSSIER.UI.CONSENT_FAILED'));
               }
             });
           }
@@ -572,7 +577,7 @@ export class PatientRegistrationComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error creating patient', err);
-          this.toast.error('Could not register the patient. Please try again.');
+          this.toast.error(this.translate.instant('PATIENTS.DOSSIER.UI.REGISTER_FAILED'));
         }
       });
     }

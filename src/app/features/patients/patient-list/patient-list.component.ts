@@ -64,7 +64,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
           <div class="quick-add-fields">
             <label>
               <span>{{ 'PATIENTS.DOSSIER.FIRST_NAME' | translate }}</span>
-              <input class="input" name="firstName" [(ngModel)]="quickFirst" required maxlength="255" autocomplete="off" autofocus />
+              <input class="input" name="firstName" [(ngModel)]="quickFirst" required maxlength="255" autocomplete="off" />
             </label>
             <label>
               <span>{{ 'PATIENTS.DOSSIER.LAST_NAME' | translate }}</span>
@@ -171,7 +171,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
                   <td [attr.data-label]="'PATIENTS.NEXT_APPOINTMENT' | translate">
                     @if (patient.nextAppointment) {
                       <span class="font-semibold text-ink-900">{{ patient.nextAppointment | date: 'mediumDate' }}</span>
-                    } @else { <span class="text-ink-400">—</span> }
+                    } @else { <span class="text-ink-500">—</span> }
                   </td>
                   <td [attr.data-label]="'PATIENTS.CONTACT' | translate">
                     <span class="flex flex-col leading-tight">
@@ -183,7 +183,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
                     <td class="cell-num" [attr.data-label]="'PAT.BALANCE' | translate">
                       @if (patient.balanceDue > 0) { <span class="font-bold text-critical-700">{{ patient.balanceDue | money }}</span> }
                       @else if (patient.credit > 0) { <span class="text-positive-700" [attr.title]="'PAT.CREDIT' | translate">+{{ patient.credit | money }}</span> }
-                      @else { <span class="text-ink-400">—</span> }
+                      @else { <span class="text-ink-500">—</span> }
                     </td>
                   }
                   <td class="cell-actions">

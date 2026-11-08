@@ -15,12 +15,12 @@ import { NavCounts } from '../../core/services/nav-counts.service';
         <p class="page-sub">{{ 'INT.SUBTITLE' | translate }}</p>
       </div>
     </div>
-    <nav class="tabs mb-6" role="tablist" [attr.aria-label]="'NAV.BOOKING' | translate">
-      <a class="tab" role="tab" routerLink="requests" routerLinkActive="is-active" #a="routerLinkActive" [attr.aria-selected]="a.isActive">
+    <nav class="tabs mb-6" [attr.aria-label]="'NAV.BOOKING' | translate">
+      <a class="tab" routerLink="requests" routerLinkActive="is-active" ariaCurrentWhenActive="page">
         {{ 'INT.TABS.REQUESTS' | translate }}
         @if (counts.bookingRequests() > 0) { <span class="ms-1.5 rounded-full bg-critical-500 px-1.5 text-2xs font-bold leading-4 text-white">{{ counts.bookingRequests() }}</span> }
       </a>
-      <a class="tab" role="tab" routerLink="registrations" routerLinkActive="is-active" #b="routerLinkActive" [attr.aria-selected]="b.isActive">
+      <a class="tab" routerLink="registrations" routerLinkActive="is-active" ariaCurrentWhenActive="page">
         {{ 'INT.TABS.REGISTRATIONS' | translate }}
         @if (counts.registrations() > 0) { <span class="ms-1.5 rounded-full bg-critical-500 px-1.5 text-2xs font-bold leading-4 text-white">{{ counts.registrations() }}</span> }
       </a>

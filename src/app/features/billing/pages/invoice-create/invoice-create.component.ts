@@ -8,30 +8,31 @@ import { InvoiceDraftLine, CreateInvoiceRequest } from '../../models/billing.mod
 import { OnInit } from '@angular/core';
 import { finalize } from 'rxjs';
 import { ToastService } from '../../../../core/services/toast.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-invoice-create',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [TranslateModule, CommonModule, RouterModule, FormsModule],
   template: `
     <div class="create-invoice-container">
       <header class="page-header">
         <div class="header-content">
-          <button type="button" class="back-btn" aria-label="Back" routerLink="..">
+          <button type="button" class="back-btn" [attr.aria-label]="'COMMON.BACK' | translate" routerLink="..">
             <span class="material-icons" aria-hidden="true">arrow_back</span>
           </button>
-          <h1>Create New Invoice</h1>
+          <h1>{{ 'BILLING.NEW_INVOICE' | translate }}</h1>
         </div>
       </header>
 
       <div class="form-grid">
         <div class="main-form">
           <section class="form-section">
-            <h3>Patient Information</h3>
+            <h2>{{ 'BILLING.FORM.PATIENT_INFO' | translate }}</h2>
             <div class="field-group">
-              <label>Select Patient</label>
-              <select [(ngModel)]="selectedPatientId" class="form-control">
-                <option value="">Select a patient...</option>
+              <label for="invoice-create-selectedPatientId">{{ 'BILLING.FORM.SELECT_PATIENT' | translate }}</label>
+              <select id="invoice-create-selectedPatientId" [(ngModel)]="selectedPatientId" class="form-control">
+                <option value="">{{ 'BILLING.FORM.SELECT_PATIENT_HINT' | translate }}</option>
                 @for (patient of patientService.patients(); track patient.id) {
                   <option [value]="patient.id">{{ patient.firstName }} {{ patient.lastName }}</option>
                 }
@@ -41,32 +42,32 @@ import { ToastService } from '../../../../core/services/toast.service';
 
           <section class="form-section">
             <div class="section-header">
-              <h3>Line Items</h3>
+              <h2>{{ 'BILLING.FORM.LINES' | translate }}</h2>
               <button type="button" class="btn-text" (click)="addLine()">
-                <span class="material-icons">add</span> Add Line
+                <span aria-hidden="true" class="material-icons">add</span> {{ 'BILLING.FORM.ADD_LINE' | translate }}
               </button>
             </div>
             
             <div class="line-items-table">
               <div class="table-header">
-                <span class="col-act">Act code</span>
-                <span class="col-desc">Description</span>
-                <span class="col-qty">Qty</span>
-                <span class="col-price">Unit Price</span>
-                <span class="col-discount">Disc %</span>
-                <span class="col-total">Total</span>
+                <span class="col-act">{{ 'BILLING.FORM.ACT_CODE' | translate }}</span>
+                <span class="col-desc">{{ 'BILLING.FORM.DESCRIPTION' | translate }}</span>
+                <span class="col-qty">{{ 'BILLING.FORM.QTY' | translate }}</span>
+                <span class="col-price">{{ 'BILLING.FORM.UNIT_PRICE' | translate }}</span>
+                <span class="col-discount">{{ 'BILLING.FORM.DISCOUNT_PCT' | translate }}</span>
+                <span class="col-total">{{ 'COMMON.TOTAL' | translate }}</span>
                 <span class="col-action"></span>
               </div>
 
               @for (line of lines(); track $index) {
                 <div class="line-item-row">
-                  <input type="text" [(ngModel)]="line.actCode" placeholder="e.g. ORTHO-01" class="form-control col-act" required>
-                  <input type="text" [(ngModel)]="line.label" placeholder="Description..." class="form-control col-desc">
-                  <input type="number" [(ngModel)]="line.quantity" (ngModelChange)="calculateTotal()" class="form-control col-qty">
-                  <input type="number" [(ngModel)]="line.unitPrice" (ngModelChange)="calculateTotal()" class="form-control col-price">
-                  <input type="number" [(ngModel)]="line.discountPct" (ngModelChange)="calculateTotal()" class="form-control col-discount">
+                  <input type="text" [attr.aria-label]="'BILLING.FORM.ACT_CODE' | translate" [(ngModel)]="line.actCode" [placeholder]="'BILLING.FORM.ACT_CODE_HINT' | translate" class="form-control col-act" required>
+                  <input type="text" [attr.aria-label]="'BILLING.FORM.DESCRIPTION' | translate" [(ngModel)]="line.label" [placeholder]="'BILLING.FORM.DESCRIPTION_HINT' | translate" class="form-control col-desc">
+                  <input type="number" [attr.aria-label]="'BILLING.FORM.QTY' | translate" [(ngModel)]="line.quantity" (ngModelChange)="calculateTotal()" class="form-control col-qty">
+                  <input type="number" [attr.aria-label]="'BILLING.FORM.UNIT_PRICE' | translate" [(ngModel)]="line.unitPrice" (ngModelChange)="calculateTotal()" class="form-control col-price">
+                  <input type="number" [attr.aria-label]="'BILLING.FORM.DISCOUNT_PCT' | translate" [(ngModel)]="line.discountPct" (ngModelChange)="calculateTotal()" class="form-control col-discount">
                   <span class="col-total">{{ line.lineTotal | number:'1.2-2' }}</span>
-                  <button type="button" class="icon-btn-danger col-action" aria-label="Remove line item" (click)="removeLine($index)">
+                  <button type="button" class="icon-btn-danger col-action" [attr.aria-label]="'BILLING.FORM.REMOVE_LINE' | translate" (click)="removeLine($index)">
                     <span class="material-icons" aria-hidden="true">delete</span>
                   </button>
                 </div>
@@ -75,36 +76,36 @@ import { ToastService } from '../../../../core/services/toast.service';
           </section>
 
           <section class="form-section">
-            <h3>Notes</h3>
-            <textarea [(ngModel)]="notes" placeholder="Internal notes or patient message..." class="form-control" rows="4"></textarea>
+            <h2>{{ 'COMMON.NOTES' | translate }}</h2>
+            <textarea [attr.aria-label]="'COMMON.NOTES' | translate" [(ngModel)]="notes" [placeholder]="'BILLING.FORM.NOTES_HINT' | translate" class="form-control" rows="4"></textarea>
           </section>
         </div>
 
         <div class="summary-sidebar">
           <div class="summary-card">
-            <h3>Invoice Summary</h3>
+            <h2>{{ 'BILLING.FORM.SUMMARY' | translate }}</h2>
             <div class="summary-row">
-              <span>Subtotal</span>
+              <span>{{ 'BILLING.FORM.SUBTOTAL' | translate }}</span>
               <span>{{ subtotal() | number:'1.2-2' }} MAD</span>
             </div>
             <div class="summary-row">
-              <span>Discount</span>
+              <span>{{ 'BILLING.FORM.DISCOUNT' | translate }}</span>
               <span class="discount-text">-{{ discountAmount() | number:'1.2-2' }} MAD</span>
             </div>
             <div class="summary-row">
-              <span>Tax (0%)</span>
+              <span>{{ 'BILLING.FORM.TAX_ZERO' | translate }}</span>
               <span>0.00 MAD</span>
             </div>
             <hr>
             <div class="summary-row total">
-              <span>Total</span>
+              <span>{{ 'COMMON.TOTAL' | translate }}</span>
               <span>{{ total() | number:'1.2-2' }} MAD</span>
             </div>
 
             <div class="sidebar-actions">
               <button type="button" class="btn btn-primary full-width" (click)="saveInvoice()">
-                <span class="material-icons">save</span>
-                Create Invoice
+                <span aria-hidden="true" class="material-icons">save</span>
+                {{ 'BILLING.FORM.CREATE' | translate }}
               </button>
             </div>
           </div>
@@ -170,7 +171,7 @@ import { ToastService } from '../../../../core/services/toast.service';
       margin-bottom: 1.5rem;
     }
 
-    .form-section h3 {
+    .form-section h2 {
       margin: 0 0 1.25rem 0;
       font-size: 1.125rem;
       font-weight: 600;
@@ -184,7 +185,7 @@ import { ToastService } from '../../../../core/services/toast.service';
       margin-bottom: 1.25rem;
     }
 
-    .section-header h3 { margin: 0; }
+    .section-header h2 { margin: 0; }
 
     .field-group {
       display: flex;
@@ -245,7 +246,7 @@ import { ToastService } from '../../../../core/services/toast.service';
     .btn-text {
       background: transparent;
       border: none;
-      color: rgb(var(--petrol-900));
+      color: rgb(var(--petrol-800));
       font-weight: 600;
       display: flex;
       align-items: center;
@@ -256,7 +257,7 @@ import { ToastService } from '../../../../core/services/toast.service';
     .icon-btn-danger {
       background: transparent;
       border: none;
-      color: rgb(var(--critical-500));
+      color: rgb(var(--critical-700));
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -293,7 +294,7 @@ import { ToastService } from '../../../../core/services/toast.service';
       color: rgb(var(--ink-900));
     }
 
-    .discount-text { color: rgb(var(--positive-600)); }
+    .discount-text { color: rgb(var(--positive-700)); }
 
     .sidebar-actions {
       display: flex;
@@ -304,12 +305,18 @@ import { ToastService } from '../../../../core/services/toast.service';
 
     .full-width { width: 100%; justify-content: center; }
 
+    /* The lines are a table: on a narrow screen it scrolls on its own, and the page does not. */
+    .form-grid > * { min-width: 0; }
+    .line-items-table { overflow-x: auto; }
+    .line-items-table > * { min-width: 40rem; }
+
     @media (max-width: 992px) {
       .form-grid { grid-template-columns: 1fr; }
     }
   `]
 })
 export class InvoiceCreateComponent implements OnInit {
+  private readonly translate = inject(TranslateService);
   invoiceService = inject(InvoiceService);
   patientService = inject(PatientService);
   router = inject(Router);
@@ -378,11 +385,11 @@ export class InvoiceCreateComponent implements OnInit {
 
   saveInvoice() {
     if (!this.selectedPatientId) {
-      this.toast.error('Please select a patient.');
+      this.toast.error(this.translate.instant('BILLING.FORM.NEED_PATIENT'));
       return;
     }
     if (!this.lines().length) {
-      this.toast.error('Add at least one line to the invoice.');
+      this.toast.error(this.translate.instant('BILLING.FORM.NEED_LINE'));
       return;
     }
     /* actCode and label are @NotBlank on the server's InvoiceLineRequest.
@@ -390,7 +397,7 @@ export class InvoiceCreateComponent implements OnInit {
        a generic failure, so catch it here where the offending line is
        visible. */
     if (this.lines().some(l => !l.actCode?.trim() || !l.label?.trim())) {
-      this.toast.error('Every line needs an act code and a description.');
+      this.toast.error(this.translate.instant('BILLING.FORM.LINE_INCOMPLETE'));
       return;
     }
 
@@ -414,7 +421,7 @@ export class InvoiceCreateComponent implements OnInit {
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: () => {
-          this.toast.success('Invoice created.');
+          this.toast.success(this.translate.instant('BILLING.FORM.CREATED'));
           this.router.navigate(['/billing/invoices']);
         },
         error: (err) => {

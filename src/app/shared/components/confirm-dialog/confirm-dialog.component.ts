@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
+import { DialogDirective } from '../../ui/dialog.directive';
 
 /**
  * Replacement for the native `confirm()` the product used to rely on.
@@ -11,21 +12,21 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
+  imports: [DialogDirective],
   template: `
     @if (dialogService.request(); as req) {
       <div class="backdrop" (click)="dialogService.respond(false)">
         <div
           class="panel"
           role="alertdialog"
-          aria-modal="true"
-          [attr.aria-labelledby]="'confirm-title-' + req.id"
+          [appDialog]="'confirm-title-' + req.id"
+          (dialogClosed)="dialogService.respond(false)"
           [attr.aria-describedby]="'confirm-message-' + req.id"
           (click)="$event.stopPropagation()"
-          (keydown.escape)="dialogService.respond(false)"
         >
           <div class="flex items-start gap-3">
             @if (req.danger) {
-              <span class="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-critical-50 text-critical-600" aria-hidden="true">
+              <span class="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-critical-50 text-critical-700" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4" /><circle cx="12" cy="17" r=".5" fill="currentColor" />
                 </svg>
@@ -47,7 +48,6 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
               [class.btn-danger]="req.danger"
               [class.btn-primary]="!req.danger"
               (click)="dialogService.respond(true)"
-              #confirmBtn
             >
               {{ req.confirmLabel }}
             </button>

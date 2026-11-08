@@ -212,7 +212,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                   <form class="cp-typed" (submit)="submitTyped($event)">
                     <input type="text" [(ngModel)]="typed" name="typed" autocomplete="off" enterkeyhint="send"
                            [placeholder]="'CONSULTATION.TYPE_PLACEHOLDER' | translate"
-                           [attr.aria-label]="'CONSULTATION.TYPE_PLACEHOLDER' | translate" />
+                           [attr.aria-label]="'COMMON.TYPE' | translate" />
                     <button type="submit" class="cp-icon solid" [attr.aria-label]="'VOICE.SEND' | translate">
                       <span class="material-icons" aria-hidden="true">send</span>
                     </button>
@@ -438,13 +438,13 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                       @if (editable) {
                         <span class="cp-row-actions">
                           @if (f.status === 'removed') {
-                            <button type="button" class="cp-icon" (click)="restoreField(def.name)" [attr.aria-label]="'CONSULTATION.RESTORE' | translate" [title]="'CONSULTATION.RESTORE' | translate"><span class="material-icons">undo</span></button>
+                            <button type="button" class="cp-icon" (click)="restoreField(def.name)" [attr.aria-label]="'CONSULTATION.RESTORE' | translate" [title]="'CONSULTATION.RESTORE' | translate"><span aria-hidden="true" class="material-icons">undo</span></button>
                           } @else {
                             @if (f.status === 'proposed') {
-                              <button type="button" class="cp-icon ok" (click)="validateField(def.name)" [attr.aria-label]="'CONSULTATION.VALIDATE' | translate" [title]="'CONSULTATION.VALIDATE' | translate"><span class="material-icons">check</span></button>
+                              <button type="button" class="cp-icon ok" (click)="validateField(def.name)" [attr.aria-label]="'CONSULTATION.VALIDATE' | translate" [title]="'CONSULTATION.VALIDATE' | translate"><span aria-hidden="true" class="material-icons">check</span></button>
                             }
-                            <button type="button" class="cp-icon" (click)="editField(def)" [attr.aria-label]="'CONSULTATION.EDIT' | translate" [title]="'CONSULTATION.EDIT' | translate"><span class="material-icons">edit</span></button>
-                            <button type="button" class="cp-icon bad" (click)="removeField(def.name)" [attr.aria-label]="'CONSULTATION.REMOVE' | translate" [title]="'CONSULTATION.REMOVE' | translate"><span class="material-icons">close</span></button>
+                            <button type="button" class="cp-icon" (click)="editField(def)" [attr.aria-label]="'CONSULTATION.EDIT' | translate" [title]="'CONSULTATION.EDIT' | translate"><span aria-hidden="true" class="material-icons">edit</span></button>
+                            <button type="button" class="cp-icon bad" (click)="removeField(def.name)" [attr.aria-label]="'CONSULTATION.REMOVE' | translate" [title]="'CONSULTATION.REMOVE' | translate"><span aria-hidden="true" class="material-icons">close</span></button>
                           }
                         </span>
                       }
@@ -455,7 +455,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                         <span class="cp-value empty">—</span>
                       }
                       @if (editable) {
-                        <button type="button" class="cp-icon" (click)="editField(def)" [attr.aria-label]="'CONSULTATION.ADD' | translate" [title]="'CONSULTATION.ADD' | translate"><span class="material-icons">add</span></button>
+                        <button type="button" class="cp-icon" (click)="editField(def)" [attr.aria-label]="'CONSULTATION.ADD' | translate" [title]="'CONSULTATION.ADD' | translate"><span aria-hidden="true" class="material-icons">add</span></button>
                       }
                     }
                   }
@@ -473,10 +473,10 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
           <div class="cp-item" [class.removed]="complaint.status === 'removed'">
             <div class="cp-item-main">
               @if (editKey() === 'complaint') {
-                <input type="text" class="cp-input" [(ngModel)]="edit.text" maxlength="400" (keydown.enter)="saveComplaint()" />
+                <input type="text" class="cp-input" [attr.aria-label]="'CONSULTATION.SEC_COMPLAINT' | translate" [(ngModel)]="edit.text" maxlength="400" (keydown.enter)="saveComplaint()" />
                 <span class="cp-row-actions">
-                  <button type="button" class="cp-icon ok" (click)="saveComplaint()" [attr.aria-label]="'CONSULTATION.SAVE_EDIT' | translate"><span class="material-icons">check</span></button>
-                  <button type="button" class="cp-icon" (click)="editKey.set(null)" [attr.aria-label]="'COMMON.CANCEL' | translate"><span class="material-icons">close</span></button>
+                  <button type="button" class="cp-icon ok" (click)="saveComplaint()" [attr.aria-label]="'CONSULTATION.SAVE_EDIT' | translate"><span aria-hidden="true" class="material-icons">check</span></button>
+                  <button type="button" class="cp-icon" (click)="editKey.set(null)" [attr.aria-label]="'COMMON.CANCEL' | translate"><span aria-hidden="true" class="material-icons">close</span></button>
                 </span>
               } @else {
                 <span class="cp-value" [class.proposed]="complaint.status === 'proposed'">{{ complaint.value }}</span>
@@ -485,13 +485,13 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                 @if (editable) {
                   <span class="cp-row-actions">
                     @if (complaint.status === 'removed') {
-                      <button type="button" class="cp-icon" (click)="c.changeReview(restoreComplaint)" [attr.aria-label]="'CONSULTATION.RESTORE' | translate"><span class="material-icons">undo</span></button>
+                      <button type="button" class="cp-icon" (click)="c.changeReview(restoreComplaint)" [attr.aria-label]="'CONSULTATION.RESTORE' | translate"><span aria-hidden="true" class="material-icons">undo</span></button>
                     } @else {
                       @if (complaint.status === 'proposed') {
-                        <button type="button" class="cp-icon ok" (click)="c.changeReview(validateComplaint)" [attr.aria-label]="'CONSULTATION.VALIDATE' | translate"><span class="material-icons">check</span></button>
+                        <button type="button" class="cp-icon ok" (click)="c.changeReview(validateComplaint)" [attr.aria-label]="'CONSULTATION.VALIDATE' | translate"><span aria-hidden="true" class="material-icons">check</span></button>
                       }
-                      <button type="button" class="cp-icon" (click)="editComplaint(complaint.value)" [attr.aria-label]="'CONSULTATION.EDIT' | translate"><span class="material-icons">edit</span></button>
-                      <button type="button" class="cp-icon bad" (click)="c.changeReview(removeComplaint)" [attr.aria-label]="'CONSULTATION.REMOVE' | translate"><span class="material-icons">close</span></button>
+                      <button type="button" class="cp-icon" (click)="editComplaint(complaint.value)" [attr.aria-label]="'CONSULTATION.EDIT' | translate"><span aria-hidden="true" class="material-icons">edit</span></button>
+                      <button type="button" class="cp-icon bad" (click)="c.changeReview(removeComplaint)" [attr.aria-label]="'CONSULTATION.REMOVE' | translate"><span aria-hidden="true" class="material-icons">close</span></button>
                     }
                   </span>
                 }
@@ -535,13 +535,13 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                     @if (editable) {
                       <span class="cp-row-actions">
                         @if (item.status === 'removed') {
-                          <button type="button" class="cp-icon" (click)="restoreItem(list.name, item.key)" [attr.aria-label]="'CONSULTATION.RESTORE' | translate"><span class="material-icons">undo</span></button>
+                          <button type="button" class="cp-icon" (click)="restoreItem(list.name, item.key)" [attr.aria-label]="'CONSULTATION.RESTORE' | translate"><span aria-hidden="true" class="material-icons">undo</span></button>
                         } @else {
                           @if (item.status === 'proposed') {
-                            <button type="button" class="cp-icon ok" (click)="validateItem(list.name, item.key)" [attr.aria-label]="'CONSULTATION.VALIDATE' | translate"><span class="material-icons">check</span></button>
+                            <button type="button" class="cp-icon ok" (click)="validateItem(list.name, item.key)" [attr.aria-label]="'CONSULTATION.VALIDATE' | translate"><span aria-hidden="true" class="material-icons">check</span></button>
                           }
-                          <button type="button" class="cp-icon" (click)="editItem(list.name, item)" [attr.aria-label]="'CONSULTATION.EDIT' | translate"><span class="material-icons">edit</span></button>
-                          <button type="button" class="cp-icon bad" (click)="removeItem(list.name, item.key)" [attr.aria-label]="'CONSULTATION.REMOVE' | translate"><span class="material-icons">close</span></button>
+                          <button type="button" class="cp-icon" (click)="editItem(list.name, item)" [attr.aria-label]="'CONSULTATION.EDIT' | translate"><span aria-hidden="true" class="material-icons">edit</span></button>
+                          <button type="button" class="cp-icon bad" (click)="removeItem(list.name, item.key)" [attr.aria-label]="'CONSULTATION.REMOVE' | translate"><span aria-hidden="true" class="material-icons">close</span></button>
                         }
                       </span>
                     }
@@ -573,22 +573,22 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
       <span class="cp-editor row">
         @switch (def.kind) {
           @case ('gender') {
-            <select class="cp-input" [(ngModel)]="edit.text">
+            <select class="cp-input" [attr.aria-label]="def.labelKey | translate" [(ngModel)]="edit.text">
               <option value="M">{{ 'PATIENTS.DOSSIER.GENDER_M' | translate }}</option>
               <option value="F">{{ 'PATIENTS.DOSSIER.GENDER_F' | translate }}</option>
             </select>
           }
           @case ('insurer') {
-            <select class="cp-input" [(ngModel)]="edit.text">
+            <select class="cp-input" [attr.aria-label]="def.labelKey | translate" [(ngModel)]="edit.text">
               @for (insurer of insurers; track insurer) { <option [value]="insurer">{{ insurer }}</option> }
             </select>
           }
-          @case ('number') { <input type="number" class="cp-input" [(ngModel)]="edit.text" min="0" max="120" (keydown.enter)="saveField(def)" /> }
-          @case ('date') { <input type="date" class="cp-input" [(ngModel)]="edit.text" [max]="today" (keydown.enter)="saveField(def)" /> }
-          @default { <input type="text" class="cp-input" [(ngModel)]="edit.text" maxlength="100" (keydown.enter)="saveField(def)" /> }
+          @case ('number') { <input type="number" class="cp-input" [attr.aria-label]="def.labelKey | translate" [(ngModel)]="edit.text" min="0" max="120" (keydown.enter)="saveField(def)" /> }
+          @case ('date') { <input type="date" class="cp-input" [attr.aria-label]="def.labelKey | translate" [(ngModel)]="edit.text" [max]="today" (keydown.enter)="saveField(def)" /> }
+          @default { <input type="text" class="cp-input" [attr.aria-label]="def.labelKey | translate" [(ngModel)]="edit.text" maxlength="100" (keydown.enter)="saveField(def)" /> }
         }
-        <button type="button" class="cp-icon ok" (click)="saveField(def)" [attr.aria-label]="'CONSULTATION.SAVE_EDIT' | translate"><span class="material-icons">check</span></button>
-        <button type="button" class="cp-icon" (click)="editKey.set(null)" [attr.aria-label]="'COMMON.CANCEL' | translate"><span class="material-icons">close</span></button>
+        <button type="button" class="cp-icon ok" (click)="saveField(def)" [attr.aria-label]="'CONSULTATION.SAVE_EDIT' | translate"><span aria-hidden="true" class="material-icons">check</span></button>
+        <button type="button" class="cp-icon" (click)="editKey.set(null)" [attr.aria-label]="'COMMON.CANCEL' | translate"><span aria-hidden="true" class="material-icons">close</span></button>
       </span>
     </ng-template>
 
@@ -597,39 +597,39 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
       <div class="cp-editor col">
         @switch (list) {
           @case ('allergies') {
-            <input type="text" class="cp-input" [(ngModel)]="edit.text" [placeholder]="'CONSULTATION.F_SUBSTANCE' | translate" maxlength="160" />
-            <input type="text" class="cp-input" [(ngModel)]="edit.reaction" [placeholder]="'CONSULTATION.F_REACTION' | translate" maxlength="500" />
-            <select class="cp-input" [(ngModel)]="edit.severity">
+            <input [attr.aria-label]="'CONSULTATION.F_SUBSTANCE' | translate" type="text" class="cp-input" [(ngModel)]="edit.text" [placeholder]="'CONSULTATION.F_SUBSTANCE' | translate" maxlength="160" />
+            <input [attr.aria-label]="'CONSULTATION.F_REACTION' | translate" type="text" class="cp-input" [(ngModel)]="edit.reaction" [placeholder]="'CONSULTATION.F_REACTION' | translate" maxlength="500" />
+            <select class="cp-input" [attr.aria-label]="'CONSULTATION.F_SEVERITY' | translate" [(ngModel)]="edit.severity">
               <option value="">{{ 'CONSULTATION.F_SEVERITY' | translate }}</option>
               @for (s of severities; track s) { <option [value]="s">{{ 'CONSULTATION.DOC.SEVERITY_' + s | translate }}</option> }
             </select>
           }
           @case ('activeTreatments') {
-            <input type="text" class="cp-input" [(ngModel)]="edit.text" [placeholder]="'CONSULTATION.F_LABEL' | translate" maxlength="160" />
-            <input type="text" class="cp-input" [(ngModel)]="edit.detail" [placeholder]="'CONSULTATION.F_DETAIL' | translate" maxlength="500" />
-            <select class="cp-input" [(ngModel)]="edit.type">
+            <input [attr.aria-label]="'CONSULTATION.F_LABEL' | translate" type="text" class="cp-input" [(ngModel)]="edit.text" [placeholder]="'CONSULTATION.F_LABEL' | translate" maxlength="160" />
+            <input [attr.aria-label]="'CONSULTATION.F_DETAIL' | translate" type="text" class="cp-input" [(ngModel)]="edit.detail" [placeholder]="'CONSULTATION.F_DETAIL' | translate" maxlength="500" />
+            <select class="cp-input" [attr.aria-label]="'COMMON.TYPE' | translate" [(ngModel)]="edit.type">
               @for (t of treatmentTypes; track t) { <option [value]="t">{{ 'CONSULTATION.TYPE_' + t | translate }}</option> }
             </select>
           }
           @case ('medicalHistory') {
-            <select class="cp-input" [(ngModel)]="edit.category">
+            <select class="cp-input" [attr.aria-label]="'CONSULTATION.SEC_HISTORY' | translate" [(ngModel)]="edit.category">
               @for (cat of historyCategories; track cat) { <option [value]="cat">{{ 'CONSULTATION.CAT_' + cat | translate }}</option> }
             </select>
-            <input type="text" class="cp-input" [(ngModel)]="edit.text" [placeholder]="'CONSULTATION.F_LABEL' | translate" maxlength="160" />
-            <input type="text" class="cp-input" [(ngModel)]="edit.detail" [placeholder]="'CONSULTATION.F_DETAIL' | translate" maxlength="500" />
+            <input [attr.aria-label]="'CONSULTATION.F_LABEL' | translate" type="text" class="cp-input" [(ngModel)]="edit.text" [placeholder]="'CONSULTATION.F_LABEL' | translate" maxlength="160" />
+            <input [attr.aria-label]="'CONSULTATION.F_DETAIL' | translate" type="text" class="cp-input" [(ngModel)]="edit.detail" [placeholder]="'CONSULTATION.F_DETAIL' | translate" maxlength="500" />
           }
           @case ('plan') {
-            <select class="cp-input" [ngModel]="edit.treatmentId" (ngModelChange)="pickCatalog($event)">
+            <select class="cp-input" [attr.aria-label]="'CONSULTATION.SEC_PLAN' | translate" [ngModel]="edit.treatmentId" (ngModelChange)="pickCatalog($event)">
               <option value="">{{ 'CONSULTATION.PLAN_NO_CATALOG' | translate }}</option>
               @for (t of catalog(); track t.id) { <option [value]="t.id">{{ t.name }} — {{ t.basePrice | number:'1.0-2' }} MAD</option> }
             </select>
-            <input type="text" class="cp-input" [(ngModel)]="edit.text" [placeholder]="'CONSULTATION.F_LABEL' | translate" maxlength="200" />
+            <input [attr.aria-label]="'CONSULTATION.F_LABEL' | translate" type="text" class="cp-input" [(ngModel)]="edit.text" [placeholder]="'CONSULTATION.F_LABEL' | translate" maxlength="200" />
             <span class="cp-editor row">
-              <input type="text" class="cp-input" [(ngModel)]="edit.teeth" [placeholder]="'CONSULTATION.PLAN_TEETH' | translate" maxlength="100" />
-              <input type="number" class="cp-input narrow" [(ngModel)]="edit.price" min="0" [placeholder]="'CONSULTATION.PLAN_PRICE' | translate" />
+              <input [attr.aria-label]="'CONSULTATION.PLAN_TEETH' | translate" type="text" class="cp-input" [(ngModel)]="edit.teeth" [placeholder]="'CONSULTATION.PLAN_TEETH' | translate" maxlength="100" />
+              <input [attr.aria-label]="'CONSULTATION.PLAN_PRICE' | translate" type="number" class="cp-input narrow" [(ngModel)]="edit.price" min="0" [placeholder]="'CONSULTATION.PLAN_PRICE' | translate" />
               <input type="number" class="cp-input narrow" [(ngModel)]="edit.quantity" min="1" [attr.aria-label]="'CONSULTATION.PLAN_QTY' | translate" />
             </span>
-            <input type="text" class="cp-input" [(ngModel)]="edit.detail" [placeholder]="'CONSULTATION.F_NOTES' | translate" maxlength="500" />
+            <input [attr.aria-label]="'CONSULTATION.F_NOTES' | translate" type="text" class="cp-input" [(ngModel)]="edit.detail" [placeholder]="'CONSULTATION.F_NOTES' | translate" maxlength="500" />
             <label class="cp-check"><input type="checkbox" [(ngModel)]="edit.performed" /> {{ 'CONSULTATION.PLAN_DONE_HINT' | translate }}</label>
           }
         }
@@ -668,8 +668,8 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-card { background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: 14px; padding: 1rem; display: flex; flex-direction: column; gap: .75rem; }
     .cp-card.center { align-items: center; text-align: center; }
     .cp-card h3, .cp-card p { margin: 0; }
-    .cp-hero { font-size: 2rem; color: rgb(var(--petrol-600)); }
-    .cp-hero.ok { color: rgb(var(--positive-600)); font-size: 2.5rem; }
+    .cp-hero { font-size: 2rem; color: rgb(var(--petrol-700)); }
+    .cp-hero.ok { color: rgb(var(--positive-700)); font-size: 2.5rem; }
     .cp-forms { list-style: none; margin: .75rem 0 0; padding: 0; display: grid; gap: .35rem; text-align: start; font-size: .85rem; color: rgb(var(--ink-700)); }
     .cp-forms li { display: flex; gap: .4rem; align-items: flex-start; }
     .cp-forms .material-icons { font-size: 1rem; color: rgb(var(--brand-600, 37 99 235)); }
@@ -713,8 +713,8 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     }
     .cp-icon .material-icons { font-size: 1.125rem; }
     .cp-icon:hover { background: rgb(var(--ink-100)); }
-    .cp-icon.ok { color: rgb(var(--positive-600)); }
-    .cp-icon.bad { color: rgb(var(--critical-600)); }
+    .cp-icon.ok { color: rgb(var(--positive-700)); }
+    .cp-icon.bad { color: rgb(var(--critical-700)); }
     .cp-icon.solid { background: rgb(var(--petrol-600)); color: #fff; width: 2.5rem; height: 2.5rem; border-radius: 10px; }
 
     .cp-alert { display: flex; gap: .5rem; align-items: center; padding: .625rem .75rem; border-radius: 10px; font-size: .8125rem; margin: 0; }
@@ -776,7 +776,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-value { font-size: .875rem; font-weight: 600; color: rgb(var(--ink-900)); word-break: break-word; }
     .cp-value.proposed { color: rgb(var(--petrol-800)); }
     .cp-value.onfile { font-weight: 500; color: rgb(var(--ink-700)); }
-    .cp-value.empty { color: rgb(var(--ink-400)); font-weight: 400; }
+    .cp-value.empty { color: rgb(var(--ink-500)); font-weight: 400; }
     .cp-status { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: .0625rem .375rem; border-radius: 999px; }
     .cp-status[data-status='proposed'] { background: rgb(var(--caution-100)); color: rgb(var(--caution-800)); }
     .cp-status[data-status='validated'] { background: rgb(var(--positive-100)); color: rgb(var(--positive-700)); }

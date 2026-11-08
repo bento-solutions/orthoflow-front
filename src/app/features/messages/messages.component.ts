@@ -41,7 +41,7 @@ import { ModalComponent } from '../../shared/ui/modal.component';
                 </span>
                 <span class="block truncate text-xs text-ink-500">{{ t.participants.join(', ') }}</span>
                 <span class="block truncate text-xs text-ink-600"><strong>{{ t.lastSender }}</strong>: {{ t.preview }}</span>
-                <span class="block text-2xs text-ink-400">{{ t.lastMessageAt | date: 'short' }}</span>
+                <span class="block text-2xs text-ink-500">{{ t.lastMessageAt | date: 'short' }}</span>
               </button>
             </li>
           } @empty {

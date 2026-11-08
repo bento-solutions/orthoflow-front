@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { VoiceSessionService } from '../../../core/voice/voice-session.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { DialogDirective } from '../../ui/dialog.directive';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 /**
  * The consultation summary a dictated examination produces, for review and
@@ -17,29 +19,28 @@ import { ToastService } from '../../../core/services/toast.service';
 @Component({
   selector: 'app-voice-session-summary',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [TranslateModule, DialogDirective, CommonModule, FormsModule],
   template: `
     @if (session.summaryOpen() && session.summary(); as summary) {
       <div class="summary-backdrop" (click)="session.closeSummary()">
-        <div class="summary-panel" (click)="$event.stopPropagation()"
-             role="dialog" aria-modal="true" aria-labelledby="voice-summary-title">
+        <div class="summary-panel" appDialog="voice-summary-title" (dialogClosed)="session.closeSummary()" (click)="$event.stopPropagation()">
 
           <header class="summary-header">
             <div>
-              <h2 id="voice-summary-title">Consultation summary</h2>
+              <h2 id="voice-summary-title">{{ 'VOICE.SUMMARY.TITLE' | translate }}</h2>
               <p class="summary-sub">
-                {{ summary.totalFindings }} findings across {{ summary.teeth.length }} teeth
+                {{ 'VOICE.SUMMARY.COUNTS' | translate: { findings: summary.totalFindings, teeth: summary.teeth.length } }}
               </p>
             </div>
-            <button type="button" class="icon-btn" (click)="session.closeSummary()" aria-label="Close">
-              <span class="material-icons">close</span>
+            <button type="button" class="icon-btn" (click)="session.closeSummary()" [attr.aria-label]="'COMMON.CLOSE' | translate">
+              <span aria-hidden="true" class="material-icons">close</span>
             </button>
           </header>
 
           <div class="summary-body">
             @if (summary.teeth.length) {
               <section>
-                <h3>Tooth-by-tooth findings</h3>
+                <h3>{{ 'VOICE.SUMMARY.BY_TOOTH' | translate }}</h3>
                 <ul class="tooth-list">
                   @for (tooth of summary.teeth; track tooth.fdi) {
                     <li>
@@ -63,7 +64,7 @@ import { ToastService } from '../../../core/services/toast.service';
 
             @if (summary.diagnoses.length) {
               <section>
-                <h3>Diagnoses</h3>
+                <h3>{{ 'VOICE.SUMMARY.DIAGNOSES' | translate }}</h3>
                 <ul class="plain">
                   @for (line of summary.diagnoses; track line) { <li>{{ line }}</li> }
                 </ul>
@@ -72,7 +73,7 @@ import { ToastService } from '../../../core/services/toast.service';
 
             @if (summary.treatments.length) {
               <section>
-                <h3>Recommended treatments</h3>
+                <h3>{{ 'VOICE.SUMMARY.TREATMENTS' | translate }}</h3>
                 <ul class="plain">
                   @for (line of summary.treatments; track line) { <li>{{ line }}</li> }
                 </ul>
@@ -81,11 +82,11 @@ import { ToastService } from '../../../core/services/toast.service';
 
             @if (summary.allergies.length) {
               <section>
-                <h3>Allergies</h3>
+                <h3>{{ 'VOICE.SUMMARY.ALLERGIES' | translate }}</h3>
                 <ul class="plain">
                   @for (substance of summary.allergies; track substance) {
                     <li class="allergy">
-                      <span class="material-icons">warning</span> {{ substance }}
+                      <span aria-hidden="true" class="material-icons">warning</span> {{ substance }}
                     </li>
                   }
                 </ul>
@@ -94,7 +95,7 @@ import { ToastService } from '../../../core/services/toast.service';
 
             @if (summary.medicalHistory.length) {
               <section>
-                <h3>Medical &amp; dental history</h3>
+                <h3>{{ 'VOICE.SUMMARY.HISTORY' | translate }}</h3>
                 <ul class="plain">
                   @for (entry of summary.medicalHistory; track entry.label) {
                     <li><span class="cat">{{ entry.category.replace('_', ' ') | lowercase }}</span> {{ entry.label }}</li>
@@ -105,12 +106,12 @@ import { ToastService } from '../../../core/services/toast.service';
 
             @if (summary.notes.length) {
               <section>
-                <h3>Clinical notes</h3>
+                <h3>{{ 'VOICE.SUMMARY.NOTES' | translate }}</h3>
                 <ul class="plain">
                   @for (note of summary.notes; track note.content) {
                     <li>
                       <span class="cat">{{ note.category.replace('_', ' ') | lowercase }}</span>
-                      @if (note.fdi) { <span class="cat tooth">tooth {{ note.fdi }}</span> }
+                      @if (note.fdi) { <span class="cat tooth">{{ 'VOICE.SUMMARY.TOOTH' | translate: { fdi: note.fdi } }}</span> }
                       {{ note.content }}
                     </li>
                   }
@@ -120,7 +121,7 @@ import { ToastService } from '../../../core/services/toast.service';
 
             @if (summary.followUps.length) {
               <section>
-                <h3>Follow-up</h3>
+                <h3>{{ 'VOICE.SUMMARY.FOLLOW_UP' | translate }}</h3>
                 <ul class="plain">
                   @for (item of summary.followUps; track item) { <li>{{ item }}</li> }
                 </ul>
@@ -128,36 +129,35 @@ import { ToastService } from '../../../core/services/toast.service';
             }
 
             @if (summary.totalFindings === 0 && summary.notes.length === 0 && summary.allergies.length === 0) {
-              <p class="empty">Nothing was recorded in this examination.</p>
+              <p class="empty">{{ 'VOICE.SUMMARY.NOTHING' | translate }}</p>
             }
 
             <!-- Editable clinician remarks — appended to the summary on confirm -->
             <section class="notes-section">
-              <h3>Clinician remarks</h3>
+              <h3>{{ 'VOICE.SUMMARY.REMARKS' | translate }}</h3>
               <p class="notes-hint">
-                Optional free-text notes that will be saved with this consultation.
+                {{ 'VOICE.SUMMARY.REMARKS_HINT' | translate }}
               </p>
               <textarea
                 class="notes-input"
                 [(ngModel)]="clinicianNotes"
                 name="clinicianNotes"
                 rows="4"
-                placeholder="Add any remarks, treatment plan notes, or follow-up instructions…"
-                aria-label="Clinician remarks"
+                [placeholder]="'VOICE.SUMMARY.REMARKS_PLACEHOLDER' | translate"
+                [attr.aria-label]="'VOICE.SUMMARY.REMARKS' | translate"
               ></textarea>
             </section>
           </div>
 
           <footer class="summary-footer">
             <p class="footer-note">
-              Each entry above is already saved and separately audited. Confirming marks the
-              consultation as reviewed.
+              {{ 'VOICE.SUMMARY.CONFIRM_HINT' | translate }}
             </p>
             <div class="footer-actions">
-              <button type="button" class="btn btn-secondary" (click)="session.closeSummary()">Keep editing</button>
+              <button type="button" class="btn btn-secondary" (click)="session.closeSummary()">{{ 'VOICE.SUMMARY.KEEP_EDITING' | translate }}</button>
               <button type="button" class="btn btn-primary" [disabled]="confirming()" (click)="confirm()">
-                <span class="material-icons">check_circle</span>
-                {{ confirming() ? 'Confirming…' : 'Confirm findings' }}
+                <span aria-hidden="true" class="material-icons">check_circle</span>
+                {{ (confirming() ? 'VOICE.SUMMARY.CONFIRMING' : 'VOICE.SUMMARY.CONFIRM') | translate }}
               </button>
             </div>
           </footer>
@@ -186,7 +186,7 @@ import { ToastService } from '../../../core/services/toast.service';
     section { margin-bottom: 1.25rem; }
     section h3 {
       margin: 0 0 0.5rem; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.06em; color: rgb(var(--ink-400));
+      letter-spacing: 0.06em; color: rgb(var(--ink-500));
     }
 
     .tooth-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.625rem; }
@@ -232,7 +232,7 @@ import { ToastService } from '../../../core/services/toast.service';
       outline: 2px solid rgb(var(--petrol-300)); outline-offset: -1px;
       border-color: rgb(var(--petrol-400));
     }
-    .notes-input::placeholder { color: rgb(var(--ink-400)); }
+    .notes-input::placeholder { color: rgb(var(--ink-500)); }
 
     .summary-footer { border-top: 1px solid rgb(var(--ink-200)); padding: 0.875rem 1.5rem 1.25rem; }
     .footer-note { margin: 0 0 0.75rem; font-size: 0.75rem; color: rgb(var(--ink-500)); line-height: 1.45; }
@@ -240,6 +240,7 @@ import { ToastService } from '../../../core/services/toast.service';
   `],
 })
 export class VoiceSessionSummaryComponent {
+  private readonly translate = inject(TranslateService);
   session = inject(VoiceSessionService);
   private toast = inject(ToastService);
 
@@ -252,9 +253,9 @@ export class VoiceSessionSummaryComponent {
     try {
       await this.session.confirm(this.clinicianNotes.trim() || null);
       this.clinicianNotes = '';
-      this.toast.success('Consultation confirmed.');
+      this.toast.success(this.translate.instant('VOICE.SUMMARY.CONFIRMED'));
     } catch {
-      this.toast.error('The consultation could not be marked as confirmed. The records themselves are saved.');
+      this.toast.error(this.translate.instant('VOICE.SUMMARY.CONFIRM_FAILED'));
     } finally {
       this.confirming.set(false);
     }

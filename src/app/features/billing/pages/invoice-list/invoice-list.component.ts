@@ -45,7 +45,7 @@ import { PatientService } from '../../../../core/services/patient.service';
       @if (invoiceService.summary(); as summary) {
         <section class="stagger mb-4 grid gap-4 sm:grid-cols-3">
           <article class="card flex items-center gap-3 p-4">
-            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-petrol-50 text-petrol-600">
+            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-petrol-50 text-petrol-700">
               <app-icon name="receipt" [size]="17" />
             </span>
             <span class="flex min-w-0 flex-col leading-tight">
@@ -55,7 +55,7 @@ import { PatientService } from '../../../../core/services/patient.service';
           </article>
 
           <article class="card flex items-center gap-3 p-4">
-            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-positive-50 text-positive-600">
+            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-positive-50 text-positive-700">
               <app-icon name="check-circle" [size]="17" />
             </span>
             <span class="flex min-w-0 flex-col leading-tight">

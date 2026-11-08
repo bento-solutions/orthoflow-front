@@ -99,7 +99,7 @@ export function toggled<T>(selected: readonly T[], value: T, all: readonly T[]):
                     <tr>
                       <td>{{ l.date | date: 'shortDate' }}</td>
                       <td>@if (l.invoiceId) { <a class="no-underline hover:text-petrol-700" [routerLink]="['/billing/invoices', l.invoiceId]">{{ l.invoiceNumber }}</a> }<span class="block text-xs text-ink-500 mono">{{ l.patientCode }}</span></td>
-                      <td>{{ l.label }}@if (l.category) { <span class="block text-xs text-ink-500">{{ l.category }}</span> }<span class="block text-2xs uppercase tracking-wider text-ink-400">{{ 'RETRO.LINE.KINDS.' + l.kind | translate }}</span></td>
+                      <td>{{ l.label }}@if (l.category) { <span class="block text-xs text-ink-500">{{ l.category }}</span> }<span class="block text-2xs uppercase tracking-wider text-ink-500">{{ 'RETRO.LINE.KINDS.' + l.kind | translate }}</span></td>
                       <td class="cell-num">{{ l.base | money }}</td>
                       <td class="cell-num">{{ l.ratePercent ?? '—' }}</td>
                       <td class="cell-num font-semibold" [class.text-critical-700]="l.amount < 0">{{ l.amount | money }}</td>

@@ -53,14 +53,14 @@ import { OrderForecast, OrderSuggestion, WarehouseInsightsApi } from './warehous
         <div class="table-wrap"><div class="table-scroll">
           <table class="data-table">
             <thead><tr>
-              <th>{{ 'WH.FC.ITEM' | translate }}</th>
-              <th class="text-end">{{ 'WH.FC.ON_HAND' | translate }}</th>
-              <th class="text-end">{{ 'WH.FC.DEMAND' | translate }}</th>
-              <th class="text-end">{{ 'WH.FC.SEASON' | translate }}</th>
-              <th class="text-end">{{ 'WH.FC.SAFETY' | translate }}</th>
-              <th class="text-end">{{ 'WH.FC.ORDER' | translate }}</th>
-              <th class="text-end">{{ 'WH.FC.COST' | translate }}</th>
-              <th>{{ 'WH.FC.SUPPLIER' | translate }}</th>
+              <th scope="col">{{ 'WH.FC.ITEM' | translate }}</th>
+              <th scope="col" class="text-end">{{ 'WH.FC.ON_HAND' | translate }}</th>
+              <th scope="col" class="text-end">{{ 'WH.FC.DEMAND' | translate }}</th>
+              <th scope="col" class="text-end">{{ 'WH.FC.SEASON' | translate }}</th>
+              <th scope="col" class="text-end">{{ 'WH.FC.SAFETY' | translate }}</th>
+              <th scope="col" class="text-end">{{ 'WH.FC.ORDER' | translate }}</th>
+              <th scope="col" class="text-end">{{ 'WH.FC.COST' | translate }}</th>
+              <th scope="col">{{ 'WH.FC.SUPPLIER' | translate }}</th>
             </tr></thead>
             <tbody>
               @for (s of f.suggestions; track s.stockItemId) {
@@ -73,7 +73,7 @@ import { OrderForecast, OrderSuggestion, WarehouseInsightsApi } from './warehous
                     {{ s.onHand | num }}
                   </td>
                   <td class="text-end tabular-nums">{{ s.forecastDemand | num }}</td>
-                  <td class="text-end tabular-nums" [class.text-ink-400]="s.seasonalFactor === 1">
+                  <td class="text-end tabular-nums" [class.text-ink-500]="s.seasonalFactor === 1">
                     ×{{ s.seasonalFactor }}
                   </td>
                   <td class="text-end tabular-nums text-ink-500">{{ s.safetyStock | num }}</td>

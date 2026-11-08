@@ -18,7 +18,7 @@
 .d3-views button.on { background: var(--action); color: var(--text-inverse); }
 .d3-views button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
 
-.d3-tools { display: inline-flex; align-items: center; gap: .25rem; }
+.d3-tools { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .25rem; }
 .d3-tool {
   display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; flex: none;
   border: 1px solid var(--border); border-radius: .5rem; background: var(--surface); color: var(--text); cursor: pointer;
@@ -28,6 +28,7 @@
 .d3-tool .material-icons { font-size: 1.125rem; }
 .d3-tool:focus-visible, .d3-back:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 .d3-back {
+  position: absolute; inset: .5rem auto auto .5rem; z-index: 3;
   display: inline-flex; align-items: center; gap: .25rem; height: 2.25rem; padding: 0 .75rem; font: inherit; font-size: .8125rem; font-weight: 600;
   border: 1px solid var(--action); border-radius: .5rem; background: var(--surface); color: var(--action-text); cursor: pointer;
 }
@@ -54,8 +55,11 @@
   color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 999px;
 }
 .d3-label:hover { background: var(--action-tint); }
-.d3-label:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
-.d3-label.behind { opacity: .35; }
+.d3-label:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; z-index: 3; opacity: 1; }
+.d3-label.behind:not(:focus-visible) { opacity: .35; }
+/* The number is small to leave the teeth in view; what it takes to hit it is not. */
+.d3-label::after { content: ''; position: absolute; inset: -3px; }
+.d3-name { font-weight: 600; white-space: nowrap; }
 .d3-label[data-state='condition'] { color: rgb(var(--critical-700)); border-color: rgb(var(--critical-500)); background: rgb(var(--critical-50)); }
 .d3-label[data-state='existing'] { color: rgb(var(--petrol-700)); border-color: rgb(var(--petrol-500)); background: rgb(var(--petrol-50)); }
 .d3-label[data-state='absent'] { color: var(--text-muted); border-style: dashed; text-decoration: line-through; }
@@ -106,8 +110,8 @@
 }
 .d3-face:hover { background: var(--action-tint); }
 .d3-face.on { background: var(--action); color: var(--text-inverse); }
-.d3-face.behind { opacity: .3; }
-.d3-face:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.d3-face.behind:not(:focus-visible) { opacity: .3; }
+.d3-face:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; z-index: 3; }
 
 .d3-overlay {
   position: absolute; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: center; gap: .5rem;

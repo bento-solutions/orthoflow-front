@@ -46,7 +46,7 @@ interface InsurerForm {
         @for (i of insurers.data(); track i.id) {
           <li class="flex flex-wrap items-center gap-4 px-5 py-3">
             <div class="min-w-0 flex-1">
-              <p class="font-semibold text-ink-900" [class.text-ink-500]="!i.active">{{ i.name }} <span class="mono text-2xs text-ink-400">{{ i.code }}</span>
+              <p class="font-semibold text-ink-900" [class.text-ink-500]="!i.active">{{ i.name }} <span class="mono text-2xs text-ink-500">{{ i.code }}</span>
                 @if (!i.active) { <span class="pill pill-idle ms-1">{{ 'SET.INSURERS.INACTIVE' | translate }}</span> }</p>
               <p class="text-sm text-ink-600">{{ formLabel(i) }}</p>
             </div>

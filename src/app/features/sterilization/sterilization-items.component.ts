@@ -56,7 +56,7 @@ const blankItem = (): ItemForm => ({ code: '', name: '', kind: 'INSTRUMENT', ser
           <option value="">{{ 'COMMON.ALL' | translate }}</option>@for (k of kinds; track k) { <option [value]="k">{{ 'STER.KINDS.' + k | translate }}</option> }
         </select></label>
       <label class="flex items-center gap-1.5 pb-2 text-sm font-semibold text-ink-700"><input type="checkbox" [ngModel]="includeRetired()" (ngModelChange)="includeRetired.set($event)" /> {{ 'STER.ITEMS.INCLUDE_RETIRED' | translate }}</label>
-      <span class="ms-auto flex gap-2">
+      <span class="ms-auto flex flex-wrap gap-2">
         <button type="button" class="btn btn-secondary btn-sm" [disabled]="selected().size === 0" (click)="printLabels()"><app-icon name="print" [size]="15" /> {{ 'STER.ITEMS.PRINT_LABELS' | translate }}@if (selected().size) { ({{ selected().size }}) }</button>
         <button type="button" class="btn btn-primary btn-sm" (click)="openNew()"><app-icon name="plus" [size]="15" /> {{ 'STER.ITEMS.NEW' | translate }}</button>
       </span>

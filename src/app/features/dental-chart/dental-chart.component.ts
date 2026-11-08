@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, AfterViewInit, ElementRef, ViewChild, OnChanges, SimpleChanges, inject, OnDestroy, Renderer2 } from '@angular/core';
+import { Component, Input, Output, EventEmitter, AfterViewInit, ElementRef, ViewChild, OnChanges, SimpleChanges, computed, inject, OnDestroy, Renderer2, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { DentalChartService } from '../../core/services/dental-chart.service';
@@ -20,30 +20,48 @@ import {
   toothStatusDefinition,
 } from '../../core/clinical/tooth-status';
 
-import { SURFACE_ZONES, SURFACE_ZONE_PATH, surfaceMarks } from '../../core/clinical/tooth-surfaces';
+import { SURFACE_ZONES, SURFACE_ZONE_PATH, surfaceMarks, surfaceShorthand } from '../../core/clinical/tooth-surfaces';
+import { findingLabel } from '../../core/clinical/finding-options';
+import { ToothNumberTyping, stepInGrid, toothGrid } from '../../core/clinical/tooth-grid';
+import { AnnouncerService } from '../../core/services/announcer.service';
+import { ModalComponent } from '../../shared/ui/modal.component';
+import { ChartKeysComponent } from './chart-keys.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastService } from '../../core/services/toast.service';
 
 import { FormsModule } from '@angular/forms';
 import { ToothDetailComponent } from './tooth-detail/tooth-detail.component';
 
+/** Where a tooth is on the drawing, in percent of the drawing. */
+interface ToothCell {
+  readonly left: number;
+  readonly top: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+let nextId = 1;
+
+/** How much of the chart a tooth takes up in close-up, in percent of its longer side. */
+const CLOSE_UP_SHARE = 45;
+
 @Component({
   selector: 'app-dental-chart',
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, ToothDetailComponent],
+  imports: [CommonModule, TranslateModule, FormsModule, ToothDetailComponent, ModalComponent, ChartKeysComponent],
   template: `
-    <div class="dental-chart-wrapper" [class.summary]="summary" (click)="closeStatusMenu()">
+    <div class="dental-chart-wrapper" [class.summary]="summary">
       <div class="chart-header">
         <div class="header-left">
           <span class="chart-type-badge" [class.adult]="chartType === 'adult'" [class.child]="chartType === 'child'">
-            <span class="material-icons">{{ chartType === 'adult' ? 'person' : 'child_care' }}</span>
+            <span class="material-icons" aria-hidden="true">{{ chartType === 'adult' ? 'person' : 'child_care' }}</span>
             {{ (chartType === 'adult' ? 'DENTAL_CHART.ADULT_TITLE' : 'DENTAL_CHART.CHILD_TITLE') | translate }}
           </span>
           <span class="tooth-info">
-            @if (hoveredTooth) {
-              <span class="tooth-num">#{{ hoveredTooth }}</span>
-              <span class="tooth-name">{{ getToothName(hoveredTooth) }}</span>
-              <span class="tooth-status-label" [style.color]="getStatusColor(hoveredTooth)">{{ getToothStatusLabel(hoveredTooth) | translate }}</span>
+            @if (hoveredTooth(); as hovered) {
+              <span class="tooth-num">#{{ hovered }}</span>
+              <span class="tooth-name">{{ getToothName(hovered) }}</span>
+              <span class="tooth-status-label" [style.color]="getStatusColor(hovered)">{{ getToothStatusLabel(hovered) | translate }}</span>
             } @else {
               <span class="placeholderText">{{ 'DENTAL_CHART.HOVER_PROMPT' | translate }}</span>
             }
@@ -56,27 +74,37 @@ import { ToothDetailComponent } from './tooth-detail/tooth-detail.component';
         </div>
       </div>
 
-      <div class="svg-container" #chartContainer [innerHTML]="svgContent"></div>
+      <div class="svg-container" [class.close-up]="!!zoomedTooth()" (keydown)="onKeydown($event)">
+        <div class="svg-stage" [style.transform]="stageTransform()">
+          <!-- The drawing is for the eye. Under the keyboard and a screen reader are the buttons laid over it, one per tooth. -->
+          <div #chartContainer class="svg-drawing" aria-hidden="true" [innerHTML]="svgContent"></div>
+          <div class="tooth-cells" role="grid" [attr.aria-label]="'DENTAL_CHART.TEETH' | translate" [attr.aria-readonly]="!interactive" [attr.aria-describedby]="keysId">
+            @for (row of rows; track $index; let upper = $first) {
+              <div role="row" [attr.aria-label]="(upper ? 'DENTAL_3D.UPPER_ARCH' : 'DENTAL_3D.LOWER_ARCH') | translate">
+                @for (fdi of row; track fdi) {
+                  <button type="button" role="gridcell" class="tooth-cell" [attr.data-fdi]="fdi"
+                    [style.left.%]="cells().get(fdi)?.left" [style.top.%]="cells().get(fdi)?.top"
+                    [style.width.%]="cells().get(fdi)?.width" [style.height.%]="cells().get(fdi)?.height"
+                    [attr.aria-label]="toothAria(fdi)" [attr.aria-selected]="zoomedTooth() === fdi"
+                    [attr.tabindex]="tabStop() === fdi ? 0 : -1"
+                    (click)="onToothClick(fdi)" (focus)="onCellFocus(fdi)" (blur)="onToothLeave(fdi)"></button>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+      <p class="sr-only" [id]="keysId">{{ keysHelp() | translate }}</p>
+      <app-chart-keys class="chart-keys" [closeUp]="!!zoomedTooth()" [detail]="opensDetail" [spaceAction]="opensDetail ? 'TOOTH_KEYS.DETAIL' : interactive ? 'TOOTH_KEYS.SELECT' : null" />
 
       <!-- Status selection popup -->
-      @if (selectedTooth && interactive) {
-      <div class="status-menu-overlay" (click)="closeStatusMenu()">
-        <div class="status-menu" [class.status-menu--detail]="!!patientId" (click)="$event.stopPropagation()">
-          <header class="menu-header">
-            <div class="menu-title">
-              <span class="material-icons">toll</span>
-              {{ 'DENTAL_CHART.TOOTH_NUMBER' | translate }} {{ selectedTooth }}
-            </div>
-            <button type="button" class="close-btn" [attr.aria-label]="'COMMON.CLOSE' | translate" (click)="closeStatusMenu()">
-              <span class="material-icons" aria-hidden="true">close</span>
-            </button>
-          </header>
-          
+      @if (selectedTooth(); as fdi) {
+      <app-modal [open]="true" size="md" [title]="('DENTAL_CHART.TOOTH_NUMBER' | translate) + ' ' + fdi" (closed)="closeStatusMenu()">
           <div class="status-sections">
             @if (patientId) {
               <!-- A tooth can carry several states, each on its own surface: the panel
                    records findings (the server derives the painted status from them). -->
-              <app-tooth-detail [patientId]="patientId" [fdi]="selectedTooth!" [findings]="findings" />
+              <app-tooth-detail [patientId]="patientId" [fdi]="fdi" [findings]="findings" />
             } @else {
             @for (group of statusGroups; track group.family) {
               <div class="status-group">
@@ -85,8 +113,9 @@ import { ToothDetailComponent } from './tooth-detail/tooth-detail.component';
                   @for (opt of group.options; track opt.value) {
                     <button type="button"
                       class="status-option"
-                      [class.active]="(teeth && teeth[selectedTooth!]?.status) === opt.value"
-                      (click)="selectStatus(selectedTooth!, opt.value)"
+                      [class.active]="(teeth && teeth[fdi]?.status) === opt.value"
+                      [attr.aria-pressed]="(teeth && teeth[fdi]?.status) === opt.value"
+                      (click)="selectStatus(fdi, opt.value)"
                     >
                       <span class="status-dot" [style.background]="opt.color"></span>
                       {{ opt.label | translate }}
@@ -98,11 +127,12 @@ import { ToothDetailComponent } from './tooth-detail/tooth-detail.component';
             }
 
             <div class="note-section">
-              <label class="note-label">
-                <span class="material-icons">edit_note</span>
+              <label class="note-label" [for]="noteId">
+                <span class="material-icons" aria-hidden="true">edit_note</span>
                 {{ 'DENTAL_CHART.NOTE_LABEL' | translate }}
               </label>
-              <textarea 
+              <textarea
+                [id]="noteId"
                 class="note-textarea"
                 [placeholder]="'DENTAL_CHART.NOTE_PLACEHOLDER' | translate"
                 [(ngModel)]="currentToothNote"
@@ -110,16 +140,15 @@ import { ToothDetailComponent } from './tooth-detail/tooth-detail.component';
               ></textarea>
             </div>
           </div>
-          
+
           @if (!patientId) {
             <div class="menu-footer">
-              <button type="button" class="btn-reset" (click)="selectStatus(selectedTooth!, 'present')">
+              <button type="button" class="btn-reset" (click)="selectStatus(fdi, 'present')">
                 {{ 'DENTAL_CHART.RESET_PRESENT' | translate }}
               </button>
             </div>
           }
-        </div>
-      </div>
+      </app-modal>
       }
 
       @if (!summary) {
@@ -144,14 +173,14 @@ import { ToothDetailComponent } from './tooth-detail/tooth-detail.component';
 
       <!-- Report Section -->
       <div class="report-container" [class.open]="showReport">
-        <button type="button" class="report-toggle" (click)="showReport = !showReport">
+        <button type="button" class="report-toggle" [attr.aria-expanded]="showReport" (click)="showReport = !showReport">
           <div class="toggle-left">
-            <span class="material-icons">{{ showReport ? 'expand_less' : 'description' }}</span>
+            <span class="material-icons" aria-hidden="true">{{ showReport ? 'expand_less' : 'description' }}</span>
             <span class="report-title">{{ 'DENTAL_CHART.REPORT_TITLE' | translate }}</span>
             <span class="note-count" *ngIf="teethWithNotes.length > 0">{{ teethWithNotes.length }}</span>
           </div>
           <div class="toggle-right">
-            <span class="material-icons toggle-arrow">{{ showReport ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+            <span class="material-icons toggle-arrow" aria-hidden="true">{{ showReport ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
           </div>
         </button>
         
@@ -172,7 +201,7 @@ import { ToothDetailComponent } from './tooth-detail/tooth-detail.component';
             </div>
           } @else {
             <div class="no-notes-state">
-              <span class="material-icons">notes</span>
+              <span class="material-icons" aria-hidden="true">notes</span>
               <p>{{ 'DENTAL_CHART.NO_NOTES' | translate }}</p>
             </div>
           }
@@ -213,6 +242,8 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
   @Input() doneTeeth: readonly string[] = [];
   /** Teeth to pick out, from pointing at a line of the legend. */
   @Input() highlightTeeth: readonly string[] = [];
+  /** What the legend says about each tooth: the letters drawn beside it mean nothing to a screen reader. */
+  @Input() toothNotes: Readonly<Record<string, readonly string[]>> = {};
 
   @Output() toothSelected = new EventEmitter<ToothState>();
   @Output() toothHovered = new EventEmitter<ToothState | null>();
@@ -227,13 +258,54 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
   private toothListenerCleanups: Array<() => void> = [];
   private translate = inject(TranslateService);
   private toast = inject(ToastService);
+  private announcer = inject(AnnouncerService);
 
   svgContent: SafeHtml = '';
-  hoveredTooth: string | null = null;
-  selectedTooth: string | null = null;
+  // Signals: these are set from listeners on the drawing, which Angular does not watch.
+  readonly hoveredTooth = signal<string | null>(null);
+  readonly selectedTooth = signal<string | null>(null);
+  readonly zoomedTooth = signal<string | null>(null);
+  private readonly roving = signal<string | null>(null);
+  protected readonly cells = signal<ReadonlyMap<string, ToothCell>>(new Map());
   currentToothNote: string = '';
   showReport: boolean = false;
   private listenersAttached = false;
+  private readonly typing = new ToothNumberTyping();
+
+  protected readonly keysId = `dental-chart-keys-${nextId}`;
+  protected readonly noteId = `dental-chart-note-${nextId++}`;
+
+  get rows() {
+    return toothGrid(this.chartType);
+  }
+
+  /** Clicking a tooth opens its panel, so Enter on one in close-up can too. */
+  get opensDetail(): boolean {
+    return this.interactive && this.statusMenu;
+  }
+
+  /** The one tooth Tab lands on. */
+  protected tabStop(): string {
+    const teeth = this.rows.flat();
+    const known = (fdi: string | null) => (fdi && teeth.includes(fdi) ? fdi : null);
+    return known(this.zoomedTooth()) ?? known(this.roving()) ?? teeth[0];
+  }
+
+  protected keysHelp(): string {
+    if (this.zoomedTooth()) return this.opensDetail ? 'DENTAL_CHART.KEYS_CLOSE_UP' : 'DENTAL_CHART.KEYS_CLOSE_UP_READ';
+    return this.opensDetail ? 'DENTAL_CHART.KEYS_MOUTH' : 'DENTAL_CHART.KEYS_MOUTH_READ';
+  }
+
+  /** Slides and enlarges the drawing so the tooth is in the middle of it, its neighbours in sight. */
+  protected readonly stageTransform = computed(() => {
+    const fdi = this.zoomedTooth();
+    const cell = fdi ? this.cells().get(fdi) : undefined;
+    if (!cell) return null;
+    const scale = Math.min(4, CLOSE_UP_SHARE / Math.max(cell.width, cell.height, 1));
+    const x = 50 - (cell.left + cell.width / 2) * scale;
+    const y = 50 - (cell.top + cell.height / 2) * scale;
+    return `translate(${x.toFixed(2)}%, ${y.toFixed(2)}%) scale(${scale.toFixed(3)})`;
+  });
 
   /**
    * The picker and legend, grouped by clinical family (absent / active
@@ -275,6 +347,7 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['chartType']) {
+      this.zoomedTooth.set(null);
       this.updateSvgContent();
       this.initChart();
     }
@@ -311,6 +384,28 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     this.applyVoiceMarks();
     this.applyHighlights();
     this.cropToTeeth();
+    this.placeCells();
+  }
+
+  /** Lays one button over each tooth. Being in percent, they follow the drawing however large it is shown. */
+  private placeCells() {
+    const svg = this.chartContainer?.nativeElement.querySelector('svg');
+    if (!svg) return;
+    const view = svg.viewBox.baseVal;
+    if (!view.width || !view.height) return;
+    const prefix = this.getToothPrefix();
+    const cells = new Map<string, ToothCell>();
+    for (const fdi of this.rows.flat()) {
+      const box = svg.querySelector<SVGGraphicsElement>(`.${prefix}${fdi}-parent`)?.getBBox?.();
+      if (!box) continue;
+      cells.set(fdi, {
+        left: ((box.x - view.x) / view.width) * 100,
+        top: ((box.y - view.y) / view.height) * 100,
+        width: (box.width / view.width) * 100,
+        height: (box.height / view.height) * 100,
+      });
+    }
+    this.cells.set(cells);
   }
 
   /** In a summary the drawing fills its space: a child's smaller arches read as large as an adult's, as they print. */
@@ -318,8 +413,8 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     if (!this.summary) return;
     const svg = this.chartContainer?.nativeElement.querySelector('svg');
     if (!svg || svg.dataset['cropped'] === this.chartType) return;
-    const box = svg.getBBox();
-    if (!box.width || !box.height) return;
+    const box = svg.getBBox?.();
+    if (!box?.width || !box.height) return;
     svg.setAttribute('viewBox', `${box.x - 6} ${box.y - 6} ${box.width + 12} ${box.height + 12}`);
     svg.dataset['cropped'] = this.chartType;
   }
@@ -343,9 +438,7 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     return this.chartType === 'adult' ? 'tooth-' : 'child-tooth-';
   }
 
-  /** Ordered tooth ids discovered in the SVG, used for arrow-key navigation between teeth. */
-  private toothOrder: string[] = [];
-
+  /** The drawing answers the pointer, by the true shape of each tooth. The keyboard goes through the buttons over it. */
   private attachToothListeners() {
     if (!this.chartContainer) return;
     // initChart() re-runs on every chartType change without ever detaching
@@ -358,7 +451,6 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
 
     // Select all paths that represent a tooth
     const allToothPaths = container.querySelectorAll(`path[class*="${prefix}"]`);
-    this.toothOrder = [];
 
     allToothPaths.forEach((path: any) => {
       const classes = path.getAttribute('class') || '';
@@ -368,26 +460,18 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
 
       const toothId = match[1];
       const el = path as HTMLElement;
-      this.toothOrder.push(toothId);
-
-      this.renderer.setAttribute(el, 'role', 'button');
-      this.renderer.setAttribute(el, 'aria-label', this.getToothAriaLabel(toothId));
 
       this.toothListenerCleanups.push(
         this.renderer.listen(el, 'mouseenter', () => this.onToothHover(toothId)),
         this.renderer.listen(el, 'mouseleave', () => this.onToothLeave(toothId)),
-        this.renderer.listen(el, 'focus', () => this.onToothHover(toothId)),
-        this.renderer.listen(el, 'blur', () => this.onToothLeave(toothId)),
       );
 
       if (this.interactive) {
-        this.renderer.setAttribute(el, 'tabindex', '0');
         this.toothListenerCleanups.push(
           this.renderer.listen(el, 'click', (e: MouseEvent) => {
             e.stopPropagation();
             this.onToothClick(toothId);
           }),
-          this.renderer.listen(el, 'keydown', (e: KeyboardEvent) => this.onToothKeydown(e, toothId))
         );
         el.style.cursor = 'pointer';
       }
@@ -396,52 +480,94 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     this.listenersAttached = true;
   }
 
-  /** Enter/Space selects the focused tooth; arrow keys move focus between teeth (WAI-ARIA-style roving navigation). */
-  private onToothKeydown(event: KeyboardEvent, toothId: string) {
-    switch (event.key) {
-      case 'Enter':
-      case ' ':
-      case 'Spacebar':
-        event.preventDefault();
-        event.stopPropagation();
-        this.onToothClick(toothId);
-        break;
-      case 'ArrowRight':
-      case 'ArrowDown':
-        event.preventDefault();
-        this.focusAdjacentTooth(toothId, 1);
-        break;
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        event.preventDefault();
-        this.focusAdjacentTooth(toothId, -1);
-        break;
+  /**
+   * The same keys as the 3D chart: arrows go from tooth to tooth, Enter goes further in, Escape
+   * comes back out, one level at a time. Space is left to the button, where it is a click.
+   */
+  protected onKeydown(event: KeyboardEvent) {
+    const fdi = (event.target as HTMLElement).dataset?.['fdi'];
+    if (!fdi || event.metaKey || event.altKey) return;
+    if (this.handleKey(event, fdi)) {
+      event.preventDefault();
+      event.stopPropagation();
     }
   }
 
-  private focusAdjacentTooth(currentToothId: string, delta: number) {
-    if (!this.toothOrder.length || !this.chartContainer) return;
-    const currentIndex = this.toothOrder.indexOf(currentToothId);
-    if (currentIndex === -1) return;
-    const nextIndex = (currentIndex + delta + this.toothOrder.length) % this.toothOrder.length;
-    const nextToothId = this.toothOrder[nextIndex];
-    const prefix = this.getToothPrefix();
-    const nextEl = this.chartContainer.nativeElement.querySelector(`path.${prefix}${nextToothId}`) as HTMLElement;
-    nextEl?.focus();
+  private handleKey(event: KeyboardEvent, fdi: string): boolean {
+    const zoomed = this.zoomedTooth();
+    if (event.key === 'Enter') {
+      if (zoomed !== fdi) {
+        this.zoomTo(fdi);
+      } else if (this.opensDetail) {
+        this.onToothClick(fdi);
+      }
+      return true;
+    }
+    if (event.key === 'Escape') {
+      if (!zoomed) return false;
+      this.zoomTo(null);
+      return true;
+    }
+    if (/^\d$/.test(event.key)) {
+      const typed = this.typing.type(event.key, this.rows.flat(), performance.now());
+      if (typed) this.goToTooth(typed);
+      return true;
+    }
+    const next = stepInGrid(this.rows, fdi, event.key, event.ctrlKey);
+    if (!next) return false;
+    this.goToTooth(next);
+    return true;
   }
 
-  /** Rebuilds the aria-label for a tooth to reflect its current status; called after status changes. */
-  private refreshToothAriaLabel(toothId: string) {
-    if (!this.chartContainer) return;
-    const prefix = this.getToothPrefix();
-    const el = this.chartContainer.nativeElement.querySelector(`path.${prefix}${toothId}`) as HTMLElement;
-    if (el) this.renderer.setAttribute(el, 'aria-label', this.getToothAriaLabel(toothId));
+  private goToTooth(fdi: string) {
+    if (this.zoomedTooth()) this.zoomedTooth.set(fdi);
+    this.focusCell(fdi);
   }
 
-  getToothAriaLabel(toothId: string): string {
-    const name = this.getToothName(toothId);
-    const status = (this.teeth && this.teeth[toothId])?.status || 'present';
-    return `FDI ${toothId} - ${name} - ${status}`;
+  private zoomTo(fdi: string | null) {
+    const from = this.zoomedTooth();
+    this.zoomedTooth.set(fdi);
+    if (fdi) {
+      this.focusCell(fdi);
+      this.toothSelected.emit((this.teeth && this.teeth[fdi]) || { id: fdi, status: 'present' });
+      this.announcer.announce(this.translate.instant('DENTAL_3D.ZOOMED', { fdi, name: this.getToothName(fdi) }));
+    } else {
+      if (from) this.focusCell(from);
+      this.announcer.announce(this.translate.instant('DENTAL_3D.ZOOMED_OUT'));
+    }
+  }
+
+  private focusCell(fdi: string) {
+    this.roving.set(fdi);
+    const stage = this.chartContainer?.nativeElement.parentElement;
+    stage?.querySelector<HTMLElement>(`[data-fdi="${fdi}"]`)?.focus({ preventScroll: true });
+    // In close-up the drawing has moved and the button with it: it is the chart's frame that has to be in view.
+    stage?.parentElement?.scrollIntoView({ block: 'nearest' });
+  }
+
+  protected onCellFocus(fdi: string) {
+    this.roving.set(fdi);
+    // A chart opened while hidden had nothing to measure.
+    if (!this.cells().size) this.placeCells();
+    this.onToothHover(fdi);
+  }
+
+  /** What the eye gets from the tooth's fill, its outline and its marks. */
+  toothAria(fdi: string): string {
+    const status = (this.teeth && this.teeth[fdi])?.status || 'present';
+    const findings = (this.findings ?? []).filter((f) => f.fdi === fdi && f.status === 'ACTIVE');
+    const treatments = (this.patientTreatments ?? []).filter((t) => (t.teeth ?? '').split(',').map((x) => x.trim()).includes(fdi));
+    return [
+      `${fdi}, ${this.getToothName(fdi)}`,
+      ...(status === 'present' ? [] : [this.translate.instant(this.getToothStatusLabel(fdi))]),
+      ...(this.toothNotes?.[fdi] ?? findings.map((f) => {
+        const label = findingLabel(this.translate, f.findingCode ?? '');
+        return f.surface ? `${label} ${surfaceShorthand(f.surface)}` : label;
+      })),
+      ...treatments.map((t) => t.treatment.name),
+      ...((this.stagedTeeth ?? []).includes(fdi) ? [this.translate.instant('VOICE.CHART_STAGED')] : []),
+      ...((this.teeth && this.teeth[fdi]?.notes) ? [this.teeth[fdi].notes!] : []),
+    ].join(', ');
   }
 
   private detachToothListeners() {
@@ -450,14 +576,14 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
   }
 
   onToothHover(toothId: string) {
-    this.hoveredTooth = toothId;
+    this.hoveredTooth.set(toothId);
     this.highlightTooth(toothId, true);
     const state = (this.teeth && this.teeth[toothId]) || { id: toothId, status: 'present' };
     this.toothHovered.emit(state);
   }
 
   onToothLeave(toothId: string) {
-    this.hoveredTooth = null;
+    this.hoveredTooth.set(null);
     this.highlightTooth(toothId, false);
     // The hover reset the outline to black; put back whatever it covered.
     if (this.stagedTeeth.length || this.focusFdi || this.patientTreatments.length || this.findings.length) {
@@ -483,23 +609,25 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
   }
 
   onToothClick(toothId: string) {
+    if (!this.interactive) return;
     const state = (this.teeth && this.teeth[toothId]) || { id: toothId, status: 'present' };
     if (this.statusMenu) {
-      this.selectedTooth = toothId;
+      this.selectedTooth.set(toothId);
       this.currentToothNote = state.notes || '';
     }
     this.toothSelected.emit(state);
   }
 
   saveToothNote() {
-    if (this.selectedTooth && this.patientId) {
-      const status = this.teeth[this.selectedTooth]?.status || 'present';
-      this.chartService.updateToothStatus(this.patientId, this.selectedTooth, status, this.currentToothNote);
+    const selected = this.selectedTooth();
+    if (selected && this.patientId) {
+      const status = this.teeth[selected]?.status || 'present';
+      this.chartService.updateToothStatus(this.patientId, selected, status, this.currentToothNote);
       this.teeth = { 
         ...this.teeth, 
-        [this.selectedTooth]: { 
-          ...this.teeth[this.selectedTooth],
-          id: this.selectedTooth, 
+        [selected]: { 
+          ...this.teeth[selected],
+          id: selected, 
           status, 
           notes: this.currentToothNote 
         } 
@@ -521,11 +649,13 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
       this.chartUpdated.emit(serialized);
     }
     this.applyToothColor(toothId);
-    this.refreshToothAriaLabel(toothId);
   }
 
+  /** Back on the tooth, whether the panel was opened from the keyboard or with a click. */
   closeStatusMenu() {
-    this.selectedTooth = null;
+    const fdi = this.selectedTooth();
+    this.selectedTooth.set(null);
+    if (fdi) this.focusCell(fdi);
   }
 
   private applyAllToothColors() {
@@ -762,11 +892,6 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
       );
       marker.setAttribute('stroke', '#ffffff');
       marker.setAttribute('stroke-width', '0.6');
-      const titleKey = overlay.unpaintedConditions.length
-        ? 'DENTAL_CHART.CONDITION_NOT_SHOWN'
-        : 'DENTAL_CHART.PLANNED_WORK_PENDING';
-      this.translate.get(titleKey).subscribe((label) => marker.setAttribute('aria-label', label));
-      marker.setAttribute('role', 'img');
       svg.appendChild(marker);
     }
   }
@@ -805,7 +930,6 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
       g.setAttribute('transform',
         `translate(${box.x + box.width / 2 - size / 2} ${box.y + box.height / 2 - size / 2}) scale(${size / 30})`);
       g.setAttribute('pointer-events', 'none');
-      g.setAttribute('role', 'img');
       for (const zone of SURFACE_ZONES) {
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', SURFACE_ZONE_PATH[zone]);
@@ -874,8 +998,6 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
       marker.setAttribute('stroke', '#ffffff');
       marker.setAttribute('stroke-width', '0.8');
       marker.setAttribute('pointer-events', 'none');
-      marker.setAttribute('role', 'img');
-      this.translate.get('VOICE.CHART_STAGED').subscribe((label) => marker.setAttribute('aria-label', label));
       svg.appendChild(marker);
     }
 

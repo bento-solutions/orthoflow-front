@@ -1,20 +1,21 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { StockService } from '../../../../core/services/stock.service';
 import { PatientApiService } from '../../../../core/services/patient-api.service';
 import { SalesOrder, SalesOrderLine, StockItem, SOStatus } from '../../../../core/models/stock.model';
 import { Patient } from '../../../../core/models/patient.model';
 
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
 @Component({
   selector: 'app-sales-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, RouterLink],
+  imports: [RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       
@@ -34,22 +35,22 @@ import { ToastService } from '../../../../core/services/toast.service';
 
       <!-- Module Navigation Pills -->
       <div class="flex flex-wrap gap-2 bg-ortho-navy/[0.03] p-1.5 rounded-xl border border-ortho-navy/5 max-w-max font-semibold text-xs">
-        <a routerLink="/stock" class="px-4 py-2 rounded-lg transition text-ink-500 hover:text-ink-900 hover:bg-white/50">
+        <a routerLink="/stock" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
           {{ "STOCK.CATALOG" | translate }}
         </a>
-        <a routerLink="/stock/procurement" class="px-4 py-2 rounded-lg transition text-ink-500 hover:text-ink-900 hover:bg-white/50">
+        <a routerLink="/stock/procurement" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
           {{ "STOCK.PROCUREMENT" | translate }}
         </a>
-        <a routerLink="/stock/direct-sales" class="px-4 py-2 rounded-lg transition bg-white text-ink-900 shadow-sm">
+        <a routerLink="/stock/direct-sales" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
           {{ "STOCK.SALES" | translate }}
         </a>
-        <a routerLink="/stock/treatment-sessions" class="px-4 py-2 rounded-lg transition text-ink-500 hover:text-ink-900 hover:bg-white/50">
+        <a routerLink="/stock/treatment-sessions" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
           {{ "STOCK.TREATMENT_SESSIONS" | translate }}
         </a>
-        <a routerLink="/stock/leakage" class="px-4 py-2 rounded-lg transition bg-white text-ink-900 shadow-sm">
+        <a routerLink="/stock/leakage" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
           {{ "STOCK.LEAKAGE" | translate }}
         </a>
-        <a routerLink="/stock/forecast" class="px-4 py-2 rounded-lg transition bg-white text-ink-900 shadow-sm">
+        <a routerLink="/stock/forecast" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
           {{ "STOCK.FORECAST" | translate }}
         </a>
       </div>
@@ -59,7 +60,7 @@ import { ToastService } from '../../../../core/services/toast.service';
       <div class="bg-white rounded-2xl border border-ortho-navy/5 shadow-sm overflow-hidden">
         
         <div class="p-4 border-b border-ortho-navy/5 bg-ortho-navy/[0.01] flex items-center justify-between">
-          <h3 class="text-base font-bold text-ink-900">{{ "STOCK.SALES_ORDERS_HISTORY" | translate }}</h3>
+          <h2 class="text-base font-bold text-ink-900">{{ "STOCK.SALES_ORDERS_HISTORY" | translate }}</h2>
           <span class="text-xs text-ink-500 font-medium">{{ "STOCK.SALES_ORDERS_HISTORY_SUBTITLE" | translate }}</span>
         </div>
 
@@ -67,13 +68,13 @@ import { ToastService } from '../../../../core/services/toast.service';
           <table class="w-full text-left border-collapse text-sm">
             <thead>
               <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
-                <th class="p-4">{{ "STOCK.SO_NUMBER" | translate }}</th>
-                <th class="p-4">{{ "STOCK.PATIENT_NAME" | translate }}</th>
-                <th class="p-4">{{ "STOCK.PURCHASE_DATE" | translate }}</th>
-                <th class="p-4 text-center">{{ "STOCK.STATUS" | translate }}</th>
-                <th class="p-4">{{ "STOCK.SOLD_ITEMS" | translate }}</th>
-                <th class="p-4 text-right">{{ "STOCK.TOTAL_AMOUNT" | translate }}</th>
-                <th class="p-4 text-right">{{ "STOCK.ACTIONS" | translate }}</th>
+                <th scope="col" class="p-4">{{ "STOCK.SO_NUMBER" | translate }}</th>
+                <th scope="col" class="p-4">{{ "STOCK.PATIENT_NAME" | translate }}</th>
+                <th scope="col" class="p-4">{{ "STOCK.PURCHASE_DATE" | translate }}</th>
+                <th scope="col" class="p-4 text-center">{{ "STOCK.STATUS" | translate }}</th>
+                <th scope="col" class="p-4">{{ "STOCK.SOLD_ITEMS" | translate }}</th>
+                <th scope="col" class="p-4 text-right">{{ "STOCK.TOTAL_AMOUNT" | translate }}</th>
+                <th scope="col" class="p-4 text-right">{{ "STOCK.ACTIONS" | translate }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-ortho-navy/5">
@@ -99,18 +100,18 @@ import { ToastService } from '../../../../core/services/toast.service';
                       }
                     </div>
                   </td>
-                  <td class="p-4 text-right font-bold text-emerald-600">{{ so.totalAmount | number:'1.2-2' }} DH</td>
+                  <td class="p-4 text-right font-bold text-emerald-700">{{ so.totalAmount | number:'1.2-2' }} DH</td>
                   <td class="p-4 text-right">
                     <div class="flex items-center justify-end gap-2">
                       @if (so.status === 'DRAFT') {
-                        <button type="button" (click)="confirmSale(so)" class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition">
+                        <button type="button" (click)="confirmSale(so)" class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition">
                           {{ "STOCK.CONFIRM_SALE" | translate }}
                         </button>
-                        <button type="button" (click)="cancelSale(so)" class="px-2.5 py-1 text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 rounded-lg border border-red-200 transition">
+                        <button type="button" (click)="cancelSale(so)" class="px-2.5 py-1 text-xs font-semibold bg-red-50 text-red-700 hover:bg-red-100 rounded-lg border border-red-200 transition">
                           {{ "STOCK.CANCEL" | translate }}
                         </button>
                       }
-                      <button type="button" (click)="deleteSale(so)" class="p-1 hover:bg-red-50 text-red-600/60 hover:text-red-600 rounded-lg transition" [disabled]="so.status === 'CONFIRMED'">
+                      <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="deleteSale(so)" class="p-1 hover:bg-red-50 text-red-700/60 hover:text-red-700 rounded-lg transition" [disabled]="so.status === 'CONFIRMED'">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                       </button>
                     </div>
@@ -129,10 +130,10 @@ import { ToastService } from '../../../../core/services/toast.service';
       <!-- Create Sales Order Modal -->
       @if (showSOCreationModal()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ortho-navy/60 backdrop-blur-sm">
-          <div class="bg-white rounded-2xl max-w-2xl w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in flex flex-col max-h-[85vh]">
+          <div appDialog="so-create-title" (dialogClosed)="closeCreateSOModal()" class="bg-white rounded-2xl max-w-2xl w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in flex flex-col max-h-[85vh]">
             <div class="px-6 py-4 border-b border-ortho-navy/5 flex items-center justify-between bg-ortho-navy/[0.01] shrink-0">
-              <h3 class="text-lg font-bold text-ink-900">{{ "STOCK.RECORD_DIRECT_SALE" | translate }}</h3>
-              <button type="button" (click)="closeCreateSOModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
+              <h2 id="so-create-title" class="text-lg font-bold text-ink-900">{{ "STOCK.RECORD_DIRECT_SALE" | translate }}</h2>
+              <button [attr.aria-label]="'COMMON.CLOSE' | translate" type="button" (click)="closeCreateSOModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -140,8 +141,8 @@ import { ToastService } from '../../../../core/services/toast.service';
             <div class="flex-1 overflow-y-auto p-6 space-y-4">
               <!-- Select Patient -->
               <div>
-                <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "STOCK.SELECT_PATIENT" | translate }} *</label>
-                <select [(ngModel)]="selectedPatientId" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white">
+                <label for="sales-orders-selectedPatientId" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "STOCK.SELECT_PATIENT" | translate }} <span aria-hidden="true">*</span></label>
+                <select id="sales-orders-selectedPatientId" [(ngModel)]="selectedPatientId" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white">
                   <option [value]="null">{{ "STOCK.SELECT_PATIENT_PLACEHOLDER" | translate }}</option>
                   @for (p of patients(); track p.id) {
                     <option [value]="p.id">{{ p.lastName }} {{ p.firstName }} ({{ "STOCK.CIN_LABEL" | translate }}: {{ p.cin || 'N/A' }})</option>
@@ -163,28 +164,28 @@ import { ToastService } from '../../../../core/services/toast.service';
                     @for (line of lines; track $index; let idx = $index) {
                       <div class="grid grid-cols-12 gap-3 items-end bg-gray-50/50 p-3 rounded-xl border border-gray-100 font-medium">
                         <div class="col-span-5">
-                          <label class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.CATALOG_ITEM" | translate }}</label>
-                          <select [(ngModel)]="line.stockItem" (change)="onItemChange(idx)" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none">
+                          <label [attr.for]="'sales-orders-line-stockItem-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.CATALOG_ITEM" | translate }}</label>
+                          <select [id]="'sales-orders-line-stockItem-' + $index" [(ngModel)]="line.stockItem" (change)="onItemChange(idx)" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none">
                             <option [value]="null">{{ "STOCK.SELECT_ITEM_PLACEHOLDER" | translate }}</option>
                             @for (item of catalogItems(); track item.id) {
-                              <option [ngValue]="item">{{ item.name }} (SKU: {{ item.sku }}) - Stock: {{ item.currentStock }}</option>
+                              <option [ngValue]="item">{{ item.name }} ({{ 'STOCK.UI.SKU' | translate }} {{ item.sku }}) - {{ 'STOCK.UI.IN_STOCK' | translate: { count: item.currentStock } }}</option>
                             }
                           </select>
                         </div>
                         <div class="col-span-2">
-                          <label class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.QUANTITY" | translate }}</label>
-                          <input type="number" [(ngModel)]="line.quantity" (change)="calculateSOTotal()" min="1" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none" />
+                          <label [attr.for]="'sales-orders-line-quantity-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.QUANTITY" | translate }}</label>
+                          <input [id]="'sales-orders-line-quantity-' + $index" type="number" [(ngModel)]="line.quantity" (change)="calculateSOTotal()" min="1" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none" />
                         </div>
                         <div class="col-span-2">
-                          <label class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.UNIT_PRICE" | translate }} (DH)</label>
-                          <input type="number" [(ngModel)]="line.unitPrice" (change)="calculateSOTotal()" min="0" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-right focus:outline-none" />
+                          <label [attr.for]="'sales-orders-line-unitPrice-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.UNIT_PRICE" | translate }} (DH)</label>
+                          <input [id]="'sales-orders-line-unitPrice-' + $index" type="number" [(ngModel)]="line.unitPrice" (change)="calculateSOTotal()" min="0" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-right focus:outline-none" />
                         </div>
                         <div class="col-span-2 text-right">
                           <span class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.TOTAL" | translate }} (DH)</span>
                           <span class="font-bold text-xs text-ink-900 block py-1.5">{{ (line.quantity * line.unitPrice) | number:'1.2-2' }}</span>
                         </div>
                         <div class="col-span-1 text-center">
-                          <button type="button" (click)="removeSOLine(idx)" class="p-1.5 hover:bg-red-50 text-red-600 rounded-lg transition mb-1">
+                          <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="removeSOLine(idx)" class="p-1.5 hover:bg-red-50 text-red-700 rounded-lg transition mb-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                           </button>
                         </div>
@@ -195,7 +196,7 @@ import { ToastService } from '../../../../core/services/toast.service';
                   <div class="flex justify-end pt-3 border-t border-ortho-navy/5">
                     <div class="text-right">
                       <span class="text-xs font-bold text-ink-500 uppercase tracking-wider block">{{ "STOCK.GRAND_TOTAL" | translate }}</span>
-                      <span class="text-xl font-bold text-emerald-600">{{ total | number:'1.2-2' }} DH</span>
+                      <span class="text-xl font-bold text-emerald-700">{{ total | number:'1.2-2' }} DH</span>
                     </div>
                   </div>
                 </div>
@@ -223,6 +224,7 @@ import { ToastService } from '../../../../core/services/toast.service';
   `]
 })
 export class SalesOrdersComponent implements OnInit {
+  private readonly translate = inject(TranslateService);
   private stockService = inject(StockService);
   private confirmDialog = inject(ConfirmDialogService);
   private toast = inject(ToastService);
@@ -323,14 +325,14 @@ export class SalesOrdersComponent implements OnInit {
 
   async deleteSale(so: SalesOrder) {
     const confirmed = await this.confirmDialog.confirm(
-      `Are you sure you want to delete this sales order draft?`,
-      { danger: true, confirmLabel: 'Delete' }
+      this.translate.instant('STOCK.UI.SO_DELETE_CONFIRM'),
+      { danger: true, confirmLabel: this.translate.instant('COMMON.DELETE') }
     );
     if (!confirmed) return;
 
     this.stockService.deleteSalesOrder(so.id!).subscribe({
       next: () => {
-        this.toast.success('Sales order draft deleted.');
+        this.toast.success(this.translate.instant('STOCK.UI.SO_DELETED'));
         this.loadAllData();
       },
       error: (err) => {
@@ -344,11 +346,11 @@ export class SalesOrdersComponent implements OnInit {
       case 'DRAFT':
         return 'bg-gray-50 text-gray-600 border-gray-200';
       case 'CONFIRMED':
-        return 'bg-emerald-50 text-emerald-600 border-emerald-200';
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
       case 'INVOICED':
-        return 'bg-blue-50 text-blue-600 border-blue-200';
+        return 'bg-blue-50 text-blue-700 border-blue-200';
       case 'CANCELLED':
-        return 'bg-red-50 text-red-600 border-red-200';
+        return 'bg-red-50 text-red-700 border-red-200';
       default:
         return 'bg-gray-50 text-gray-600 border-gray-200';
     }

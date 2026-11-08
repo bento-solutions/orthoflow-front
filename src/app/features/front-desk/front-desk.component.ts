@@ -62,7 +62,7 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
             <div class="tile p-4">
               <p class="text-2xs font-bold uppercase tracking-wider text-ink-500">{{ k.key | translate }}</p>
               <p class="mt-1 text-2xl font-extrabold tabular-nums" [class.text-critical-700]="k.tone === 'critical'" [class.text-caution-700]="k.tone === 'warn'" [class.text-ink-900]="k.tone === 'ok'">{{ k.value }}</p>
-              @if (k.hint) { <p class="mt-0.5 text-2xs font-bold text-ink-400">{{ k.hint }}</p> }
+              @if (k.hint) { <p class="mt-0.5 text-2xs font-bold text-ink-500">{{ k.hint }}</p> }
             </div>
           }
         </section>
@@ -145,7 +145,7 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
           <div class="card-head"><h2 class="text-lg font-bold text-ink-900">{{ 'FD.EXPECTED' | translate }} <span class="pill pill-idle ms-1">{{ expected().length }}</span></h2></div>
           <div class="table-wrap"><div class="table-scroll">
             <table class="data-table">
-              <thead><tr><th>{{ 'COMMON.TIME' | translate }}</th><th>{{ 'COMMON.PATIENT' | translate }}</th><th>{{ 'COMMON.TYPE' | translate }}</th><th>{{ 'COMMON.PRACTITIONER' | translate }}</th><th>{{ 'COMMON.STATUS' | translate }}</th><th></th></tr></thead>
+              <thead><tr><th scope="col">{{ 'COMMON.TIME' | translate }}</th><th scope="col">{{ 'COMMON.PATIENT' | translate }}</th><th scope="col">{{ 'COMMON.TYPE' | translate }}</th><th scope="col">{{ 'COMMON.PRACTITIONER' | translate }}</th><th scope="col">{{ 'COMMON.STATUS' | translate }}</th><th scope="col"><span class="sr-only">{{ 'COMMON.ACTIONS' | translate }}</span></th></tr></thead>
               <tbody>
                 @for (a of expected(); track a.id) {
                   <tr>

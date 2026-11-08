@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, model, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input, model, output, signal, viewChild } from '@angular/core';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ClinicalRecordService } from '../../../core/services/clinical-record.service';
 import { DentalChartService } from '../../../core/services/dental-chart.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { AnnouncerService } from '../../../core/services/announcer.service';
 import {
   AddToothFindingRequest, FindingKind, FindingOrigin, ToothFinding,
 } from '../../../core/models/clinical-record.model';
@@ -89,7 +90,7 @@ import { SurfacePickerComponent } from './surface-picker.component';
 
       <label class="field">
         <span class="field-label">{{ 'TOOTH_DETAIL.WHAT' | translate }}</span>
-        <select class="select" [ngModel]="code()" (ngModelChange)="pick($event)">
+        <select #what class="select" [ngModel]="code()" (ngModelChange)="pick($event)">
           <option value="" disabled>{{ 'TOOTH_DETAIL.CHOOSE' | translate }}</option>
           @for (kind of kinds; track kind) {
             <optgroup [label]="('TOOTH_DETAIL.KIND.' + kind) | translate">
@@ -111,10 +112,10 @@ import { SurfacePickerComponent } from './surface-picker.component';
       @if (chosen()?.kind === 'EXISTING') {
         <div class="field">
           <span class="field-label">{{ 'TOOTH_DETAIL.DONE_BY' | translate }}</span>
-          <div class="seg" role="radiogroup" [attr.aria-label]="'TOOTH_DETAIL.DONE_BY' | translate">
-            <button type="button" role="radio" [attr.aria-checked]="origin() === 'THIS_CLINIC'"
+          <div class="seg" role="group" [attr.aria-label]="'TOOTH_DETAIL.DONE_BY' | translate">
+            <button type="button" [attr.aria-pressed]="origin() === 'THIS_CLINIC'"
               [class.on]="origin() === 'THIS_CLINIC'" (click)="origin.set('THIS_CLINIC')">{{ 'TOOTH_DETAIL.THIS_CLINIC' | translate }}</button>
-            <button type="button" role="radio" [attr.aria-checked]="origin() === 'EXTERNAL'"
+            <button type="button" [attr.aria-pressed]="origin() === 'EXTERNAL'"
               [class.on]="origin() === 'EXTERNAL'" (click)="origin.set('EXTERNAL')">{{ 'TOOTH_DETAIL.ELSEWHERE' | translate }}</button>
           </div>
         </div>
@@ -224,6 +225,8 @@ export class ToothDetailComponent {
   private readonly charts = inject(DentalChartService);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
+  private readonly announcer = inject(AnnouncerService);
+  private readonly what = viewChild<ElementRef<HTMLSelectElement>>('what');
 
   protected readonly kinds = FINDING_KIND_ORDER;
   protected readonly today = new Date().toISOString().slice(0, 10);
@@ -308,23 +311,26 @@ export class ToothDetailComponent {
     };
     this.saving.set(true);
     this.records.addFinding(this.patientId(), this.fdi(), request).subscribe({
-      next: () => this.afterChange(),
+      next: () => this.afterChange(this.label(code)),
       error: (err) => this.fail(err),
     });
   }
 
   protected setStatus(finding: ToothFinding, status: 'RESOLVED' | 'RETRACTED'): void {
     this.records.changeFindingStatus(this.patientId(), finding.id, status).subscribe({
-      next: () => this.afterChange(false),
+      next: () => this.afterChange(this.label(finding.findingCode), false),
       error: (err) => this.fail(err),
     });
   }
 
-  private afterChange(reset = true): void {
+  private afterChange(what: string, reset = true): void {
     this.saving.set(false);
     if (reset) this.resetForm();
     this.charts.reloadChart(this.patientId());
     this.changed.emit();
+    // The button just pressed is disabled now or gone with its row, and focus would go with it.
+    this.what()?.nativeElement.focus();
+    this.announcer.announce(this.translate.instant('TOOTH_DETAIL.SAVED', { what, fdi: this.fdi() }));
   }
 
   private fail(err: unknown): void {

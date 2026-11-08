@@ -110,16 +110,17 @@ const remember = (key: string, value: string): void => {
             </button>
             <div class="menu-wrap">
               <button type="button" class="pc-icon-btn" [attr.aria-label]="'PERIO.TOOLBAR.MORE' | translate" [title]="'PERIO.TOOLBAR.MORE' | translate"
-                      aria-haspopup="menu" [attr.aria-expanded]="menuOpen()" (click)="toggleMenu($event)">
+                      [attr.aria-expanded]="menuOpen()" (click)="toggleMenu($event)">
                 <app-perio-icon name="more" [size]="16"/>
               </button>
               @if (menuOpen()) {
-                <div class="menu" role="menu">
-                  <button type="button" role="menuitem" (click)="clear()">{{ 'PERIO.TOOLBAR.CLEAR' | translate }}</button>
-                  <button type="button" role="menuitem" class="danger" (click)="remove()">{{ 'PERIO.TOOLBAR.DELETE' | translate }}</button>
+                <!-- Plain buttons under a disclosure: Tab reaches them, with no menu keys to promise. -->
+                <div class="menu">
+                  <button type="button" (click)="clear()">{{ 'PERIO.TOOLBAR.CLEAR' | translate }}</button>
+                  <button type="button" class="danger" (click)="remove()">{{ 'PERIO.TOOLBAR.DELETE' | translate }}</button>
                   @if (deletedCount() > 0) {
                     <hr/>
-                    <button type="button" role="menuitem" (click)="openDeleted()">{{ 'PERIO.TOOLBAR.RECENTLY_DELETED' | translate: { count: deletedCount() } }}</button>
+                    <button type="button" (click)="openDeleted()">{{ 'PERIO.TOOLBAR.RECENTLY_DELETED' | translate: { count: deletedCount() } }}</button>
                   }
                 </div>
               }

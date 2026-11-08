@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { ToastService } from '../../../core/services/toast.service';
 import { IconComponent, IconName } from '../../ui/icon.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 /**
  * Transient feedback region.
@@ -14,7 +15,7 @@ import { IconComponent, IconName } from '../../ui/icon.component';
 @Component({
   selector: 'app-toast-container',
   standalone: true,
-  imports: [IconComponent],
+  imports: [TranslateModule, IconComponent],
   template: `
     <div class="region" role="status" aria-live="polite">
       @for (toast of toastService.toasts(); track toast.id) {
@@ -25,7 +26,7 @@ import { IconComponent, IconName } from '../../ui/icon.component';
             type="button"
             class="dismiss"
             (click)="toastService.dismiss(toast.id)"
-            aria-label="Dismiss notification"
+            [attr.aria-label]="'COMMON.DISMISS' | translate"
           >
             <app-icon name="close" [size]="15" />
           </button>
@@ -77,9 +78,9 @@ import { IconComponent, IconName } from '../../ui/icon.component';
     .toast.info::before    { background: var(--status-active); }
 
     .icon-slot { display: flex; flex-shrink: 0; margin-top: 1px; color: var(--text-subtle); }
-    .toast.success .icon-slot { color: rgb(var(--positive-600)); }
-    .toast.error .icon-slot   { color: rgb(var(--critical-600)); }
-    .toast.info .icon-slot    { color: rgb(var(--petrol-600)); }
+    .toast.success .icon-slot { color: rgb(var(--positive-700)); }
+    .toast.error .icon-slot   { color: rgb(var(--critical-700)); }
+    .toast.info .icon-slot    { color: rgb(var(--petrol-700)); }
 
     .message { flex: 1; line-height: var(--leading-snug); }
 

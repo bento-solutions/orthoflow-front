@@ -73,7 +73,7 @@ const blankCategory = () => ({ code: '', nameFr: '', nameEn: '', nameAr: '', kin
         </select></label>
       <label class="search"><span class="sr-only">{{ 'COMMON.SEARCH' | translate }}</span><app-icon name="search" [size]="16" />
         <input class="input" type="search" [placeholder]="'FIN.EXP.SEARCH' | translate" [ngModel]="search()" (ngModelChange)="search.set($event)" /></label>
-      <span class="ms-auto flex gap-2">
+      <span class="ms-auto flex flex-wrap gap-2">
         <app-export-menu path="/finance/expenses/export" [query]="exportQuery()" fallbackName="expenses" />
         <button *appCan="'EXPENSES_MANAGE'" type="button" class="btn btn-secondary btn-sm" (click)="openCategories()">{{ 'FIN.EXP.CATEGORIES' | translate }}</button>
         <button *appCan="'EXPENSES_MANAGE'" type="button" class="btn btn-primary btn-sm" (click)="openNew()"><app-icon name="plus" [size]="15" /> {{ 'FIN.EXP.NEW' | translate }}</button>
@@ -190,9 +190,9 @@ const blankCategory = () => ({ code: '', nameFr: '', nameEn: '', nameAr: '', kin
       <form id="cat-form" class="space-y-3 rounded-lg border border-ink-200 p-4" (ngSubmit)="saveCategory()">
         <h3 class="text-sm font-bold text-ink-900">{{ (categoryId2() ? 'FIN.EXP.EDIT_CATEGORY' : 'FIN.EXP.NEW_CATEGORY') | translate }}</h3>
         <div class="grid gap-3 sm:grid-cols-3">
-          <label class="field"><span class="label label-required">Français</span><input class="input" name="nameFr" required maxlength="120" [ngModel]="category.value().nameFr" (ngModelChange)="category.set('nameFr', $event)" /></label>
-          <label class="field"><span class="label label-required">English</span><input class="input" name="nameEn" required maxlength="120" [ngModel]="category.value().nameEn" (ngModelChange)="category.set('nameEn', $event)" /></label>
-          <label class="field"><span class="label label-required">العربية</span><input class="input" name="nameAr" required maxlength="120" dir="rtl" [ngModel]="category.value().nameAr" (ngModelChange)="category.set('nameAr', $event)" /></label>
+          <label class="field"><span class="label label-required" lang="fr">Français</span><input class="input" name="nameFr" required maxlength="120" [ngModel]="category.value().nameFr" (ngModelChange)="category.set('nameFr', $event)" /></label>
+          <label class="field"><span class="label label-required" lang="en">English</span><input class="input" name="nameEn" required maxlength="120" [ngModel]="category.value().nameEn" (ngModelChange)="category.set('nameEn', $event)" /></label>
+          <label class="field"><span class="label label-required" lang="ar" dir="rtl">العربية</span><input class="input" name="nameAr" required maxlength="120" dir="rtl" [ngModel]="category.value().nameAr" (ngModelChange)="category.set('nameAr', $event)" /></label>
           <label class="field"><span class="label">{{ 'FIN.EXP.KIND' | translate }}</span>
             <select class="select" name="kind" [ngModel]="category.value().kind" (ngModelChange)="category.set('kind', $event)">
               @for (k of kinds; track k) { <option [value]="k">{{ 'FIN.EXP.KINDS.' + k | translate }}</option> }

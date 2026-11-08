@@ -33,9 +33,9 @@ const TABS: Tab[] = [
         <p class="page-sub">{{ 'SETTINGS.SUBTITLE' | translate }}</p>
       </div>
     </div>
-    <nav class="tabs mb-6" role="tablist" [attr.aria-label]="'COMMON.SETTINGS' | translate">
+    <nav class="tabs mb-6" [attr.aria-label]="'COMMON.SETTINGS' | translate">
       @for (tab of visible(); track tab.path) {
-        <a class="tab" role="tab" [routerLink]="tab.path" routerLinkActive="is-active" #rla="routerLinkActive" [attr.aria-selected]="rla.isActive">{{ tab.key | translate }}</a>
+        <a class="tab" [routerLink]="tab.path" routerLinkActive="is-active" ariaCurrentWhenActive="page">{{ tab.key | translate }}</a>
       }
     </nav>
     <router-outlet />

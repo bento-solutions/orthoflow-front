@@ -8,6 +8,7 @@ import {
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { DialogDirective } from '../../../shared/ui/dialog.directive';
 
 interface ViewSlot {
   view: PhotoView;
@@ -64,7 +65,7 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
 @Component({
   selector: 'app-patient-photos',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule],
+  imports: [DialogDirective, DatePipe, FormsModule, TranslateModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown.escape)': 'lightbox.set(null)' },
   template: `
@@ -253,7 +254,7 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
     </section>
 
     @if (lightbox(); as box) {
-      <div class="lightbox" role="dialog" aria-modal="true" [attr.aria-label]="box.label" (click)="lightbox.set(null)">
+      <div class="lightbox" appDialog (dialogClosed)="lightbox.set(null)" [attr.aria-label]="box.label" (click)="lightbox.set(null)">
         <figure (click)="$event.stopPropagation()">
           <img [src]="box.url" [alt]="box.label" />
           <figcaption>{{ box.label }} · {{ box.caption }}</figcaption>

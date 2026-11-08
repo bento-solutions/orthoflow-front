@@ -61,6 +61,7 @@ const GROUP_ORDER = ['DONE', 'CONDITION', 'PLANNED', 'WATCH', 'ABSENT'];
             [interactive]="false"
             [summary]="true"
             [toothKeys]="keys()"
+            [toothNotes]="notes()"
             [doneTeeth]="doneTeeth()"
             [highlightTeeth]="highlighted()"
           />
@@ -176,6 +177,17 @@ export class TreatmentChartComponent {
       .filter((group) => group.rows.length);
   });
 
+  /** What the legend says of each tooth, in words: the letters beside it mean nothing to a screen reader. */
+  protected readonly notes = computed(() => {
+    const byTooth: Record<string, string[]> = {};
+    for (const group of this.groups()) {
+      for (const row of group.rows) {
+        for (const fdi of row.teeth) (byTooth[fdi] ??= []).push(row.label);
+      }
+    }
+    return byTooth;
+  });
+
   protected swatch(entry: PassportChartEntry) {
     return swatchStyle(entry);
   }
@@ -256,7 +268,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
     .head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .75rem; margin-bottom: .875rem; }
     h2 { margin: 0; font-size: 1.0625rem; }
     p { margin: .125rem 0 0; font-size: .8125rem; color: var(--text-muted); max-width: 46rem; }
-    .actions { display: flex; align-items: center; gap: .5rem; }
+    .actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
     select { padding: .4375rem .5rem; font: inherit; font-size: .8125rem; border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface, #fff); color: var(--text); }
     .btn { display: inline-flex; align-items: center; gap: .375rem; padding: .4375rem .75rem; font: inherit; font-size: .8125rem; font-weight: 600; border: 1px solid var(--action); border-radius: .375rem; background: var(--surface, #fff); color: var(--action-text); cursor: pointer; }
     .btn:hover:not(:disabled) { background: var(--action-tint); }

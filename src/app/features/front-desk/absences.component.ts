@@ -33,7 +33,7 @@ export function absenceWindow(today: Date = new Date()): { from: Date; to: Date 
       </div>
       <div class="table-wrap"><div class="table-scroll">
         <table class="data-table">
-          <thead><tr><th>{{ 'COMMON.PRACTITIONER' | translate }}</th><th>{{ 'COMMON.FROM' | translate }}</th><th>{{ 'COMMON.TO' | translate }}</th><th>{{ 'COMMON.REASON' | translate }}</th><th class="cell-actions"></th></tr></thead>
+          <thead><tr><th scope="col">{{ 'COMMON.PRACTITIONER' | translate }}</th><th scope="col">{{ 'COMMON.FROM' | translate }}</th><th scope="col">{{ 'COMMON.TO' | translate }}</th><th scope="col">{{ 'COMMON.REASON' | translate }}</th><th scope="col" class="cell-actions"><span class="sr-only">{{ 'COMMON.ACTIONS' | translate }}</span></th></tr></thead>
           <tbody>
             @for (a of absences.data(); track a.id) {
               <tr>
@@ -54,7 +54,7 @@ export function absenceWindow(today: Date = new Date()): { from: Date; to: Date 
       </div>
       <div class="table-wrap"><div class="table-scroll">
         <table class="data-table">
-          <thead><tr><th>{{ 'FD.EVENTS.NAME' | translate }}</th><th>{{ 'COMMON.FROM' | translate }}</th><th>{{ 'COMMON.TO' | translate }}</th><th class="cell-actions"></th></tr></thead>
+          <thead><tr><th scope="col">{{ 'FD.EVENTS.NAME' | translate }}</th><th scope="col">{{ 'COMMON.FROM' | translate }}</th><th scope="col">{{ 'COMMON.TO' | translate }}</th><th scope="col" class="cell-actions"><span class="sr-only">{{ 'COMMON.ACTIONS' | translate }}</span></th></tr></thead>
           <tbody>
             @for (e of events.data(); track e.id) {
               <tr>

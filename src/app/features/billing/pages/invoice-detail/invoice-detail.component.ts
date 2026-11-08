@@ -30,15 +30,15 @@ import { PatientService } from '../../../../core/services/patient.service';
           </div>
           <div class="header-actions">
             <button type="button" class="btn btn-secondary" (click)="downloadPdf(inv)">
-              <span class="material-icons">download</span>
+              <span aria-hidden="true" class="material-icons">download</span>
               PDF
             </button>
             <button type="button" class="btn btn-secondary">
-              <span class="material-icons">email</span>
-              Send
+              <span aria-hidden="true" class="material-icons">email</span>
+              {{ 'BILLING.FORM.SEND' | translate }}
             </button>
             @if (inv.status === 'DRAFT') {
-              <button type="button" class="btn btn-primary">Edit Invoice</button>
+              <button type="button" class="btn btn-primary">{{ 'BILLING.FORM.EDIT' | translate }}</button>
             }
           </div>
         </header>
@@ -47,16 +47,16 @@ import { PatientService } from '../../../../core/services/patient.service';
           <div class="main-content">
             <div class="invoice-card patient-card">
               <div class="card-header">
-                <h3>Patient & Practice</h3>
+                <h3>{{ 'BILLING.FORM.PATIENT_PRACTICE' | translate }}</h3>
               </div>
               <div class="card-body info-grid">
                 <div class="info-group">
-                  <label>Bill To</label>
+                  <label>{{ 'BILLING.FORM.BILL_TO' | translate }}</label>
                   <span class="info-value">{{ patients.nameFor(inv.patientId) || '—' }}</span>
                   <span class="info-sub">{{ 'PATIENTS.NAME' | translate }} ID: {{ inv.patientId }}</span>
                 </div>
                 <div class="info-group">
-                  <label>Practice</label>
+                  <label>{{ 'BILLING.FORM.PRACTICE' | translate }}</label>
                   <span class="info-value">OrthoFlow Clinic</span>
                   <span class="info-sub">Casablanca, Morocco</span>
                 </div>
@@ -73,16 +73,16 @@ import { PatientService } from '../../../../core/services/patient.service';
 
             <div class="invoice-card items-card">
               <div class="card-header">
-                <h3>Line Items</h3>
+                <h3>{{ 'BILLING.FORM.LINES' | translate }}</h3>
               </div>
               <table class="items-table">
                 <thead>
                   <tr>
-                    <th>Description</th>
-                    <th class="text-right">Qty</th>
-                    <th class="text-right">Unit Price</th>
-                    <th class="text-right">Discount</th>
-                    <th class="text-right">{{ 'COMMON.TOTAL' | translate }}</th>
+                    <th scope="col">{{ 'BILLING.FORM.DESCRIPTION' | translate }}</th>
+                    <th scope="col" class="text-right">{{ 'BILLING.FORM.QTY' | translate }}</th>
+                    <th scope="col" class="text-right">{{ 'BILLING.FORM.UNIT_PRICE' | translate }}</th>
+                    <th scope="col" class="text-right">{{ 'BILLING.FORM.DISCOUNT' | translate }}</th>
+                    <th scope="col" class="text-right">{{ 'COMMON.TOTAL' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -99,15 +99,15 @@ import { PatientService } from '../../../../core/services/patient.service';
               </table>
               <div class="totals-section">
                 <div class="total-row">
-                  <span>Subtotal</span>
+                  <span>{{ 'BILLING.FORM.SUBTOTAL' | translate }}</span>
                   <span>{{ inv.subtotal | number:'1.2-2' }} {{ inv.currency }}</span>
                 </div>
                 <div class="total-row">
-                  <span>Discount</span>
+                  <span>{{ 'BILLING.FORM.DISCOUNT' | translate }}</span>
                   <span class="text-success">-{{ inv.discountAmount | number:'1.2-2' }} {{ inv.currency }}</span>
                 </div>
                 <div class="total-row">
-                  <span>Tax</span>
+                  <span>{{ 'BILLING.FORM.TAX' | translate }}</span>
                   <span>{{ inv.taxAmount | number:'1.2-2' }} {{ inv.currency }}</span>
                 </div>
                 <div class="total-row grand-total">
@@ -127,9 +127,9 @@ import { PatientService } from '../../../../core/services/patient.service';
                     @for (payment of inv.payments; track payment.id) {
                       <div class="payment-item">
                         <div class="payment-icon" [ngSwitch]="payment.method">
-                          <span class="material-icons" *ngSwitchCase="'CASH'">payments</span>
-                          <span class="material-icons" *ngSwitchCase="'CARD'">credit_card</span>
-                          <span class="material-icons" *ngSwitchDefault>account_balance</span>
+                          <span aria-hidden="true" class="material-icons" *ngSwitchCase="'CASH'">payments</span>
+                          <span aria-hidden="true" class="material-icons" *ngSwitchCase="'CARD'">credit_card</span>
+                          <span aria-hidden="true" class="material-icons" *ngSwitchDefault>account_balance</span>
                         </div>
                         <div class="payment-details">
                           <div class="payment-main">
@@ -162,7 +162,7 @@ import { PatientService } from '../../../../core/services/patient.service';
               </div>
               @if (remainingBalance() > 0) {
                 <button type="button" class="btn btn-primary full-width" (click)="showPaymentForm.set(true)">
-                  <span class="material-icons">add</span>
+                  <span aria-hidden="true" class="material-icons">add</span>
                   {{ 'BILLING.RECORD_PAYMENT' | translate }}
                 </button>
               }
@@ -178,12 +178,12 @@ import { PatientService } from '../../../../core/services/patient.service';
                 </div>
                 <div class="card-body">
                   <div class="form-group">
-                    <label>{{ 'COMMON.AMOUNT' | translate }}</label>
-                    <input type="number" [(ngModel)]="paymentAmount" class="form-control">
+                    <label for="invoice-detail-paymentAmount">{{ 'COMMON.AMOUNT' | translate }}</label>
+                    <input id="invoice-detail-paymentAmount" type="number" [(ngModel)]="paymentAmount" class="form-control">
                   </div>
                   <div class="form-group">
-                    <label>{{ 'BILLING.METHOD' | translate }}</label>
-                    <select [(ngModel)]="paymentMethod" class="form-control">
+                    <label for="invoice-detail-paymentMethod">{{ 'BILLING.METHOD' | translate }}</label>
+                    <select id="invoice-detail-paymentMethod" [(ngModel)]="paymentMethod" class="form-control">
                       <option value="CASH">{{ 'BILLING.METHODS.CASH' | translate }}</option>
                       <option value="CARD">{{ 'BILLING.METHODS.CARD' | translate }}</option>
                       <option value="BANK_TRANSFER">{{ 'BILLING.METHODS.BANK_TRANSFER' | translate }}</option>
@@ -191,8 +191,8 @@ import { PatientService } from '../../../../core/services/patient.service';
                     </select>
                   </div>
                   <div class="form-group">
-                    <label>{{ 'BILLING.REFERENCE' | translate }}</label>
-                    <input type="text" [(ngModel)]="paymentRef" class="form-control" [placeholder]="'COMMON.OPTIONAL' | translate">
+                    <label for="invoice-detail-paymentRef">{{ 'BILLING.REFERENCE' | translate }}</label>
+                    <input id="invoice-detail-paymentRef" type="text" [(ngModel)]="paymentRef" class="form-control" [placeholder]="'COMMON.OPTIONAL' | translate">
                   </div>
                   <button type="button" class="btn btn-primary full-width mt-4" (click)="recordPayment()">
                     {{ 'COMMON.SUBMIT' | translate }}
@@ -242,7 +242,7 @@ import { PatientService } from '../../../../core/services/patient.service';
       transition: all 0.2s;
     }
 
-    .back-btn:hover { background: rgb(var(--ink-50)); color: rgb(var(--petrol-900)); }
+    .back-btn:hover { background: rgb(var(--ink-50)); color: rgb(var(--petrol-800)); }
     .back-btn:focus-visible, .icon-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
     .title-with-status {
@@ -377,7 +377,7 @@ import { PatientService } from '../../../../core/services/patient.service';
       color: rgb(var(--ink-900));
     }
 
-    .text-success { color: rgb(var(--positive-600)); }
+    .text-success { color: rgb(var(--positive-700)); }
 
     .payment-timeline {
       display: flex;

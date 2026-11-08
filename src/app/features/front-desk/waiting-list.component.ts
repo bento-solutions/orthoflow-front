@@ -51,8 +51,8 @@ export function formatWeekdays(days: Iterable<number>): string | undefined {
       <div class="table-wrap"><div class="table-scroll">
         <table class="data-table">
           <thead><tr>
-            <th>{{ 'FD.LIST.URGENCY' | translate }}</th><th>{{ 'COMMON.PATIENT' | translate }}</th><th>{{ 'COMMON.TYPE' | translate }}</th>
-            <th>{{ 'COMMON.PRACTITIONER' | translate }}</th><th>{{ 'FD.LIST.PREFERENCES' | translate }}</th><th class="cell-actions">{{ 'COMMON.ACTIONS' | translate }}</th>
+            <th scope="col">{{ 'FD.LIST.URGENCY' | translate }}</th><th scope="col">{{ 'COMMON.PATIENT' | translate }}</th><th scope="col">{{ 'COMMON.TYPE' | translate }}</th>
+            <th scope="col">{{ 'COMMON.PRACTITIONER' | translate }}</th><th scope="col">{{ 'FD.LIST.PREFERENCES' | translate }}</th><th scope="col" class="cell-actions">{{ 'COMMON.ACTIONS' | translate }}</th>
           </tr></thead>
           <tbody>
             @for (e of entries.data(); track e.id) {
@@ -249,7 +249,7 @@ export class WaitingListComponent {
     try {
       await this.send(entry.id, body);
       this.scheduling.set(null);
-      this.toast.success('✓');
+      this.toast.success(this.translate.instant('COMMON.SAVED'));
       await this.reload();
     } catch (error) {
       this.errors.report(error);

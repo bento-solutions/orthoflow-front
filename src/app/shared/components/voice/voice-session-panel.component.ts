@@ -222,7 +222,7 @@ interface ToothGroup {
 
           <!-- A question outranks everything else on screen. -->
           @if (voice.confirmation(); as pending) {
-            <div class="card vs-prompt confirm" role="alertdialog" aria-live="assertive">
+            <div class="card vs-prompt confirm" role="alert">
               <p class="vs-prompt-text">{{ pending.preview }}</p>
               <div class="vs-actions">
                 <button type="button" class="btn-big positive" (click)="voice.confirmPending()">
@@ -236,7 +236,7 @@ interface ToothGroup {
             </div>
           }
           @if (voice.clarification(); as question) {
-            <div class="card vs-prompt question" role="alertdialog" aria-live="assertive">
+            <div class="card vs-prompt question" role="alert">
               <p class="vs-prompt-text">{{ question.question }}</p>
               @if (question.options.length) {
                 <div class="vs-options">
@@ -464,7 +464,7 @@ interface ToothGroup {
     .vs-intro h3 { margin: 0; font-size: 1rem; }
     .vs-intro p { margin: 0; color: rgb(var(--ink-700)); line-height: 1.5; font-size: .9rem; }
     .vs-intro-icon {
-      font-size: 1.75rem; color: rgb(var(--petrol-600)); background: rgb(var(--petrol-50));
+      font-size: 1.75rem; color: rgb(var(--petrol-700)); background: rgb(var(--petrol-50));
       border-radius: 12px; padding: .5rem;
     }
     .vs-intro.warn .vs-intro-icon { color: rgb(var(--caution-700)); background: rgb(var(--caution-50)); }
@@ -582,7 +582,7 @@ interface ToothGroup {
       border-radius: 8px; padding: .25rem .5rem; color: rgb(var(--ink-800));
     }
     .vs-note { display: flex; gap: .375rem; margin: 0; font-size: .8125rem; color: rgb(var(--ink-600)); line-height: 1.45; }
-    .vs-note .material-icons { font-size: 1rem; color: rgb(var(--petrol-600)); flex-shrink: 0; }
+    .vs-note .material-icons { font-size: 1rem; color: rgb(var(--petrol-700)); flex-shrink: 0; }
     .vs-notice { font-weight: 500; color: rgb(var(--ink-700)); }
 
     .vs-typed { display: flex; gap: .5rem; }

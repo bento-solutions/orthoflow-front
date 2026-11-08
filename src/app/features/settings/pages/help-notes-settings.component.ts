@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { api } from '../../../core/api/url';
 import type { Wire } from '../../../core/api/wire';
@@ -39,7 +39,7 @@ type Note = Wire<'NoteView'>;
         @for (n of notes.data(); track n.pageKey) {
           <li class="flex items-start gap-4 px-5 py-3">
             <div class="min-w-0 flex-1">
-              <p class="font-semibold text-ink-900">{{ n.title }} <span class="mono text-2xs text-ink-400">{{ n.pageKey }}</span>
+              <p class="font-semibold text-ink-900">{{ n.title }} <span class="mono text-2xs text-ink-500">{{ n.pageKey }}</span>
                 @if (n.customised) { <span class="pill pill-active ms-1">{{ 'SET.PERMISSIONS.CUSTOM' | translate }}</span> }
                 @if (n.lang !== lang()) { <span class="pill pill-attention ms-1">{{ n.lang.toUpperCase() }}</span> }</p>
               <p class="line-clamp-2 text-sm text-ink-600">{{ n.body }}</p>
@@ -67,6 +67,7 @@ type Note = Wire<'NoteView'>;
   `,
 })
 export class HelpNotesSettingsComponent {
+  private readonly translate = inject(TranslateService);
   private readonly http = inject(HttpClient);
   private readonly errors = inject(ApiErrors);
   private readonly toast = inject(ToastService);
@@ -106,7 +107,7 @@ export class HelpNotesSettingsComponent {
       // Saved for the language being viewed, even when the note shown fell back to another one.
       await firstValueFrom(this.http.put(api(`/help/notes/${n.pageKey}`), this.form.value(), { params: { lang: this.lang() } }));
       this.editing.set(null);
-      this.toast.success('✓');
+      this.toast.success(this.translate.instant('COMMON.SAVED'));
       await this.reload();
     } catch (error) {
       this.errors.report(error);

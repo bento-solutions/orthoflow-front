@@ -1,17 +1,18 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { StockService } from '../../../../core/services/stock.service';
 import { Treatment, TreatmentConsumable, StockItem } from '../../../../core/models/stock.model';
 import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { NgapAct, NgapService, cotation, plainText } from '../../../../core/services/ngap.service';
+import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
 @Component({
   selector: 'app-treatments-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [DialogDirective, CommonModule, FormsModule, TranslateModule],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       
@@ -38,16 +39,16 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
               <div class="flex items-center justify-between">
                 <span class="px-2.5 py-0.5 bg-ortho-navy/5 text-ink-900 font-mono text-xs font-bold rounded-lg border border-ortho-navy/10 uppercase">{{ t.code }}</span>
                 <div class="flex items-center gap-1.5">
-                  <button type="button" (click)="openEditModal(t)" class="p-1 hover:bg-ortho-navy/5 text-ink-600 hover:text-ink-900 rounded transition">
+                  <button [attr.aria-label]="'COMMON.EDIT' | translate" type="button" (click)="openEditModal(t)" class="p-1 hover:bg-ortho-navy/5 text-ink-600 hover:text-ink-900 rounded transition">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
                   </button>
-                  <button type="button" (click)="deleteTreatment(t)" class="p-1 hover:bg-red-50 text-red-600/60 hover:text-red-600 rounded transition">
+                  <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="deleteTreatment(t)" class="p-1 hover:bg-red-50 text-red-700/60 hover:text-red-700 rounded transition">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                   </button>
                 </div>
               </div>
 
-              <h3 class="font-bold text-lg text-ink-900 tracking-tight leading-tight">{{ t.name }}</h3>
+              <h2 class="font-bold text-lg text-ink-900 tracking-tight leading-tight">{{ t.name }}</h2>
               
               @if (t.actCode) {
                 <p class="text-xs text-ink-500 font-semibold">{{ "TREATMENTS.ACT_CODE" | translate }}: <span class="font-mono text-ink-700">{{ t.actCode }}</span>@if (cotationOf(t); as c) { · {{ "TREATMENTS.NGAP_COTATION" | translate }} <span class="font-mono text-ink-700">{{ c }}</span> } @else if (t.actCoefficient != null) { · {{ "TREATMENTS.ACT_COEFFICIENT" | translate }} <span class="text-ink-700">{{ t.actCoefficient }}</span> }</p>
@@ -77,11 +78,11 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
                       <!-- The unit is the whole point: "x8" never said whether that was
                            pieces, grams or millilitres. -->
                       <span class="font-bold text-ink-500">{{ c.quantityUsed }} {{ c.stockItem?.unitSymbol || '' }}</span>
-                      <span class="text-emerald-600 font-extrabold">{{ (c.quantityUsed * c.stockItem.pricePerUse) | number:'1.2-2' }} DH</span>
+                      <span class="text-emerald-700 font-extrabold">{{ (c.quantityUsed * c.stockItem.pricePerUse) | number:'1.2-2' }} DH</span>
                     </div>
                   </div>
                 } @empty {
-                  <span class="text-xs text-ink-400 block py-1">{{ "TREATMENTS.NO_CONSUMABLES_CONFIGURED" | translate }}</span>
+                  <span class="text-xs text-ink-500 block py-1">{{ "TREATMENTS.NO_CONSUMABLES_CONFIGURED" | translate }}</span>
                 }
               </div>
             </div>
@@ -89,7 +90,7 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
             <!-- Cumulative cost summary -->
             <div class="border-t border-ortho-navy/5 pt-3 flex justify-between items-center text-xs">
               <span class="text-ink-500 font-bold uppercase tracking-wider">{{ "TREATMENTS.MATERIALS_COST" | translate }}</span>
-              <span class="font-bold text-emerald-600">{{ getConsumablesTotal(t) | number:'1.2-2' }} DH</span>
+              <span class="font-bold text-emerald-700">{{ getConsumablesTotal(t) | number:'1.2-2' }} DH</span>
             </div>
 
           </div>
@@ -103,10 +104,10 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
       <!-- Add/Edit Modal -->
       @if (showModal()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ortho-navy/60 backdrop-blur-sm">
-          <div class="bg-white rounded-2xl max-w-xl w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in flex flex-col max-h-[85vh]">
+          <div appDialog="treatment-dialog-title" (dialogClosed)="closeModal()" class="bg-white rounded-2xl max-w-xl w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in flex flex-col max-h-[85vh]">
             <div class="px-6 py-4 border-b border-ortho-navy/5 flex items-center justify-between bg-ortho-navy/[0.01] shrink-0">
-              <h3 class="text-lg font-bold text-ink-900">{{ editMode() ? ("TREATMENTS.EDIT_TREATMENT_PROCEDURE" | translate) : ("TREATMENTS.ADD_TREATMENT_PROCEDURE" | translate) }}</h3>
-              <button type="button" (click)="closeModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
+              <h2 id="treatment-dialog-title" class="text-lg font-bold text-ink-900">{{ editMode() ? ("TREATMENTS.EDIT_TREATMENT_PROCEDURE" | translate) : ("TREATMENTS.ADD_TREATMENT_PROCEDURE" | translate) }}</h2>
+              <button [attr.aria-label]="'COMMON.CLOSE' | translate" type="button" (click)="closeModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -114,12 +115,12 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
             <div class="flex-1 overflow-y-auto p-6 space-y-4">
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "TREATMENTS.PROCEDURE_CODE" | translate }} *</label>
-                  <input type="text" [(ngModel)]="form.code" [placeholder]="'TREATMENTS.PROCEDURE_CODE_PLACEHOLDER' | translate" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition font-mono uppercase bg-white" />
+                  <label for="treatments-list-form-code" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "TREATMENTS.PROCEDURE_CODE" | translate }} <span aria-hidden="true">*</span></label>
+                  <input id="treatments-list-form-code" type="text" [(ngModel)]="form.code" [placeholder]="'TREATMENTS.PROCEDURE_CODE_PLACEHOLDER' | translate" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition font-mono uppercase bg-white" />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "TREATMENTS.BASE_PRICE_DH" | translate }} *</label>
-                  <input type="number" [(ngModel)]="form.basePrice" required min="0" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                  <label for="treatments-list-form-basePrice" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "TREATMENTS.BASE_PRICE_DH" | translate }} <span aria-hidden="true">*</span></label>
+                  <input id="treatments-list-form-basePrice" type="number" [(ngModel)]="form.basePrice" required min="0" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
                 </div>
               </div>
 
@@ -137,8 +138,8 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
               </fieldset>
 
               <div>
-                <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "TREATMENTS.PROCEDURE_NAME" | translate }} *</label>
-                <input type="text" [(ngModel)]="form.name" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                <label for="treatments-list-form-name" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "TREATMENTS.PROCEDURE_NAME" | translate }} <span aria-hidden="true">*</span></label>
+                <input id="treatments-list-form-name" type="text" [(ngModel)]="form.name" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
               </div>
 
               <div>
@@ -148,16 +149,17 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
                     @if (selectedAct(); as act) {
                       <div class="flex items-center gap-2 px-3 py-2 border border-ortho-navy/10 rounded-xl bg-white">
                         <span class="font-mono text-sm text-ink-900">{{ act.code }}</span>
-                        <button type="button" (click)="clearAct()" class="ms-auto text-xs font-semibold text-ink-500 hover:text-red-600" [attr.aria-label]="'TREATMENTS.NGAP_REMOVE' | translate">{{ "TREATMENTS.NGAP_REMOVE" | translate }}</button>
+                        <button type="button" (click)="clearAct()" class="ms-auto text-xs font-semibold text-ink-500 hover:text-red-700" [attr.aria-label]="'TREATMENTS.NGAP_REMOVE' | translate">{{ "TREATMENTS.NGAP_REMOVE" | translate }}</button>
                       </div>
                     } @else {
                       <input id="act-code" type="search" autocomplete="off" [ngModel]="ngapQuery()" (ngModelChange)="ngapQuery.set($event)"
-                        [placeholder]="'TREATMENTS.NGAP_SEARCH' | translate" role="combobox" [attr.aria-expanded]="ngapMatches().length > 0" aria-controls="ngap-matches"
+                        [placeholder]="'TREATMENTS.NGAP_SEARCH' | translate"
                         class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
                       @if (ngapQuery().trim()) {
-                        <ul id="ngap-matches" role="listbox" class="absolute z-20 mt-1 w-[min(32rem,calc(100vw-3rem))] max-h-64 overflow-y-auto bg-white border border-ortho-navy/10 rounded-xl shadow-lg">
+                        <!-- Plain buttons: Tab goes down the matches, Enter takes one. -->
+                        <ul id="ngap-matches" class="absolute z-20 mt-1 w-[min(32rem,calc(100vw-3rem))] max-h-64 overflow-y-auto bg-white border border-ortho-navy/10 rounded-xl shadow-lg">
                           @for (a of ngapMatches(); track a.code) {
-                            <li role="option" aria-selected="false">
+                            <li>
                               <button type="button" (click)="pickAct(a)" class="w-full text-start px-3 py-2 hover:bg-petrol-50 transition">
                                 <span class="font-mono text-xs text-ink-900">{{ a.code }}</span>
                                 @if (cotationFor(a); as c) { <span class="font-mono text-xs text-petrol-700 ms-2">{{ c }}</span> }
@@ -182,7 +184,7 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
                     <p class="text-xs text-ink-500">
                       @if (cotationFor(act, form.actCoefficient); as c) { {{ "TREATMENTS.NGAP_COTATION" | translate }} <span class="font-mono text-ink-800">{{ c }}</span> }
                       @if (act.anesthesiaCoefficient != null) { · {{ "TREATMENTS.NGAP_ANESTHESIA" | translate }} {{ act.anesthesiaCoefficient }} }
-                      @if (act.priorAgreement) { · <span class="font-semibold text-amber-600">{{ "TREATMENTS.NGAP_PRIOR_AGREEMENT" | translate }}</span> }
+                      @if (act.priorAgreement) { · <span class="font-semibold text-amber-700">{{ "TREATMENTS.NGAP_PRIOR_AGREEMENT" | translate }}</span> }
                     </p>
                     @if (act.notes) { <p class="text-xs text-ink-500 leading-snug">{{ act.notes }}</p> }
                   </div>
@@ -203,8 +205,8 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
                   @for (c of formConsumables; track $index; let idx = $index) {
                     <div class="grid grid-cols-12 gap-3 items-end bg-gray-50/50 p-3 rounded-xl border border-gray-100 font-semibold text-xs text-ink-900">
                       <div class="col-span-6">
-                        <label class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.STOCK_ITEM" | translate }}</label>
-                        <select [(ngModel)]="c.stockItem" (change)="onItemChange(idx)" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none">
+                        <label [attr.for]="'treatments-list-c-stockItem-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.STOCK_ITEM" | translate }}</label>
+                        <select [id]="'treatments-list-c-stockItem-' + $index" [(ngModel)]="c.stockItem" (change)="onItemChange(idx)" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none">
                           <option [value]="null">{{ "TREATMENTS.SELECT_ITEM" | translate }}</option>
                           @for (item of catalogItems(); track item.id) {
                             <option [ngValue]="item">{{ item.name }} ({{ "STOCK.SKU" | translate }}: {{ item.sku }})</option>
@@ -212,18 +214,18 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
                         </select>
                       </div>
                       <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-ink-600 uppercase mb-1">
+                        <label [attr.for]="'treatments-list-c-quantityUsed-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">
                           {{ "TREATMENTS.QTY_USED" | translate }}
-                          @if (c.stockItem?.unitSymbol) { <span class="text-petrol-600">({{ c.stockItem?.unitSymbol }})</span> }
+                          @if (c.stockItem?.unitSymbol) { <span class="text-petrol-700">({{ c.stockItem?.unitSymbol }})</span> }
                         </label>
-                        <input type="number" [(ngModel)]="c.quantityUsed" min="0.0001" step="any" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none font-mono" />
+                        <input [id]="'treatments-list-c-quantityUsed-' + $index" type="number" [(ngModel)]="c.quantityUsed" min="0.0001" step="any" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none font-mono" />
                       </div>
                       <div class="col-span-3 text-right">
                         <span class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.MATERIALS_COST" | translate }}</span>
-                        <span class="font-bold text-emerald-600 block py-1.5 text-xs">{{ (c.quantityUsed * (c.stockItem?.pricePerUse || 0)) | number:'1.2-2' }} DH</span>
+                        <span class="font-bold text-emerald-700 block py-1.5 text-xs">{{ (c.quantityUsed * (c.stockItem?.pricePerUse || 0)) | number:'1.2-2' }} DH</span>
                       </div>
                       <div class="col-span-1 text-center">
-                        <button type="button" (click)="removeConsumableLine(idx)" class="p-1.5 hover:bg-red-50 text-red-600 rounded-lg transition mb-1">
+                        <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="removeConsumableLine(idx)" class="p-1.5 hover:bg-red-50 text-red-700 rounded-lg transition mb-1">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                       </div>
@@ -234,7 +236,7 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
                 <div class="flex justify-end pt-3 border-t border-ortho-navy/5">
                   <div class="text-right">
                     <span class="text-xs font-bold text-ink-500 uppercase tracking-wider block">{{ "TREATMENTS.CUMULATIVE_MATERIAL_COST" | translate }}</span>
-                    <span class="text-lg font-bold text-emerald-600">{{ formCumulativeCost() | number:'1.2-2' }} DH</span>
+                    <span class="text-lg font-bold text-emerald-700">{{ formCumulativeCost() | number:'1.2-2' }} DH</span>
                   </div>
                 </div>
               </div>
@@ -261,6 +263,7 @@ import { NgapAct, NgapService, cotation, plainText } from '../../../../core/serv
   `]
 })
 export class TreatmentsListComponent implements OnInit {
+  private readonly translate = inject(TranslateService);
   private stockService = inject(StockService);
   private confirmDialog = inject(ConfirmDialogService);
   private toast = inject(ToastService);
@@ -423,14 +426,14 @@ export class TreatmentsListComponent implements OnInit {
 
   async deleteTreatment(t: Treatment) {
     const confirmed = await this.confirmDialog.confirm(
-      `Are you sure you want to delete treatment procedure '${t.name}'?`,
-      { danger: true, confirmLabel: 'Delete' }
+      this.translate.instant('TREATMENTS.UI.DELETE_CONFIRM', { name: t.name }),
+      { danger: true, confirmLabel: this.translate.instant('COMMON.DELETE') }
     );
     if (!confirmed) return;
 
     this.stockService.deleteTreatment(t.id!).subscribe({
       next: () => {
-        this.toast.success('Treatment procedure deleted.');
+        this.toast.success(this.translate.instant('TREATMENTS.UI.DELETED'));
         this.loadAllData();
       },
       error: (err) => {

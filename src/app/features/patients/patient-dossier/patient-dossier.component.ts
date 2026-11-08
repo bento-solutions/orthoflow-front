@@ -39,11 +39,13 @@ import { PatientAccountComponent } from '../account/patient-account.component';
 import { RegistrationInviteComponent } from '../registration-invite.component';
 import { PatientDocumentsComponent } from '../documents/patient-documents.component';
 import { PatientPhotosComponent } from '../patient-photos/patient-photos.component';
+import { DialogDirective } from '../../../shared/ui/dialog.directive';
+import { findingLabel } from '../../../core/clinical/finding-options';
 
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [CommonModule, RouterModule, Dental3dChartComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, ConsultationLogComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent, PatientPhotosComponent, GumStatusComponent, TreatmentLogComponent, TreatmentSummaryComponent],
+  imports: [DialogDirective, CommonModule, RouterModule, Dental3dChartComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, ConsultationLogComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent, PatientPhotosComponent, GumStatusComponent, TreatmentLogComponent, TreatmentSummaryComponent],
   template: `
     <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive()" [class.has-consultation]="consultation.visible()">
       @if (patientService.currentPatient(); as patient) {
@@ -172,7 +174,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
       </header>
 
       <!-- Main Content Area -->
-      <main class="dossier-content">
+      <div class="dossier-content">
         @switch (activeTab()) {
           @case ('voice') {
             <!-- Every voice result is shown here: the chart with what is staged
@@ -196,7 +198,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
               <div class="overview-grid">
                 <!-- Summary Cards -->
                 <div class="summary-card">
-                  <h3>{{ 'PATIENTS.NEXT_APPOINTMENT' | translate }}</h3>
+                  <h2>{{ 'PATIENTS.NEXT_APPOINTMENT' | translate }}</h2>
                   <div class="card-content">
                     @if (nextAppointment(); as appt) {
                       <span class="date">{{ appt.dateTime | date:'longDate' }} - {{ appt.dateTime | date:'shortTime' }}</span>
@@ -207,7 +209,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                   </div>
                 </div>
                 <div class="summary-card">
-                  <h3>{{ 'PATIENTS.DOSSIER.ACTIVE_TREATMENTS' | translate }}</h3>
+                  <h2>{{ 'PATIENTS.DOSSIER.ACTIVE_TREATMENTS' | translate }}</h2>
                   <div class="card-content">
                     @if (activeTreatmentsCount() > 0) {
                       <span class="date">{{ activeTreatmentsCount() }}</span>
@@ -218,7 +220,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                   </div>
                 </div>
                 <div class="summary-card">
-                  <h3>{{ 'BILLING.OUTSTANDING' | translate }}</h3>
+                  <h2>{{ 'BILLING.OUTSTANDING' | translate }}</h2>
                   <div class="card-content">
                     @if (balanceDueForPatient() > 0) {
                       <span class="date" [class.balance-due]="balanceDueForPatient() > 0">{{ balanceDueForPatient() | number:'1.2-2' }} MAD</span>
@@ -229,7 +231,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                   </div>
                 </div>
                 <div class="summary-card">
-                  <h3>{{ 'PATIENTS.DOSSIER.LATEST_NOTE' | translate }}</h3>
+                  <h2>{{ 'PATIENTS.DOSSIER.LATEST_NOTE' | translate }}</h2>
                   <div class="card-content">
                     @if (latestNote(); as note) {
                       <span class="desc">{{ note.content }}</span>
@@ -240,13 +242,13 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                   </div>
                 </div>
                 <div class="summary-card" [class.has-allergies]="clinicalRecordService.allergies().length > 0">
-                  <h3>{{ 'PATIENTS.DOSSIER.ALLERGIES' | translate }}</h3>
+                  <h2>{{ 'PATIENTS.DOSSIER.ALLERGIES' | translate }}</h2>
                   <div class="card-content">
                     @if (clinicalRecordService.allergies().length) {
                       <div class="allergy-chips">
                         @for (allergy of clinicalRecordService.allergies(); track allergy.id) {
                           <span class="allergy-chip" [class]="(allergy.severity || 'mild').toLowerCase()">
-                            <span class="material-icons">warning</span>
+                            <span aria-hidden="true" class="material-icons">warning</span>
                             {{ allergy.substance }}
                           </span>
                         }
@@ -257,7 +259,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                   </div>
                 </div>
                 <div class="summary-card dental-chart-card">
-                  <h3>{{ 'DENTAL_3D.TITLE' | translate }}</h3>
+                  <h2>{{ 'DENTAL_3D.TITLE' | translate }}</h2>
                   @if (dentalChartState(); as chart) {
                     <!-- three.js and the model load only when the chart comes into view. -->
                     @defer (on viewport; prefetch on idle) {
@@ -290,7 +292,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                     [id]="'clinical-subtab-' + sub.id"
                     role="tab"
                     [attr.aria-selected]="activeClinicalSubTab() === sub.id"
-                    [attr.aria-controls]="'clinical-subpanel-' + sub.id"
+                    [attr.aria-controls]="activeClinicalSubTab() === sub.id ? 'clinical-subpanel-' + sub.id : null"
                     [tabindex]="activeClinicalSubTab() === sub.id ? 0 : -1"
                     [class.active]="activeClinicalSubTab() === sub.id"
                     (click)="activeClinicalSubTab.set(sub.id)"
@@ -301,11 +303,10 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                 }
               </nav>
 
+              <div role="tabpanel" [id]="'clinical-subpanel-' + activeClinicalSubTab()" [attr.aria-labelledby]="'clinical-subtab-' + activeClinicalSubTab()">
               @switch (activeClinicalSubTab()) {
                 @case ('photos') {
-                  <div role="tabpanel" id="clinical-subpanel-photos" aria-labelledby="clinical-subtab-photos">
-                    <app-patient-photos [patientId]="patient.id" />
-                  </div>
+                  <app-patient-photos [patientId]="patient.id" />
                 }
                 @case ('history') {
                   <section class="dossier-section">
@@ -318,13 +319,13 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
 
                     @if (showHistoryForm()) {
                       <div class="inline-form">
-                        <select [(ngModel)]="historyForm.category" class="select">
+                        <select [attr.aria-label]="'PATIENTS.DOSSIER.UI.CATEGORY' | translate" [(ngModel)]="historyForm.category" class="select">
                           @for (cat of medicalHistoryCategories; track cat) {
-                            <option [value]="cat">{{ cat }}</option>
+                            <option [value]="cat">{{ 'CONSULTATION.CAT_' + cat | translate }}</option>
                           }
                         </select>
-                        <input type="text" [(ngModel)]="historyForm.label" placeholder="Label (e.g. Hypertension)" class="input" />
-                        <textarea [(ngModel)]="historyForm.detail" placeholder="Detail (optional)" rows="2" class="textarea"></textarea>
+                        <input [attr.aria-label]="'PATIENTS.DOSSIER.UI.HISTORY_LABEL' | translate" type="text" [(ngModel)]="historyForm.label" [placeholder]="'PATIENTS.DOSSIER.UI.HISTORY_LABEL' | translate" class="input" />
+                        <textarea [attr.aria-label]="'PATIENTS.DOSSIER.UI.DETAIL_OPTIONAL' | translate" [(ngModel)]="historyForm.detail" [placeholder]="'PATIENTS.DOSSIER.UI.DETAIL_OPTIONAL' | translate" rows="2" class="textarea"></textarea>
                         <div class="inline-form-actions">
                           <button type="button" class="btn btn-ghost btn-sm" (click)="showHistoryForm.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
                           <button type="button" class="btn btn-primary btn-sm" [disabled]="!historyForm.label" (click)="submitMedicalHistory()">{{ 'COMMON.SAVE' | translate }}</button>
@@ -341,15 +342,15 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                               <span class="clinical-item-label">{{ entry.label }}</span>
                               @if (entry.detail) { <p class="clinical-item-detail">{{ entry.detail }}</p> }
                             </div>
-                            <button type="button" class="btn btn-ghost btn-icon" (click)="removeMedicalHistory(entry.id)" title="Delete">
-                              <span class="material-icons text-sm">delete</span>
+                            <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" class="btn btn-ghost btn-icon" (click)="removeMedicalHistory(entry.id)" [title]="'COMMON.DELETE' | translate">
+                              <span aria-hidden="true" class="material-icons text-sm">delete</span>
                             </button>
                           </div>
                         }
                       </div>
                     } @else if (!showHistoryForm()) {
                       <div class="empty">
-                        <span class="material-icons">medical_services</span>
+                        <span aria-hidden="true" class="material-icons">medical_services</span>
                         <p>{{ 'PATIENTS.DOSSIER.NO_MEDICAL_HISTORY' | translate }}</p>
                       </div>
                     }
@@ -366,20 +367,20 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
 
                     @if (showFindingForm() === 'diagnostic') {
                       <div class="inline-form">
-                        <input type="text" [(ngModel)]="findingForm.fdi" placeholder="Tooth FDI (e.g. 26)" maxlength="2" class="input" />
-                        <select [(ngModel)]="findingForm.findingCode" class="select">
-                          <option value="" disabled>Select a finding...</option>
+                        <input [attr.aria-label]="'PATIENTS.DOSSIER.UI.TOOTH_FDI' | translate" type="text" [(ngModel)]="findingForm.fdi" [placeholder]="'PATIENTS.DOSSIER.UI.TOOTH_FDI' | translate" maxlength="2" class="input" />
+                        <select [attr.aria-label]="'PATIENTS.DOSSIER.UI.SELECT_FINDING' | translate" [(ngModel)]="findingForm.findingCode" class="select">
+                          <option value="" disabled>{{ 'PATIENTS.DOSSIER.UI.SELECT_FINDING' | translate }}</option>
                           @for (def of diagnosticCatalogCodes(); track def.code) {
-                            <option [value]="def.code">{{ def.code | titlecase }}</option>
+                            <option [value]="def.code">{{ findingName(def.code) }}</option>
                           }
                         </select>
-                        <select [(ngModel)]="findingForm.severity" class="select">
-                          <option value="">No severity</option>
-                          <option value="MILD">Mild</option>
-                          <option value="MODERATE">Moderate</option>
-                          <option value="SEVERE">Severe</option>
+                        <select [attr.aria-label]="'PATIENTS.DOSSIER.UI.SEVERITY' | translate" [(ngModel)]="findingForm.severity" class="select">
+                          <option value="">{{ 'PATIENTS.DOSSIER.UI.NO_SEVERITY' | translate }}</option>
+                          <option value="MILD">{{ 'PATIENTS.DOSSIER.UI.MILD' | translate }}</option>
+                          <option value="MODERATE">{{ 'PATIENTS.DOSSIER.UI.MODERATE' | translate }}</option>
+                          <option value="SEVERE">{{ 'PATIENTS.DOSSIER.UI.SEVERE' | translate }}</option>
                         </select>
-                        <textarea [(ngModel)]="findingForm.note" placeholder="Note (optional)" rows="2" class="textarea"></textarea>
+                        <textarea [attr.aria-label]="'PATIENTS.DOSSIER.UI.NOTE_OPTIONAL' | translate" [(ngModel)]="findingForm.note" [placeholder]="'PATIENTS.DOSSIER.UI.NOTE_OPTIONAL' | translate" rows="2" class="textarea"></textarea>
                         <div class="inline-form-actions">
                           <button type="button" class="btn btn-ghost btn-sm" (click)="showFindingForm.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
                           <button type="button" class="btn btn-primary btn-sm" [disabled]="!findingForm.fdi || !findingForm.findingCode" (click)="submitFinding()">{{ 'COMMON.SAVE' | translate }}</button>
@@ -393,19 +394,19 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                           <div class="clinical-item">
                             <div class="clinical-item-main">
                               <span class="clinical-item-badge tooth">#{{ finding.fdi }}</span>
-                              <span class="clinical-item-label">{{ finding.findingCode | titlecase }}</span>
+                              <span class="clinical-item-label">{{ findingName(finding.findingCode) }}</span>
                               @if (finding.severity) { <span class="clinical-item-severity" [class]="finding.severity.toLowerCase()">{{ finding.severity }}</span> }
                               @if (finding.note) { <p class="clinical-item-detail">{{ finding.note }}</p> }
                             </div>
-                            <button type="button" class="btn btn-ghost btn-icon" (click)="resolveFinding(finding.id)" title="Mark resolved">
-                              <span class="material-icons text-sm">check_circle</span>
+                            <button [attr.aria-label]="'TOOTH_DETAIL.MARK_TREATED' | translate" type="button" class="btn btn-ghost btn-icon" (click)="resolveFinding(finding.id)" [title]="'PATIENTS.DOSSIER.UI.MARK_RESOLVED' | translate">
+                              <span aria-hidden="true" class="material-icons text-sm">check_circle</span>
                             </button>
                           </div>
                         }
                       </div>
                     } @else if (showFindingForm() !== 'diagnostic') {
                       <div class="empty">
-                        <span class="material-icons">biotech</span>
+                        <span aria-hidden="true" class="material-icons">biotech</span>
                         <p>{{ 'PATIENTS.DOSSIER.NO_DIAGNOSTICS' | translate }}</p>
                       </div>
                     }
@@ -422,14 +423,14 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
 
                     @if (showFindingForm() === 'plan') {
                       <div class="inline-form">
-                        <input type="text" [(ngModel)]="findingForm.fdi" placeholder="Tooth FDI (e.g. 26)" maxlength="2" class="input" />
-                        <select [(ngModel)]="findingForm.findingCode" class="select">
-                          <option value="" disabled>Select required treatment...</option>
+                        <input [attr.aria-label]="'PATIENTS.DOSSIER.UI.TOOTH_FDI' | translate" type="text" [(ngModel)]="findingForm.fdi" [placeholder]="'PATIENTS.DOSSIER.UI.TOOTH_FDI' | translate" maxlength="2" class="input" />
+                        <select [attr.aria-label]="'PATIENTS.DOSSIER.UI.SELECT_REQUIRED' | translate" [(ngModel)]="findingForm.findingCode" class="select">
+                          <option value="" disabled>{{ 'PATIENTS.DOSSIER.UI.SELECT_REQUIRED' | translate }}</option>
                           @for (def of treatmentRequiredCatalogCodes(); track def.code) {
-                            <option [value]="def.code">{{ def.code | titlecase }}</option>
+                            <option [value]="def.code">{{ findingName(def.code) }}</option>
                           }
                         </select>
-                        <textarea [(ngModel)]="findingForm.note" placeholder="Note (optional)" rows="2" class="textarea"></textarea>
+                        <textarea [attr.aria-label]="'PATIENTS.DOSSIER.UI.NOTE_OPTIONAL' | translate" [(ngModel)]="findingForm.note" [placeholder]="'PATIENTS.DOSSIER.UI.NOTE_OPTIONAL' | translate" rows="2" class="textarea"></textarea>
                         <div class="inline-form-actions">
                           <button type="button" class="btn btn-ghost btn-sm" (click)="showFindingForm.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
                           <button type="button" class="btn btn-primary btn-sm" [disabled]="!findingForm.fdi || !findingForm.findingCode" (click)="submitFinding()">{{ 'COMMON.SAVE' | translate }}</button>
@@ -443,18 +444,18 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                           <div class="clinical-item">
                             <div class="clinical-item-main">
                               <span class="clinical-item-badge tooth">#{{ finding.fdi }}</span>
-                              <span class="clinical-item-label">{{ finding.findingCode | titlecase }}</span>
+                              <span class="clinical-item-label">{{ findingName(finding.findingCode) }}</span>
                               @if (finding.note) { <p class="clinical-item-detail">{{ finding.note }}</p> }
                             </div>
-                            <button type="button" class="btn btn-ghost btn-icon" (click)="resolveFinding(finding.id)" title="Mark treated">
-                              <span class="material-icons text-sm">check_circle</span>
+                            <button [attr.aria-label]="'TOOTH_DETAIL.MARK_TREATED' | translate" type="button" class="btn btn-ghost btn-icon" (click)="resolveFinding(finding.id)" [title]="'TOOTH_DETAIL.MARK_TREATED' | translate">
+                              <span aria-hidden="true" class="material-icons text-sm">check_circle</span>
                             </button>
                           </div>
                         }
                       </div>
                     } @else if (showFindingForm() !== 'plan') {
                       <div class="empty">
-                        <span class="material-icons">assignment</span>
+                        <span aria-hidden="true" class="material-icons">assignment</span>
                         <p>{{ 'PATIENTS.DOSSIER.NO_TREATMENT_PLAN' | translate }}</p>
                       </div>
                     }
@@ -469,10 +470,10 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                           <table class="data-table">
                             <thead>
                               <tr>
-                                <th>{{ 'COMMON.DATE' | translate }}</th>
-                                <th>{{ 'COMMON.TYPE' | translate }}</th>
-                                <th>{{ 'COMMON.STATUS' | translate }}</th>
-                                <th>{{ 'COMMON.NOTES' | translate }}</th>
+                                <th scope="col">{{ 'COMMON.DATE' | translate }}</th>
+                                <th scope="col">{{ 'COMMON.TYPE' | translate }}</th>
+                                <th scope="col">{{ 'COMMON.STATUS' | translate }}</th>
+                                <th scope="col">{{ 'COMMON.NOTES' | translate }}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -490,7 +491,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                       </div>
                     } @else {
                       <div class="empty">
-                        <span class="material-icons">event_busy</span>
+                        <span aria-hidden="true" class="material-icons">event_busy</span>
                         <p>{{ 'PATIENTS.DOSSIER.NO_APPOINTMENTS' | translate }}</p>
                       </div>
                     }
@@ -517,12 +518,12 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
 
                     @if (showNoteForm()) {
                       <div class="inline-form">
-                        <select [(ngModel)]="noteForm.category" class="select">
+                        <select [attr.aria-label]="'PATIENTS.DOSSIER.UI.CATEGORY' | translate" [(ngModel)]="noteForm.category" class="select">
                           @for (cat of noteCategories; track cat) {
-                            <option [value]="cat">{{ cat }}</option>
+                            <option [value]="cat">{{ 'PATIENTS.DOSSIER.UI.NOTE_CAT.' + cat | translate }}</option>
                           }
                         </select>
-                        <textarea [(ngModel)]="noteForm.content" placeholder="Note content..." rows="3" class="textarea"></textarea>
+                        <textarea [attr.aria-label]="'PATIENTS.DOSSIER.UI.NOTE_CONTENT' | translate" [(ngModel)]="noteForm.content" [placeholder]="'PATIENTS.DOSSIER.UI.NOTE_CONTENT' | translate" rows="3" class="textarea"></textarea>
                         <div class="inline-form-actions">
                           <button type="button" class="btn btn-ghost btn-sm" (click)="showNoteForm.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
                           <button type="button" class="btn btn-primary btn-sm" [disabled]="!noteForm.content" (click)="submitNote()">{{ 'COMMON.SAVE' | translate }}</button>
@@ -548,22 +549,22 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                                 </details>
                                 <!-- Beside the commands the examination understood and what was validated. -->
                                 <button type="button" class="btn btn-ghost btn-sm" (click)="openConsultationLog(note.sessionId)">
-                                  <span class="material-icons text-sm">history</span> {{ 'CONSULTATION.OPEN_LOG' | translate }}
+                                  <span aria-hidden="true" class="material-icons text-sm">history</span> {{ 'CONSULTATION.OPEN_LOG' | translate }}
                                 </button>
                               } @else {
                                 <p class="clinical-item-detail">{{ note.content }}</p>
                               }
                               <span class="clinical-item-meta">{{ note.createdAt | date:'medium' }}</span>
                             </div>
-                            <button type="button" class="btn btn-ghost btn-icon" (click)="removeNote(note.id)" title="Delete">
-                              <span class="material-icons text-sm">delete</span>
+                            <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" class="btn btn-ghost btn-icon" (click)="removeNote(note.id)" [title]="'COMMON.DELETE' | translate">
+                              <span aria-hidden="true" class="material-icons text-sm">delete</span>
                             </button>
                           </div>
                         }
                       </div>
                     } @else if (!showNoteForm()) {
                       <div class="empty">
-                        <span class="material-icons">history_edu</span>
+                        <span aria-hidden="true" class="material-icons">history_edu</span>
                         <p>{{ 'PATIENTS.DOSSIER.NO_NOTES' | translate }}</p>
                       </div>
                     }
@@ -576,10 +577,10 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                     </section>
                     <div class="treatments-tracker">
                       <div class="tracker-header">
-                        <h2>Patient Clinical Treatments</h2>
+                        <h2>{{ 'PATIENTS.DOSSIER.UI.TREATMENTS' | translate }}</h2>
                         <button type="button" class="btn btn-primary" (click)="openAssignModal()">
-                          <span class="material-icons">add</span>
-                          Assign Treatment
+                          <span aria-hidden="true" class="material-icons">add</span>
+                          {{ 'PATIENTS.DOSSIER.UI.ASSIGN' | translate }}
                         </button>
                       </div>
 
@@ -588,17 +589,17 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                           <div class="treatment-card">
                             <div class="card-left">
                               <div class="treatment-icon">
-                                <span class="material-icons">healing</span>
+                                <span aria-hidden="true" class="material-icons">healing</span>
                               </div>
                               <div class="treatment-meta">
-                                <div class="flex items-center gap-2">
+                                <div class="flex flex-wrap items-center gap-2">
                                   <span class="treatment-name">{{ pt.treatment.name }}</span>
-                                  <span class="teeth-list">Teeth: {{ pt.teeth }}</span>
+                                  <span class="teeth-list">{{ 'PATIENTS.DOSSIER.UI.TEETH' | translate: { teeth: pt.teeth } }}</span>
                                 </div>
-                                <div class="flex items-center gap-4 text-xs text-slate-500 mt-1">
-                                  <span><span class="font-semibold text-slate-700">Doctor:</span> {{ pt.doctorName }}</span>
+                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
+                                  <span><span class="font-semibold text-slate-700">{{ 'PATIENTS.DOSSIER.UI.DOCTOR' | translate }}</span> {{ pt.doctorName }}</span>
                                   <span *ngIf="pt.startDate">
-                                    <span class="font-semibold text-slate-700">Started:</span> {{ pt.startDate | date:'mediumDate' }}
+                                    <span class="font-semibold text-slate-700">{{ 'PATIENTS.DOSSIER.UI.STARTED' | translate }}</span> {{ pt.startDate | date:'mediumDate' }}
                                   </span>
                                 </div>
                                 <p class="treatment-desc text-xs text-slate-600 mt-2" *ngIf="pt.notes">
@@ -617,20 +618,20 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                               </div>
 
                               <div class="card-actions">
-                                <button type="button" class="btn btn-ghost btn-icon" (click)="openAssignModal(pt)" title="Edit">
-                                  <span class="material-icons text-slate-500 hover:text-slate-800">edit</span>
+                                <button [attr.aria-label]="'COMMON.EDIT' | translate" type="button" class="btn btn-ghost btn-icon" (click)="openAssignModal(pt)" [title]="'COMMON.EDIT' | translate">
+                                  <span aria-hidden="true" class="material-icons text-slate-500 hover:text-slate-800">edit</span>
                                 </button>
-                                <button type="button" class="btn btn-ghost btn-icon" (click)="deletePatientTreatment(pt)" title="Delete">
-                                  <span class="material-icons text-red-600 hover:text-red-700">delete</span>
+                                <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" class="btn btn-ghost btn-icon" (click)="deletePatientTreatment(pt)" [title]="'COMMON.DELETE' | translate">
+                                  <span aria-hidden="true" class="material-icons text-red-700 hover:text-red-700">delete</span>
                                 </button>
                               </div>
                             </div>
                           </div>
                         } @empty {
                           <div class="no-treatments">
-                            <span class="material-icons large">health_and_safety</span>
-                            <p>No treatments assigned to this patient.</p>
-                            <button type="button" class="btn btn-secondary btn-sm mt-3" (click)="openAssignModal()">Assign First Treatment</button>
+                            <span aria-hidden="true" class="material-icons large">health_and_safety</span>
+                            <p>{{ 'PATIENTS.DOSSIER.UI.NO_TREATMENTS' | translate }}</p>
+                            <button type="button" class="btn btn-secondary btn-sm mt-3" (click)="openAssignModal()">{{ 'PATIENTS.DOSSIER.UI.ASSIGN_FIRST' | translate }}</button>
                           </div>
                         }
                       </div>
@@ -638,6 +639,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                   </div>
                 }
               }
+              </div>
             </div>
 
           }
@@ -652,14 +654,14 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
             </div>
           }
         }
-      </main>
+      </div>
 
         <!-- Custom Modal Backdrop -->
         @if (showAssignModal()) {
           <div class="modal-backdrop" (click)="closeAssignModal()">
-            <div class="modal-card" (click)="$event.stopPropagation()">
+            <div class="modal-card" appDialog="assign-title" (dialogClosed)="closeAssignModal()" (click)="$event.stopPropagation()">
               <header class="modal-header">
-                <h3>{{ isEditingTreatment() ? 'Edit Treatment Assignment' : 'Assign Treatment Procedure' }}</h3>
+                <h2 id="assign-title">{{ (isEditingTreatment() ? 'PATIENTS.DOSSIER.UI.EDIT_ASSIGNMENT' : 'PATIENTS.DOSSIER.UI.NEW_ASSIGNMENT') | translate }}</h2>
                 <button type="button" class="btn btn-ghost btn-icon" [attr.aria-label]="'COMMON.CLOSE' | translate" (click)="closeAssignModal()">
                   <span class="material-icons" aria-hidden="true">close</span>
                 </button>
@@ -669,9 +671,9 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                 <div class="form-grid">
                   <!-- Select Treatment -->
                   <div class="form-group col-span-2">
-                    <label>Select Treatment Setup *</label>
-                    <select [(ngModel)]="formTreatmentId" (ngModelChange)="onTreatmentSelected($event)" [disabled]="isEditingTreatment()" class="select">
-                      <option value="" disabled>-- Choose a predefined treatment --</option>
+                    <label for="patient-dossier-formTreatmentId">{{ 'PATIENTS.DOSSIER.UI.TREATMENT_SETUP' | translate }} <span aria-hidden="true">*</span></label>
+                    <select id="patient-dossier-formTreatmentId" [(ngModel)]="formTreatmentId" (ngModelChange)="onTreatmentSelected($event)" [disabled]="isEditingTreatment()" class="select">
+                      <option value="" disabled>{{ 'PATIENTS.DOSSIER.UI.CHOOSE_TREATMENT' | translate }}</option>
                       @for (t of availableTreatments(); track t.id) {
                         <option [value]="t.id">{{ t.name }} ({{ t.code }})</option>
                       }
@@ -680,59 +682,59 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
 
                   <!-- Teeth comma separated -->
                   <div class="form-group">
-                    <label>Assigned Teeth (FDI numbers separated by comma) *</label>
-                    <input type="text" [(ngModel)]="formTeeth" placeholder="e.g. 11, 12, 13" class="input">
+                    <label for="patient-dossier-formTeeth">{{ 'PATIENTS.DOSSIER.UI.ASSIGNED_TEETH' | translate }} <span aria-hidden="true">*</span></label>
+                    <input id="patient-dossier-formTeeth" type="text" [(ngModel)]="formTeeth" placeholder="e.g. 11, 12, 13" class="input">
                   </div>
 
                   <!-- Doctor Name -->
                   <div class="form-group">
-                    <label>Assigned Doctor *</label>
-                    <input type="text" [(ngModel)]="formDoctorName" class="input">
+                    <label for="patient-dossier-formDoctorName">{{ 'PATIENTS.DOSSIER.UI.ASSIGNED_DOCTOR' | translate }} <span aria-hidden="true">*</span></label>
+                    <input id="patient-dossier-formDoctorName" type="text" [(ngModel)]="formDoctorName" class="input">
                   </div>
 
                   <!-- Status -->
                   <div class="form-group">
-                    <label>Status</label>
-                    <select [(ngModel)]="formStatus" class="select">
-                      <option value="PLANNED">PLANNED</option>
-                      <option value="ACTIVE">ACTIVE</option>
-                      <option value="COMPLETED">COMPLETED</option>
-                      <option value="CANCELLED">CANCELLED</option>
+                    <label for="patient-dossier-formStatus">{{ 'COMMON.STATUS' | translate }}</label>
+                    <select id="patient-dossier-formStatus" [(ngModel)]="formStatus" class="select">
+                      <option value="PLANNED">{{ 'PATIENTS.DOSSIER.UI.STATUS_PLANNED' | translate }}</option>
+                      <option value="ACTIVE">{{ 'PATIENTS.DOSSIER.UI.STATUS_ACTIVE' | translate }}</option>
+                      <option value="COMPLETED">{{ 'PATIENTS.DOSSIER.UI.STATUS_COMPLETED' | translate }}</option>
+                      <option value="CANCELLED">{{ 'PATIENTS.DOSSIER.UI.STATUS_CANCELLED' | translate }}</option>
                     </select>
                   </div>
 
                   <!-- Progress Slider -->
                   <div class="form-group">
-                    <label>Progress ({{ formProgress }}%)</label>
+                    <label for="patient-dossier-formProgress">{{ 'PATIENTS.DOSSIER.UI.PROGRESS' | translate: { value: formProgress } }}</label>
                     <div class="flex items-center gap-2">
-                      <input type="range" min="0" max="100" step="5" [(ngModel)]="formProgress" class="flex-1">
+                      <input id="patient-dossier-formProgress" type="range" min="0" max="100" step="5" [(ngModel)]="formProgress" class="flex-1">
                     </div>
                   </div>
 
                   <!-- Start Date -->
                   <div class="form-group">
-                    <label>Start Date</label>
-                    <input type="date" [(ngModel)]="formStartDate" class="input">
+                    <label for="patient-dossier-formStartDate">{{ 'PATIENTS.DOSSIER.UI.START_DATE' | translate }}</label>
+                    <input id="patient-dossier-formStartDate" type="date" [(ngModel)]="formStartDate" class="input">
                   </div>
 
                   <!-- End Date -->
                   <div class="form-group">
-                    <label>End Date</label>
-                    <input type="date" [(ngModel)]="formEndDate" class="input">
+                    <label for="patient-dossier-formEndDate">{{ 'PATIENTS.DOSSIER.UI.END_DATE' | translate }}</label>
+                    <input id="patient-dossier-formEndDate" type="date" [(ngModel)]="formEndDate" class="input">
                   </div>
 
                   <!-- Notes -->
                   <div class="form-group col-span-2">
-                    <label>Clinical Notes</label>
-                    <textarea [(ngModel)]="formNotes" placeholder="Describe clinical symptoms or execution details..." class="textarea"></textarea>
+                    <label for="patient-dossier-formNotes">{{ 'PATIENTS.DOSSIER.UI.CLINICAL_NOTES' | translate }}</label>
+                    <textarea id="patient-dossier-formNotes" [(ngModel)]="formNotes" [placeholder]="'PATIENTS.DOSSIER.UI.CLINICAL_NOTES_HINT' | translate" class="textarea"></textarea>
                   </div>
 
                   <!-- Predefined Materials / Consumables -->
                   <div class="form-group col-span-2">
                     <div class="flex justify-between items-center mb-2">
-                      <span class="font-bold text-slate-700 text-sm">Material Consumption Settings</span>
+                      <span class="font-bold text-slate-700 text-sm">{{ 'PATIENTS.DOSSIER.UI.MATERIALS' | translate }}</span>
                       <button type="button" class="btn btn-secondary btn-sm" (click)="addConsumableToForm()">
-                        <span class="material-icons">add</span> Add Material
+                        <span aria-hidden="true" class="material-icons">add</span> {{ 'PATIENTS.DOSSIER.UI.ADD_MATERIAL' | translate }}
                       </button>
                     </div>
                     
@@ -741,25 +743,25 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
                         @for (c of formConsumables; track $index) {
                           <div class="consumable-editor-row">
                             <div class="item-select">
-                              <select [(ngModel)]="c.stockItem" class="select">
+                              <select [attr.aria-label]="'STOCK.UI.STOCK_ITEM' | translate" [(ngModel)]="c.stockItem" class="select">
                                 @for (item of availableStockItems(); track item.id) {
-                                  <option [ngValue]="item">{{ item.name }} (SKU: {{ item.sku }})</option>
+                                  <option [ngValue]="item">{{ item.name }} ({{ 'STOCK.UI.SKU' | translate }} {{ item.sku }})</option>
                                 }
                               </select>
                             </div>
                             <div class="item-qty">
-                              <input type="number" step="any" [(ngModel)]="c.quantityUsed" class="input" style="width: 80px;">
+                              <input [attr.aria-label]="'BILLING.FORM.QTY' | translate" type="number" step="any" [(ngModel)]="c.quantityUsed" class="input" style="width: 80px;">
                               <span class="text-xs text-slate-500 ms-1">{{ c.stockItem.unitLabel || 'Units' }}</span>
                             </div>
                             <div class="item-actions">
-                              <button type="button" class="btn btn-ghost btn-icon" (click)="removeConsumableFromForm($index)">
-                                <span class="material-icons text-sm text-red-600">delete</span>
+                              <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" class="btn btn-ghost btn-icon" (click)="removeConsumableFromForm($index)">
+                                <span aria-hidden="true" class="material-icons text-sm text-red-700">delete</span>
                               </button>
                             </div>
                           </div>
                         }
                       } @else {
-                        <p class="text-slate-500 text-xs italic text-center p-2">No materials configured for consumption in this session.</p>
+                        <p class="text-slate-500 text-xs italic text-center p-2">{{ 'PATIENTS.DOSSIER.UI.NO_MATERIALS' | translate }}</p>
                       }
                     </div>
                   </div>
@@ -767,8 +769,8 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
               </div>
 
               <footer class="modal-footer mt-4">
-                <button type="button" class="btn btn-secondary" (click)="closeAssignModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" (click)="savePatientTreatment()">Save Assignment</button>
+                <button type="button" class="btn btn-secondary" (click)="closeAssignModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+                <button type="button" class="btn btn-primary" (click)="savePatientTreatment()">{{ 'PATIENTS.DOSSIER.UI.SAVE_ASSIGNMENT' | translate }}</button>
               </footer>
             </div>
           </div>
@@ -902,7 +904,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
     .dossier-container.has-voice-dock { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
     .clinical-item-detail { white-space: pre-line; }
     .clinical-item-transcript summary { cursor: pointer; font-size: .8125rem; color: rgb(var(--ink-600)); }
-    .value-unknown { color: rgb(var(--ink-400)); }
+    .value-unknown { color: rgb(var(--ink-500)); }
 
     /* A consultation puts its panel beside the dossier: the doctor keeps the
        chart in view while the conversation is read. Below the breakpoint there
@@ -953,11 +955,11 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
     }
 
     .dossier-tabs button:hover {
-      color: rgb(var(--petrol-900));
+      color: rgb(var(--petrol-800));
     }
 
     .dossier-tabs button.active {
-      color: rgb(var(--petrol-900));
+      color: rgb(var(--petrol-800));
     }
 
     .dossier-tabs button.active::after {
@@ -1004,7 +1006,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
     }
 
-    .summary-card h3 {
+    .summary-card h2 {
       font-size: 1rem;
       margin: 0 0 1rem 0;
       color: rgb(var(--ink-500));
@@ -1018,7 +1020,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
     }
 
     .card-content .date {
-      color: rgb(var(--petrol-900));
+      color: rgb(var(--petrol-800));
       font-weight: 700;
       font-size: 1.1rem;
     }
@@ -1028,14 +1030,14 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
     }
 
     .card-content .date.balance-due {
-      color: rgb(var(--critical-600));
+      color: rgb(var(--critical-700));
     }
 
     .link-btn {
       background: none;
       border: none;
       padding: 0;
-      color: rgb(var(--petrol-900));
+      color: rgb(var(--petrol-800));
       font-weight: 600;
       text-decoration: underline;
       cursor: pointer;
@@ -1078,7 +1080,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
 
     .clinical-subtabs button.active {
       background: rgb(var(--petrol-50));
-      color: rgb(var(--petrol-900));
+      color: rgb(var(--petrol-800));
     }
 
     .clinical-subtabs button:focus-visible {
@@ -1221,6 +1223,8 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
 
     .treatment-card {
       display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
       justify-content: space-between;
       align-items: center;
       background: rgb(var(--ink-50));
@@ -1240,12 +1244,13 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
       display: flex;
       gap: 1rem;
       align-items: flex-start;
-      flex: 1;
+      flex: 1 1 14rem;
+      min-width: 0;
     }
 
     .treatment-icon {
       background: rgb(var(--petrol-50));
-      color: rgb(var(--petrol-900));
+      color: rgb(var(--petrol-800));
       padding: 0.5rem;
       border-radius: 10px;
       display: flex;
@@ -1274,6 +1279,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
 
     .card-right {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 1.5rem;
     }
@@ -1372,7 +1378,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
       padding-bottom: 0.75rem;
     }
 
-    .modal-header h3 {
+    .modal-header h2 {
       font-size: 1.2rem;
       font-weight: 700;
       color: rgb(var(--ink-900));
@@ -1491,7 +1497,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
     }
     .doc-card:hover { border-color: rgb(var(--petrol-900)); transform: translateY(-2px); }
     .doc-icon {
-      color: rgb(var(--petrol-900));
+      color: rgb(var(--petrol-800));
       background: rgb(var(--petrol-50));
       padding: 0.5rem;
       border-radius: 8px;
@@ -1535,10 +1541,10 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
       color: rgb(var(--ink-900));
     }
 
-    .mini-stat .value.warning { color: rgb(var(--caution-600)); }
+    .mini-stat .value.warning { color: rgb(var(--caution-700)); }
 
     .invoice-link {
-      color: rgb(var(--petrol-900));
+      color: rgb(var(--petrol-800));
       font-weight: 600;
       cursor: pointer;
     }
@@ -1587,7 +1593,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
     }
     .allergy-chip .material-icons { font-size: 14px; }
     .allergy-chip.moderate { background: rgb(var(--caution-200)); color: rgb(var(--caution-800)); }
-    .allergy-chip.severe { background: rgb(var(--critical-200)); color: rgb(var(--critical-900)); font-weight: 700; }
+    .allergy-chip.severe { background: rgb(var(--critical-200)); color: rgb(var(--critical-800)); font-weight: 700; }
 
     .inline-form {
       display: flex;
@@ -1675,7 +1681,7 @@ import { PatientPhotosComponent } from '../patient-photos/patient-photos.compone
     .clinical-item-meta {
       flex-basis: 100%;
       font-size: 0.75rem;
-      color: rgb(var(--ink-400));
+      color: rgb(var(--ink-500));
     }
 
     .loading {
@@ -2012,6 +2018,10 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     this.clinicalRecordService.findings().filter(f => f.status === 'ACTIVE' && f.kind === 'TREATMENT_REQUIRED')
   );
 
+  protected findingName(code: string): string {
+    return findingLabel(this.translate, code);
+  }
+
   readonly medicalHistoryCategories: MedicalHistoryCategory[] =
     ['CONDITION', 'MEDICATION', 'SURGERY', 'DENTAL_HISTORY', 'FAMILY', 'LIFESTYLE', 'OTHER'];
   readonly noteCategories: NoteCategory[] =
@@ -2050,7 +2060,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
       source: 'manual',
     }).subscribe({
       next: () => {
-        this.toast.success('Finding recorded.');
+        this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.FINDING_RECORDED'));
         this.showFindingForm.set(null);
       },
       error: (err) => this.toast.error(err.error?.detail || err.error?.message || 'Could not save the finding.')
@@ -2067,7 +2077,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
       source: 'manual',
     }).subscribe({
       next: () => {
-        this.toast.success('Medical history entry added.');
+        this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.HISTORY_ADDED'));
         this.historyForm = { category: 'CONDITION', label: '', detail: '' };
         this.showHistoryForm.set(false);
       },
@@ -2079,7 +2089,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     const patient = this.patientService.currentPatient();
     if (!patient) return;
     this.clinicalRecordService.deleteMedicalHistory(patient.id, entryId).subscribe({
-      next: () => this.toast.success('Entry removed.'),
+      next: () => this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.ENTRY_REMOVED')),
       error: (err) => this.toast.error(err.error?.detail || err.error?.message || 'Could not remove the entry.')
     });
   }
@@ -2093,7 +2103,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
       source: 'manual',
     }).subscribe({
       next: () => {
-        this.toast.success('Note added.');
+        this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.NOTE_ADDED'));
         this.noteForm = { category: 'GENERAL', content: '' };
         this.showNoteForm.set(false);
       },
@@ -2123,7 +2133,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     const patient = this.patientService.currentPatient();
     if (!patient) return;
     this.clinicalRecordService.deleteNote(patient.id, noteId).subscribe({
-      next: () => this.toast.success('Note deleted.'),
+      next: () => this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.NOTE_DELETED')),
       error: (err) => this.toast.error(err.error?.detail || err.error?.message || 'Could not delete the note.')
     });
   }
@@ -2132,7 +2142,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     const patient = this.patientService.currentPatient();
     if (!patient) return;
     this.clinicalRecordService.changeFindingStatus(patient.id, findingId, 'RESOLVED').subscribe({
-      next: () => this.toast.success('Finding marked resolved.'),
+      next: () => this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.FINDING_RESOLVED')),
       error: (err) => this.toast.error(err.error?.detail || err.error?.message || 'Could not update the finding.')
     });
   }
@@ -2299,7 +2309,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
 
     const matchedTreatment = this.availableTreatments().find(t => t.id === this.formTreatmentId);
     if (!matchedTreatment) {
-      this.toast.error('Please select a valid treatment procedure.');
+      this.toast.error(this.translate.instant('PATIENTS.DOSSIER.UI.SELECT_VALID_TREATMENT'));
       return;
     }
 
@@ -2348,19 +2358,19 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     if (!patient || !treatment.id) return;
 
     const confirmed = await this.confirmDialog.confirm(
-      'Are you sure you want to delete this treatment assignment? This will reverse any stock deductions.',
-      { danger: true, confirmLabel: 'Delete' }
+      this.translate.instant('PATIENTS.DOSSIER.UI.ASSIGNMENT_DELETE_CONFIRM'),
+      { danger: true, confirmLabel: this.translate.instant('COMMON.DELETE') }
     );
     if (!confirmed) return;
 
     this.patientTreatmentService.deletePatientTreatment(patient.id, treatment.id).subscribe({
       next: () => {
-        this.toast.success('Treatment assignment deleted.');
+        this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.ASSIGNMENT_DELETED'));
         this.loadPatientTreatments(patient.id);
       },
       error: (err: any) => {
         console.error('Error deleting patient treatment', err);
-        this.toast.error('Could not delete the treatment assignment. Please try again.');
+        this.toast.error(this.translate.instant('PATIENTS.DOSSIER.UI.ASSIGNMENT_DELETE_FAILED'));
       }
     });
   }
@@ -2397,17 +2407,17 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     if (!patient) return;
 
     const confirmMsg = this.translate.instant('PATIENTS.DOSSIER.ARCHIVE_CONFIRM', { name: `${patient.firstName} ${patient.lastName}` });
-    const confirmed = await this.confirmDialog.confirm(confirmMsg, { danger: true, confirmLabel: 'Archive' });
+    const confirmed = await this.confirmDialog.confirm(confirmMsg, { danger: true, confirmLabel: this.translate.instant('PATIENTS.DOSSIER.UI.ARCHIVE') });
     if (!confirmed) return;
 
     this.patientService.deletePatient(patient.id).subscribe({
       next: () => {
-        this.toast.success('Patient record deleted.');
+        this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.PATIENT_DELETED'));
         this.router.navigate(['/patients']);
       },
       error: (err) => {
         console.error('Error deleting patient', err);
-        this.toast.error('Could not delete the patient record. Please try again.');
+        this.toast.error(this.translate.instant('PATIENTS.DOSSIER.UI.PATIENT_DELETE_FAILED'));
       }
     });
   }
@@ -2475,7 +2485,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
       await this.voice.startExaminationMode();
     } catch {
       this.voice.stopListening();
-      this.toast.error('The voice session could not start — check the connection and try again.');
+      this.toast.error(this.translate.instant('PATIENTS.DOSSIER.UI.VOICE_START_FAILED'));
     } finally {
       this.voiceStarting.set(false);
     }

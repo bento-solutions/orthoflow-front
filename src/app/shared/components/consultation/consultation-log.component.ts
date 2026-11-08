@@ -26,7 +26,7 @@ import { ModalComponent } from '../../ui/modal.component';
       @if (loading()) {
         <p class="text-sm text-ink-500">{{ 'CONSULTATION.LOG.LOADING' | translate }}</p>
       } @else if (error()) {
-        <p class="text-sm text-red-600" role="alert">{{ 'CONSULTATION.LOG.ERROR' | translate }}</p>
+        <p class="text-sm text-red-700" role="alert">{{ 'CONSULTATION.LOG.ERROR' | translate }}</p>
       } @else if (log(); as l) {
         <p class="mb-3 text-sm text-ink-500">
           {{ l.startedAt | date: 'dd/MM/yyyy HH:mm' }}
@@ -72,7 +72,7 @@ import { ModalComponent } from '../../ui/modal.component';
                     <p class="mt-1 text-xs text-ink-500">« {{ row.command.transcript }} »</p>
                   }
                   @if (row.command.errorMessage) {
-                    <p class="mt-1 text-xs text-red-600">{{ row.command.errorMessage }}</p>
+                    <p class="mt-1 text-xs text-red-700">{{ row.command.errorMessage }}</p>
                   }
                 </li>
               }

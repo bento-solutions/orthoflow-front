@@ -20,7 +20,8 @@ describe('public page helpers', () => {
   });
 
   it('sends a free time as a moment in the clinic\'s zone', () => {
-    expect(slotMoment('2026-10-06', '09:30', 'Africa/Casablanca')).toBe('2026-10-06T09:30:00+01:00');
+    // A fixed UTC+1 zone: Morocco's offset outside Ramadan depends on the runtime's time-zone data.
+    expect(slotMoment('2026-10-06', '09:30', 'Africa/Lagos')).toBe('2026-10-06T09:30:00+01:00');
     expect(slotMoment('2026-03-01', '09:30', 'Africa/Casablanca')).toBe('2026-03-01T09:30:00+00:00');
     expect(slotMoment('2026-10-06', '09:30', null)).toBe('2026-10-06T09:30:00');
   });
@@ -100,7 +101,7 @@ describe('public pages', () => {
 
   describe('booking', () => {
     const info = {
-      clinicName: 'Cabinet Atlas', phone: '0522000000', city: 'Casablanca', maxDaysAhead: 30, defaultLanguage: 'fr', timeZone: 'Africa/Casablanca',
+      clinicName: 'Cabinet Atlas', phone: '0522000000', city: 'Casablanca', maxDaysAhead: 30, defaultLanguage: 'fr', timeZone: 'Africa/Lagos',
       types: [{ id: 'ty1', nameFr: 'Contrôle', nameEn: 'Check-up', nameAr: 'فحص', color: '#2f8fa2', durationMinutes: 30 }],
       practitioners: [{ id: 'd1', name: 'Dr Tazi', color: '#1a9a5c' }],
     };

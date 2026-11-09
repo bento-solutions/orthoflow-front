@@ -3,10 +3,11 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Invoice, InvoiceStatus, Payment, Quote, BillingSummary,
          CreateInvoiceRequest, RecordPaymentRequest } from '../models/billing.model';
 import type { SpringPage } from '../../../core/api/contract';
-import { Observable, BehaviorSubject, map, tap, finalize, switchMap, shareReplay } from 'rxjs';
+import { Observable, BehaviorSubject, map, tap, finalize, switchMap, shareReplay, from, of } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { PermissionService } from '../../../core/services/permission.service';
 import { TranslateService } from '@ngx-translate/core';
 
 @Injectable({
@@ -17,6 +18,7 @@ export class InvoiceService {
   private http = inject(HttpClient);
   private toast = inject(ToastService);
   private auth = inject(AuthService);
+  private permissions = inject(PermissionService);
   private readonly apiUrl = `${environment.apiUrl}/api/v1/invoices`;
 
   // Signals for UI state
@@ -61,7 +63,10 @@ export class InvoiceService {
       .pipe(
         map(page => page.content),
         tap(invoices => this.invoicesSignal.set(invoices)),
-        switchMap(() => this.getBillingSummary()),
+        // The clinic's totals are finance data (FINANCE_VIEW): asked for only by someone who may see
+        // them, or every assistant, and now every doctor, met an error toast after signing in.
+        switchMap(() => from(this.permissions.ready())),
+        switchMap(() => this.permissions.can('FINANCE_VIEW') ? this.getBillingSummary() : of(null)),
         tap(summary => this.summarySignal.set(summary)),
         finalize(() => this.loadingSignal.set(false))
       )
@@ -69,7 +74,11 @@ export class InvoiceService {
         error: (err) => {
           console.error('Failed to refresh billing data', err);
           this.errorSignal.set('Failed to load billing data.');
-          this.toast.error(this.translate.instant('BILLING.FORM.LOAD_FAILED'));
+          // A session that has just ended (401) is the sign-in page's business, and a refusal (403)
+          // is not something the person can retry their way out of.
+          if (err?.status !== 401 && err?.status !== 403) {
+            this.toast.error(this.translate.instant('BILLING.FORM.LOAD_FAILED'));
+          }
         }
       });
   }
@@ -128,6 +137,7 @@ export class InvoiceService {
   }
 
   private refreshSummary(): void {
-    this.getBillingSummary().subscribe(summary => this.summarySignal.set(summary));
+    if (!this.permissions.can('FINANCE_VIEW')) return;
+    this.getBillingSummary().subscribe({ next: summary => this.summarySignal.set(summary), error: () => undefined });
   }
 }

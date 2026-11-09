@@ -1,11 +1,16 @@
 name: Frontend CI
 
+# Runs on every pull request, and as the first job of both deploy workflows
+# (deploy.yml for main, deploy-parity.yml for feature/denteam-parity), which
+# call it through workflow_call and deploy only if it passes (audit H5).
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main, feature/denteam-parity]
+  workflow_call: {}
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
 
 jobs:
   build-and-test:
@@ -22,28 +27,35 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Blocking: a known high-severity advisory in what ships to the browser
+      # stops the build (it was advisory-only, and Angular sat on four).
+      - name: Dependency vulnerability scan (shipped code)
+        run: npm audit --omit=dev --audit-level=high
+
+      # Advisory: build tooling never reaches the browser.
+      - name: Dependency vulnerability scan (build tooling)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
       - name: Build (production configuration)
         run: npx ng build --configuration production
+
+      - name: Build (parity configuration)
+        run: npx ng build --configuration parity
 
       - name: Unit tests
         run: npx ng test --watch=false
 
-      - name: Dependency vulnerability scan
-        run: npm audit --audit-level=high
-        continue-on-error: true
-
-      - name: Build image (no push) to catch Dockerfile regressions
+      # Also runs `nginx -t` on the rendered config, CSP included.
+      - name: Build image (no push) to catch Dockerfile and nginx regressions
         run: docker build -t orthoflow-frontend:ci .
 
-  # Requires the repository "Dependency graph" feature to be enabled
-  # (Settings -> Advanced Security -> Dependency graph). Without it the
-  # action hard-fails with "Dependency review is not supported on this
-  # repository". Kept advisory-only so an infra/setting regression never
-  # blocks PRs; it does not gate deploy.yml.
+  # Blocking on pull requests: a new dependency with a known high-severity
+  # advisory is not merged. Needs the repository's dependency graph
+  # (Settings -> Code security), on by default for public repositories.
   dependency-review:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Dependency review

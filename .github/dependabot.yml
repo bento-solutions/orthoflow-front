@@ -1,0 +1,24 @@
+# Weekly pull requests for outdated or vulnerable dependencies (audit H5/F2):
+# Angular carried four high-severity advisories with nothing saying so. Each
+# PR runs ci.yml, which fails on a high advisory in what ships to the browser.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: feature/denteam-parity
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      angular:
+        patterns: ["@angular/*", "@angular-devkit/*", "@schematics/angular"]
+  - package-ecosystem: docker
+    directory: /
+    target-branch: feature/denteam-parity
+    schedule:
+      interval: monthly
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: feature/denteam-parity
+    schedule:
+      interval: monthly

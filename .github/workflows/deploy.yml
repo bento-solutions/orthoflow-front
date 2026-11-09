@@ -20,7 +20,14 @@ env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/orthoflow-front
 
 jobs:
+  # Tests, both builds, the audit and the image build (ci.yml) pass before
+  # anything is built for the VPS (audit H5).
+  ci:
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
   build:
+    needs: ci
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -70,7 +77,14 @@ jobs:
           echo "${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
+      # The registry token goes over the ssh session's input, not its command
+      # line, where any process listing on the VPS could read it.
       - name: Deploy frontend to the VPS
+        env:
+          GHCR_LOGIN_USER: ${{ github.actor }}
+          GHCR_LOGIN_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.build.outputs.tag }}
         run: |
-          ssh -o ConnectTimeout=30 -o ServerAliveInterval=15 "${{ secrets.DEPLOY_SSH_HOST }}" \
-            "GHCR_LOGIN_USER='${{ github.actor }}' GHCR_LOGIN_TOKEN='${{ secrets.GITHUB_TOKEN }}' /srv/bento/apps/ortho/deploy.sh front '${{ needs.build.outputs.tag }}'"
+          printf 'export GHCR_LOGIN_USER=%q GHCR_LOGIN_TOKEN=%q\nexec /srv/bento/apps/ortho/deploy.sh front %q\n' \
+            "$GHCR_LOGIN_USER" "$GHCR_LOGIN_TOKEN" "$TAG" \
+            | ssh -o ConnectTimeout=30 -o ServerAliveInterval=15 "${{ secrets.DEPLOY_SSH_HOST }}" 'bash -s'

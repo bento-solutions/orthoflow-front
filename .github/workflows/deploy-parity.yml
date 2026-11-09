@@ -20,7 +20,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Deployed only after the tests pass (audit H5).
+  ci:
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
   deploy:
+    needs: ci
     runs-on: ubuntu-latest
     timeout-minutes: 40
     permissions:

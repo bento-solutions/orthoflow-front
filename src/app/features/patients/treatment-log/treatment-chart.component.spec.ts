@@ -89,6 +89,11 @@ describe('TreatmentChartComponent', () => {
     expect(fixture.componentInstance['keys']()).toEqual({ '16': ['A', 'C'], '26': ['B'], '36': ['D'] });
   });
 
+  it('keeps the legend swatches\' hatching patterns, which tell statuses apart without colour', async () => {
+    const fixture = await setUp();
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('svg.defs pattern').length).toBeGreaterThan(0);
+  });
+
   it('says so when nothing is recorded', async () => {
     const fixture = await setUp({ ...passport, chart: { dentition: 'adult', teeth: [], legend: [] } });
     expect((fixture.nativeElement as HTMLElement).querySelector('.muted')?.textContent).toContain('Rien d');

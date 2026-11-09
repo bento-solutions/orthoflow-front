@@ -428,6 +428,7 @@ export class ConsultationService {
     this.sessions.setRouting(null);
     this.consultationSignal.set(null);
     this.linesSignal.set([]);
+    this.storedSeq = -1;
     this.reviewSignal.set(emptyReview());
     this.reportSignal.set('');
     this.excludedSignal.set(new Set());
@@ -449,6 +450,8 @@ export class ConsultationService {
   private attach(dto: ConsultationDto): void {
     this.consultationSignal.set(dto);
     this.linesSignal.set(this.restoreLines(dto));
+    // What came back from the server is stored there already.
+    this.storedSeq = Math.max(-1, ...(dto.lines ?? []).map(line => line.seq));
     // What the doctor had decided, when there is any: the server's draft is
     // already folded into it, and rebuilding from the draft alone would undo
     // every validation, correction and removal. The next reading merges as usual.
@@ -509,15 +512,26 @@ export class ConsultationService {
       }));
   }
 
-  /** The lines with a known time, as the server stores them. */
+  /**
+   * The highest line number the server is known to have stored. It keeps each line by its number and
+   * ignores one it already has, so a line is sent until a request carrying it succeeds and not after:
+   * a long visit no longer re-uploads every sentence on every reading (audit P6).
+   */
+  private storedSeq = -1;
+
+  /** The lines with a known time the server does not have yet, as it stores them. */
   private timedLines(): ConsultationLinePayload[] {
-    return this.linesSignal().filter(line => line.at > 0).map(line => ({
+    return this.linesSignal().filter(line => line.at > 0 && line.id > this.storedSeq).map(line => ({
       seq: line.id,
       at: new Date(line.at).toISOString(),
       phase: line.phase,
       typed: line.typed,
       text: line.text,
     }));
+  }
+
+  private markStored(sent: ConsultationLinePayload[]): void {
+    for (const line of sent) this.storedSeq = Math.max(this.storedSeq, line.seq);
   }
 
   // ── The conversation ────────────────────────────────────────────────
@@ -581,7 +595,9 @@ export class ConsultationService {
     this.inFlight = true;
     this.extractingSignal.set(true);
     try {
-      const response = await firstValueFrom(this.api.extract(consultation.id, this.transcript(), this.timedLines()));
+      const lines = this.timedLines();
+      const response = await firstValueFrom(this.api.extract(consultation.id, this.transcript(), lines));
+      this.markStored(lines);
       // A reading of only the end of a long conversation cannot drop what was
       // said at its start: it corrects and adds, nothing more.
       this.reviewSignal.update(state => mergeDraft(state, response.draft, { partial: response.truncated }));
@@ -648,7 +664,9 @@ export class ConsultationService {
       await this.sessions.end({ waitForClips: options.waitForClips, direct: true });
       this.releaseVoice();
 
-      this.consultationSignal.set(await firstValueFrom(this.api.end(consultation.id, this.transcript(), this.timedLines())));
+      const lines = this.timedLines();
+      this.consultationSignal.set(await firstValueFrom(this.api.end(consultation.id, this.transcript(), lines)));
+      this.markStored(lines);
       // One last, complete reading of the finished conversation.
       this.dirty = true;
       await this.extractNow();

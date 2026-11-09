@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { StockService } from '../../../../core/services/stock.service';
-import { PatientApiService } from '../../../../core/services/patient-api.service';
 import { SalesOrder, SalesOrderLine, StockItem, SOStatus } from '../../../../core/models/stock.model';
 import { Patient } from '../../../../core/models/patient.model';
 
@@ -11,11 +10,12 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { DialogDirective } from '../../../../shared/ui/dialog.directive';
+import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/patient-picker.component';
 
 @Component({
   selector: 'app-sales-orders',
   standalone: true,
-  imports: [RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink],
+  imports: [RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink, PatientPickerComponent],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       
@@ -141,13 +141,9 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
             <div class="flex-1 overflow-y-auto p-6 space-y-4">
               <!-- Select Patient -->
               <div>
-                <label for="sales-orders-selectedPatientId" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "STOCK.SELECT_PATIENT" | translate }} <span aria-hidden="true">*</span></label>
-                <select id="sales-orders-selectedPatientId" [(ngModel)]="selectedPatientId" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white">
-                  <option [value]="null">{{ "STOCK.SELECT_PATIENT_PLACEHOLDER" | translate }}</option>
-                  @for (p of patients(); track p.id) {
-                    <option [value]="p.id">{{ p.lastName }} {{ p.firstName }} ({{ "STOCK.CIN_LABEL" | translate }}: {{ p.cin || 'N/A' }})</option>
-                  }
-                </select>
+                <span class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "STOCK.SELECT_PATIENT" | translate }} <span aria-hidden="true">*</span></span>
+                <!-- Searched on the server as you type: a dropdown of every patient stopped at the first 200 (audit P1). -->
+                <app-patient-picker [value]="pickedPatient()" (valueChange)="pickPatient($event)" [label]="'STOCK.SELECT_PATIENT' | translate" />
               </div>
 
               <!-- Lines Editor -->
@@ -228,16 +224,20 @@ export class SalesOrdersComponent implements OnInit {
   private stockService = inject(StockService);
   private confirmDialog = inject(ConfirmDialogService);
   private toast = inject(ToastService);
-  private patientService = inject(PatientApiService);
 
   readonly salesOrders = signal<SalesOrder[]>([]);
-  readonly patients = signal<Patient[]>([]);
+  readonly pickedPatient = signal<PickedPatient | null>(null);
   readonly catalogItems = signal<StockItem[]>([]);
 
   // Create Modal control
   readonly showSOCreationModal = signal(false);
   selectedPatientId: string | null = null;
   lines: SalesOrderLine[] = [];
+
+  pickPatient(patient: PickedPatient | null): void {
+    this.pickedPatient.set(patient);
+    this.selectedPatientId = patient?.id ?? null;
+  }
   total = 0;
 
   ngOnInit() {
@@ -248,12 +248,12 @@ export class SalesOrdersComponent implements OnInit {
     this.stockService.getSalesOrders().subscribe(data => {
       this.salesOrders.set(data.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()));
     });
-    this.patientService.getPatients().subscribe(data => this.patients.set(data));
     this.stockService.getStockItems().subscribe(data => this.catalogItems.set(data));
   }
 
   openCreateSOModal() {
     this.selectedPatientId = null;
+    this.pickedPatient.set(null);
     this.lines = [];
     this.total = 0;
     this.showSOCreationModal.set(true);
@@ -290,13 +290,13 @@ export class SalesOrdersComponent implements OnInit {
   }
 
   saveSO() {
-    const pat = this.patients().find(p => p.id === this.selectedPatientId);
-    if (!pat || this.lines.length === 0) {
+    if (!this.selectedPatientId || this.lines.length === 0) {
       return;
     }
 
     const order: Partial<SalesOrder> = {
-      patient: pat,
+      // The server takes the patient by id.
+      patient: { id: this.selectedPatientId } as Patient,
       lines: this.lines.map(line => ({
         stockItem: { id: line.stockItem.id } as StockItem,
         quantity: line.quantity,

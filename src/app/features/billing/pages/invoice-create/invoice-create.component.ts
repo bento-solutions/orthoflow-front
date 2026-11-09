@@ -4,6 +4,8 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InvoiceService } from '../../services/invoice.service';
 import { PatientService } from '../../../../core/services/patient.service';
+import { PatientApiService } from '../../../../core/services/patient-api.service';
+import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/patient-picker.component';
 import { InvoiceDraftLine, CreateInvoiceRequest } from '../../models/billing.model';
 import { OnInit } from '@angular/core';
 import { finalize } from 'rxjs';
@@ -13,7 +15,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 @Component({
   selector: 'app-invoice-create',
   standalone: true,
-  imports: [TranslateModule, CommonModule, RouterModule, FormsModule],
+  imports: [TranslateModule, CommonModule, RouterModule, FormsModule, PatientPickerComponent],
   template: `
     <div class="create-invoice-container">
       <header class="page-header">
@@ -30,13 +32,10 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
           <section class="form-section">
             <h2>{{ 'BILLING.FORM.PATIENT_INFO' | translate }}</h2>
             <div class="field-group">
-              <label for="invoice-create-selectedPatientId">{{ 'BILLING.FORM.SELECT_PATIENT' | translate }}</label>
-              <select id="invoice-create-selectedPatientId" [(ngModel)]="selectedPatientId" class="form-control">
-                <option value="">{{ 'BILLING.FORM.SELECT_PATIENT_HINT' | translate }}</option>
-                @for (patient of patientService.patients(); track patient.id) {
-                  <option [value]="patient.id">{{ patient.firstName }} {{ patient.lastName }}</option>
-                }
-              </select>
+              <!-- Searched on the server as you type: a dropdown of every patient stopped at the first 200 (audit P1). -->
+              <span class="field-label" id="invoice-create-patient-label">{{ 'BILLING.FORM.SELECT_PATIENT' | translate }}</span>
+              <app-patient-picker [value]="pickedPatient()" (valueChange)="pickPatient($event)"
+                [label]="'BILLING.FORM.SELECT_PATIENT' | translate" />
             </div>
           </section>
 
@@ -324,6 +323,13 @@ export class InvoiceCreateComponent implements OnInit {
   private toast = inject(ToastService);
 
   selectedPatientId = '';
+  readonly pickedPatient = signal<PickedPatient | null>(null);
+  private readonly patientApi = inject(PatientApiService);
+
+  pickPatient(patient: PickedPatient | null): void {
+    this.pickedPatient.set(patient);
+    this.selectedPatientId = patient?.id ?? '';
+  }
   treatmentPlanId = '';
   notes = '';
   lines = signal<InvoiceDraftLine[]>([
@@ -335,7 +341,12 @@ export class InvoiceCreateComponent implements OnInit {
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       if (params['patientId']) {
-        this.selectedPatientId = params['patientId'];
+        const id = params['patientId'];
+        this.selectedPatientId = id;
+        this.patientApi.getPatient(id).subscribe({
+          next: (p) => this.pickedPatient.set({ id: p.id, name: `${p.lastName} ${p.firstName}`.trim(), phone: p.phone || undefined }),
+          error: () => this.pickedPatient.set(null),
+        });
       }
     });
     this.calculateTotal();

@@ -1,0 +1,22 @@
+/* The product's typefaces, served from this origin.
+
+   They came from Google Fonts, which put a render-blocking cross-origin
+   stylesheet in front of the first paint and sent every visitor's address to
+   Google before the page showed, the public booking, registration and survey
+   pages included (audit F3/P5). The build copies the woff2 files into media/
+   under content-hashed names, which nginx caches for good.
+
+   Each weight's file covers several scripts behind unicode-range, so a browser
+   downloads only the Latin files a French or English page needs.
+
+   Manrope for the product; Inter for the periodontal chart alone (its figures
+   are 9-11px and the chart is drawn to the pixel around that face). */
+@import '@fontsource/manrope/400.css';
+@import '@fontsource/manrope/500.css';
+@import '@fontsource/manrope/600.css';
+@import '@fontsource/manrope/700.css';
+@import '@fontsource/manrope/800.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import 'material-icons/iconfont/filled.css';

@@ -15,13 +15,14 @@ import { AgendaConfigService, APPOINTMENT_STATUSES, AppointmentType } from '../.
 import { LiveEventsService } from '../../core/services/live-events.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DialogDirective } from '../../shared/ui/dialog.directive';
+import { PatientPickerComponent, PickedPatient } from '../../shared/ui/patient-picker.component';
 
 type CalendarView = 'day' | 'week' | 'month' | 'year';
 
 @Component({
   selector: 'app-schedule',
   standalone: true,
-  imports: [DialogDirective, CommonModule, RouterModule, TranslateModule, ReactiveFormsModule, FormsModule],
+  imports: [DialogDirective, CommonModule, RouterModule, TranslateModule, ReactiveFormsModule, FormsModule, PatientPickerComponent],
   template: `
     <div class="schedule-container" [class.rtl]="translate.currentLang === 'ar'">
       <header class="schedule-header">
@@ -255,13 +256,10 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
             
             <form [formGroup]="appointmentForm" (ngSubmit)="saveAppointment()">
               <div class="form-group">
-                <label for="schedule-patientId">{{ 'SCHEDULE.FORM.PATIENT' | translate }}</label>
-                <select id="schedule-patientId" formControlName="patientId">
-                  <option value="">{{ 'SCHEDULE.FORM.SELECT_PATIENT' | translate }}</option>
-                  @for (p of patientService.patients(); track p.id) {
-                    <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
-                  }
-                </select>
+                <!-- Searched on the server as you type: a list of every patient stopped at the first 200 (audit P1). -->
+                <span class="form-label" id="schedule-patient-label">{{ 'SCHEDULE.FORM.PATIENT' | translate }}</span>
+                <app-patient-picker [value]="pickedPatient()" (valueChange)="pickPatient($event)"
+                  [label]="'SCHEDULE.FORM.PATIENT' | translate" />
               </div>
 
               <div class="form-row">
@@ -723,7 +721,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .modal-header h2 { margin: 0; font-size: 1.25rem; }
 
     .form-group { margin-bottom: 1.5rem; }
-    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: rgb(var(--ink-500)); }
+    .form-group label, .form-group .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: rgb(var(--ink-500)); }
     .form-group input, .form-group select, .form-group textarea {
       width: 100%;
       padding: 0.75rem;
@@ -1008,9 +1006,30 @@ export class ScheduleComponent {
     }
   }
 
+  /** The patient chosen in the appointment form. */
+  readonly pickedPatient = signal<PickedPatient | null>(null);
+
+  pickPatient(patient: PickedPatient | null): void {
+    this.pickedPatient.set(patient);
+    this.appointmentForm.patchValue({ patientId: patient?.id ?? '' });
+    this.appointmentForm.get('patientId')?.markAsTouched();
+  }
+
+  /** Names as the appointments carry them; the loaded patient list is only the first 200 patients. */
+  private readonly namesFromAppointments = computed(() => {
+    const names = new Map<string, string>();
+    for (const a of this.scheduleService.appointments()) {
+      if (a.patientName) names.set(a.patientId, a.patientName);
+    }
+    return names;
+  });
+
   getPatientName(id: string) {
-    const p = this.patientService.patients().find(p => p.id === id);
-    return p ? `${p.firstName} ${p.lastName}` : (this.translate.instant('SCHEDULE.UNKNOWN_PATIENT'));
+    const picked = this.pickedPatient();
+    return this.namesFromAppointments().get(id)
+      || this.patientService.nameFor(id)
+      || (picked?.id === id ? picked.name : '')
+      || this.translate.instant('SCHEDULE.UNKNOWN_PATIENT');
   }
 
   formatTime(iso: string) {
@@ -1039,6 +1058,7 @@ export class ScheduleComponent {
 
   openAddModal(date?: Date) {
     this.editingAppointment.set(null);
+    this.pickedPatient.set(null);
     this.appointmentForm.reset({
       patientId: '',
       dateTime: this.formatDateForInput(date || new Date()),
@@ -1135,6 +1155,7 @@ export class ScheduleComponent {
 
   openEditModal(appointment: Appointment) {
     this.editingAppointment.set(appointment);
+    this.pickedPatient.set({ id: appointment.patientId, name: this.getPatientName(appointment.patientId), phone: appointment.patientPhone || undefined });
     this.appointmentForm.patchValue({
       patientId: appointment.patientId,
       dateTime: this.formatDateForInput(new Date(appointment.dateTime)),

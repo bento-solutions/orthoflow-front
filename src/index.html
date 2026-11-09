@@ -6,30 +6,12 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Manrope for the product. Cormorant Garamond was loaded on every page load and
-       referenced by a `.serif` class that appeared nowhere in the product.
-       Inter is for the periodontal chart alone: its figures are 9-11px, and the chart is drawn
-       to the pixel around that face. -->
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Fonts are self-hosted (src/fonts.css): nothing on this page is fetched from another origin. -->
   <meta name="theme-color" content="#20414e">
   <meta name="color-scheme" content="light dark">
   <!-- Sets the theme before the first paint so a dark-mode user never sees a
-       white flash. ThemeService owns it from there. -->
-  <script>
-    (function () {
-      try {
-        var saved = localStorage.getItem('orthoflow_theme');
-        var dark = saved === 'dark' || ((!saved || saved === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        if (dark) {
-          document.documentElement.setAttribute('data-theme', 'dark');
-          document.documentElement.classList.add('dark');
-        }
-      } catch (e) { /* storage blocked: stay light */ }
-    })();
-  </script>
+       white flash. A file, not an inline script: the CSP forbids inline scripts. -->
+  <script src="theme-init.js"></script>
 </head>
 <body>
   <app-root></app-root>

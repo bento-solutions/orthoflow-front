@@ -46,3 +46,14 @@ person, with NVDA or VoiceOver, going through the main tasks with the mouse unpl
 
 `src/app/testing/template-a11y.spec.ts` runs with the unit tests and covers what only a template can
 show, such as the forms inside dialogs nobody has opened.
+
+## Public pages with a working link
+
+Signed in (`A11Y_EMAIL`), the run also scans the booking and registration pages through the clinic's
+own working links, not only their "invalid link" state. Switch online booking on in the throwaway
+clinic's settings first, or the booking page shows only its "closed" message.
+
+## What this does not replace
+
+A screen-reader pass. Before calling any part of the app conformant, go through sign-in, online
+booking, the patient file and the agenda once with NVDA (Windows) and once with VoiceOver (macOS).

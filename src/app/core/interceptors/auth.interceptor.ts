@@ -3,6 +3,7 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 /**
  * The public forms (online booking, self-registration, satisfaction) are for people with no
@@ -11,11 +12,21 @@ import { AuthService } from '../services/auth.service';
  */
 export const isPublicRequest = (url: string): boolean => url.includes('/api/v1/public/');
 
+/**
+ * Only our API gets the session (audit F4). Every HttpClient request used to carry it, so the first
+ * call to any other host (a map tile, a vendor's script, an asset on a CDN) would have handed the
+ * clinic's session to it.
+ */
+export const isApiRequest = (url: string): boolean => {
+  const base = `${environment.apiUrl}/api/v1/`;
+  return url.startsWith(base) || (!/^[a-z][a-z0-9+.-]*:/i.test(url) && url.startsWith('/api/v1/'));
+};
+
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  const token = isPublicRequest(req.url) ? null : authService.token();
+  const token = isPublicRequest(req.url) || !isApiRequest(req.url) ? null : authService.token();
   const authedReq = token
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;

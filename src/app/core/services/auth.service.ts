@@ -6,6 +6,22 @@ import { AuthUser } from '../models/user.model';
 const TOKEN_KEY = 'orthoflow_auth_token';
 const USER_KEY = 'orthoflow_auth_user';
 
+/**
+ * Patient data a former version kept in localStorage (dental_chart_<patientId>), where it outlived
+ * the sign-out on a shared computer (audit M4). Nothing writes it any more; this removes what is left,
+ * at start-up and at every sign-out.
+ */
+function forgetCachedClinicalData(): void {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('dental_chart_')) localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage blocked: there is nothing in it either.
+  }
+}
+
 /** Why the session ended: the person chose to, or the server stopped accepting it. */
 export type SignOutReason = 'user' | 'expired';
 
@@ -74,6 +90,7 @@ export class AuthService {
   private fullLifetimeMs: number | null = null;
 
   constructor() {
+    forgetCachedClinicalData();
     this.scheduleRenewal();
     if (typeof document !== 'undefined') {
       // Timers are throttled or paused while a tab is hidden or a laptop sleeps.
@@ -124,6 +141,7 @@ export class AuthService {
     this.userSignal.set(null);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    forgetCachedClinicalData();
   }
 
   /**

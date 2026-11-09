@@ -486,7 +486,11 @@
     "PASSWORD_MIN_HINT": "At least 10 characters",
     "PASSWORD_REPEAT_HINT": "Re-enter password",
     "NEW_CLINIC": "Setting up a new clinic?",
-    "GET_STARTED": "Get started"
+    "GET_STARTED": "Get started",
+    "SESSION_ENDING_TITLE": "Your session is about to end",
+    "SESSION_ENDING_TEXT": "It closes in {{minutes}} min and cannot be extended. Enter your password to keep working: nothing on this screen will be lost.",
+    "SESSION_CONTINUE": "Continue",
+    "SESSION_LATER": "Later"
   },
   "DENTAL_CHART": {
     "TITLE": "Dental Chart",

@@ -29,7 +29,12 @@ const MOUTH_ROWS: readonly (readonly PerioRegion[])[] = [
   imports: [FormsModule, DatePipe, NgTemplateOutlet, TranslateModule, PerioChartComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-perio-chart [patientId]="patientId()" [patientName]="patientName()" [patientBirthDate]="patientBirthDate()" />
+    <!-- Its own chunk, loaded when the Gums tab is opened, not with every patient file (audit P4). -->
+    @defer (on immediate) {
+      <app-perio-chart [patientId]="patientId()" [patientName]="patientName()" [patientBirthDate]="patientBirthDate()" />
+    } @loading (minimum 0ms) {
+      <p class="sub" role="status">{{ 'COMMON.LOADING' | translate }}</p>
+    }
 
     <section class="areas">
     <header class="head">

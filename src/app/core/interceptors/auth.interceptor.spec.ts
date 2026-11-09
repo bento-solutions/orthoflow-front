@@ -42,6 +42,15 @@ describe('authInterceptor', () => {
     expect(controller.expectOne('http://localhost:8080/api/v1/patients').request.headers.get('Authorization')).toBe('Bearer staff-jwt');
   });
 
+  it('sends the session to the API only, never to another host', () => {
+    http.get('https://tiles.example.com/1/2/3.png').subscribe();
+    expect(controller.expectOne('https://tiles.example.com/1/2/3.png').request.headers.has('Authorization')).toBe(false);
+    http.get('http://localhost:8080.evil.example/api/v1/patients').subscribe();
+    expect(controller.expectOne('http://localhost:8080.evil.example/api/v1/patients').request.headers.has('Authorization')).toBe(false);
+    http.get('i18n/fr.json').subscribe();
+    expect(controller.expectOne('i18n/fr.json').request.headers.has('Authorization')).toBe(false);
+  });
+
   it('keeps the session off a public form request', () => {
     http.post('http://localhost:8080/api/v1/public/book/abc/requests', {}).subscribe();
     expect(controller.expectOne('http://localhost:8080/api/v1/public/book/abc/requests').request.headers.has('Authorization')).toBe(false);

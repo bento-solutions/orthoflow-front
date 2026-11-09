@@ -4,8 +4,11 @@ import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InvoiceService } from '../../services/invoice.service';
 import { Invoice, InvoiceStatus } from '../../models/billing.model';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { downloadInvoicePdf } from '../../../../core/utils/invoice-pdf';
+import { ToastService } from '../../../../core/services/toast.service';
+import { DownloadService } from '../../../../core/services/download.service';
+import { LanguageService } from '../../../../core/services/language.service';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { StatusPillComponent } from '../../../../shared/ui/status-pill.component';
 import { PatientService } from '../../../../core/services/patient.service';
@@ -212,6 +215,10 @@ export class InvoiceListComponent {
   readonly invoiceService = inject(InvoiceService);
   private readonly router = inject(Router);
   private readonly patients = inject(PatientService);
+  private readonly downloads = inject(DownloadService);
+  private readonly language = inject(LanguageService);
+  private readonly toast = inject(ToastService);
+  private readonly translate = inject(TranslateService);
 
   readonly query = signal('');
   readonly statusFilter = signal<'' | InvoiceStatus>('');
@@ -228,13 +235,11 @@ export class InvoiceListComponent {
       .filter((inv) => {
         if (status && inv.status !== status) return false;
         if (!q) return true;
-        return [inv.invoiceNumber, this.patients.nameFor(inv.patientId), inv.regionCode]
+        return [inv.invoiceNumber, this.nameOf(inv), inv.regionCode]
           .some((v) => (v ?? '').toString().toLowerCase().includes(q));
       })
       .map((invoice) => {
-        /* InvoiceResponse carries only patientId, so the display name is a
-           join against the loaded patient list rather than a field. */
-        const patientName = this.patients.nameFor(invoice.patientId);
+        const patientName = this.nameOf(invoice);
         /* A cancelled or draft invoice is not collectable, so it has no
            balance to chase — showing one made a cancelled invoice look
            like unpaid debt in the amber "still owed" treatment. */
@@ -276,6 +281,15 @@ export class InvoiceListComponent {
   }
 
   downloadPdf(invoice: Invoice): void {
-    downloadInvoicePdf(invoice, this.patients.nameFor(invoice.patientId));
+    downloadInvoicePdf(this.downloads, invoice, this.language.currentLang())
+      .catch(() => this.toast.error(this.translate.instant('COMMON.EXPORT_FAILED')));
+  }
+
+  /**
+   * The server names the patient on the invoice. Joining against the loaded patient list was only
+   * ever the first 200 patients, so anyone after them printed as "Patient: —" (audit P1).
+   */
+  private nameOf(invoice: Invoice): string | undefined {
+    return invoice.patientName || this.patients.nameFor(invoice.patientId);
   }
 }

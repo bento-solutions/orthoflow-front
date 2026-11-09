@@ -2,4 +2,6 @@ node_modules
 dist
 .angular
 .git
-tools
+tools/*
+# The image build renders its nginx config with this one.
+!tools/render-nginx-conf.mjs

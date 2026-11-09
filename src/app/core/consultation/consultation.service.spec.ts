@@ -669,7 +669,7 @@ describe('ConsultationService', () => {
       expect(sentLines[0].map(l => l.text)).toEqual(['Merci docteur']);
     });
 
-    it('keeps the numbers and times of a conversation it comes back to, so a resend is not a duplicate', async () => {
+    it('keeps the numbers of a conversation it comes back to and sends only what the server does not have', async () => {
       openLines = [
         { seq: 7, at: '2026-10-13T09:00:00.000Z', phase: 'INTAKE', typed: false, text: 'Bonjour' },
         { seq: 8, at: '2026-10-13T09:00:09.000Z', phase: 'INTAKE', typed: false, text: 'J\'ai mal' },
@@ -681,9 +681,18 @@ describe('ConsultationService', () => {
       hear('Depuis hier');
       await service.extractNow();
 
-      expect(sentLines.at(-1)?.map(l => [l.seq, l.at])).toEqual([
-        [7, '2026-10-13T09:00:00.000Z'], [8, '2026-10-13T09:00:09.000Z'], [9, '2026-10-13T09:05:00.000Z'],
-      ]);
+      expect(sentLines.at(-1)?.map(l => [l.seq, l.at])).toEqual([[9, '2026-10-13T09:05:00.000Z']]);
+    });
+
+    it('sends a line until a request carrying it succeeds, and not after', async () => {
+      vi.setSystemTime(new Date('2026-10-13T10:00:05Z'));
+      await started();
+      hear('Bonjour docteur');
+      await service.extractNow();
+      hear('dent 16 carie');
+      await service.extractNow();
+
+      expect(sentLines.map(batch => batch.map(l => l.text))).toEqual([['Bonjour docteur'], ['dent 16 carie']]);
     });
 
     it('does not invent a time for a conversation recorded before lines were timed', async () => {

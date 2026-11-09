@@ -5,6 +5,7 @@ import { ToastContainerComponent } from './shared/components/toast/toast-contain
 import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
 import { CommandPaletteComponent } from './shared/components/command-palette/command-palette.component';
 import { LiveRegionComponent } from './shared/components/live-region/live-region.component';
+import { SessionExpiryBannerComponent } from './shared/components/session-expiry/session-expiry-banner.component';
 import { CommandRegistryService } from './core/services/command-registry.service';
 import { registerAppCommands } from './core/services/register-app-commands';
 import { HelpPanelService } from './core/services/help-panel.service';
@@ -25,6 +26,7 @@ import { assertLexiconMatches } from './core/voice/clinical-lexicon';
     ConfirmDialogComponent,
     CommandPaletteComponent,
     LiveRegionComponent,
+    SessionExpiryBannerComponent,
   ],
   // The voice HUD is deliberately *not* here. It used to be mounted at the
   // app root, which put a listening indicator and a live microphone on every
@@ -36,7 +38,8 @@ import { assertLexiconMatches } from './core/voice/clinical-lexicon';
     <app-toast-container />
     <app-confirm-dialog />
     <app-command-palette />
-    <app-live-region />`,
+    <app-live-region />
+    <app-session-expiry-banner />`,
 })
 export class App {
   private voiceCommands = inject(VoiceCommandsService);

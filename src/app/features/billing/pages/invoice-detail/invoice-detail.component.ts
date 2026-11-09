@@ -4,9 +4,11 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { InvoiceService } from '../../services/invoice.service';
 import { Invoice, Payment } from '../../models/billing.model';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastService } from '../../../../core/services/toast.service';
 import { downloadInvoicePdf } from '../../../../core/utils/invoice-pdf';
+import { DownloadService } from '../../../../core/services/download.service';
+import { LanguageService } from '../../../../core/services/language.service';
 import { PatientService } from '../../../../core/services/patient.service';
 
 @Component({
@@ -52,7 +54,7 @@ import { PatientService } from '../../../../core/services/patient.service';
               <div class="card-body info-grid">
                 <div class="info-group">
                   <label>{{ 'BILLING.FORM.BILL_TO' | translate }}</label>
-                  <span class="info-value">{{ patients.nameFor(inv.patientId) || '—' }}</span>
+                  <span class="info-value">{{ inv.patientName || patients.nameFor(inv.patientId) || '—' }}</span>
                   <span class="info-sub">{{ 'PATIENTS.NAME' | translate }} ID: {{ inv.patientId }}</span>
                 </div>
                 <div class="info-group">
@@ -453,8 +455,13 @@ export class InvoiceDetailComponent implements OnInit {
   protected patients = inject(PatientService);
   private toast = inject(ToastService);
 
+  private downloads = inject(DownloadService);
+  private language = inject(LanguageService);
+  private translate = inject(TranslateService);
+
   downloadPdf(invoice: Invoice): void {
-    downloadInvoicePdf(invoice, this.patients.nameFor(invoice.patientId));
+    downloadInvoicePdf(this.downloads, invoice, this.language.currentLang())
+      .catch(() => this.toast.error(this.translate.instant('COMMON.EXPORT_FAILED')));
   }
 
   invoice = signal<Invoice | null>(null);

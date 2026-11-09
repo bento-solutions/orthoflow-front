@@ -10,6 +10,7 @@ import type {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { PatientService } from '../../core/services/patient.service';
+import { PatientDirectoryApi, DirectoryKpis } from '../patients/patient-directory-api.service';
 import { ScheduleService } from '../../core/services/schedule.service';
 import { Appointment } from '../../core/models/patient.model';
 import { IconComponent, IconName } from '../../shared/ui/icon.component';
@@ -270,7 +271,14 @@ export type ChartOptions = {
 })
 export class DashboardComponent implements OnInit {
   readonly patientService = inject(PatientService);
+  private readonly directory = inject(PatientDirectoryApi);
   private readonly scheduleService = inject(ScheduleService);
+
+  /**
+   * The patient figures, counted by the server over every patient. They were counted here over the
+   * patient list the app keeps, which is the first page of 200: past that, every tile was wrong (audit P1).
+   */
+  private readonly patientKpis = signal<DirectoryKpis | null>(null);
   private readonly translate = inject(TranslateService);
 
   readonly granularity = signal<'monthly' | 'quarterly'>('monthly');
@@ -287,36 +295,20 @@ export class DashboardComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.patientService.refreshPatients();
+    this.directory.kpis().then((k) => this.patientKpis.set(k)).catch(() => undefined);
     this.scheduleService.refreshAppointments();
   }
 
   // ── Derived figures ──────────────────────────────────────────────────
 
-  private readonly activePatients = computed(
-    () => this.patientService.patients().filter((p) => p.status === 'ACTIVE').length,
-  );
-
-  private readonly completedPatients = computed(
-    () => this.patientService.patients().filter((p) => p.status === 'COMPLETED').length,
-  );
-
-  private readonly onHoldPatients = computed(
-    () => this.patientService.patients().filter((p) => p.status === 'ON_HOLD').length,
-  );
-
-  private readonly newThisMonth = computed(() => {
-    const start = new Date();
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-    return this.patientService.patients().filter((p) => {
-      if (!p.createdAt) return false;
-      return new Date(p.createdAt) >= start;
-    }).length;
-  });
+  private readonly activePatients = computed(() => this.patientKpis()?.active ?? 0);
+  private readonly completedPatients = computed(() => this.patientKpis()?.completed ?? 0);
+  private readonly onHoldPatients = computed(() => this.patientKpis()?.onHold ?? 0);
+  private readonly newThisMonth = computed(() => this.patientKpis()?.newThisMonth ?? 0);
+  private readonly totalPatients = computed(() => this.patientKpis()?.total ?? 0);
 
   private readonly completionRate = computed(() => {
-    const total = this.patientService.patients().length;
+    const total = this.totalPatients();
     return total ? Math.round((this.completedPatients() / total) * 100) : 0;
   });
 
@@ -338,7 +330,7 @@ export class DashboardComponent implements OnInit {
         link: '/patients',
         tone: 'neutral' as const,
         suffix: '',
-        caption: this.t('DASHBOARD.KPI_IN_TREATMENT_CAPTION', { count: this.patientService.patients().length }),
+        caption: this.t('DASHBOARD.KPI_IN_TREATMENT_CAPTION', { count: this.totalPatients() }),
       },
       {
         key: 'DASHBOARD.TODAYS_VISITS',
@@ -404,12 +396,7 @@ export class DashboardComponent implements OnInit {
       });
     }
 
-    const unscheduled = this.patientService
-      .patients()
-      .filter((p) => p.status === 'ACTIVE')
-      .filter((p) => !this.scheduleService.appointments()
-        .some((a) => a.patientId === p.id && a.status !== 'CANCELLED' && +new Date(a.dateTime) >= Date.now()))
-      .length;
+    const unscheduled = this.patientKpis()?.activeWithoutUpcoming ?? 0;
     if (unscheduled > 0) {
       items.push({
         key: 'DASHBOARD.ATTENTION_UNSCHEDULED', hintKey: 'DASHBOARD.ATTENTION_UNSCHEDULED_HINT',
@@ -424,22 +411,16 @@ export class DashboardComponent implements OnInit {
     new Intl.DateTimeFormat(this.locale(), { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date()),
   );
 
+  /** The appointment names its patient; the loaded patient list is only the first 200. */
   nameFor(appt: Appointment): string {
-    const p = this.patientService.patients().find((x) => x.id === appt.patientId);
-    return p ? `${p.firstName} ${p.lastName}` : appt.patientId;
+    return appt.patientName || this.patientService.nameFor(appt.patientId) || '—';
   }
 
   // ── Chart ────────────────────────────────────────────────────────────
 
   private readonly admissionsByMonth = computed(() => {
-    const year = new Date().getFullYear();
-    const buckets = new Array(12).fill(0);
-    for (const p of this.patientService.patients()) {
-      if (!p.createdAt) continue;
-      const d = new Date(p.createdAt);
-      if (d.getFullYear() === year) buckets[d.getMonth()]++;
-    }
-    return buckets;
+    const months = this.patientKpis()?.admissionsByMonth ?? [];
+    return Array.from({ length: 12 }, (_, i) => months[i] ?? 0);
   });
 
   readonly hasAdmissionData = computed(() => this.admissionsByMonth().some((v) => v > 0));

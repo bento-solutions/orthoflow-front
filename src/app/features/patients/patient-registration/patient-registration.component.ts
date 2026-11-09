@@ -504,12 +504,16 @@ export class PatientRegistrationComponent implements OnInit {
    * (audit VIII.4). This is a heuristic warning, not a hard block — some
    * clinics do see siblings or name collisions.
    */
-  private findPossibleDuplicate(firstName: string, lastName: string, dateOfBirth: string) {
-    return this.patientService.patients().find(p =>
-      p.firstName.trim().toLowerCase() === firstName.trim().toLowerCase() &&
-      p.lastName.trim().toLowerCase() === lastName.trim().toLowerCase() &&
-      p.dateOfBirth === dateOfBirth
-    );
+  private async findPossibleDuplicate(firstName: string, lastName: string, dateOfBirth: string) {
+    // Asked of the server: the patient list the app keeps is the first 200 patients, so a
+    // duplicate after them was never found (audit P1).
+    const same = (a?: string | null, b?: string | null) => (a ?? '').trim().toLowerCase() === (b ?? '').trim().toLowerCase();
+    try {
+      const page = await this.directory.list({ search: lastName.trim(), size: 50 });
+      return page.content.find(p => same(p.firstName, firstName) && same(p.lastName, lastName) && p.dateOfBirth === dateOfBirth);
+    } catch {
+      return undefined; // a warning, not a gate: registering goes ahead if the check cannot be made
+    }
   }
 
   async onSubmit() {
@@ -536,7 +540,7 @@ export class PatientRegistrationComponent implements OnInit {
     }
 
     if (!this.editMode) {
-      const duplicate = this.findPossibleDuplicate(patientData.firstName, patientData.lastName, patientData.dateOfBirth);
+      const duplicate = await this.findPossibleDuplicate(patientData.firstName, patientData.lastName, patientData.dateOfBirth);
       if (duplicate) {
         const proceed = await this.confirmDialog.confirm(
           this.translate.instant('PATIENTS.DOSSIER.UI.DUPLICATE_CONFIRM', { name: `${duplicate.firstName} ${duplicate.lastName}` }),

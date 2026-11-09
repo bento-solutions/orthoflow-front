@@ -39,6 +39,8 @@ describe('GumStatusComponent', () => {
         ...mocks.providers,
       ],
     });
+    // The probing chart is a deferred block, so the component has a lazy dependency to resolve.
+    await TestBed.compileComponents();
     const fixture = TestBed.createComponent(GumStatusComponent);
     fixture.componentRef.setInput('patientId', 'p1');
     document.body.appendChild(fixture.nativeElement);

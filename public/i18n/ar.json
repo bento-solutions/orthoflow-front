@@ -486,7 +486,11 @@
     "PASSWORD_MIN_HINT": "10 أحرف على الأقل",
     "PASSWORD_REPEAT_HINT": "أعد إدخال كلمة المرور",
     "NEW_CLINIC": "هل تجهّز عيادة جديدة؟",
-    "GET_STARTED": "ابدأ"
+    "GET_STARTED": "ابدأ",
+    "SESSION_ENDING_TITLE": "جلستك على وشك الانتهاء",
+    "SESSION_ENDING_TEXT": "تُغلق خلال {{minutes}} دقيقة ولا يمكن تمديدها. أدخل كلمة المرور لمواصلة العمل: لن يضيع شيء مما على الشاشة.",
+    "SESSION_CONTINUE": "متابعة",
+    "SESSION_LATER": "لاحقاً"
   },
   "DENTAL_CHART": {
     "TITLE": "مخطط الأسنان",

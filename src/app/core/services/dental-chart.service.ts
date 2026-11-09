@@ -8,6 +8,7 @@ import {
   CHILD_TEETH,
 } from '../models/patient.model';
 import { DentalChartApiService, ToothUpdateSource, DentalChartResponse } from './dental-chart-api.service';
+import { AuthService } from './auth.service';
 
 /**
  * DentalChartService
@@ -25,10 +26,22 @@ export class DentalChartService {
   private api = inject(DentalChartApiService);
 
   // In-memory store keyed by patientId
+  /**
+   * In memory only. Charts used to be cached in localStorage under dental_chart_<patientId>, where
+   * they outlived the sign-out on a shared front-desk computer (audit M4). The server's copy arrives
+   * a moment after the default chart is drawn.
+   */
   private chartStore = new Map<string, DentalChartState>();
 
   // Current chart being viewed/edited
   currentChart = signal<DentalChartState | null>(null);
+
+  constructor() {
+    inject(AuthService).onSignOut(() => {
+      this.chartStore.clear();
+      this.currentChart.set(null);
+    });
+  }
 
   /**
    * Determine chart type based on patient age.
@@ -77,8 +90,7 @@ export class DentalChartService {
     const chartType = this.getChartTypeForAge(dateOfBirth);
     let chart = this.chartStore.get(patientId);
     if (!chart) {
-      const stored = localStorage.getItem(`dental_chart_${patientId}`);
-      chart = stored ? this.deserialize(patientId, stored) : this.createDefaultChart(patientId, chartType);
+      chart = this.createDefaultChart(patientId, chartType);
       this.chartStore.set(patientId, chart);
     }
     this.currentChart.set(chart);
@@ -112,7 +124,6 @@ export class DentalChartService {
     chart.lastUpdated = response.updatedAt;
     this.chartStore.set(patientId, chart);
     this.currentChart.set({ ...chart });
-    this.saveToLocalStorage(patientId, chart);
   }
 
   /**
@@ -141,7 +152,6 @@ export class DentalChartService {
     chart.lastUpdated = new Date().toISOString();
     this.chartStore.set(patientId, chart);
     this.currentChart.set({ ...chart });
-    this.saveToLocalStorage(patientId, chart);
 
     this.api.updateTooth(patientId, toothId, status, chart.teeth[toothId].notes, source).subscribe({
       error: (err) => console.error(`Failed to persist tooth ${toothId} for patient ${patientId}`, err),
@@ -235,19 +245,8 @@ export class DentalChartService {
     const chart = this.deserialize(patientId, encoded);
     this.chartStore.set(patientId, chart);
     this.currentChart.set(chart);
-    this.saveToLocalStorage(patientId, chart);
     return chart;
   }
 
-  /**
-   * Local cache only — not the source of truth. See loadChart/updateToothStatus.
-   */
-  private saveToLocalStorage(patientId: string, chart: DentalChartState): void {
-    try {
-      localStorage.setItem(`dental_chart_${patientId}`, this.serialize(chart));
-    } catch (err) {
-      console.error(`Failed to cache dental chart for patient ${patientId} locally`, err);
-    }
-  }
 
 }

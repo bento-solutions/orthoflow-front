@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PassportChartEntry, PassportChartUse, TreatmentPassport } from '../../../core/api/contract';
 import { findingLabel } from '../../../core/clinical/finding-options';
@@ -139,7 +140,13 @@ export class TreatmentChartComponent {
   private readonly translate = inject(TranslateService);
 
   protected readonly highlighted = signal<readonly string[]>([]);
-  protected readonly patternDefs = odontogramPatternDefs().replace(/<\/?defs[^>]*>/g, '');
+  /**
+   * Trusted on purpose, as in DentalChartComponent: built only from constants (no input reaches it),
+   * and Angular's sanitiser keeps no SVG elements, so bound as a plain string the <pattern>s were
+   * stripped and the swatches lost the hatching that tells statuses apart without colour (WCAG 1.4.1).
+   */
+  protected readonly patternDefs: SafeHtml = inject(DomSanitizer).bypassSecurityTrustHtml(
+    odontogramPatternDefs().replace(/<\/?defs[^>]*>/g, ''));
   protected readonly dotColour = FAMILY_PAINT.condition.solid;
 
   protected readonly chart = computed(() => this.passport().chart);

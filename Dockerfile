@@ -12,12 +12,17 @@ RUN npm ci
 COPY . .
 
 ARG CONFIG=production
-RUN npm run build -- --configuration=$CONFIG
+RUN npm run build -- --configuration=$CONFIG \
+ && node tools/render-nginx-conf.mjs $CONFIG > /app/nginx.default.conf
 
 # Production stage
 FROM nginx:alpine
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# nginx.conf with the Content-Security-Policy's API origin taken from the
+# configuration's environment file (tools/render-nginx-conf.mjs).
+COPY --from=build /app/nginx.default.conf /etc/nginx/conf.d/default.conf
+# A config nginx would refuse fails the image build, not the deploy.
+RUN nginx -t
 
 COPY --from=build /app/dist/orthoflow-front/browser/ /usr/share/nginx/html/
 

@@ -256,6 +256,27 @@ function summarise() {
 }
 
 const session = await login();
+
+/**
+ * The public pages with a link that works, so the slot picker and the forms are scanned too: the
+ * people who use those pages are the public, and the "invalid link" state was all that was ever
+ * checked (audit A3). The clinic-wide links come from the signed-in clinic; online booking has to be
+ * switched on in its settings for the slot picker to show.
+ */
+async function workingPublicRoutes() {
+  if (!session) return [];
+  const routes = [];
+  for (const purpose of ['BOOKING', 'REGISTRATION']) {
+    try {
+      const response = await fetch(`${API}/public-links/shared/${purpose}`, { headers: { Authorization: `Bearer ${session.token}` } });
+      if (response.ok) routes.push(new URL((await response.json()).url).pathname);
+    } catch {
+      // The invalid-link state is still scanned.
+    }
+  }
+  return routes;
+}
+PUBLIC_ROUTES.push(...(await workingPublicRoutes()));
 const browser = await chromium.launch({
   channel: 'chrome', headless: true,
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],

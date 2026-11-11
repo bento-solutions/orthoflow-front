@@ -50,6 +50,8 @@ export interface ReviewField<T = string | number> {
   manual: boolean;
   /** Changed by the doctor after it was proposed. */
   edited: boolean;
+  /** Said to the app with the wake word: validated from the start, badged "dicté". */
+  dictated?: boolean;
 }
 
 export interface ReviewItem<T> {
@@ -59,6 +61,8 @@ export interface ReviewItem<T> {
   status: ReviewStatus;
   manual: boolean;
   edited: boolean;
+  /** Said to the app with the wake word: validated from the start, badged "dicté". */
+  dictated?: boolean;
 }
 
 export interface AllergyData { substance: string; reaction: string | null; severity: DraftAllergy['severity'] }

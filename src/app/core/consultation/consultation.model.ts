@@ -162,6 +162,10 @@ export interface ConsultationConfigDto {
   modelExtraction: boolean;
   /** The timestamped conversation is kept in the patient's file once saved, for the doctor to check later. */
   retainTranscript: boolean;
+  /** The one-screen cockpit while recording; false brings back the two panels. Absent on an older server: on. */
+  cockpit?: boolean;
+  /** The fast "tail" reading of the conversation's last sentences. */
+  tailReading?: boolean;
 }
 
 export interface ConsultationDto {

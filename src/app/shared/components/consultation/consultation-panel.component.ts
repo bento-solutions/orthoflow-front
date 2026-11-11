@@ -93,11 +93,11 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
  * corrected or removed by the doctor, and nothing is saved until none is left
  * undecided.
  *
- * The recording view is deliberately read-only. The doctor's hands are busy and
- * they are not looking at the screen (see the hands-free constraint on every
- * in-consultation feature); everything they need mid-consultation — begin,
- * end — is also a spoken phrase, and the screen only shows what was heard.
- * Deciding is screen-and-mouse work, and it happens after, in the review.
+ * While recording, the consultation cockpit (cockpit/) takes the whole screen
+ * and this panel shows only the intro, the review and the saved screen; with the
+ * cockpit switched off (CONSULTATION_COCKPIT_ENABLED=false) this panel's
+ * recording view is back, read-only. Either way, deciding is screen-and-mouse
+ * work, and it happens after, in the review.
  */
 @Component({
   selector: 'app-consultation-panel',

@@ -23,6 +23,10 @@ import { REFUSAL_KEYS } from './clinical/perio/perio-input';
 import { FURCATION_SITES, PERIO_MODES, PROBING_SITES, TOOTH_STATUSES } from './clinical/perio/perio.model';
 import { modeKey } from '../features/patients/perio-chart/perio-palette';
 import { TREND_KEYS, TREND_METRICS } from '../features/patients/perio-chart/perio-progression';
+import { STAGE_VIEWS } from './consultation/consultation-focus.service';
+import { FEEDBACK_LEVELS } from './voice/voice-preferences.service';
+import { PATIENT_FIELDS } from './consultation/consultation-draft';
+import { HELP_GROUPS } from '../shared/components/consultation/cockpit/cockpit-help.component';
 
 /**
  * Templates build some keys at run time (`'REC.KINDS.' + kind`), which the static scan in
@@ -58,6 +62,15 @@ const FAMILIES: Record<string, readonly string[]> = {
   'TASK.OPEN_DOC': ['INSURANCE_FORM', 'PRESCRIPTION'],
   'TREATMENT_LOG.OUTCOME': ['IN_PLACE', 'TREATED', 'COMPLETED', 'REQUIRED', 'PLANNED', 'IN_PROGRESS'],
   'VOICE.LANG': INPUT_LANGUAGES,
+  'COCKPIT.VIEW': STAGE_VIEWS.map(v => v.toUpperCase()),
+  'COCKPIT.LEVEL': FEEDBACK_LEVELS.map(l => l.toUpperCase()),
+  'COCKPIT.LEVEL_HINT': FEEDBACK_LEVELS.map(l => l.toUpperCase()),
+  'COCKPIT.VERDICT': ['ACTED', 'PROPOSED', 'HEARD', 'UNSURE', 'QUESTION', 'CONTROL', 'OTHER_LANGUAGE'],
+  'COCKPIT.LINE': ['DICTATED', 'PROPOSED', 'VALIDATED', 'TO_CONFIRM', 'SET'],
+  'COCKPIT.STATUS': ['PROPOSED', 'TO_CONFIRM', 'REMOVED', 'NOT_UNDERSTOOD'],
+  'COCKPIT.FIELD': PATIENT_FIELDS.map(f => f.toUpperCase()),
+  'COCKPIT.HELP_GROUP': HELP_GROUPS,
+  'COCKPIT.HELP_SAY': HELP_GROUPS,
   'GUMS.REGION': PERIO_REGIONS,
   'PERIO.LABEL': PERIO_MODES.map(modeKey),
   'PERIO.SITE': [...PROBING_SITES, ...FURCATION_SITES].map(s => s.toUpperCase()),

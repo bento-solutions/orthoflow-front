@@ -1017,3 +1017,9 @@
 :root[data-theme='dark'] [class*='bg-white/'] { background-color: rgb(var(--white) / 0.88); }
 :root[data-theme='dark'] .border-white { border-color: rgb(var(--ink-200)); }
 :root[data-theme='dark'] .text-black { color: rgb(var(--ink-900)); }
+
+/* The consultation cockpit fills the window under the application bar and the
+   page itself does not scroll: each part of the cockpit scrolls inside itself. */
+html.cockpit-mode, html.cockpit-mode body { overflow: hidden; }
+html.cockpit-mode #main-content { padding: 0 !important; }
+html.cockpit-mode #main-content > div { max-width: none; }

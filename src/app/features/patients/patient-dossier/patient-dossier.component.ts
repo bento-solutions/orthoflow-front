@@ -30,6 +30,7 @@ import { VoiceSessionService } from '../../../core/voice/voice-session.service';
 import { VoiceSessionPanelComponent } from '../../../shared/components/voice/voice-session-panel.component';
 import { VoiceSessionDockComponent } from '../../../shared/components/voice/voice-session-dock.component';
 import { ConsultationPanelComponent } from '../../../shared/components/consultation/consultation-panel.component';
+import { ConsultationCockpitComponent } from '../../../shared/components/consultation/cockpit/consultation-cockpit.component';
 import { ConsultationService } from '../../../core/consultation/consultation.service';
 import { ConsultationApiService } from '../../../core/consultation/consultation-api.service';
 import { ConsultationLogComponent } from '../../../shared/components/consultation/consultation-log.component';
@@ -45,10 +46,22 @@ import { findingLabel } from '../../../core/clinical/finding-options';
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [DialogDirective, CommonModule, RouterModule, Dental3dChartComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, ConsultationLogComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent, PatientPhotosComponent, GumStatusComponent, TreatmentLogComponent, TreatmentSummaryComponent],
+  imports: [DialogDirective, CommonModule, RouterModule, Dental3dChartComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, ConsultationCockpitComponent, ConsultationLogComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent, PatientPhotosComponent, GumStatusComponent, TreatmentLogComponent, TreatmentSummaryComponent],
   template: `
-    <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive()" [class.has-consultation]="consultation.visible()">
+    <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive() && !cockpit()"
+         [class.has-consultation]="consultation.visible() && !cockpit()" [class.is-cockpit]="cockpit()">
       @if (patientService.currentPatient(); as patient) {
+      @if (cockpit()) {
+        <!-- While a consultation records, one screen: the cockpit replaces the tabs,
+             the dictation panel, the side panel and the dock. Nothing that deletes,
+             edits or prints is on it. -->
+        <app-consultation-cockpit
+          [chart]="dentalChartState()"
+          [findings]="clinicalRecordService.findings()"
+          [treatments]="patientTreatments()"
+          (leave)="leaveForList()"
+        />
+      } @else {
       <!-- Dossier Header -->
       <header class="dossier-header">
         <div class="header-top">
@@ -775,6 +788,7 @@ import { findingLabel } from '../../../core/clinical/finding-options';
             </div>
           </div>
         }
+      }
       } @else {
         <div class="loading">
           <p>{{ 'COMMON.LOADING' | translate }}</p>
@@ -782,19 +796,24 @@ import { findingLabel } from '../../../core/clinical/finding-options';
       }
 
       <!-- The consultation: what is heard and what the system catches, beside the
-           dossier while it runs, and the review once it ends. -->
-      <app-consultation-panel class="dossier-consultation" />
+           dossier while it runs, and the review once it ends. In the cockpit the
+           recording view is the cockpit itself. -->
+      @if (!cockpit()) {
+        <app-consultation-panel class="dossier-consultation" />
+      }
       <app-consultation-log [consultationId]="logConsultationId()" (closed)="logConsultationId.set(null)" />
 
       <!-- Scoped to the dossier rather than mounted at the app root. A voice
            command like "sixteen, recurrent caries" only has a referent when a
            patient's record is open; showing a live microphone on the billing
            screen invited exactly the ambiguity this rework removes. -->
-      <app-voice-session-dock
-        [onVoiceTab]="activeTab() === 'voice'"
-        (openPanel)="activeTab.set('voice')"
-        (resume)="beginSession()"
-      />
+      @if (!cockpit()) {
+        <app-voice-session-dock
+          [onVoiceTab]="activeTab() === 'voice'"
+          (openPanel)="activeTab.set('voice')"
+          (resume)="beginSession()"
+        />
+      }
     </div>
   `,
   styles: [`
@@ -802,6 +821,8 @@ import { findingLabel } from '../../../core/clinical/finding-options';
       background: rgb(var(--ink-50));
       min-height: 100vh;
     }
+    /* The cockpit sizes itself to the window below the bar; the container must not add to it. */
+    .dossier-container.is-cockpit { min-height: 0; }
 
     .dossier-header {
       background: var(--surface);
@@ -1830,10 +1851,24 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     if (this.consultation.savedVersion() > 0) this.onVoiceSaved();
   });
 
-  /** While a consultation runs the chart is what the doctor needs in view. */
+  /**
+   * The consultation cockpit, while recording: one screen, no tabs. Off (the
+   * server's CONSULTATION_COCKPIT_ENABLED) it is the two panels of before.
+   */
+  readonly cockpit = computed(() => this.consultation.isRecording() && this.consultation.cockpitEnabled());
+
+  /**
+   * The intro and the review are shown beside the dictation tab; while the
+   * cockpit records, it is the whole screen and there is no tab to move to.
+   */
   private readonly consultationFocus = effect(() => {
-    if (this.consultation.intro() || this.consultation.isOpen()) this.activeTab.set('voice');
+    if (this.consultation.intro() || (this.consultation.isOpen() && !this.cockpit())) this.activeTab.set('voice');
   });
+
+  /** The cockpit's back arrow: leave the dossier, as its own back button does; the consultation stays open. */
+  leaveForList(): void {
+    void this.router.navigate(['/patients']);
+  }
 
   /** The microphone is being opened and the session created. */
   voiceStarting = signal(false);

@@ -1,6 +1,8 @@
 import { Injector, isDevMode } from '@angular/core';
 import { environment } from '../../../../environments/environment';
 import { ConsultationService } from '../../consultation/consultation.service';
+import { ConsultationFocusService } from '../../consultation/consultation-focus.service';
+import { EarconService } from '../earcon.service';
 import { SpeechFeedbackService } from '../speech-feedback.service';
 import { VoiceOrchestratorService } from '../voice-orchestrator.service';
 
@@ -73,6 +75,8 @@ export function installVoiceTestHook(
   const voice = () => injector.get(VoiceOrchestratorService);
   const consultation = () => injector.get(ConsultationService);
   const speech = () => injector.get(SpeechFeedbackService);
+  const earcons = () => injector.get(EarconService);
+  const focus = () => injector.get(ConsultationFocusService);
 
   const hook: VoiceTestHook = {
     hear: text => voice().simulateHeard(text),
@@ -84,10 +88,11 @@ export function installVoiceTestHook(
     },
     mute(on) {
       speech().setRecorder(on ? text => spoken.push(text) : null);
+      earcons().setRecorder(on ? tone => tones.push(tone) : null);
       extensions.setToneRecorder?.(on ? tone => tones.push(tone) : null);
     },
     state() {
-      const stage = extensions.view?.() ?? { view: null, pinned: false, lastAction: null };
+      const stage = extensions.view?.() ?? { view: focus().view(), pinned: focus().pinned(), lastAction: focus().lastAction() };
       return {
         ...stage,
         buffered: voice().buffered().map(entry => ({ intent: entry.intent, entities: entry.entities, summary: (entry as { summary?: string }).summary ?? null })),

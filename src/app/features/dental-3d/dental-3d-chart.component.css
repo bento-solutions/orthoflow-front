@@ -189,3 +189,11 @@
   .d3-stage { border: 0; break-inside: avoid; }
   .d3-printing .d3-canvas, .d3-printing .d3-labels { visibility: hidden; }
 }
+
+/* The cockpit's stage: fill the height given, keep the credit, drop what voice already reaches. */
+:host(.d3-compact) { height: 100%; }
+:host(.d3-compact) .d3 { height: 100%; gap: 0; }
+:host(.d3-compact) .d3-main { height: 100%; padding: .375rem; gap: .25rem; }
+:host(.d3-compact) .d3-stage { aspect-ratio: auto; flex: 1 1 auto; min-height: 10rem; max-height: none; }
+:host(.d3-compact) .d3-legend--compact { font-size: .75rem; gap: .25rem .75rem; }
+:host(.d3-compact) .d3-credit { margin: 0; font-size: .6875rem; }

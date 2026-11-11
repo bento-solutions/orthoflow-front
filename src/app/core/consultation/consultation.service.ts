@@ -34,6 +34,8 @@ import { SpeechFeedbackService } from '../voice/speech-feedback.service';
 import { EarconService } from '../voice/earcon.service';
 import { VoiceFeedbackService } from '../voice/voice-feedback.service';
 import { UtteranceEvent, UtteranceVerdict } from '../voice/voice-intent.model';
+import { ConsultationFocusService } from './consultation-focus.service';
+import { actionFromUtterance } from './consultation-events';
 import { isStopPhrase } from '../voice/voice-wake';
 import { spokenLanguage, synthesisLocale } from '../voice/voice-vocabulary';
 import { PatientService } from '../services/patient.service';
@@ -179,6 +181,7 @@ export class ConsultationService {
   private feedback = inject(SpeechFeedbackService);
   private policy = inject(VoiceFeedbackService);
   private earcons = inject(EarconService);
+  private focus = inject(ConsultationFocusService);
   private patients = inject(PatientService);
   private clinical = inject(ClinicalRecordService);
   private schedule = inject(ScheduleService);
@@ -233,6 +236,8 @@ export class ConsultationService {
 
   available = computed(() => this.configSignal()?.enabled === true);
   modelExtraction = computed(() => this.configSignal()?.modelExtraction === true);
+  /** The cockpit is the rollback-able default: a server that does not say is read as "on". */
+  cockpitEnabled = computed(() => this.configSignal()?.cockpit !== false);
   /** Whether the transcript is kept after saving — it decides what the patient is told. */
   retainTranscript = computed(() => this.configSignal()?.retainTranscript === true);
 
@@ -438,6 +443,7 @@ export class ConsultationService {
    * the dossier. The server keeps it, and offers it back when they return.
    */
   detach(): void {
+    this.focus.reset();
     this.flushReviewSave();
     this.clearExtractTimer();
     this.releaseVoice();
@@ -464,6 +470,7 @@ export class ConsultationService {
   }
 
   private attach(dto: ConsultationDto): void {
+    if (this.consultationSignal()?.id !== dto.id) this.focus.reset();
     this.consultationSignal.set(dto);
     this.linesSignal.set(this.restoreLines(dto));
     // What came back from the server is stored there already.
@@ -507,10 +514,14 @@ export class ConsultationService {
 
   /** Puts what became of a sentence on its line of the conversation. */
   private onVerdict(event: UtteranceEvent): void {
-    if (event.lineId === null) return;
-    this.linesSignal.update(lines => lines.map(line => line.id === event.lineId
-      ? { ...line, verdict: event.verdict, summary: event.summary, latencyMs: event.latencyMs }
-      : line));
+    if (event.lineId !== null) {
+      this.linesSignal.update(lines => lines.map(line => line.id === event.lineId
+        ? { ...line, verdict: event.verdict, summary: event.summary, latencyMs: event.latencyMs }
+        : line));
+    }
+    // What changed goes on the last-action card, and the stage follows it.
+    const action = actionFromUtterance(event);
+    if (action) this.focus.touch(action);
   }
 
   /**

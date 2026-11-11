@@ -52,6 +52,7 @@ interface SummaryGroup {
 @Component({
   selector: 'app-dental-3d-chart',
   standalone: true,
+  host: { '[class.d3-compact]': 'compact()' },
   imports: [FormsModule, TranslateModule, ChartKeysComponent, DentalChartComponent, ToothDetailComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -73,14 +74,16 @@ interface SummaryGroup {
       <div class="d3" [class.d3--panel]="sidePanel()">
         <div class="d3-main">
           <div class="d3-toolbar">
-            <div class="d3-views" role="group" [attr.aria-label]="'DENTAL_3D.VIEW' | translate">
-              @for (v of views; track v) {
-                <button type="button" [attr.aria-pressed]="view.view() === v" [class.on]="view.view() === v"
-                  [title]="('DENTAL_3D.VIEW_HINT.' + v) | translate" (click)="view.view.set(v)">
-                  {{ ('DENTAL_3D.VIEW_NAME.' + v) | translate }}
-                </button>
-              }
-            </div>
+            @if (!compact()) {
+              <div class="d3-views" role="group" [attr.aria-label]="'DENTAL_3D.VIEW' | translate">
+                @for (v of views; track v) {
+                  <button type="button" [attr.aria-pressed]="view.view() === v" [class.on]="view.view() === v"
+                    [title]="('DENTAL_3D.VIEW_HINT.' + v) | translate" (click)="view.view.set(v)">
+                    {{ ('DENTAL_3D.VIEW_NAME.' + v) | translate }}
+                  </button>
+                }
+              </div>
+            }
             @if (focusCard(); as card) {
               <div class="d3-focus" role="status">
                 <b>{{ card.title }}</b>
@@ -193,9 +196,11 @@ interface SummaryGroup {
           </div>
 
           <p class="sr-only" [id]="keysId">{{ (view.zoomedFdi() ? 'DENTAL_3D.KEYS_CLOSE_UP' : 'DENTAL_3D.KEYS_MOUTH') | translate }}</p>
+          @if (!compact()) {
           <app-chart-keys [closeUp]="!!view.zoomedFdi()" [faces]="closeUpLetters()" [detail]="sidePanel()" [turnable]="true" />
+          }
 
-          <div class="d3-legend">
+          <div class="d3-legend" [class.d3-legend--compact]="compact()">
             <span class="d3-key"><i class="sw sw-existing"></i>{{ 'DENTAL_3D.LEGEND.EXISTING' | translate }}</span>
             <span class="d3-key"><i class="sw sw-condition"></i>{{ 'DENTAL_3D.LEGEND.CONDITION' | translate }}</span>
             <span class="d3-key"><i class="sw sw-planned"></i>{{ 'DENTAL_3D.LEGEND.PLANNED' | translate }}</span>
@@ -304,6 +309,12 @@ export class Dental3dChartComponent {
    * where a tap only tells the assistant what "that tooth" means.
    */
   readonly sidePanel = input(true);
+  /**
+   * The consultation cockpit's stage: the chart fills the height it is given, the
+   * keyboard legend and the view names go (voice and the toolbar's icons still
+   * reach them), and the credit line stays — it is the model's licence.
+   */
+  readonly compact = input(false);
 
   readonly assignTreatment = output<string>();
 

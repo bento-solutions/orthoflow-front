@@ -279,7 +279,13 @@ export const FINDINGS: FindingDefinition[] = [
   F('existing_filling', 'EXISTING', 'Existing filling',
     /\b(?:old|existing|previous|has\s+an?)\s+(?:filling|restoration|obturation)/iu,
     /\bfilled\b/iu, /\bfillings?\b/iu, /\brestoration\b/iu,
-    /\b(?:ancienne\s+)?obturation\b/iu, /\bplomb\w*/iu, /\breconstitutions?(?:\s+coronaire)?\b/iu),
+    /\b(?:ancienne\s+)?obturation\b/iu, /\bplomb\w*/iu, /\breconstitutions?(?:\s+coronaire)?\b/iu,
+    // "Soins en place", "soins antécédents", "déjà soignée": how a French dentist says a tooth was
+    // treated before (the 10 Nov 2026 session). The participle only, never "soigner" or "à soigner",
+    // which are a treatment still to do.
+    /\bsoins?\s+(?:d[ée]j[àa]\s+)?en\s+place\b/iu, /\bsoins?\s+existants?\b/iu, /\bsoins?\s+ant[ée]c[ée]dents?\b/iu,
+    /\bd[ée]j[àa]\s+soign[ée]e?s?\b/iu, /\bd[ée]j[àa]\s+trait[ée]e?s?\b/iu, /\bsoign(?:é|ée|ées|és|ee|ees)(?![\p{L}\p{N}])/iu,
+    /\brestaurations?\b/iu),
 
   // ── Observations ────────────────────────────────────────────────────
   F('monitor', 'OBSERVATION', 'Monitor',
@@ -293,6 +299,13 @@ export const FINDINGS: FindingDefinition[] = [
     /\bnormal\b/iu, /\bhealthy\b/iu, /\bsound\b/iu, /\bnothing\s+(?:to\s+report|abnormal)\b/iu,
     /\bras\b/iu, /\bsaine?\b/iu, /\brien\s+[àa]\s+signaler\b/iu),
 ];
+
+/**
+ * What a patient feels or sees and says themself. "Vous avez mal à la 16" is a
+ * question or a conversation; "vous avez une carie sur la 16" is the doctor
+ * telling the chart. Only the second may open a sentence that needs no wake word.
+ */
+export const SYMPTOM_CODES: ReadonlySet<string> = new Set(['pain', 'sensitivity', 'bleeding', 'swelling']);
 
 const FINDING_BY_CODE = new Map(FINDINGS.map(f => [f.code, f]));
 

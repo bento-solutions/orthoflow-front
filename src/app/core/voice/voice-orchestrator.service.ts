@@ -12,8 +12,10 @@ import { TranscriptionDto, VoiceApiService } from './voice-api.service';
 import { VoiceSessionService } from './voice-session.service';
 import { SEVERAL_TEETH_QUESTION } from './voice-grammar';
 import { resolveForgiving } from './voice-resolve';
+import { repairSttConfusions } from './stt-confusions';
 import {
   detectWake,
+  isBareStop,
   isPausePhrase,
   isResumePhrase,
   isSelfEvidentDictation,
@@ -21,7 +23,7 @@ import {
   stripWakeWord,
   FOLLOW_UP_WINDOW_MS,
 } from './voice-wake';
-import { acceptsFollowUp } from './voice-followup';
+import { acceptsFollowUp, isSelfEvidentUiCommand, withoutFillers } from './voice-followup';
 import { InputLanguageService } from './input-language.service';
 import { InputLanguage, classifyLanguage, isLanguageNeutralAnswer, requestedLanguage } from './language-filter';
 import { affirmedFindings, allFindingCodes, extractFindings, findingKind, findingLabel, spokenFindingCovers } from './clinical-lexicon';
@@ -31,6 +33,7 @@ import {
   PhraseKey,
   Spoken,
   SpokenLanguage,
+  alreadyNoted,
   dictationLanguage,
   expiryWarning,
   languageIgnored,
@@ -115,6 +118,8 @@ export interface PendingConfirmation {
   auditId?: string;
   /** The entities as sent to the server, for the command's own feedback. */
   serverEntities?: Record<string, unknown>;
+  /** What a yes does, when it is not running the command: ending the consultation. */
+  onConfirm?: () => Promise<void>;
 }
 
 /** One staged clinical write, held until the dentist commits the session. */
@@ -126,6 +131,19 @@ export interface BufferedEntry {
   transcript: string;
   corrections: { from: string; to: string }[];
   at: number;
+  /**
+   * The entry in the doctor's language — "Dent 16 : carie occlusale." — shown
+   * instead of the English preview, which stays for the audit row. An entry
+   * restored from storage may predate it; {@link summaryOf} fills it in.
+   */
+  summary?: string;
+  /** Recovered by the reader from a sentence the grammar did not take: undecided until the doctor says. */
+  needsConfirmation?: boolean;
+}
+
+/** An entry's line in the doctor's language, computed when it has none. */
+export function summaryOf(entry: Pick<BufferedEntry, 'intent' | 'entities' | 'preview' | 'summary'>, language: SpokenLanguage): string {
+  return entry.summary || spokenConfirmation(entry.intent, entry.entities, language)?.text || entry.preview;
 }
 
 export interface VoiceOutcome {
@@ -187,7 +205,7 @@ const FINISH_WAIT_MS = 12_000;
 const LANGUAGE_WARNING_INTERVAL_MS = 45_000;
 
 /** How a spoken utterance came to be treated as addressed to the system. */
-export type AddressedVia = 'wake-word' | 'dictation' | 'follow-up' | 'explicit';
+export type AddressedVia = 'wake-word' | 'dictation' | 'view' | 'follow-up' | 'explicit';
 
 const AFFIRMATIVE = new RegExp(
   `^(?:yes|yeah|yep|confirm(?:ed)?|correct|ok(?:ay)?|right|do\\s+it|go\\s+ahead|save\\s+it|oui|ouais|`
@@ -213,6 +231,12 @@ interface StagedBatch {
   spoken: Spoken[];
   /** Teeth whose command could not be recorded. */
   failedTeeth: string[];
+  /** Read-backs for parts that changed nothing: "Dent 38 : carie, déjà notée." */
+  notes: Spoken[];
+}
+
+function fdiOf(intent: VoiceIntent): string | null {
+  return entityString(intent.entities, 'fdi');
 }
 
 function distinct(values: Array<string | null | undefined>): string[] {
@@ -714,7 +738,8 @@ export class VoiceOrchestratorService {
 
   /** Restores a buffer recovered from IndexedDB after a crash or reload. */
   restoreBuffer(entries: BufferedEntry[]): void {
-    this.bufferedSignal.set(entries);
+    const language = this.language();
+    this.bufferedSignal.set(entries.map(entry => ({ ...entry, summary: summaryOf(entry, language) })));
   }
 
   // ── Transcription ───────────────────────────────────────────────────
@@ -897,7 +922,17 @@ export class VoiceOrchestratorService {
     const cleaned = normalized?.trim() || null;
     const said = heard || cleaned;
     if (!said) return;
-    const readings = distinct([cleaned, said]);
+    // What the recogniser makes of "dent" and "carie" next to a tooth number
+    // ("dans 16 caries", "38 carré") is put back before anything decides what
+    // the sentence is. The verbatim words still go to the conversation, the
+    // audit row and the tooth guard.
+    const dentition = this.context.dentition();
+    const repaired = distinct([cleaned, said]).map(reading => repairSttConfusions(reading, dentition));
+    const readings = distinct(repaired.map(reading => reading.text));
+    this.confusionRepairs = repaired.flatMap(reading => reading.repairs)
+      .filter(repair => repair.rule === 'finding')
+      .filter((repair, index, all) => all.findIndex(other => other.from === repair.from && other.to === repair.to) === index)
+      .map(({ from, to }) => ({ from, to }));
 
     const heardAloud = gated || recognitionConfidence !== 1;
 
@@ -976,6 +1011,12 @@ export class VoiceOrchestratorService {
       this.ignoredSignal.set(null);
       if (addressed.via === 'wake-word' && addressed.primary && isPausePhrase(addressed.primary)) {
         this.pauseByVoice();
+        return;
+      }
+      // "Calypso, stop": a bare word that would end the consultation is asked
+      // back rather than obeyed — ending cannot be undone without a tap.
+      if (addressed.via === 'wake-word' && addressed.primary && isBareStop(addressed.primary)) {
+        this.askToEnd(said);
         return;
       }
       // A bare wake word opens the floor and waits. It is also the answer to
@@ -1075,16 +1116,20 @@ export class VoiceOrchestratorService {
     }
 
     const dentition = this.context.dentition();
+    const snapshot = this.context.snapshot();
     const spokenWake = wakes.some(wake => wake.reason === 'wake-word');
     const dictation = readings.some(reading => isSelfEvidentDictation(reading, dentition));
-    if (!(wakes.some(wake => wake.addressed) || dictation)) return null;
+    // "Montre les allergies", "zoom sur la 16": the whole sentence is a view or
+    // camera command. It only changes what is on screen, and "retour" undoes it.
+    const view = !spokenWake && !dictation && readings.some(reading => isSelfEvidentUiCommand(reading, snapshot));
+    if (!(wakes.some(wake => wake.addressed) || dictation || view)) return null;
 
     const commands = distinct(readings.map((reading, index) =>
-      wakes[index].reason === 'wake-word' ? wakes[index].command : (stripWakeWord(reading) ?? reading)));
-    const via: AddressedVia = spokenWake ? 'wake-word' : dictation ? 'dictation' : 'follow-up';
+      wakes[index].reason === 'wake-word' ? wakes[index].command
+        : view ? withoutFillers(reading) : (stripWakeWord(reading) ?? reading)));
+    const via: AddressedVia = spokenWake ? 'wake-word' : dictation ? 'dictation' : view ? 'view' : 'follow-up';
 
     if (via === 'follow-up') {
-      const snapshot = this.context.snapshot();
       if (!commands.some(command => acceptsFollowUp(command, snapshot))) return null;
     }
     return { primary: commands[0] ?? '', alternate: commands[1] ?? null, via };
@@ -1128,7 +1173,7 @@ export class VoiceOrchestratorService {
     if (resolution.kind === 'sequence') resolution.intents.forEach(intent => { intent.transcript = heard; });
     if (resolution.kind === 'clarification') resolution.clarification.transcript = heard;
 
-    this.pendingCorrections = corrections;
+    this.pendingCorrections = [...this.confusionRepairs, ...corrections];
     await this.applyResolution(resolution, snapshot, recognitionConfidence, via);
     this.pendingCorrections = [];
   }
@@ -1186,6 +1231,8 @@ export class VoiceOrchestratorService {
 
   /** Terms repaired for the utterance currently being dispatched. */
   private pendingCorrections: { from: string; to: string }[] = [];
+  /** "Carré" heard and read as "carie" in the utterance being handled: told in the read-back. */
+  private confusionRepairs: { from: string; to: string }[] = [];
 
   /**
    * Extends the window in which a bare utterance is still a command. Called
@@ -1283,16 +1330,25 @@ export class VoiceOrchestratorService {
     snapshot: VoiceContextSnapshot,
     recognitionConfidence: number,
   ): Promise<void> {
-    const batch: StagedBatch = { auditIds: [], previews: [], spoken: [], failedTeeth: [] };
+    const batch: StagedBatch = { auditIds: [], previews: [], spoken: [], failedTeeth: [], notes: [] };
     for (const intent of intents) {
       await this.dispatch(intent, snapshot, recognitionConfidence, batch);
     }
-    // Nothing staged: dispatch has already said why.
-    if (batch.auditIds.length === 0) return;
+    // Nothing staged: dispatch has already said why — or every part was
+    // already noted, which is said here, once.
+    if (batch.auditIds.length === 0) {
+      if (batch.notes.length > 0) {
+        this.touchWakeWindow();
+        this.settle();
+        this.announce(true, batch.notes.map(note => note.text).join(' '),
+          { text: batch.notes.map(note => note.text).join(' '), locale: batch.notes[0].locale });
+      }
+      return;
+    }
 
     const language = this.language();
     const fr = language === 'fr';
-    const heard = batch.spoken.map(part => part.text);
+    const heard = [...batch.spoken, ...batch.notes].map(part => part.text);
     if (batch.failedTeeth.length > 0) {
       const teeth = batch.failedTeeth.join(fr ? ' et ' : ' and ');
       heard.push(fr ? `Dent ${teeth} non enregistrée. Répétez.` : `Tooth ${teeth} was not recorded. Say it again.`);
@@ -1387,6 +1443,44 @@ export class VoiceOrchestratorService {
       }
     }
 
+    // "45, c'est pas couronne, amalgame" denies what was staged on 45 a moment
+    // ago, and a finding already noted is not noted twice.
+    let refined: BufferedEntry[] = [];
+    // "Dent 16, pas de fracture" with only a denial: the fracture staged on 16
+    // comes off. Against nothing staged it stays the note it always was.
+    if (command.id === 'clinical.addNote' && Array.isArray(intent.entities['denied'])) {
+      const checked = this.againstStaged({ ...intent, entities: { ...intent.entities, findings: [] } });
+      if (checked.kind === 'retracted') {
+        await this.retractDenied(checked.entry, checked.codes, batch);
+        return;
+      }
+    }
+    if (command.id === 'chart.addToothFindings') {
+      const checked = this.againstStaged(intent);
+      if (checked.kind === 'rewritten') {
+        await this.dispatch(checked.intent, snapshot, recognitionConfidence, batch, humanConfirmed);
+        return;
+      }
+      if (checked.kind === 'retracted') {
+        await this.retractDenied(checked.entry, checked.codes, batch);
+        return;
+      }
+      if (checked.kind === 'already-noted') {
+        const spoken = alreadyNoted(checked.fdi, checked.codes, this.language());
+        if (fdiOf(intent)) this.highlightSignal.set(fdiOf(intent));
+        if (batch) {
+          batch.notes.push(spoken);
+          return;
+        }
+        this.touchWakeWindow();
+        this.settle();
+        this.announce(true, spoken.text, spoken);
+        return;
+      }
+      intent = checked.intent;
+      refined = checked.refines;
+    }
+
     // "Non, en fait…" corrects the entry just staged. In the buffered flow
     // nothing is on the record yet, so the correction replaces that entry; it
     // cannot retract anything. Found before anything is staged, so a
@@ -1459,6 +1553,7 @@ export class VoiceOrchestratorService {
         return;
       }
 
+      const language = this.language();
       const entry: BufferedEntry = {
         auditId,
         intent: command.serverIntent,
@@ -1467,11 +1562,18 @@ export class VoiceOrchestratorService {
         transcript: intent.transcript,
         corrections: this.pendingCorrections,
         at: Date.now(),
+        summary: spokenConfirmation(command.serverIntent, serverEntities, language)?.text ?? preview,
       };
       this.stage(entry, snapshot.sessionId);
       // The correction is in place; only now is the entry it replaces taken
       // out, so a failure above leaves the original standing.
       if (replaced) await this.discardBuffered(replaced.auditId);
+      // A surface added to a finding already staged ("38 carie" then "38 carie
+      // occlusale") moves it to the new entry; the old one keeps the rest.
+      for (const old of refined) {
+        const moved = stagedFindingCodes(entry.entities).filter(code => stagedFindingCodes(old.entities).includes(code));
+        await this.removeStagedFindings(old, moved);
+      }
 
       this.context.rememberWrite({
         commandId: command.id,
@@ -1484,7 +1586,6 @@ export class VoiceOrchestratorService {
 
       // Spoken because the dentist is not looking at the screen. The resolved
       // values, never an echo of the words.
-      const language = this.language();
       let spoken = spokenConfirmation(command.serverIntent, serverEntities, language)
         ?? { text: preview, locale: 'en-US' };
       if (replaced) spoken = { ...spoken, text: `${this.say('corrected').text} ${spoken.text}` };
@@ -1515,6 +1616,122 @@ export class VoiceOrchestratorService {
     }
 
     await this.run(command, intent, snapshot, 'AUTO');
+  }
+
+  /**
+   * A finding said about a tooth, set against what this session has already
+   * staged on it:
+   *
+   * - **a denial of something staged is a correction of it** — "non, donc 45,
+   *   c'est pas couronne, amalgame" said after "44, 43 et 45 couronnes" replaces
+   *   the crown staged on 45 by the amalgam, instead of adding the amalgam beside
+   *   it with the crown left standing (saved wrong on 10 Nov 2026);
+   * - **a finding already staged is not staged again** — "Dent 38, carie
+   *   occlusale" said twice is one caries; the second time is answered "déjà
+   *   notée" and leaves no row;
+   * - **a surface added to one is a refinement** — the new entry carries it and
+   *   the old one gives the finding up.
+   *
+   * A denial of something not staged stays a note on the tooth, as before.
+   */
+  private againstStaged(intent: VoiceIntent):
+    | { kind: 'stage'; intent: VoiceIntent; refines: BufferedEntry[] }
+    | { kind: 'rewritten'; intent: VoiceIntent }
+    | { kind: 'retracted'; entry: BufferedEntry; codes: string[] }
+    | { kind: 'already-noted'; fdi: string; codes: string[] } {
+    const fdi = entityString(intent.entities, 'fdi');
+    const findings = Array.isArray(intent.entities['findings']) ? intent.entities['findings'] as FindingEntity[] : [];
+    if (!fdi) return { kind: 'stage', intent, refines: [] };
+    const staged = this.bufferedSignal().filter(entry =>
+      entry.intent === 'clinical.addFindings' && entityString(entry.entities, 'fdi') === fdi);
+    if (staged.length === 0) return { kind: 'stage', intent, refines: [] };
+    const findingsOf = (entry: BufferedEntry) =>
+      (Array.isArray(entry.entities['findings']) ? entry.entities['findings'] as Array<Record<string, unknown>> : []);
+
+    const denied = Array.isArray(intent.entities['denied']) ? (intent.entities['denied'] as unknown[]).map(String) : [];
+    if (denied.length > 0) {
+      const covers = (code: string) => denied.some(spoken => spokenFindingCovers(spoken, code));
+      const entry = [...staged].reverse().find(candidate => findingsOf(candidate).some(f => covers(String(f['code']))));
+      if (entry) {
+        if (findings.length === 0) {
+          return { kind: 'retracted', entry, codes: findingsOf(entry).map(f => String(f['code'])).filter(covers) };
+        }
+        const kept = findingsOf(entry).filter(f => !covers(String(f['code']))).map(f => ({
+          code: String(f['code']),
+          label: findingLabel(String(f['code'])),
+          kind: findingKind(String(f['code'])) ?? 'CONDITION',
+          surface: (f['surface'] as string | null | undefined) ?? null,
+          severity: (f['severity'] as FindingEntity['severity'] | undefined) ?? null,
+        } as FindingEntity));
+        return {
+          kind: 'rewritten',
+          intent: { ...intent, intent: 'chart.replaceLastFinding', entities: { fdi, findings: [...kept, ...findings], replaceAuditId: entry.auditId } },
+        };
+      }
+    }
+
+    const fresh: FindingEntity[] = [];
+    const duplicates: string[] = [];
+    const refines = new Set<BufferedEntry>();
+    for (const finding of findings) {
+      let duplicate = false;
+      let refining: BufferedEntry | null = null;
+      for (const entry of staged) {
+        for (const known of findingsOf(entry)) {
+          if (String(known['code']) !== finding.code) continue;
+          const knownSurface = (known['surface'] as string | null | undefined) ?? null;
+          if (!finding.surface || knownSurface === finding.surface) duplicate = true;
+          else if (!knownSurface) refining = entry;
+        }
+      }
+      if (duplicate) duplicates.push(finding.code);
+      else {
+        fresh.push(finding);
+        if (refining) refines.add(refining);
+      }
+    }
+    if (fresh.length === 0) return { kind: 'already-noted', fdi, codes: duplicates };
+    if (fresh.length === findings.length && refines.size === 0) return { kind: 'stage', intent, refines: [] };
+    return { kind: 'stage', intent: { ...intent, entities: { ...intent.entities, findings: fresh } }, refines: [...refines] };
+  }
+
+  /** "45, c'est pas couronne" with nothing said instead: the denied findings come off the staged entry. */
+  private async retractDenied(entry: BufferedEntry, codes: string[], batch?: StagedBatch): Promise<void> {
+    const fdi = entityString(entry.entities, 'fdi') ?? '';
+    const removed = await this.removeStagedFindings(entry, codes);
+    const language = this.language();
+    const fr = language === 'fr';
+    const labels = codes.map(code => spokenFindingLabel(code, language)).join(', ');
+    const spoken: Spoken = removed
+      ? { text: fr ? `Corrigé. Retiré de la dent ${fdi} : ${labels}.` : `Corrected. Removed from tooth ${fdi}: ${labels}.`, locale: synthesisLocale(language) }
+      : this.say('notStaged');
+    this.highlightSignal.set(fdi || null);
+    if (batch) {
+      batch.notes.push(spoken);
+      return;
+    }
+    this.touchWakeWindow();
+    this.settle();
+    this.announce(removed, spoken.text, spoken);
+  }
+
+  /** "Calypso, stop": asks before ending, because ending cannot be undone hands-free. */
+  private askToEnd(said: string): void {
+    const command = this.registry.get('voice.session.end');
+    if (!command) return;
+    this.confirmationSignal.set({
+      intent: { intent: 'voice.session.end', entities: {}, confidence: 1, resolver: 'grammar', transcript: said },
+      command,
+      preview: 'End the consultation?',
+      reason: 'risk',
+      onConfirm: async () => {
+        this.lastAcceptedAtSignal.set(null);
+        await this.sessionHooks?.end();
+      },
+    });
+    this.stateSignal.set('awaiting-confirmation');
+    this.touchWakeWindow();
+    this.announce(false, 'End the consultation?', this.say('confirmEnd'));
   }
 
   /**
@@ -1659,6 +1876,11 @@ export class VoiceOrchestratorService {
     if (!pending) return;
     this.confirmationSignal.set(null);
 
+    if (pending.onConfirm) {
+      this.settle();
+      await pending.onConfirm();
+      return;
+    }
     if (pending.auditId) {
       await this.runServerConfirmed(pending);
       return;

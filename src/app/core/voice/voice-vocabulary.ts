@@ -255,6 +255,7 @@ const PHRASES = {
     en: 'Paused. Say Calypso, resume.',
   },
   resumedByVoice: { fr: 'Reprise.', en: 'Resumed.' },
+  confirmEnd: { fr: 'Terminer la consultation ?', en: 'End the consultation?' },
   nothingStaged: { fr: 'Rien à relire pour l\'instant.', en: 'Nothing to read back yet.' },
   sttDown: {
     fr: 'La reconnaissance vocale ne répond pas. Répétez.',
@@ -284,6 +285,17 @@ export interface Spoken {
 
 export function phrase(key: PhraseKey, language: SpokenLanguage): Spoken {
   return { text: PHRASES[key][language], locale: synthesisLocale(language) };
+}
+
+/** A finding said again: "Dent 38 : carie, déjà notée." Nothing is staged a second time. */
+export function alreadyNoted(fdi: string, codes: string[], language: SpokenLanguage): Spoken {
+  const fr = language === 'fr';
+  const labels = [...new Set(codes)].map(code => spokenFindingLabel(code, language)).join(', ');
+  const plural = new Set(codes).size > 1;
+  return {
+    text: fr ? `Dent ${fdi} : ${labels}, déjà noté${plural ? 'es' : 'e'}.` : `Tooth ${fdi}: ${labels}, already noted.`,
+    locale: synthesisLocale(language),
+  };
 }
 
 /** The session is about to end and cannot be extended. */
@@ -452,6 +464,7 @@ const QUESTIONS_FR: Record<string, string> = {
     'Antécédent médical ou dentaire ?',
   'What should I add to the medical history?': 'Quel antécédent médical ?',
   'What should I add to the dental history?': 'Quel antécédent dentaire ?',
+  'Which medication?': 'Quel médicament ?',
 };
 
 export function spokenQuestion(question: string, language: SpokenLanguage): Spoken {

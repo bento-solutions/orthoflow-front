@@ -67,15 +67,15 @@ describe('golden transcript — the consultation of 10 Nov 2026', () => {
   it('22:36:40 is conversation', () => heard('22:36:40'));
   it('22:36:51 the price said to the patient is conversation', () => heard('22:36:51'));
 
-  it.fails('22:37:18 "soins en place" on 18 is an existing filling', () => {
+  it('22:37:18 "soins en place" on 18 is an existing filling', () => {
     staged('22:37:18', ['18:existing_filling']);
   });
 
-  it.fails('22:37:39 "dans 16 caries occlusales" (mis-heard "dent") is occlusal caries on 16', () => {
+  it('22:37:39 "dans 16 caries occlusales" (mis-heard "dent") is occlusal caries on 16', () => {
     staged('22:37:39', ['16:caries@occlusal']);
   });
 
-  it.fails('22:38:32 "dont 11 caries occlusales" is occlusal caries on 11', () => {
+  it('22:38:32 "dont 11 caries occlusales" is occlusal caries on 11', () => {
     staged('22:38:32', ['11:caries@occlusal']);
   });
 
@@ -96,7 +96,7 @@ describe('golden transcript — the consultation of 10 Nov 2026', () => {
     expect(result.byTime('22:39:39').ran).toContain('help.show');
   });
 
-  it.fails('22:40:22 "Dans 11 carrés." is already noted: no second entry', () => {
+  it('22:40:22 "Dans 11 carrés." is already noted: no second entry', () => {
     expect(result.byTime('22:40:22').staged).toEqual([]);
     expect(result.finalFindings.filter(f => f.startsWith('11:caries'))).toHaveLength(1);
   });
@@ -105,11 +105,11 @@ describe('golden transcript — the consultation of 10 Nov 2026', () => {
   it('22:40:34 "Dent 13, carie." — 13 caries', () => staged('22:40:34', ['13:caries']));
   it('22:40:41 "dont 24 absentes." — 24 missing', () => staged('22:40:41', ['24:missing']));
 
-  it.fails('22:40:49 "38 carré occlusal." is occlusal caries on 38', () => {
+  it('22:40:49 "38 carré occlusal." is occlusal caries on 38', () => {
     staged('22:40:49', ['38:caries@occlusal']);
   });
 
-  it.fails('22:40:57 "Dent 38, carie occlusale." is already noted', () => {
+  it('22:40:57 "Dent 38, carie occlusale." is already noted', () => {
     const row = result.byTime('22:40:57');
     expect(row.staged).toEqual([]);
     expect(row.stagedIntents).toEqual([]);
@@ -121,7 +121,7 @@ describe('golden transcript — the consultation of 10 Nov 2026', () => {
     staged('22:41:14', ['44:existing_crown', '43:existing_crown', '45:existing_crown']);
   });
 
-  it.fails('22:41:28 "Non, donc 45, c\'est pas couronne, amalgame." replaces the crown on 45', () => {
+  it('22:41:28 "Non, donc 45, c\'est pas couronne, amalgame." replaces the crown on 45', () => {
     const row = result.byTime('22:41:28');
     expect(row.staged).toEqual(['45:existing_amalgam']);
     expect(row.rejected).toHaveLength(1);
@@ -130,13 +130,13 @@ describe('golden transcript — the consultation of 10 Nov 2026', () => {
 
   it('22:41:55 the next appointment told to the patient is conversation, not a read', () => heard('22:41:55'));
 
-  it.fails('22:42:39 "Calypso, stop, fin de consultation." ends at once, with no model call', () => {
+  it('22:42:39 "Calypso, stop, fin de consultation." ends at once, with no model call', () => {
     const row = result.byTime('22:42:39');
     expect(row.ended).toBe(true);
     expect(row.nluCalls).toBe(0);
   });
 
-  it.fails('ends with the eleven findings, none lost, none wrong', () => {
+  it('ends with the eleven findings, none lost, none wrong', () => {
     expect([...result.finalFindings].sort()).toEqual([
       '18:existing_filling', '16:caries@occlusal', '11:caries@occlusal', '12:missing', '13:caries',
       '24:missing', '38:caries@occlusal', '35:missing', '44:existing_crown', '43:existing_crown',
@@ -151,7 +151,7 @@ describe('golden transcript — the consultation of 10 Nov 2026', () => {
 });
 
 describe('golden transcript — the allergies sentence with the wake window open (A3)', () => {
-  it.fails('is still conversation, even right after a command', async () => {
+  it('is still conversation, even right after a command', async () => {
     const result = await replayConsultation([
       { time: '22:32:40', text: 'Dent 13, carie.' },
       { time: '22:32:52', text: SESSION_2026_11_10.find(line => line.time === '22:32:52')!.text },

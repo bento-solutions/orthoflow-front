@@ -235,7 +235,18 @@ describe('reads, and what voice deliberately cannot do', () => {
   });
 
   it('selects a tooth without writing anything', () => {
-    expect(expectIntent('Show tooth 16.', 'chart.selectTooth').entities['fdi']).toBe('16');
+    expect(expectIntent('Select tooth 16.', 'chart.selectTooth').entities['fdi']).toBe('16');
+    expect(expectIntent('Sélectionne la 16.', 'chart.selectTooth').entities['fdi']).toBe('16');
+  });
+
+  it('shows a tooth alone, in close-up, when asked to look at it', () => {
+    for (const said of ['Show tooth 16.', 'montre la dent 16', 'inspecte la 16', 'je veux voir la dent 16', 'focus sur la 16', 'gros plan sur la 16']) {
+      expect(expectIntent(said, 'chart.zoomTooth').entities['fdi'], said).toBe('16');
+    }
+  });
+
+  it('reads a sentence that looks at a tooth and names a finding as dictation', () => {
+    expectIntent('regarde la 16, carie', 'chart.addToothFindings');
   });
 
   it('schedules a follow-up', () => {
@@ -862,4 +873,56 @@ describe('the 3D chart view by voice', () => {
     '"%s" goes back to the whole mouth', (utterance) => {
       expect(intentOf(utterance)).toEqual({ id: 'chart.zoomTooth', entities: {} });
     });
+});
+
+describe('free-text commands start with what they are (WP1.5)', () => {
+  const kinds = (utterance: string) => {
+    const result = resolve(utterance);
+    if (result.kind === 'intent') return [`${result.intent.intent}:${JSON.stringify(result.intent.entities)}`];
+    if (result.kind === 'sequence') return result.intents.map(i => `${i.intent}:${JSON.stringify(i.entities)}`);
+    return [result.kind];
+  };
+
+  it('reads an allergy only when the sentence opens with it', () => {
+    expect(kinds('allergie à la pénicilline')).toEqual(['clinical.addAllergy:{"substance":"pénicilline"}']);
+    expect(kinds('note allergie au latex')).toEqual(['clinical.addAllergy:{"substance":"latex"}']);
+    expect(kinds("le patient est allergique au latex et à l'iode")).toEqual([
+      'clinical.addAllergy:{"substance":"latex"}', 'clinical.addAllergy:{"substance":"iode"}',
+    ]);
+    expect(kinds('allergies : ananas, pénicilline et kiwi')).toEqual([
+      'clinical.addAllergy:{"substance":"ananas"}', 'clinical.addAllergy:{"substance":"pénicilline"}',
+      'clinical.addAllergy:{"substance":"kiwi"}',
+    ]);
+  });
+
+  it('does not make a sentence of conversation into a substance', () => {
+    expect(kinds("Pour les allergies, vous avez une allergie à l'ananas, vous avez une allergie à la pénicilline, et je vois aussi que vous avez une réaction au kiwi."))
+      .toEqual(['unrecognized']);
+    expect(kinds("allergie à l'ananas vous avez une allergie à la pénicilline")).toEqual(['clarification']);
+  });
+
+  it('reads a medical history entry only at the start, short, with its qualifier', () => {
+    expect(kinds('antécédents médicaux : diabète de type 1')).toEqual(['clinical.addMedicalHistory:{"category":"CONDITION","label":"diabète de type 1"}']);
+    expect(kinds('Et pour les antécédents médicaux, est-ce que vous avez— OK, je vois.')).toEqual(['unrecognized']);
+    expect(kinds('patient diabétique de type 1')).toEqual(['clinical.addMedicalHistory:{"category":"CONDITION","label":"Diabète de type 1"}']);
+  });
+
+  it('reads a medication only from the ways one is said', () => {
+    expect(kinds('le patient prend du paracétamol')).toEqual(['clinical.addMedicalHistory:{"category":"MEDICATION","label":"paracétamol"}']);
+    expect(kinds('traitement en cours : metformine')).toEqual(['clinical.addMedicalHistory:{"category":"MEDICATION","label":"metformine"}']);
+    expect(kinds('médicaments : aspirine, lansoprazole')).toEqual([
+      'clinical.addMedicalHistory:{"category":"MEDICATION","label":"aspirine"}',
+      'clinical.addMedicalHistory:{"category":"MEDICATION","label":"lansoprazole"}',
+    ]);
+    for (const said of ['on va faire le traitement la semaine prochaine', 'le traitement va durer deux semaines',
+      'il prend le bus pour venir', 'Oui, donc vous prenez du paracétamol. OK.']) {
+      expect(kinds(said), said).toEqual(['unrecognized']);
+    }
+  });
+
+  it('reads the next appointment only when asked', () => {
+    expectIntent('quand est le prochain rendez-vous', 'patients.readNextAppointment');
+    expectIntent('prochain rendez-vous ?', 'patients.readNextAppointment');
+    expect(kinds('notre prochain rendez-vous, ça sera pour demain à 10 heures')).toEqual(['unrecognized']);
+  });
 });

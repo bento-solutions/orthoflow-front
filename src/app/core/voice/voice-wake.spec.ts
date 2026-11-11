@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   detectWake,
   FOLLOW_UP_WINDOW_MS,
+  isBareStop,
   isPausePhrase,
   isResumePhrase,
   isSelfEvidentDictation,
   isStopPhrase,
   stripWakeWord,
   WAKE_WORD,
+  wakeSentence,
 } from './voice-wake';
 
 /**
@@ -161,5 +163,65 @@ describe('pausing and resuming by voice', () => {
   it('never makes "stop" a pause: stopping ends the examination', () => {
     expect(isPausePhrase('stop')).toBe(false);
     expect(isPausePhrase("stop l'examen")).toBe(false);
+  });
+});
+
+describe('the gate after the 10 Nov 2026 session (WP1)', () => {
+  it('takes what the doctor tells the patient about a tooth as dictation', () => {
+    for (const said of ['vous avez une carie sur la 16', 'il présente une fracture sur la 17', 'elle a une couronne sur la 21',
+      'on retrouve une carie sur la 36', 'you have caries on tooth 16', 'Donc vous avez dent 16 caries occlusales.']) {
+      expect(isSelfEvidentDictation(said), said).toBe(true);
+    }
+  });
+
+  it('but not a symptom, which is the patient\'s to say', () => {
+    for (const said of ['vous avez mal à la 16', 'vous avez une sensibilité sur la 16', 'il a mal à la dent 16', 'la dent 16 me fait mal',
+      "j'ai mal à la dent 16", 'est-ce que vous avez mal à la 16 ?']) {
+      expect(isSelfEvidentDictation(said), said).toBe(false);
+    }
+  });
+
+  it('takes "dent N" followed at once by a finding as dictation, however the sentence opens', () => {
+    expect(isSelfEvidentDictation("C'est le schéma dentaire dent 11 caries occlusales.")).toBe(true);
+    expect(isSelfEvidentDictation('alors voyons voir maintenant, dent 26, une carie')).toBe(true);
+    // A symptom right after the tooth is still not dictation.
+    expect(isSelfEvidentDictation('alors voyons voir maintenant, dent 26 douleur')).toBe(false);
+  });
+
+  it('accepts a long sentence when the tooth and the finding are close', () => {
+    expect(isSelfEvidentDictation(
+      'Voilà, donc pour vos dents, donc je vois que vous avez des soins antécédents déjà sur la dent 18, donc soins en place.',
+    )).toBe(true);
+  });
+
+  it('refuses a question however it opens', () => {
+    expect(isSelfEvidentDictation('dent 16 carie ?')).toBe(false);
+    expect(isSelfEvidentDictation('est-ce que la 16 a une carie')).toBe(false);
+  });
+
+  it('hears the wake word at the start of a later sentence of the clip, not in the middle of one', () => {
+    expect(detectWake('On peut commencer le Calypso schéma dentaire. Calypso schéma dentaire.', null))
+      .toEqual({ addressed: true, command: 'schéma dentaire.', reason: 'wake-word' });
+    expect(detectWake('On peut commencer le Calypso schéma dentaire.', null).addressed).toBe(false);
+    expect(wakeSentence('Bon. Calypso, dent 16 carie')).toBe('Calypso, dent 16 carie');
+  });
+
+  it('ends on the phrases that name what ends, with a few words in front', () => {
+    for (const said of ['Calypso, stop, fin de consultation.', 'fin de la consultation', 'on termine la consultation',
+      'terminé, fin de consultation', "c'est fini, fin de la séance", 'ok, on arrête la consultation', 'end the session',
+      "let's finish the consultation"]) {
+      expect(isStopPhrase(said), said).toBe(true);
+    }
+    for (const said of ['stop', 'arrêtez ça fait mal', 'Donc merci monsieur pour cette session.', 'la consultation est finie demain']) {
+      expect(isStopPhrase(said), said).toBe(false);
+    }
+  });
+
+  it('knows a bare "stop" said to the system, which is asked back', () => {
+    for (const said of ['stop', 'Stop.', 'terminé', "c'est fini", 'on arrête', 'end', 'finish']) {
+      expect(isBareStop(said), said).toBe(true);
+    }
+    expect(isBareStop('stop, fin de consultation')).toBe(false);
+    expect(isBareStop('dent 16 carie')).toBe(false);
   });
 });

@@ -159,13 +159,20 @@ function recordOnTooth(
   const affirmed = uniqueByCode(affirmedFindings(findings));
   const denied = negatedClauses(findings);
 
+  const deniedCodes = [...new Set(findings.filter(f => f.negated).map(f => f.code))];
   if (affirmed.length === 0) {
-    return noteIntent(denied.join('; '), 'OBSERVATION', fdi, Math.min(confidence, CONFIDENCE_STRONG), raw);
+    const note = noteIntent(denied.join('; '), 'OBSERVATION', fdi, Math.min(confidence, CONFIDENCE_STRONG), raw);
+    if (deniedCodes.length) note.entities['denied'] = deniedCodes;
+    return note;
   }
   const note = [withResidualNote ? residualNote(raw, affirmed) : undefined, ...denied]
     .filter((part): part is string => !!part)
     .join('; ') || undefined;
-  return makeIntent('chart.addToothFindings', { fdi, findings: toEntities(affirmed), note }, confidence, raw);
+  // What was denied, by code: "45, c'est pas couronne, amalgame" denies the crown
+  // staged a moment ago, and the pipeline turns that into a correction of it.
+  return makeIntent('chart.addToothFindings', {
+    fdi, findings: toEntities(affirmed), note, ...(deniedCodes.length ? { denied: deniedCodes } : {}),
+  }, confidence, raw);
 }
 
 /**
@@ -705,41 +712,88 @@ function beforeNegation(label: string): string {
   return kept.replace(/\s*(?:mais|but|et|and)?\s*$/iu, '').trim();
 }
 
+/**
+ * Words that make what follows "allergie à" a sentence rather than a substance:
+ * "vous avez une allergie à l'ananas, vous avez une allergie à la pénicilline"
+ * once became an allergy called "l'ananas vous avez une allergie à la pénicilline".
+ */
+const NOT_A_SUBSTANCE = /(?:^|\s)(?:vous|je|j|il|elle|on|avez|avons|ont|est|sont|que|qui|you|he|she|is|are|has|have)(?=\s|$)/iu;
+
+/** The article in front of a substance: "à la pénicilline", "au latex", "de l'iode". */
+const SUBSTANCE_ARTICLE = /^(?:(?:[àa]\s+)?(?:de\s+)?l['’]\s*|(?:[àa]\s+)?(?:de\s+la|de\s+l|la|le|les|l|du|des|au|aux|une?)\s+|[àa]\s+|to\s+(?:the\s+)?|the\s+)/iu;
+
+/** At most this many words to a substance; a longer "substance" is a sentence. */
+const SUBSTANCE_MAX_WORDS = 4;
+
+/**
+ * Splits "la pénicilline, le latex et l'iode" into substances, each without its
+ * article, or returns null when one of them is not a substance.
+ */
+function substancesOf(spoken: string): string[] | null {
+  const parts = spoken
+    .split(/\s*(?:,|;|\bet\b|\band\b)\s*/iu)
+    .map(part => part.replace(/[.!]+$/u, '').trim())
+    .filter(Boolean);
+  if (parts.length === 0) return null;
+  const substances: string[] = [];
+  for (const part of parts) {
+    let substance = part;
+    for (let i = 0; i < 2; i++) substance = substance.replace(SUBSTANCE_ARTICLE, '').trim();
+    if (!substance || NOT_A_SUBSTANCE.test(` ${substance} `)) return null;
+    if (substance.split(/\s+/).length > SUBSTANCE_MAX_WORDS) return null;
+    if (!substances.some(known => known.toLowerCase() === substance.toLowerCase())) substances.push(substance);
+  }
+  return substances;
+}
+
+/**
+ * "Allergie à la pénicilline", "le patient est allergique au latex et à l'iode",
+ * "allergy to penicillin". The sentence has to *open* with the allergy: one that
+ * merely contains the word is a conversation about it, which the reader takes
+ * from the transcript instead.
+ */
+const ALLERGY_START = /^\s*(?:(?:ajoute[rz]?|note[rz]?|add|record)\s*:?\s+)?(?:(?:(?:le|la|the)\s+)?patiente?\s+(?:(?:est|is|a\s+une?|has\s+an?)\s+)?)?(?:une?\s+|an?\s+)?(?:allergies?|allergique|allergic|allergy)(?![\p{L}])\s*(?::|(?:aux|au|[àa]|to)(?![\p{L}]))?\s*(.*)$/isu;
+
 const addAllergy: GrammarRule = {
   id: 'grammar.allergy.add',
-  match: (raw, text) => {
-    // normalizeUtterance has already stripped the colon from "allergy:
-    // penicillin", so the separator has to be optional here.
-    const explicit = text.match(/\ballerg(?:y|ies|ie|ic|ique)\s*(?:to|[àa]|au|aux)?\s+(.+)$/iu);
-    const patientIs = text.match(/\bpatient\s+est\s+allergique\s+(?:[àa]|au|aux)\s+(.+)$/iu);
-    const raw_substance = (explicit?.[1] ?? patientIs?.[1] ?? '').trim();
-    if (!raw_substance) return null;
-
-    // "allergie à la pénicilline" — the article is grammar, not the substance.
-    // "… mais pas à l'amoxicilline" is a second statement, not part of the name.
-    const substance = beforeNegation(raw_substance)
-      .replace(/[.,;]+$/, '')
-      // A whole word only — "latex" is not "la" + "tex". The normaliser has
-      // already turned "l'amoxicilline" into "l amoxicilline".
-      .replace(/^(?:(?:de\s+la|de\s+l|la|le|les|l|du|des|the)\s+|l['’]\s*)/iu, '')
-      .trim();
-    if (!substance || startsNegated(substance)) {
-      if (startsNegated(raw_substance)) {
+  match: (raw) => {
+    const start = ALLERGY_START.exec(raw);
+    if (!start) return null;
+    const rawSubstance = start[1].trim();
+    // "Allergie à la pénicilline mais pas à l'amoxicilline": the second half is another statement.
+    const kept = beforeNegation(rawSubstance);
+    if (!kept) {
+      if (startsNegated(rawSubstance)) {
         return { kind: 'intent', intent: noteIntent(raw, 'MEDICAL_HISTORY', null, CONFIDENCE_STRONG, raw) };
       }
       return ask('Allergic to what?', raw, [], { intent: 'clinical.addAllergy', entities: {}, awaiting: 'substance' });
     }
-    return intent('clinical.addAllergy', { substance }, CONFIDENCE_STRONG, raw);
+    const substances = substancesOf(kept);
+    if (!substances) {
+      return ask('Allergic to what?', raw, [], { intent: 'clinical.addAllergy', entities: {}, awaiting: 'substance' });
+    }
+    if (substances.length === 1) return intent('clinical.addAllergy', { substance: substances[0] }, CONFIDENCE_STRONG, raw);
+    return {
+      kind: 'sequence',
+      intents: substances.map(substance => makeIntent('clinical.addAllergy', { substance }, CONFIDENCE_STRONG, raw)),
+    };
   },
 };
 
 const addMedicalHistory: GrammarRule = {
   id: 'grammar.history.medical',
   match: (raw, text) => {
-    const match = text.match(/\b(?:medical\s+history|ant[ée]c[ée]dents?\s+m[ée]dicaux?)\s*(?::|is|includes?)?\s*(.+)$/iu);
+    // It has to open the sentence: "et pour les antécédents médicaux, est-ce que
+    // vous avez…" is the doctor asking, and a label made of it is nonsense.
+    const match = raw.match(/^\s*(?:(?:ajoute[rz]?|note[rz]?|add)\s+(?:aux?\s+|to\s+(?:the\s+)?)?)?(?:medical\s+history|ant[ée]c[ée]dents?\s+m[ée]dicaux?)\s*(?::|is|includes?)?\s*(.+)$/isu);
     if (!match) return null;
-    const label = beforeNegation(match[1].replace(/[.,;]+$/, '').trim());
+    // Up to the first clause break, and short: a history entry is a name, not a story.
+    const clause = match[1].split(/[,;.!?]|\s(?:mais|but)\s/iu)[0];
+    const label = beforeNegation(clause.trim());
     if (!label) return ask('What should I add to the medical history?', raw);
+    if (label.split(/\s+/).length > 8 || NOT_A_SUBSTANCE.test(` ${label} `)) {
+      return ask('What should I add to the medical history?', raw);
+    }
     // "Antécédents médicaux : aucun" is a statement, not an entry called "aucun".
     if (startsNegated(label)) {
       return { kind: 'intent', intent: noteIntent(raw, 'MEDICAL_HISTORY', null, CONFIDENCE_STRONG, raw) };
@@ -753,22 +807,37 @@ const addMedicalHistory: GrammarRule = {
   },
 };
 
+/**
+ * "Le patient prend du paracétamol", "traitement en cours : metformine",
+ * "médicaments : …". Only these openings: the bare word "traitement" and the
+ * verb "prend" used to make "on va faire le traitement la semaine prochaine" a
+ * medication called "la semaine prochaine", and "il prend le bus" one called
+ * "le bus".
+ */
+const MEDICATION_START = /^\s*(?:(?:(?:le|la|the)\s+)?patiente?\s+(?:prend|est\s+sous|suit|takes?|is\s+on|is\s+taking)|traitements?\s+en\s+cours|current\s+(?:treatments?|medications?)|m[ée]dicaments?|m[ée]dications?|medications?)\s*:?\s+(.+)$/isu;
+const MEDICATION_ARTICLE = /^(?:(?:de\s+)?l['’]\s*|d['’]\s*|(?:du|de\s+la|de\s+l|des|de|un|une|le|la|les|l|the|an?)\s+)/iu;
+
 const addMedication: GrammarRule = {
   id: 'grammar.history.medication',
-  match: (raw, text) => {
-    // "What is on tooth 16" contains "is on"; a question is never a
-    // medication being recorded.
-    if (/^(?:what|which|where|read|tell|lis|lire|qu)\b/iu.test(text)) return null;
-    const match = text.match(/\b(?:patient\s+)?(?:takes?|is\s+on|medication\s*:?|traitement\s*:?|prend)\s+(.+)$/iu);
+  match: (raw) => {
+    const match = MEDICATION_START.exec(raw);
     if (!match) return null;
-    if (!/\bmedication\b|\btraitement\b|\btakes?\b|\bis\s+on\b|\bprend\b/iu.test(text)) return null;
-    const label = match[1].replace(/[.,;]+$/, '').trim();
-    if (!label) return null;
+    const spoken = match[1].trim();
     // "Ne prend pas de médicaments" is the absence of one, not one called "pas de médicaments".
-    if (startsNegated(label) || isNegatedAt(text, match.index ?? 0)) {
+    if (startsNegated(spoken) || isNegatedAt(raw, match.index ?? 0)) {
       return { kind: 'intent', intent: noteIntent(raw, 'MEDICAL_HISTORY', null, CONFIDENCE_STRONG, raw) };
     }
-    return intent('clinical.addMedicalHistory', { category: 'MEDICATION', label }, CONFIDENCE_MODERATE, raw);
+    const labels = spoken
+      .split(/\s*(?:,|;|\bet\b|\band\b)\s*/iu)
+      .map(part => part.replace(/[.!?]+$/u, '').replace(MEDICATION_ARTICLE, '').trim())
+      .filter(Boolean);
+    if (labels.length === 0) return null;
+    if (labels.some(label => label.split(/\s+/).length > 5 || NOT_A_SUBSTANCE.test(` ${label} `))) {
+      return ask('Which medication?', raw);
+    }
+    const intents = labels.map(label =>
+      makeIntent('clinical.addMedicalHistory', { category: 'MEDICATION', label }, CONFIDENCE_MODERATE, raw));
+    return intents.length === 1 ? { kind: 'intent', intent: intents[0] } : { kind: 'sequence', intents };
   },
 };
 
@@ -788,6 +857,19 @@ const MEDICAL_CONDITIONS: RegExp[] = [
   /\bfumeu(?:r|rs|se|ses)\b/iu, /\bsmoker\b/iu,
   /\bh[ée]mophile\b/iu, /\bh[ée]mophilie\b/iu, /\bhaemophil\w+/iu, /\bhemophil\w+/iu,
 ];
+
+/**
+ * The entry a condition word makes, with what qualifies it: "diabétique de type
+ * 1" is "Diabète de type 1", not "Diabétique" — the type is the part that matters.
+ */
+function conditionLabel(word: string, after: string): string {
+  const lower = word.toLowerCase();
+  const type = /^\s+(?:de\s+|of\s+)?type\s+(1|2|un|deux|i{1,2})(?![\p{L}\p{N}])/iu.exec(after)?.[1];
+  const typeNumber = type ? ({ un: '1', deux: '2', i: '1', ii: '2' } as Record<string, string>)[type.toLowerCase()] ?? type : null;
+  if (typeNumber && /^diab[ée]tiques?$|^diab[èe]te$/u.test(lower)) return `Diabète de type ${typeNumber}`;
+  if (typeNumber && /^diabetic$|^diabetes$/u.test(lower)) return `Type ${typeNumber} diabetes`;
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
 
 /** "Sous anticoagulants", "traité par metformine" — said of the patient, not of a tooth. */
 const MEDICATION_OF_PATIENT =
@@ -812,7 +894,7 @@ const medicalStatement: GrammarRule = {
     for (const pattern of MEDICAL_CONDITIONS) {
       const match = pattern.exec(raw);
       if (!match) continue;
-      const label = match[0].charAt(0).toUpperCase() + match[0].slice(1).toLowerCase();
+      const label = conditionLabel(match[0], raw.slice((match.index ?? 0) + match[0].length));
       if (seen.has(label.toLowerCase())) continue;
       seen.add(label.toLowerCase());
       intents.push(makeIntent('clinical.addMedicalHistory', { category: 'CONDITION', label }, CONFIDENCE_MODERATE, raw));
@@ -1021,18 +1103,26 @@ function followUpIntent(raw: string): VoiceIntent {
 // swapped the screen mid-examination cost the dentist their view of the chart
 // and could not be undone hands-free. The command palette still navigates.
 
+/**
+ * "Montre la dent 16", "inspecte la 16", "je veux voir la 26", "gros plan sur
+ * la 26": that tooth, alone, in close-up. "Sélectionne la 16" only marks it. A
+ * sentence that also names a finding is dictation, not a request to look.
+ */
+const LOOK_AT_TOOTH = /^(?:montre(?:\s+moi)?|affiche|inspecte|examine|regarde|isole|focus\s+sur|gros\s+plan\s+sur|je\s+veux\s+voir|show(?:\s+me)?|inspect|isolate|focus\s+on|close\s?up\s+on|go\s+to)(?![\p{L}\p{N}])/iu;
+const MARK_TOOTH = /^(?:select|highlight|s[ée]lectionne[rz]?|surligne)(?![\p{L}\p{N}])/iu;
+
 const selectTooth: GrammarRule = {
   id: 'grammar.chart.selectTooth',
   match: (raw, text, context) => {
-    if (!/^(?:show|select|go\s+to|highlight|s[ée]lectionne[rz]?|affiche[rz]?)\b/iu.test(text)) return null;
-    if (!/\b(?:tooth|teeth|dent|molar|incisor|canine|premolar|molaire|incisive|canine|pr[ée]molaire)\b/iu.test(text)) {
-      return null;
-    }
+    const look = LOOK_AT_TOOTH.test(text);
+    const mark = MARK_TOOTH.test(text);
+    if (!look && !mark) return null;
+    if (extractFindings(raw).length > 0) return null;
     const tooth = resolveTooth(raw, context.dentition);
-    if (tooth.kind === 'resolved') {
-      return intent('chart.selectTooth', { fdi: tooth.fdi }, CONFIDENCE_STRONG, raw);
-    }
-    if (tooth.kind === 'ambiguous') {
+    const mentions = findToothMentions(raw).filter(mention => mention.valid);
+    const fdi = tooth.kind === 'resolved' ? tooth.fdi : mentions.length === 1 ? mentions[0].fdi : null;
+    if (fdi) return intent(look ? 'chart.zoomTooth' : 'chart.selectTooth', { fdi }, CONFIDENCE_STRONG, raw);
+    if (tooth.kind === 'ambiguous' && /\b(?:tooth|teeth|dent|molar|incisor|canine|premolar|molaire|incisive|pr[ée]molaire)\b/iu.test(text)) {
       return ask(tooth.question, raw, toothOptions(tooth));
     }
     return null;
@@ -1095,6 +1185,11 @@ const readNextAppointment: GrammarRule = {
   match: (raw, text, context) => {
     if (!context.patientId) return null;
     if (!/\bnext\s+appointment\b|\bprochain\s+rendez[- ]?vous\b|\bprochain\s+rdv\b/iu.test(text)) return null;
+    // Asked, or asked to be read — never "notre prochain rendez-vous, ça sera
+    // pour demain", which is the doctor telling the patient.
+    const asked = /^(?:quand\s+est|c\s+est\s+quand|quel\s+est|quelle\s+est\s+la\s+date|lis|lire|relis|dis\s+moi|when\s+is|what\s+is|what\s+s|read|tell\s+me)\b/iu.test(text)
+      || /^(?:(?:le|son|the|his|her)\s+)?(?:prochain\s+(?:rendez[\s-]?vous|rdv)|next\s+appointment)\s*\?\s*$/iu.test(raw.trim());
+    if (!asked) return null;
     return intent('patients.readNextAppointment', {}, CONFIDENCE_STRONG, raw);
   },
 };

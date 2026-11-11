@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { acceptsFollowUp } from './voice-followup';
 import { VoiceContextSnapshot } from './voice-intent.model';
-import { isBareFindingDictation, looksLikeQuestion } from './voice-wake';
+import { isBareFindingDictation, isSelfEvidentDictation, looksLikeQuestion } from './voice-wake';
 
 /**
  * The follow-up window keeps the microphone listening without the wake word for
@@ -79,23 +79,36 @@ describe('acceptsFollowUp — a run of dictation still flows', () => {
     });
   }
 
-  it('accepts a finding on a tooth that is named', () => {
-    expect(acceptsFollowUp('dent 17 carie', afterDictatingSixteen)).toBe(true);
-    expect(acceptsFollowUp('la 17 fracture', afterDictatingSixteen)).toBe(true);
-    expect(acceptsFollowUp('dent 17 pas de carie', afterDictatingSixteen)).toBe(true);
+  it('leaves a finding on a named tooth to be dictation in its own right', () => {
+    // The same sentence gives the same result whenever it is said: these are
+    // dictation because of what they are, not because a command came just before.
+    for (const said of ['dent 17 carie', 'la 17 fracture', 'dent 17 pas de carie', 'dent 17 carie et dent 18 couronne']) {
+      expect(acceptsFollowUp(said, afterDictatingSixteen), said).toBe(false);
+      expect(isSelfEvidentDictation(said), said).toBe(true);
+    }
   });
 
-  it('accepts commands that do not depend on which tooth is selected', () => {
+  it('accepts corrections, whichever tooth is selected', () => {
     expect(acceptsFollowUp('annule', afterDictatingSixteen)).toBe(true);
     expect(acceptsFollowUp('non, en fait couronne à remplacer', afterDictatingSixteen)).toBe(true);
     expect(acceptsFollowUp('enlève la carie sur la seize', afterDictatingSixteen)).toBe(true);
-    expect(acceptsFollowUp('note : patient anxieux', afterDictatingSixteen)).toBe(true);
-    expect(acceptsFollowUp('allergie à la pénicilline', afterDictatingSixteen)).toBe(true);
-    expect(acceptsFollowUp('montre les constatations', afterDictatingSixteen)).toBe(true);
   });
 
-  it('accepts several teeth said at once', () => {
-    expect(acceptsFollowUp('dent 17 carie et dent 18 couronne', afterDictatingSixteen)).toBe(true);
+  it('accepts a view of the chart', () => {
+    expect(acceptsFollowUp('montre la dent 16', afterDictatingSixteen)).toBe(true);
+    expect(acceptsFollowUp('vue occlusale', afterDictatingSixteen)).toBe(true);
+  });
+
+  it('never takes a note, an allergy or a task without the wake word (R7)', () => {
+    expect(acceptsFollowUp('note : patient anxieux', afterDictatingSixteen)).toBe(false);
+    expect(acceptsFollowUp('allergie à la pénicilline', afterDictatingSixteen)).toBe(false);
+    expect(acceptsFollowUp('crée une tâche pour l\'accueil : rappeler le patient', afterDictatingSixteen)).toBe(false);
+  });
+
+  it('no longer stages what is said to the assistant a few seconds after a command', () => {
+    // At baseline this staged a composite on 16.
+    expect(acceptsFollowUp('passe-moi le composite pour la seize', afterDictatingSixteen)).toBe(false);
+    expect(isSelfEvidentDictation('passe-moi le composite pour la seize')).toBe(false);
   });
 });
 
@@ -144,7 +157,7 @@ describe('a sentence that names a tooth', () => {
     // Said by the dentist about the tooth in front of them; staged, read back,
     // and reviewed. Dropping it would lose a finding with no sound to say so.
     for (const said of ['la 17 est cassée', 'la 17 est cassée depuis hier', 'dent 17 fracture depuis hier']) {
-      expect(acceptsFollowUp(said, afterDictatingSixteen), said).toBe(true);
+      expect(isSelfEvidentDictation(said), said).toBe(true);
     }
   });
 
@@ -156,6 +169,7 @@ describe('a sentence that names a tooth', () => {
       'elle est cassée depuis hier',
     ]) {
       expect(acceptsFollowUp(said, afterDictatingSixteen), said).toBe(false);
+      expect(isSelfEvidentDictation(said), said).toBe(false);
     }
   });
 });

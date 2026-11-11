@@ -1,6 +1,6 @@
 import { foldAccents, repairClinicalTerms, similarity } from './voice-fuzzy';
-import { Dentition, resolveTooth } from './tooth-lexicon';
-import { extractFindings } from './clinical-lexicon';
+import { Dentition, findToothMentions, normalizeUtterance, resolveTooth } from './tooth-lexicon';
+import { SYMPTOM_CODES, extractFindings } from './clinical-lexicon';
 
 /**
  * The wake word, and the window it opens.
@@ -97,7 +97,7 @@ export function detectWake(
     return { addressed: false, command: '', reason: 'not-addressed' };
   }
 
-  const stripped = stripWakeWord(trimmed);
+  const stripped = stripWakeWord(trimmed) ?? stripWakeWord(wakeSentence(trimmed) ?? '');
   if (stripped !== null) {
     // A bare "Calypso" with nothing after it is the dentist opening the floor
     // before they have decided what to say. That is addressed to the system
@@ -148,6 +148,22 @@ export function stripWakeWord(transcript: string): string | null {
 }
 
 /**
+ * The clip from the first sentence after the first one that opens with the wake
+ * word, or null. A recogniser hands back a clip, not a sentence: "On peut
+ * commencer le Calypso schéma dentaire. Calypso schéma dentaire." is the doctor
+ * trying once mid-sentence and then saying it properly, and the second sentence
+ * is addressed to the system. A wake word in the middle of a sentence still
+ * does not count.
+ */
+export function wakeSentence(transcript: string): string | null {
+  const sentences = transcript.trim().split(/(?<=[.!?])\s+/u);
+  for (let index = 1; index < sentences.length; index++) {
+    if (stripWakeWord(sentences[index]) !== null) return sentences.slice(index).join(' ');
+  }
+  return null;
+}
+
+/**
  * Guards the similarity check against the Winkler prefix bonus.
  *
  * Jaro-Winkler rewards a shared prefix, so "caly" — the first half of a
@@ -178,10 +194,31 @@ function stripLeadingPunctuation(text: string): string {
  * session that ended on the patient's word dropped the dentist into review
  * mid-examination. The phrase has to name what is ending.
  */
+const FILLER = '(?:(?:et|alors|donc|bon|ben|ok|okay|euh|hum|puis|voil[àa]|and|so|well|then|now|uh|um|right)[\\s,]+)*';
+
+/**
+ * Matched on {@link normalizeUtterance}'s output (apostrophes and punctuation
+ * gone). "Stop, fin de consultation", "on termine la consultation", "c'est
+ * fini, fin de la séance": a few words in front are allowed, the phrase itself
+ * still has to name what ends.
+ */
 const STOP_PHRASES = [
-  /^(?:end|stop|finish|close)\s+(?:the\s+)?(?:session|examination|exam|consultation|dictation)\b/iu,
-  /^(?:termine[rz]?|arr[êe]te[rz]?|finis|fin)\s+(?:de\s+)?(?:la\s+|le\s+|l['’]\s*|l\s+)?(?:session|consultation|examen|dict[ée]e)(?![\p{L}\p{N}])/iu,
+  new RegExp(`^${FILLER}(?:(?:stop|ok|bon|allez|merci|termin[ée]|c\\s+est\\s+(?:fini|bon|tout))[\\s,.;:!]+)*`
+    + '(?:on\\s+)?(?:termine[rz]?|terminons|arr[êe]te[rz]?|arr[êe]tons|finis(?:sons)?|fin|cl[ôo]ture[rz]?)\\s+'
+    + '(?:de\\s+)?(?:la\\s+|le\\s+|l\\s+|cette\\s+)?(?:session|consultation|examen|dict[ée]e|s[ée]ance)(?![\\p{L}\\p{N}])', 'iu'),
+  /^(?:(?:stop|ok|right|thanks|done)[\s,.;:!]+)*(?:let\s+s\s+)?(?:end|stop|finish|close)\s+(?:the\s+)?(?:session|examination|exam|consultation|dictation)(?![\p{L}\p{N}])/iu,
 ];
+
+/**
+ * "Calypso, stop" — said to the system, a bare word that would end the
+ * consultation. It is asked back ("Terminer la consultation ?") rather than
+ * obeyed: ending cannot be undone without a tap, and "stop" is what a patient says.
+ */
+const BARE_STOP = /^(?:stop|termin[ée]|c\s+est\s+fini|on\s+arr[êe]te|arr[êe]te|fin|end|finish|done)$/iu;
+
+export function isBareStop(command: string): boolean {
+  return BARE_STOP.test(normalizeUtterance(command));
+}
 
 /**
  * Pausing and resuming by voice, both said after the wake word.
@@ -220,7 +257,10 @@ export function isResumePhrase(transcript: string): boolean {
 }
 
 /** A dictated finding is a short sentence; a conversation is not. */
-const DICTATION_MAX_WORDS = 22;
+const DICTATION_MAX_WORDS = 30;
+
+/** In a sentence that long, the tooth and the finding still have to be close. */
+const DICTATION_REACH_WORDS = 12;
 
 /**
  * How a doctor opens a sentence that reports what they see before naming the
@@ -245,6 +285,47 @@ const REPORTING_LEAD = new RegExp(
   + ')(?![\\p{L}\\p{N}])',
   'iu',
 );
+
+/**
+ * The doctor telling the patient what is in their mouth: "vous avez une carie
+ * sur la 16", "il présente une fracture". Through these, only a finding the
+ * doctor sees counts — never a symptom, which is what the patient says they
+ * feel ("vous avez mal à la 16" stays conversation).
+ */
+const TELLING_LEAD = new RegExp(
+  `^${FILLER}(?:vous\\s+avez|vous\\s+pr[ée]sentez|il\\s+a|elle\\s+a|il\\s+pr[ée]sente|elle\\s+pr[ée]sente|on\\s+retrouve`
+  + '|you\\s+have|you[\'’]ve\\s+got|he\\s+has|she\\s+has)(?![\\p{L}\\p{N}])',
+  'iu',
+);
+
+/** "Vous avez…" opens a question as often as a statement; on its own it is not one. */
+const BARE_STATEMENT = /^(?:vous\s+avez|tu\s+as|you\s+have)(?![\p{L}\p{N}])/iu;
+
+/** Words that may sit between a tooth and its finding in "dent 11 c'est une carie". */
+const CORE_CONNECTOR = /^(?:c['’\s]?est|est|avec|une?|des)\s+/iu;
+
+/** Words that make a sentence the patient's own: "la dent 16 me fait mal". */
+const FIRST_PERSON = /(?:^|[\s,])(?:me|m['’]|j['’]|je|moi|mon|ma|mes|i|my|me)(?=[\s,]|$)/iu;
+
+function wordIndex(text: string, offset: number): number {
+  return text.slice(0, offset).split(/\s+/).filter(Boolean).length;
+}
+
+/**
+ * "…dent 11 caries occlusales": a tooth word and its number followed at once
+ * by a finding the doctor sees. That is dictation however the sentence opens —
+ * "C'est le schéma dentaire, dent 11 caries occlusales" included.
+ */
+function hasDictationCore(text: string): boolean {
+  for (const mention of findToothMentions(text)) {
+    if (!mention.valid) continue;
+    if (!/^(?:dents?|tooth|teeth)(?![\p{L}\p{N}])/iu.test(text.slice(mention.start))) continue;
+    const rest = text.slice(mention.end).replace(/^[\s,:;.\-–—]*/u, '').replace(CORE_CONNECTOR, '');
+    const [first] = extractFindings(rest);
+    if (first && !first.negated && first.at <= 1 && !SYMPTOM_CODES.has(first.code)) return true;
+  }
+  return false;
+}
 
 /**
  * Dictation that is unmistakably dictation, accepted without the wake word.
@@ -272,8 +353,11 @@ export function isSelfEvidentDictation(transcript: string, dentition: Dentition 
   let text = transcript.trim();
   const words = text.split(/\s+/).filter(Boolean);
   if (words.length === 0 || words.length > DICTATION_MAX_WORDS) return false;
-  if (opensWithQuestion(text)) return false;
-  if (resolveTooth(text, dentition).kind !== 'resolved') return false;
+  // A question is never dictation. "Vous avez une carie sur la 16" opens like
+  // one and is not: it is the doctor telling the patient, and the chart.
+  if (/\?\s*$/u.test(text)) return false;
+  if (opensWithQuestion(text) && !BARE_STATEMENT.test(text)) return false;
+  if (resolveTooth(text, dentition).kind !== 'resolved' && !findToothMentions(text).some(mention => mention.valid)) return false;
 
   let findings = extractFindings(text);
   if (findings.length === 0) {
@@ -287,20 +371,35 @@ export function isSelfEvidentDictation(transcript: string, dentition: Dentition 
     if (findings.length === 0) return false;
   }
 
+  // The tooth and the first finding are close: in a 30-word sentence a tooth
+  // at one end and a finding word at the other are two different things.
+  const mentions = findToothMentions(text).filter(mention => mention.valid);
+  const findingAt = wordIndex(text, findings[0].at);
+  if (mentions.length > 0
+    && mentions.every(mention => Math.abs(wordIndex(text, mention.start) - findingAt) > DICTATION_REACH_WORDS)) {
+    return false;
+  }
+
+  const seen = findings.filter(finding => !SYMPTOM_CODES.has(finding.code));
+  // Only symptoms, in the patient's own words — "la dent 16 me fait mal" — is
+  // the patient talking, however it opens.
+  if (seen.length === 0 && FIRST_PERSON.test(text)) return false;
+
   if (resolveTooth(words.slice(0, 4).join(' '), dentition).kind === 'resolved') return true;
   const firstFinding = text.toLowerCase().indexOf(findings[0].matchedText.toLowerCase());
   if (firstFinding >= 0 && firstFinding <= 1) return true;
 
-  // The weaker evidence: it has to read as a statement, not as a question.
-  return REPORTING_LEAD.test(text) && !/\?\s*$/u.test(text);
+  if (REPORTING_LEAD.test(text)) return true;
+  if (TELLING_LEAD.test(text) && seen.length > 0) return true;
+  return hasDictationCore(text);
 }
 
 export function isStopPhrase(transcript: string): boolean {
   // The wake word is optional on a stop, so try both forms.
   const bare = transcript.trim();
-  const stripped = stripWakeWord(bare);
+  const stripped = stripWakeWord(bare) ?? stripWakeWord(wakeSentence(bare) ?? '');
   const candidates = stripped === null ? [bare] : [bare, stripped];
-  return candidates.some(text => STOP_PHRASES.some(pattern => pattern.test(text.trim())));
+  return candidates.some(text => STOP_PHRASES.some(pattern => pattern.test(normalizeUtterance(text))));
 }
 
 // ── Speech heard during the follow-up window ────────────────────────────

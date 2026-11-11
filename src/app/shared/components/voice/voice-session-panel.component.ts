@@ -393,7 +393,7 @@ interface ToothGroup {
                 @for (entry of groups().other; track entry.auditId) {
                   <li class="vs-entry">
                     <div class="vs-entry-body">
-                      <p class="vs-entry-text">{{ entry.preview }}</p>
+                      <p class="vs-entry-text">{{ entry.summary || entry.preview }}</p>
                       @if (entry.transcript) {
                         <p class="vs-heard">“{{ entry.transcript }}”</p>
                       }

@@ -284,7 +284,7 @@ const MENTION_TOOTH_WORDS: ReadonlySet<string> = new Set(TOOTH_WORD);
 const MENTION_ARTICLES: ReadonlySet<string> = new Set(['la', 'le', 'number', 'numero', 'numéro']);
 
 /** A two-digit number followed by a unit of time or size is a quantity, not a tooth. */
-const QUANTITY_AFTER =
+export const QUANTITY_AFTER =
   /^\s*(?:mois|ans?|jours?|semaines?|heures?|h|mm|cm|mg|ml|%|months?|years?|days?|weeks?|hours?|minutes?|min|secondes?|janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[uû]t|septembre|octobre|novembre|d[ée]cembre|january|february|march|april|may|june|july|august|september|november|december)(?![\p{L}\p{N}])/iu;
 const QUANTITY_BEFORE = /(?:dans|pendant|depuis|in|for|after|apr[eè]s|every|chaque|tous\s+les)\s*$/iu;
 

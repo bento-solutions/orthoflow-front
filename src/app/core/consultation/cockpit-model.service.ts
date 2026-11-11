@@ -95,6 +95,9 @@ export class CockpitModelService {
     });
   });
 
+  /** Findings on a tooth the reader heard and could not place: shown, never saved by themselves. */
+  readonly mentions = computed(() => this.c.review().chartMentions ?? []);
+
   readonly complaint = computed(() => {
     const field = this.c.review().chiefComplaint;
     return field && field.status !== 'removed' ? { text: field.value, status: statusOf(field), quote: field.quote } : null;

@@ -68,6 +68,13 @@ describe('ConsultationService', () => {
   let patient: ReturnType<typeof signal<typeof PATIENT | null>>;
   let currentStatus: ConsultationStatus;
   let narrative: string | null;
+  let tailOn: boolean;
+  let modes: string[];
+  let knownSent: string[][];
+  let nextCorrections: unknown[];
+  let nextMentions: unknown[];
+  let recovered: string[];
+  let recoverResult: 'staged' | 'duplicate' | 'rejected';
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -88,23 +95,33 @@ describe('ConsultationService', () => {
     patient = signal<typeof PATIENT | null>(PATIENT);
     currentStatus = 'INTAKE';
     narrative = 'Examen : carie sur la 16.';
+    tailOn = false;
+    modes = [];
+    knownSent = [];
+    nextCorrections = [];
+    nextMentions = [];
+    recovered = [];
+    recoverResult = 'staged';
 
     TestBed.configureTestingModule({
       providers: [
         {
           provide: ConsultationApiService,
           useValue: {
-            config: () => of({ enabled: true, modelExtraction: true, retainTranscript: false }),
+            config: () => of({ enabled: true, modelExtraction: true, retainTranscript: false, tailReading: tailOn }),
             start: (patientId: string, locale: string, informed: boolean) => {
               calls.push(`api.start ${patientId} ${locale} informed=${informed}`);
               return of(dto('INTAKE'));
             },
             open: () => of(dto(currentStatus, { transcript: 'Bonjour\nJ\'ai mal', lines: openLines })),
             saveReviewState: (_id: string, state: unknown) => { savedReviews.push(state); return of(undefined); },
-            extract: (_id: string, transcript: string, lines: ConsultationLinePayload[] = []) => {
+            extract: (_id: string, transcript: string, lines: ConsultationLinePayload[] = [], options: { mode?: string; known?: string[] } = {}) => {
               extractions.push(transcript);
               sentLines.push(lines);
-              return extractFails ? throwError(() => extractFails) : of({ draft: nextDraft, error: null, truncated: false });
+              modes.push(options.mode ?? 'full');
+              knownSent.push(options.known ?? []);
+              return extractFails ? throwError(() => extractFails)
+                : of({ draft: nextDraft, error: null, truncated: false, corrections: nextCorrections, chartMentions: nextMentions });
             },
             beginExamination: () => { calls.push('api.examination'); return of(dto('EXAMINATION')); },
             end: (_id: string, transcript: string, lines: ConsultationLinePayload[] = []) => {
@@ -134,6 +151,7 @@ describe('ConsultationService', () => {
             setTranscriptListener: (l: ((t: string) => void) | null) => { listener = l; },
             setHandledElsewhere: (predicate: ((text: string) => boolean) | null) => { handledElsewhere = predicate; },
             setUtteranceListener: () => undefined,
+            stageRecovered: async (teeth: string, finding: string) => { recovered.push(`${teeth}:${finding}`); return recoverResult; },
           },
         },
         {
@@ -526,6 +544,111 @@ describe('ConsultationService', () => {
   });
 
   // ── Review and save ─────────────────────────────────────────────────
+
+  describe('reading as the conversation goes (WP6)', () => {
+    const HISTORY_T2 = { key: 'history:CONDITION:diabete de type 2', category: 'CONDITION' as const, label: 'Diabète de type 2', detail: null, quote: 'diabétique de type 2' };
+
+    it('with tail reading off, reads within 12 s of the first sentence however long people talk', async () => {
+      await started();
+      for (let s = 0; s < 16; s++) {
+        hear(`phrase ${s}`);
+        await vi.advanceTimersByTimeAsync(1_000);
+      }
+      expect(extractions.length).toBeGreaterThanOrEqual(1);
+      expect(modes.every(mode => mode === 'full')).toBe(true);
+    });
+
+    it('with tail reading on, reads the end within 4 s even while people keep talking', async () => {
+      tailOn = true;
+      await started();
+      hear('Pour les allergies, vous avez une allergie à l\'ananas');
+      for (let s = 0; s < 4; s++) {
+        await vi.advanceTimersByTimeAsync(800);
+        hear(`et encore ${s}`);
+      }
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(modes[0]).toBe('tail');
+    });
+
+    it('never reads the end more often than every 2.5 s, and sends what is already read, not who the patient is', async () => {
+      tailOn = true;
+      nextDraft = draft({ allergies: [PENICILLIN] });
+      await started();
+      hear('première');
+      await vi.advanceTimersByTimeAsync(1_000);
+      hear('deuxième');
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(modes.filter(m => m === 'tail')).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(modes.filter(m => m === 'tail')).toHaveLength(2);
+      expect(knownSent[1]).toEqual(['pénicilline']);
+    });
+
+    it('still reads the whole conversation every 75 s', async () => {
+      tailOn = true;
+      await started();
+      for (let s = 0; s < 40; s++) {
+        hear(`phrase ${s}`);
+        await vi.advanceTimersByTimeAsync(2_000);
+      }
+      expect(modes).toContain('full');
+    });
+
+    it('corrects an item nobody touched, and never one the doctor decided', async () => {
+      tailOn = true;
+      nextDraft = draft({ medicalHistory: [HISTORY_T2] });
+      await started();
+      hear('vous êtes diabétique de type 2');
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(service.review().medicalHistory.map(i => i.data.label)).toEqual(['Diabète de type 2']);
+
+      nextDraft = draft();
+      nextCorrections = [{ list: 'medicalHistory', was: 'Diabète de type 2', nowLabel: 'Diabète de type 1', nowCategory: 'CONDITION', quote: 'Pas diabète de type 2, diabète de type 1' }];
+      hear('Pas diabète de type 2, diabète de type 1');
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(service.review().medicalHistory.map(i => i.data.label)).toEqual(['Diabète de type 1']);
+
+      service.changeReview(state => ({ ...state, medicalHistory: state.medicalHistory.map(i => ({ ...i, status: 'validated' as const })) }));
+      nextCorrections = [{ list: 'medicalHistory', was: 'Diabète de type 1', nowLabel: null, nowCategory: null, quote: 'Pas diabète de type 2' }];
+      hear('encore une phrase');
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(service.review().medicalHistory.map(i => i.data.label)).toEqual(['Diabète de type 1']);
+    });
+
+    it('says what a reading proposed once, and marks the lines it read it from', async () => {
+      tailOn = true;
+      nextDraft = draft({ allergies: [{ ...PENICILLIN, quote: 'allergie à la pénicilline' }] });
+      await started();
+      hear('Vous avez une allergie à la pénicilline');
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(calls.filter(c => c.startsWith('say ')).at(-1)).toBe('say Allergie : pénicilline.');
+      expect(service.lines()[0]).toMatchObject({ verdict: 'proposed', summary: 'pénicilline' });
+    });
+
+    it('stages a finding on a tooth the reader heard, or lists it when it cannot', async () => {
+      tailOn = true;
+      nextMentions = [{ teeth: '16', finding: 'carie occlusale', quote: 'dans 16 caries occlusales' }];
+      await started();
+      hear('Donc vous avez dans 16 caries occlusales.');
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(recovered).toEqual(['16:carie occlusale']);
+      expect(service.review().chartMentions).toEqual([]);
+
+      recoverResult = 'rejected';
+      nextMentions = [{ teeth: null, finding: 'carie', quote: 'une carie quelque part' }];
+      hear('une carie quelque part');
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(service.review().chartMentions).toEqual([{ teeth: null, finding: 'carie', quote: 'une carie quelque part' }]);
+    });
+
+    it('counts a recovered finding as pending until the doctor keeps or drops it', async () => {
+      await started();
+      buffered.set([{ auditId: 'a-9', preview: '16 : carie', needsConfirmation: true } as never]);
+      const before = service.pending();
+      service.keepChartEntry('a-9');
+      expect(service.pending()).toBe(before - 1);
+    });
+  });
 
   describe('saving', () => {
     async function inReview(): Promise<void> {

@@ -1560,7 +1560,10 @@
     "STATUS_DICTATED": "Dictated",
     "APPT_IGNORE": "Ignore",
     "APPT_IGNORED": "Ignored",
-    "SEC_NOTES_DICTATED": "Dictated notes and tasks"
+    "SEC_NOTES_DICTATED": "Dictated notes and tasks",
+    "KEEP": "Keep",
+    "SEC_MENTIONS": "Mentions not recorded",
+    "MENTIONS_HINT": "Heard in the conversation but could not be placed on the chart. Dictate them if they are right."
   },
   "SET": {
     "TABS": {
@@ -4229,6 +4232,7 @@
       "CALYPSO": "\"Calypso, allergy to penicillin\" · \"Calypso, plan: scaling, 300 dirhams\" · \"Calypso, appointment tomorrow at 10\" · \"Calypso, first name: …\"",
       "LISTEN": "\"Calypso, read the allergies\" · \"Calypso, repeat\" · \"Calypso, silence\"",
       "END": "\"end the consultation\""
-    }
+    },
+    "MENTIONS": "Mentions not recorded"
   }
 }

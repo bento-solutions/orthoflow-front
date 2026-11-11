@@ -183,3 +183,19 @@ describe('outside a consultation', () => {
     expect(result.rows[0].stagedIntents).toEqual(['clinical.addNote']);
   });
 });
+
+describe('a chart finding the reader recovered', () => {
+  it('is staged "à confirmer" when its words name the tooth, and not twice', async () => {
+    let pipeline!: { stageRecovered: (t: string | null, f: string, q: string) => Promise<string>; buffered: () => Array<{ needsConfirmation?: boolean; summary?: string; entities: Record<string, unknown> }> };
+    await replayConsultation(lines('Dent 13, carie.'), { setUp: orchestrator => { pipeline = orchestrator as never; } });
+
+    expect(await pipeline.stageRecovered('16', 'carie occlusale', 'Donc vous avez dans 16 caries occlusales.')).toBe('staged');
+    const entry = pipeline.buffered().at(-1)!;
+    expect(entry.needsConfirmation).toBe(true);
+    expect(entry.summary).toBe('Dent 16 : carie occlusale, à confirmer.');
+
+    expect(await pipeline.stageRecovered('13', 'carie', 'Dent 13, carie.')).toBe('duplicate');
+    expect(await pipeline.stageRecovered('26', 'carie', 'Donc vous avez dans 16 caries occlusales.')).toBe('rejected');
+    expect(await pipeline.stageRecovered(null, 'carie', 'une carie')).toBe('rejected');
+  });
+});

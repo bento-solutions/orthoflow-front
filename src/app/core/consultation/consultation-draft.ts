@@ -558,3 +558,38 @@ export function planTotal(lines: Array<{ price?: number | null; quantity?: numbe
   }
   return { total, complete };
 }
+
+// ── Corrections from a tail reading ─────────────────────────────────────
+
+/**
+ * "Pas diabète de type 2, diabète de type 1": the reader says an item already
+ * read is wrong. It replaces — or, with nothing said instead, withdraws — only
+ * an item nobody has touched: a decision the doctor made, or something dictated,
+ * is never undone by a later reading (invariant 5).
+ */
+export function applyCorrections(
+  state: ReviewState,
+  corrections: ReadonlyArray<{ list: string; was: string; nowLabel: string | null; nowCategory: string | null; quote: string }>,
+): ReviewState {
+  let next = state;
+  for (const correction of corrections) {
+    const list: ListName | null = correction.list === 'treatmentPlan' ? 'plan'
+      : (['allergies', 'medicalHistory', 'activeTreatments'] as const).find(name => name === correction.list) ?? null;
+    if (!list) continue;
+    const items = next[list] as unknown as ReviewItem<Record<string, unknown>>[];
+    const wanted = normalizeKeyText(correction.was);
+    const target = items.find(item => normalizeKeyText(String(item.data['substance'] ?? item.data['label'] ?? '')) === wanted);
+    if (!target || target.status !== 'proposed' || target.manual || target.edited || target.dictated) continue;
+    if (!correction.nowLabel) {
+      next = { ...next, [list]: items.filter(item => item !== target) };
+      continue;
+    }
+    const data: Record<string, unknown> = list === 'allergies'
+      ? { ...target.data, substance: correction.nowLabel }
+      : { ...target.data, label: correction.nowLabel, ...(list === 'medicalHistory' && correction.nowCategory ? { category: correction.nowCategory } : {}) };
+    const key = reviewKey(list, data as { substance?: string; label?: string; category?: string; teeth?: string | null });
+    const replaced: ReviewItem<Record<string, unknown>> = { ...target, key, data, quote: correction.quote };
+    next = { ...next, [list]: [...items.filter(item => item !== target && item.key !== key), replaced] };
+  }
+  return next;
+}

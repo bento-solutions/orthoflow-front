@@ -1560,7 +1560,10 @@
     "STATUS_DICTATED": "مُملى",
     "APPT_IGNORE": "تجاهل",
     "APPT_IGNORED": "تم التجاهل",
-    "SEC_NOTES_DICTATED": "ملاحظات ومهام مُملاة"
+    "SEC_NOTES_DICTATED": "ملاحظات ومهام مُملاة",
+    "KEEP": "احتفظ",
+    "SEC_MENTIONS": "ملاحظات غير مسجلة",
+    "MENTIONS_HINT": "سُمعت في المحادثة دون أن تُوضع على المخطط. أملِها إن كانت صحيحة."
   },
   "SET": {
     "TABS": {
@@ -4229,6 +4232,7 @@
       "CALYPSO": "« Calypso, allergie à la pénicilline » · « Calypso, plan : détartrage, 300 dirhams » · « Calypso, rendez-vous demain à 10 heures »",
       "LISTEN": "« Calypso, lis les allergies » · « Calypso, répète » · « Calypso, silence »",
       "END": "« fin de la consultation »"
-    }
+    },
+    "MENTIONS": "ملاحظات غير مسجلة"
   }
 }

@@ -93,6 +93,14 @@ import { ConsultationFocusService, StageView } from '../../../../core/consultati
               <li class="ck-row"><span class="ck-row-main">{{ line.label }}</span></li>
             }
           </ul>
+          @if (model.mentions().length) {
+            <h3 class="ck-sub">{{ 'COCKPIT.MENTIONS' | translate }}</h3>
+            <ul class="ck-list">
+              @for (m of model.mentions(); track m.quote) {
+                <li class="ck-row"><span class="ck-row-main">{{ m.teeth ?? '' }} {{ m.finding }}</span><span class="ck-quote">« {{ m.quote }} »</span></li>
+              }
+            </ul>
+          }
           <h3 class="ck-sub">{{ 'COCKPIT.VIEW.CHART' | translate }}</h3>
           <ul class="ck-list">
             @for (line of model.chartLines(); track line.key) {

@@ -13,7 +13,7 @@ import { VoiceContextService } from './voice-context.service';
 import { VoiceCommandRegistryService } from './voice-command-registry.service';
 import { TranscriptionDto, VoiceApiService } from './voice-api.service';
 import { VoiceSessionService } from './voice-session.service';
-import { SEVERAL_TEETH_QUESTION } from './voice-grammar';
+import { SEVERAL_TEETH_QUESTION, resolveWithGrammar } from './voice-grammar';
 import { resolveForgiving } from './voice-resolve';
 import { repairSttConfusions } from './stt-confusions';
 import {
@@ -1929,6 +1929,47 @@ export class VoiceOrchestratorService {
     }
     this.settle();
     this.announce(true, taken.spoken.text, taken.spoken, 'confirm', { brief: { text: this.language() === 'fr' ? 'Noté.' : 'Noted.', locale: taken.spoken.locale } });
+  }
+
+  /**
+   * A finding on a tooth the reader heard in the conversation and the command
+   * path did not take ("dans 16 caries occlusales" before that was understood).
+   * Staged like dictation but with the model as its source and marked "à
+   * confirmer" — undecided until the doctor keeps or drops it at review — and
+   * only when the words it was read from name every tooth it would go on.
+   * Returns 'duplicate' when it is already staged, 'rejected' when it cannot be
+   * staged safely (the consultation then lists it instead).
+   */
+  async stageRecovered(teeth: string | null, finding: string, quote: string): Promise<'staged' | 'duplicate' | 'rejected'> {
+    if (!teeth) return 'rejected';
+    const snapshot = this.context.snapshot();
+    const dentition = snapshot.dentition;
+    const wanted = teeth.split(',').map(t => t.trim()).filter(Boolean);
+    const said = new Set(findToothMentions(repairSttConfusions(quote, dentition).text).filter(m => m.valid).map(m => m.fdi));
+    if (wanted.length === 0 || !wanted.every(fdi => said.has(fdi))) return 'rejected';
+    const resolution = resolveWithGrammar(`dent ${wanted.join(' et ')} ${finding}`, snapshot);
+    const intents = resolution.kind === 'intent' ? [resolution.intent] : resolution.kind === 'sequence' ? resolution.intents : [];
+    if (intents.length === 0 || intents.some(intent => intent.intent !== 'chart.addToothFindings')) return 'rejected';
+    const command = this.registry.get('chart.addToothFindings');
+    if (!command?.serverIntent) return 'rejected';
+    let staged = 0;
+    for (const found of intents) {
+      const checked = this.againstStaged(found);
+      if (checked.kind !== 'stage') continue;
+      const intent: VoiceIntent = { ...checked.intent, resolver: 'llm', transcript: quote, confidence: 0.6 };
+      const serverEntities = command.toServerEntities ? command.toServerEntities(intent.entities, snapshot) : intent.entities;
+      const auditId = await this.audit({ ...intent, intent: command.serverIntent, entities: serverEntities }, snapshot, 'CONFIRM', 'PENDING', 'CLARIFICATION');
+      if (!auditId) return staged ? 'staged' : 'rejected';
+      const language = this.language();
+      const base = spokenConfirmation(command.serverIntent, serverEntities, language)?.text ?? command.preview(intent.entities, snapshot);
+      this.stage({
+        auditId, intent: command.serverIntent, entities: serverEntities, preview: command.preview(intent.entities, snapshot),
+        transcript: quote, corrections: [], at: Date.now(), needsConfirmation: true,
+        summary: `${base.replace(/\.$/u, '')}${language === 'fr' ? ', à confirmer.' : ', to confirm.'}`,
+      }, snapshot.sessionId);
+      staged++;
+    }
+    return staged ? 'staged' : 'duplicate';
   }
 
   /** "45, c'est pas couronne" with nothing said instead: the denied findings come off the staged entry. */

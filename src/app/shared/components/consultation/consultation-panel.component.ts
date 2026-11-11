@@ -261,9 +261,24 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                         <input type="checkbox" [checked]="row.included" (change)="c.toggleChartEntry(row.entry.auditId)" />
                         <span>{{ chartText(row.entry) }}</span>
                       </label>
+                      @if (row.entry.needsConfirmation && !c.decided().has(row.entry.auditId)) {
+                        <span class="cp-status" data-status="proposed">{{ 'COCKPIT.LINE.TO_CONFIRM' | translate }}</span>
+                        <button type="button" class="cp-btn small" (click)="c.keepChartEntry(row.entry.auditId)">{{ 'CONSULTATION.KEEP' | translate }}</button>
+                        <span class="cp-quote">« {{ row.entry.transcript }} »</span>
+                      }
                     </li>
                   }
                 </ul>
+                @if (c.review().chartMentions.length) {
+                  <div class="cp-sec-title"><h3>{{ 'CONSULTATION.SEC_MENTIONS' | translate }}</h3></div>
+                  <p class="cp-hint">{{ 'CONSULTATION.MENTIONS_HINT' | translate }}</p>
+                  <ul class="cp-list">
+                    @for (m of c.review().chartMentions; track m.quote) {
+                      <li class="cp-item"><span>{{ m.teeth ? ('CONSULTATION.DOC.TOOTH' | translate) + ' ' + m.teeth + ' : ' : '' }}{{ m.finding }}</span>
+                        <span class="cp-quote">« {{ m.quote }} »</span></li>
+                    }
+                  </ul>
+                }
                 @if (noteRows().length) {
                   <div class="cp-sec-title"><h3>{{ 'CONSULTATION.SEC_NOTES_DICTATED' | translate }}</h3><span class="cp-count">{{ noteRows().length }}</span></div>
                   <ul class="cp-list">

@@ -124,3 +124,49 @@ export function actionFromUtterance(event: UtteranceEvent): ActionInput | null {
     source: 'voice',
   };
 }
+
+const LIST_WORDS: Readonly<Record<ReviewChange['list'], { fr: [string, string]; en: [string, string] }>> = {
+  allergies: { fr: ['Allergie', 'Allergies'], en: ['Allergy', 'Allergies'] },
+  medicalHistory: { fr: ['Antécédent', 'Antécédents'], en: ['History', 'History'] },
+  activeTreatments: { fr: ['Traitement en cours', 'Traitements en cours'], en: ['Current treatment', 'Current treatments'] },
+  plan: { fr: ['Plan', 'Plan'], en: ['Plan', 'Plan'] },
+  patient: { fr: ['Patient', 'Patient'], en: ['Patient', 'Patient'] },
+  complaint: { fr: ['Motif', 'Motif'], en: ['Complaint', 'Complaint'] },
+  appointment: { fr: ['Rendez-vous proposé', 'Rendez-vous proposé'], en: ['Proposed appointment', 'Proposed appointment'] },
+};
+
+/**
+ * One line for everything a reading proposed, said once rather than item by
+ * item: "Allergies : ananas, pénicilline, kiwi. Antécédent : goutte."
+ */
+export function describeChanges(changes: ReviewChange[], language: 'fr' | 'en'): string {
+  const groups = new Map<ReviewChange['list'], string[]>();
+  for (const change of changes) {
+    if (change.kind === 'removed' || !change.label) continue;
+    groups.set(change.list, [...(groups.get(change.list) ?? []), change.label]);
+  }
+  return [...groups.entries()].map(([list, labels]) => {
+    const [one, many] = LIST_WORDS[list][language];
+    return `${labels.length > 1 ? many : one}${language === 'fr' ? ' : ' : ': '}${labels.join(', ')}.`;
+  }).join(' ');
+}
+
+/** The last-action card for a reading: the first thing it found, and how many more. */
+export function actionFromChanges(changes: ReviewChange[], language: 'fr' | 'en'): ActionInput | null {
+  const shown = changes.filter(change => change.kind !== 'removed' && change.label);
+  if (shown.length === 0) return null;
+  const [first, ...rest] = shown;
+  const views = [...new Set(rest.map(change => viewOfList(change.list)))].filter(view => view !== viewOfList(first.list));
+  const [one] = LIST_WORDS[first.list][language];
+  return {
+    kind: 'intake',
+    title: `${one}${language === 'fr' ? ' : ' : ': '}${first.label}`,
+    detail: rest.length ? (language === 'fr' ? `+ ${rest.length} autre${rest.length > 1 ? 's' : ''}` : `+ ${rest.length} more`) : null,
+    status: 'proposed',
+    heard: null,
+    target: { view: viewOfList(first.list), itemKey: first.key },
+    undoable: false,
+    source: 'reader',
+    also: views,
+  };
+}

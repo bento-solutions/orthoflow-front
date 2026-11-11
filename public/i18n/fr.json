@@ -1560,7 +1560,10 @@
     "STATUS_DICTATED": "Dicté",
     "APPT_IGNORE": "Ignorer",
     "APPT_IGNORED": "Ignoré",
-    "SEC_NOTES_DICTATED": "Notes et tâches dictées"
+    "SEC_NOTES_DICTATED": "Notes et tâches dictées",
+    "KEEP": "Garder",
+    "SEC_MENTIONS": "Mentions non enregistrées",
+    "MENTIONS_HINT": "Entendues dans la conversation, sans pouvoir être placées sur le schéma. Dictez-les si elles sont justes."
   },
   "SET": {
     "TABS": {
@@ -4229,6 +4232,7 @@
       "CALYPSO": "« Calypso, allergie à la pénicilline » · « Calypso, plan : détartrage, 300 dirhams » · « Calypso, rendez-vous demain à 10 heures » · « Calypso, prénom : … »",
       "LISTEN": "« Calypso, lis les allergies » · « Calypso, répète » · « Calypso, silence »",
       "END": "« fin de la consultation »"
-    }
+    },
+    "MENTIONS": "Mentions non enregistrées"
   }
 }

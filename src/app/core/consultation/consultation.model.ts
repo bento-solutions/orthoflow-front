@@ -96,6 +96,20 @@ export interface ExtractionResponseDto {
   /** `extraction-disabled` / `extraction-failed` when only the rule-based reading is here. */
   error: string | null;
   truncated: boolean;
+  /** Findings on a tooth the reader heard: staged "à confirmer" or listed, never saved by themselves. */
+  chartMentions?: ChartMentionDto[];
+  /** A tail reading's corrections of what was already read. */
+  corrections?: CorrectionDto[];
+  mode?: 'full' | 'tail';
+}
+
+export interface ChartMentionDto { teeth: string | null; finding: string; quote: string }
+export interface CorrectionDto {
+  list: 'allergies' | 'medicalHistory' | 'activeTreatments' | 'treatmentPlan';
+  was: string;
+  nowLabel: string | null;
+  nowCategory: string | null;
+  quote: string;
 }
 
 /** One utterance of a consultation, as the server keeps it. */

@@ -24,7 +24,7 @@ import {
 import { isBeginExaminationCommand, isBeginExaminationPhrase } from './consultation-phrases';
 import { chartLine } from './consultation-chart';
 import {
-  CommitConsultationDto, ConsultationDto, ConsultationConfigDto, ConsultationLinePayload, InsuranceFormIssuedDto,
+  ChartMentionDto, CommitConsultationDto, ConsultationDto, ConsultationConfigDto, ConsultationLinePayload, InsuranceFormIssuedDto,
 } from './consultation.model';
 import { VoiceApiService } from '../voice/voice-api.service';
 import { VoiceOrchestratorService } from '../voice/voice-orchestrator.service';
@@ -37,10 +37,10 @@ import { UtteranceEvent, UtteranceVerdict } from '../voice/voice-intent.model';
 import { ConsultationFocusService } from './consultation-focus.service';
 import { StockService } from '../services/stock.service';
 import { Treatment } from '../models/stock.model';
-import { normalizeKeyText, reviewKey } from './consultation-draft';
+import { applyCorrections, normalizeKeyText, ReviewItem, reviewKey } from './consultation-draft';
 import { IntakeSink } from '../voice/voice-orchestrator.service';
 import { Spoken } from '../voice/voice-vocabulary';
-import { actionFromUtterance } from './consultation-events';
+import { ReviewChange, actionFromChanges, actionFromUtterance, describeChanges, diffReview } from './consultation-events';
 import { isStopPhrase } from '../voice/voice-wake';
 import { spokenLanguage, synthesisLocale } from '../voice/voice-vocabulary';
 import { PatientService } from '../services/patient.service';
@@ -140,6 +140,19 @@ export const EXTRACT_MAX_INTERVAL_MS = 60_000;
  * characters said.
  */
 export const EXTRACT_MS_PER_1000_CHARS = 1_500;
+
+/**
+ * With tail reading on: a reading of the conversation's end shortly after the
+ * last sentence, at most a few seconds after the first one nobody has read yet
+ * (even while people keep talking), never more often than every 2.5 s; and a
+ * full reading every 75 s and at the end, which may correct the tail's.
+ */
+export const TAIL_DEBOUNCE_MS = 900;
+export const TAIL_MAX_WAIT_MS = 4_000;
+export const TAIL_MIN_GAP_MS = 2_500;
+export const FULL_EVERY_MS = 75_000;
+/** Tail reading off: the full reading still starts at most this long after the first unread sentence. */
+export const FULL_MAX_WAIT_MS = 12_000;
 
 /**
  * How long to leave between readings: the minimum, more for a long conversation,
@@ -279,7 +292,16 @@ export class ConsultationService {
   });
 
   /** How many items still wait for the doctor to validate, correct or remove them. */
-  pending = computed(() => pendingCount(this.reviewSignal(), this.record(), new Date()));
+  /** Chart findings the reader recovered that the doctor has kept or dropped. */
+  private decidedSignal = signal<Set<string>>(new Set());
+  decided = this.decidedSignal.asReadonly();
+
+  /**
+   * How many items still wait for the doctor — including a chart finding the
+   * reader recovered ("à confirmer"), which is undecided until kept or dropped.
+   */
+  pending = computed(() => pendingCount(this.reviewSignal(), this.record(), new Date())
+    + this.voice.buffered().filter(entry => entry.needsConfirmation && !this.decidedSignal().has(entry.auditId)).length);
 
   /** The chart findings dictated in the examination, with the doctor's ticks applied. */
   chartEntries = computed(() => this.voice.buffered().map(entry => ({
@@ -454,6 +476,7 @@ export class ConsultationService {
     this.focus.reset();
     this.flushReviewSave();
     this.clearExtractTimer();
+    this.clearFullTimer();
     this.releaseVoice();
     this.sessions.setRouting(null);
     this.consultationSignal.set(null);
@@ -703,6 +726,7 @@ export class ConsultationService {
       verdict: null, summary: null,
     }]);
     this.sessions.touchSession();
+    this.markUnread();
     this.scheduleExtraction();
 
     // Ending is also the voice pipeline's to hear, and it does, with or without
@@ -718,15 +742,57 @@ export class ConsultationService {
 
   // ── Reading the conversation ────────────────────────────────────────
 
+  /** The fast reading of the conversation's end, when the server offers it. */
+  tailReading = computed(() => this.configSignal()?.tailReading === true);
+
+  private firstUnreadAt = 0;
+  private lastLineAt = 0;
+  private lastTailAt = 0;
+  private fullTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Lines heard since the last full reading, so a full reading with nothing new is skipped. */
+  private unreadForFull = 0;
+
+  private markUnread(): void {
+    const now = Date.now();
+    if (!this.dirty) this.firstUnreadAt = now;
+    this.lastLineAt = now;
+    this.unreadForFull++;
+  }
+
   private scheduleExtraction(immediate = false): void {
     if (!this.consultationSignal()) return;
+    if (!this.dirty && !this.firstUnreadAt) this.firstUnreadAt = Date.now();
     this.dirty = true;
     if (this.inFlight) return; // runs again when this one finishes
     this.clearExtractTimer();
-    const sinceLast = Date.now() - this.lastExtractAt;
+    const now = Date.now();
+    if (this.tailReading() && !immediate && this.isRecording()) {
+      const due = Math.max(
+        Math.min(this.lastLineAt + TAIL_DEBOUNCE_MS, this.firstUnreadAt + TAIL_MAX_WAIT_MS),
+        this.lastTailAt + TAIL_MIN_GAP_MS,
+        now,
+      );
+      this.extractTimer = setTimeout(() => void this.extractNow('tail'), due - now);
+      this.ensureFullReading();
+      return;
+    }
+    const sinceLast = now - this.lastExtractAt;
     const interval = extractionInterval(this.transcript().length, this.failedReadings);
-    const wait = immediate ? 0 : Math.max(EXTRACT_DEBOUNCE_MS, interval - sinceLast);
+    let wait = immediate ? 0 : Math.max(EXTRACT_DEBOUNCE_MS, interval - sinceLast);
+    // However long people keep talking, the panel is not left behind for more
+    // than this — unless the model is refusing us, when waiting longer is the point.
+    if (this.failedReadings === 0 && this.firstUnreadAt) wait = Math.min(wait, Math.max(0, this.firstUnreadAt + FULL_MAX_WAIT_MS - now));
     this.extractTimer = setTimeout(() => void this.extractNow(), wait);
+  }
+
+  /** With tail reading on, a full reading every 75 s (longer for a long conversation, or after failures). */
+  private ensureFullReading(): void {
+    if (this.fullTimer !== null) return;
+    const wait = Math.max(FULL_EVERY_MS, extractionInterval(this.transcript().length, this.failedReadings));
+    this.fullTimer = setTimeout(() => {
+      this.fullTimer = null;
+      if (this.unreadForFull > 0 && this.isRecording()) void this.extractNow('full', true);
+    }, wait);
   }
 
   private clearExtractTimer(): void {
@@ -734,34 +800,129 @@ export class ConsultationService {
     this.extractTimer = null;
   }
 
+  private clearFullTimer(): void {
+    if (this.fullTimer !== null) clearTimeout(this.fullTimer);
+    this.fullTimer = null;
+  }
+
+  /** The labels already read in this consultation: what a tail reading is told it need not repeat. */
+  private knownLabels(): string[] {
+    const review = this.reviewSignal();
+    const labels = [
+      ...review.allergies.map(item => item.data.substance),
+      ...review.medicalHistory.map(item => item.data.label),
+      ...review.activeTreatments.map(item => item.data.label),
+      ...review.plan.map(item => item.data.label),
+    ];
+    return [...new Set(labels.map(label => label.trim()).filter(Boolean))].slice(0, 50);
+  }
+
+  /**
+   * What a reading changed, told once: the last-action card and the stage, one
+   * batched confirmation, and a "proposé" chip on the lines it was read from.
+   * Only while recording — the final reading at the end feeds the review.
+   */
+  private announceReading(before: ReviewState, after: ReviewState): void {
+    if (!this.isRecording()) return;
+    const changes = diffReview(before, after).filter(change => change.kind !== 'removed');
+    if (changes.length === 0) return;
+    const language = spokenLanguage(this.context.locale());
+    const action = actionFromChanges(changes, language);
+    if (action) this.focus.touch(action);
+    const line = describeChanges(changes, language);
+    if (line) this.policy.deliver('proposal', { full: { text: line, locale: synthesisLocale(language) } });
+
+    const quotes = this.quotesOf(after, changes);
+    if (quotes.length === 0) return;
+    this.linesSignal.update(lines => lines.map(row => {
+      if (row.verdict && row.verdict !== 'heard') return row;
+      const text = normalizeKeyText(row.text);
+      const found = quotes.find(q => q.quote && text.includes(q.quote));
+      return found ? { ...row, verdict: 'proposed' as const, summary: found.label } : row;
+    }));
+  }
+
+  private quotesOf(state: ReviewState, changes: ReviewChange[]): { quote: string; label: string }[] {
+    const out: { quote: string; label: string }[] = [];
+    for (const change of changes) {
+      const list = change.list;
+      if (list === 'allergies' || list === 'medicalHistory' || list === 'activeTreatments' || list === 'plan') {
+        const item = (state[list] as ReviewItem<unknown>[]).find(candidate => candidate.key === change.key);
+        if (item?.quote) out.push({ quote: normalizeKeyText(item.quote), label: change.label });
+      } else if (list === 'patient') {
+        const field = state.patient[change.key as keyof ReviewState['patient']];
+        if (field?.quote) out.push({ quote: normalizeKeyText(field.quote), label: change.label });
+      } else if (list === 'appointment' && state.appointmentSuggestion?.quote) {
+        out.push({ quote: normalizeKeyText(state.appointmentSuggestion.quote), label: change.label });
+      }
+    }
+    return out;
+  }
+
+  /**
+   * A finding on a tooth the reader heard and the command path did not take:
+   * staged "à confirmer" when its words name every tooth, else listed as a
+   * mention the doctor sees at review and that is never saved by itself.
+   */
+  private async takeChartMentions(mentions: ChartMentionDto[]): Promise<void> {
+    if (!this.isRecording() || mentions.length === 0) return;
+    const unstaged: ChartMentionDto[] = [];
+    for (const mention of mentions) {
+      const result = await this.voice.stageRecovered?.(mention.teeth, mention.finding, mention.quote) ?? 'rejected';
+      if (result === 'rejected') unstaged.push(mention);
+    }
+    if (unstaged.length === 0) return;
+    this.changeReview(state => {
+      const known = new Set(state.chartMentions.map(m => normalizeKeyText(m.quote)));
+      const added = unstaged.filter(m => !known.has(normalizeKeyText(m.quote)));
+      return added.length ? { ...state, chartMentions: [...state.chartMentions, ...added] } : state;
+    });
+  }
+
   /**
    * Reads the whole conversation and folds what it finds into the side panel,
    * never over a decision the doctor made ({@link mergeDraft}).
    */
-  async extractNow(): Promise<void> {
+  async extractNow(mode: 'full' | 'tail' = 'full', force = false): Promise<void> {
     const consultation = this.consultationSignal();
-    if (!consultation || this.inFlight || !this.dirty) return;
+    if (!consultation || this.inFlight || (!this.dirty && !force)) return;
     if (!this.transcript().trim()) {
       this.dirty = false;
       return;
     }
     this.clearExtractTimer();
+    if (mode === 'full') this.clearFullTimer();
     this.dirty = false;
+    this.firstUnreadAt = 0;
     this.inFlight = true;
     this.extractingSignal.set(true);
+    const before = this.reviewSignal();
     try {
       const lines = this.timedLines();
-      const response = await firstValueFrom(this.api.extract(consultation.id, this.transcript(), lines));
+      const response = await firstValueFrom(this.api.extract(consultation.id, this.transcript(), lines,
+        mode === 'tail' ? { mode: 'tail', known: this.knownLabels() } : {}));
       this.markStored(lines);
-      // A reading of only the end of a long conversation cannot drop what was
-      // said at its start: it corrects and adds, nothing more.
-      this.reviewSignal.update(state => mergeDraft(state, response.draft, { partial: response.truncated }));
-      this.scheduleReviewSave();
-      // "Failed" here is the model not answering (a rate limit, a timeout): the
-      // rules' reading arrived instead, and the next try should wait longer.
-      this.failedReadings = response.error === 'extraction-failed' ? this.failedReadings + 1 : 0;
-      this.noteSignal.set(response.truncated ? 'truncated'
-        : response.error === 'extraction-disabled' || response.error === 'extraction-failed' ? response.error : null);
+      if (mode === 'tail') {
+        this.lastTailAt = Date.now();
+        // A tail reading only ever adds and corrects: what it does not mention stays.
+        if (!response.error) {
+          this.reviewSignal.update(state => applyCorrections(mergeDraft(state, response.draft, { partial: true }), response.corrections ?? []));
+          this.scheduleReviewSave();
+        }
+      } else {
+        this.unreadForFull = 0;
+        // A reading of only the end of a long conversation cannot drop what was
+        // said at its start: it corrects and adds, nothing more.
+        this.reviewSignal.update(state => mergeDraft(state, response.draft, { partial: response.truncated }));
+        this.scheduleReviewSave();
+        // "Failed" here is the model not answering (a rate limit, a timeout): the
+        // rules' reading arrived instead, and the next try should wait longer.
+        this.failedReadings = response.error === 'extraction-failed' ? this.failedReadings + 1 : 0;
+        this.noteSignal.set(response.truncated ? 'truncated'
+          : response.error === 'extraction-disabled' || response.error === 'extraction-failed' ? response.error : null);
+      }
+      this.announceReading(before, this.reviewSignal());
+      await this.takeChartMentions(response.chartMentions ?? []);
     } catch (error) {
       // A rate limit is the server asking for patience; the next reading carries everything.
       this.failedReadings++;
@@ -772,6 +933,7 @@ export class ConsultationService {
       this.extractingSignal.set(false);
       this.lastExtractAt = Date.now();
       if (this.dirty && this.isOpen()) this.scheduleExtraction();
+      else if (this.tailReading() && this.isRecording() && this.unreadForFull > 0) this.ensureFullReading();
     }
   }
 
@@ -815,6 +977,7 @@ export class ConsultationService {
     this.ending = true;
     this.busySignal.set(true);
     this.clearExtractTimer();
+    this.clearFullTimer();
     try {
       await this.sessions.end({ waitForClips: options.waitForClips, direct: true });
       this.releaseVoice();
@@ -908,7 +1071,13 @@ export class ConsultationService {
     this.scheduleReviewSave();
   }
 
+  /** Keeps a recovered finding "à confirmer": decided, and on the record at save. */
+  keepChartEntry(auditId: string): void {
+    this.decidedSignal.update(set => new Set(set).add(auditId));
+  }
+
   toggleChartEntry(auditId: string): void {
+    this.decidedSignal.update(set => new Set(set).add(auditId));
     this.excludedSignal.update(set => {
       const next = new Set(set);
       if (next.has(auditId)) next.delete(auditId);

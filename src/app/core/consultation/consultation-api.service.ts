@@ -50,8 +50,19 @@ export class ConsultationApiService {
    * Reads the conversation so far and says what it established. Also saves the
    * transcript, so a crash loses at most the last few seconds.
    */
-  extract(id: string, transcript: string, lines: ConsultationLinePayload[] = []): Observable<ExtractionResponseDto> {
-    return this.http.post<ExtractionResponseDto>(`${this.base}/${id}/extract`, { transcript, lines });
+  /**
+   * A full reading by default. A tail reading sends the same conversation but is
+   * answered from its end, against `known` — the labels already read, never who
+   * the patient is.
+   */
+  extract(id: string, transcript: string, lines: ConsultationLinePayload[] = [],
+          options: { mode?: 'full' | 'tail'; known?: string[] } = {}): Observable<ExtractionResponseDto> {
+    const body: Record<string, unknown> = { transcript, lines };
+    if (options.mode === 'tail') {
+      body['mode'] = 'tail';
+      body['known'] = (options.known ?? []).slice(0, 50).map(label => label.slice(0, 160));
+    }
+    return this.http.post<ExtractionResponseDto>(`${this.base}/${id}/extract`, body);
   }
 
   /** The doctor called the consultation: the chart commands start to work. */

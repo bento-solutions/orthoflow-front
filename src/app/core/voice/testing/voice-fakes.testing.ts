@@ -119,11 +119,11 @@ export class FakeAudioCapture {
   startCalls = 0;
   stopCalls = 0;
   startSucceeds = true;
-  handler: ((clip: Blob) => void) | null = null;
+  handler: ((clip: Blob, meta?: { cut: boolean }) => void) | null = null;
 
   isActive() { return ['capturing', 'suspended', 'starting'].includes(this.status()); }
   isSupported() { return true; }
-  setUtteranceHandler(handler: (clip: Blob) => void) { this.handler = handler; }
+  setUtteranceHandler(handler: (clip: Blob, meta?: { cut: boolean }) => void) { this.handler = handler; }
   async start() {
     this.startCalls++;
     if (this.startSucceeds) this.status.set('capturing');
@@ -133,7 +133,7 @@ export class FakeAudioCapture {
   setPaused() { /* not needed */ }
   lastError() { return null; }
   resume() { return Promise.resolve(); }
-  say() { this.handler?.(new Blob(['x'], { type: 'audio/wav' })); }
+  say(cut = false) { this.handler?.(new Blob(['x'], { type: 'audio/wav' }), { cut }); }
 }
 
 export class FakeAuth {

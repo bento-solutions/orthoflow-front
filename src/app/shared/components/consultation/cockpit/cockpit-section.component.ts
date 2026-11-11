@@ -146,9 +146,9 @@ import { ConsultationFocusService, StageView } from '../../../../core/consultati
     .ck-row-side { margin-inline-start: auto; font-variant-numeric: tabular-nums; font-weight: 700; }
     .ck-muted { color: rgb(var(--ink-600)); }
     .ck-quote { flex-basis: 100%; font-size: .8125rem; font-style: italic; color: rgb(var(--ink-600)); }
-    .ck-chip-status { font-size: .75rem; font-weight: 700; padding: 0 .45rem; border-radius: 999px; background: rgb(var(--positive-100)); color: rgb(var(--positive-900)); }
-    .ck-chip-status[data-status='proposed'] { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-900)); }
-    .ck-chip-status[data-status='to-confirm'] { background: rgb(var(--caution-100)); color: rgb(var(--caution-900)); }
+    .ck-chip-status { font-size: .75rem; font-weight: 700; padding: 0 .45rem; border-radius: 999px; background: rgb(var(--positive-100)); color: rgb(var(--positive-800)); }
+    .ck-chip-status[data-status='proposed'] { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-800)); }
+    .ck-chip-status[data-status='to-confirm'] { background: rgb(var(--caution-100)); color: rgb(var(--caution-800)); }
     .hl { outline: 3px solid rgb(var(--positive-500)); outline-offset: 1px; animation: ck-flash 4s ease-out; }
     @keyframes ck-flash { from { background: rgb(var(--positive-100)); } to { background: rgb(var(--ink-50)); } }
     @media (prefers-reduced-motion: reduce) { .hl { animation: none; } }

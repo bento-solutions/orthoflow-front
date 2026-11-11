@@ -52,8 +52,8 @@ import { VoiceOrchestratorService } from '../../../../core/voice/voice-orchestra
     .ck-undo { margin-inline-start: .375rem; font-weight: 700; text-decoration: underline; color: rgb(var(--petrol-800)); }
     .ck-last-empty { margin: 0; color: rgb(var(--ink-600)); font-size: .875rem; }
     .ck-status { display: inline-block; margin-top: .25rem; font-size: .75rem; font-weight: 700; padding: .05rem .45rem; border-radius: 999px; background: rgb(var(--ink-100)); color: rgb(var(--ink-800)); }
-    .ck-status[data-status='to-confirm'], .ck-status[data-status='not-understood'] { background: rgb(var(--caution-100)); color: rgb(var(--caution-900)); }
-    .ck-status[data-status='proposed'] { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-900)); }
+    .ck-status[data-status='to-confirm'], .ck-status[data-status='not-understood'] { background: rgb(var(--caution-100)); color: rgb(var(--caution-800)); }
+    .ck-status[data-status='proposed'] { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-800)); }
   `],
 })
 export class CockpitLastActionComponent {

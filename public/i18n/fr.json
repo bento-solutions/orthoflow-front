@@ -1504,7 +1504,11 @@
       "V_HISTORY": "Antécédents",
       "V_PLAN": "Plan de traitement",
       "V_APPOINTMENT": "Prochain rendez-vous",
-      "V_REPORT": "Compte rendu"
+      "V_REPORT": "Compte rendu",
+      "COUNTS": "{{sentences}} phrases · {{acted}} actions · {{proposed}} proposées · {{unsure}} pas comprises",
+      "MEDIAN": "délai médian {{ms}} ms",
+      "EXPORT_SCENARIO": "Exporter comme scénario",
+      "EXPORT_HINT": "Remplacez noms et numéros avant de l'ajouter aux tests."
     },
     "ERROR_START": "La consultation n’a pas pu démarrer. Vérifiez la connexion et réessayez.",
     "ERROR_PHASE": "Impossible de passer à l’examen.",

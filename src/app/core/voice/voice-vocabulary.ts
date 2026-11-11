@@ -258,6 +258,10 @@ const PHRASES = {
   },
   resumedByVoice: { fr: 'Reprise.', en: 'Resumed.' },
   confirmEnd: { fr: 'Terminer la consultation ?', en: 'End the consultation?' },
+  sttQueued: {
+    fr: 'Pas de connexion. Ce que vous dites est gardé et sera envoyé au retour du réseau.',
+    en: 'No connection. What you say is kept and will be sent when the connection is back.',
+  },
   nothingStaged: { fr: 'Rien à relire pour l\'instant.', en: 'Nothing to read back yet.' },
   sttDown: {
     fr: 'La reconnaissance vocale ne répond pas. Répétez.',

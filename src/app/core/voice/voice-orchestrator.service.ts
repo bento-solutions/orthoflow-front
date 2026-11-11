@@ -224,6 +224,14 @@ const FINISH_WAIT_MS = 12_000;
  */
 const LANGUAGE_WARNING_INTERVAL_MS = 45_000;
 
+/** Clips that failed for want of a connection are kept this long, and this many at most. */
+const OFFLINE_KEEP_MS = 180_000;
+const OFFLINE_MAX_CLIPS = 60;
+/** A clip transcribed later than this after it was said is conversation, never a command. */
+const STALE_COMMAND_MS = 20_000;
+/** How long a clip cut by the length limit waits for the rest of its sentence. */
+const CUT_HOLD_MS = 1_200;
+
 /**
  * A finding said with no tooth is "not understood" only while the doctor is
  * going round the mouth: within this long of the last chart command. Said while
@@ -295,6 +303,10 @@ interface ClipOutcome {
   inSession: boolean;
   /** When the clip closed — the end of speech — for the latency of the verdict. */
   endedAt?: number;
+  /** Closed by the length limit mid-sentence: its text is read with the next clip's. */
+  cut?: boolean;
+  /** The clip itself, kept when it failed for want of a connection. */
+  clip?: Blob;
   /** The HTTP status when the request itself failed; 0 for no connection. */
   transportStatus?: number;
 }
@@ -630,7 +642,8 @@ export class VoiceOrchestratorService {
       const lineId = (this.transcriptListener?.(result.transcript.trim()) ?? null) || null;
       void this.handleTranscript(result.transcript, result.confidence, null, this.examinationModeSignal(), lineId);
     });
-    this.capture.setUtteranceHandler(clip => this.transcribeClip(clip));
+    this.capture.setUtteranceHandler((clip, meta) => this.transcribeClip(clip, meta?.cut ?? false));
+    if (typeof window !== 'undefined') window.addEventListener?.('online', () => void this.flushOffline());
     this.wired = true;
   }
 
@@ -814,7 +827,7 @@ export class VoiceOrchestratorService {
   private transcriptionFailures = 0;
   private lastFailureSpokenAt = 0;
 
-  private transcribeClip(clip: Blob): void {
+  private transcribeClip(clip: Blob, cut = false): void {
     const sequence = this.clipSequence++;
     // Read when the clip was recorded, not when its transcript returns: the
     // last clip of a session is flushed as the session ends.
@@ -828,11 +841,13 @@ export class VoiceOrchestratorService {
         .pipe(timeout(TRANSCRIBE_TIMEOUT_MS)),
     )
       .then(
-        (result): ClipOutcome => ({ result, inSession, endedAt }),
+        (result): ClipOutcome => ({ result, inSession, endedAt, cut }),
         (error: unknown): ClipOutcome => ({
           result: null,
           inSession,
           endedAt,
+          cut,
+          clip,
           transportStatus: (error as { status?: number } | null)?.status,
         }),
       )
@@ -868,7 +883,91 @@ export class VoiceOrchestratorService {
    * which on a phone meant a microphone that looked dead: every clip failed
    * and nothing on screen said so.
    */
-  private async acceptTranscription({ result, inSession, transportStatus, endedAt }: ClipOutcome): Promise<void> {
+  // ── Clips lost to the connection, and sentences cut by the length limit ──
+
+  /** Clips that failed for want of a connection, oldest first; sent again when it returns. */
+  private offline: { clip: Blob; endedAt: number }[] = [];
+  private flushingOffline = false;
+  /** The text of a clip cut by the length limit, waiting for the rest of its sentence. */
+  private heldCut: { text: string; normalized: string | null; endedAt: number | undefined; inSession: boolean } | null = null;
+  private heldCutTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * The connection is back: the clips kept while it was gone are transcribed in
+   * order and their text joins the conversation. One more than a few seconds old
+   * is never run as a command — what it said was said to a moment that has passed.
+   */
+  async flushOffline(): Promise<void> {
+    if (this.flushingOffline || this.offline.length === 0) return;
+    this.flushingOffline = true;
+    try {
+      const now = Date.now();
+      const kept = this.offline.filter(entry => now - entry.endedAt <= OFFLINE_KEEP_MS);
+      this.offline = [];
+      for (const entry of kept) {
+        const snapshot = this.context.snapshot();
+        let result: TranscriptionDto | null = null;
+        try {
+          result = await firstValueFrom(this.api.transcribe(entry.clip, snapshot.locale.split('-')[0], speechHints(snapshot)).pipe(timeout(TRANSCRIBE_TIMEOUT_MS)));
+        } catch {
+          // Still nothing: kept for the next time the connection comes back.
+          this.offline.push(entry);
+          continue;
+        }
+        const text = result?.text?.trim();
+        if (!text || result?.error) continue;
+        const lineId = (this.transcriptListener?.(text) ?? null) || null;
+        if (Date.now() - entry.endedAt > STALE_COMMAND_MS) {
+          this.utteranceListener?.({ lineId, text, verdict: 'heard', summary: null, intents: [], auditIds: [], fdi: [], latencyMs: null });
+        } else {
+          await this.handleTranscript(text, 1, result?.normalized ?? null, this.examinationModeSignal(), lineId);
+        }
+      }
+      if (this.offline.length === 0) this.transcriptionIssueSignal.set(null);
+    } finally {
+      this.flushingOffline = false;
+    }
+  }
+
+  private keepOffline(clip: Blob, endedAt: number): void {
+    this.offline.push({ clip, endedAt });
+    const now = Date.now();
+    this.offline = this.offline.filter(entry => now - entry.endedAt <= OFFLINE_KEEP_MS).slice(-OFFLINE_MAX_CLIPS);
+  }
+
+  private releaseHeldCut(): void {
+    if (this.heldCutTimer !== null) clearTimeout(this.heldCutTimer);
+    this.heldCutTimer = null;
+    const held = this.heldCut;
+    this.heldCut = null;
+    if (held) void this.acceptTranscription({ result: { text: held.text, normalized: held.normalized } as TranscriptionDto, inSession: held.inSession, endedAt: held.endedAt });
+  }
+
+  private async acceptTranscription({ result, inSession, transportStatus, endedAt, cut, clip }: ClipOutcome): Promise<void> {
+    // A sentence cut by the length limit is read whole: this clip's text waits
+    // for the next one (at most a moment), and the two go through as one.
+    if (result && !result.error && result.text?.trim()) {
+      if (this.heldCut) {
+        const held = this.heldCut;
+        this.heldCut = null;
+        if (this.heldCutTimer !== null) clearTimeout(this.heldCutTimer);
+        this.heldCutTimer = null;
+        result = {
+          ...result,
+          text: `${held.text} ${result.text.trim()}`,
+          normalized: held.normalized || result.normalized ? `${held.normalized ?? held.text} ${result.normalized ?? result.text}` : null,
+        } as TranscriptionDto;
+        endedAt = endedAt ?? held.endedAt;
+      }
+      if (cut) {
+        this.heldCut = { text: result.text.trim(), normalized: result.normalized ?? null, endedAt, inSession };
+        this.heldCutTimer = setTimeout(() => this.releaseHeldCut(), CUT_HOLD_MS);
+        return;
+      }
+    } else if (this.heldCut && !this.pendingClipsSignal()) {
+      this.releaseHeldCut();
+    }
+
     // The session ended while this clip was in flight; it must not be staged
     // into a consultation that is already in review. Not silently, though: if
     // it was dictation, the dentist is told what was not added.
@@ -892,6 +991,12 @@ export class VoiceOrchestratorService {
         return;
       }
       if (transportStatus === 0 || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
+        // Kept, not lost: sent again in order when the connection comes back.
+        if (clip) {
+          this.keepOffline(clip, endedAt ?? Date.now());
+          this.noteTranscriptionFailure('No connection — what is said is kept and will be sent when the connection is back.', 'sttQueued');
+          return;
+        }
         this.noteTranscriptionFailure('No connection — the last thing said was not heard. Repeat it once the connection is back.', 'sttOffline');
       } else {
         this.noteTranscriptionFailure('The speech service did not answer — check the connection. Repeat, or type the command.');

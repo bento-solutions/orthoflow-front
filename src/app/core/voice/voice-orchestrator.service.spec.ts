@@ -773,10 +773,10 @@ describe('VoiceOrchestratorService — staging what was dictated', () => {
       expect(said()).toHaveLength(2);
     });
 
-    it('says so when there is no connection', async () => {
+    it('says so when there is no connection, and that what was said is kept', async () => {
       await failWith({ status: 0 });
 
-      expect(said()).toEqual(['Pas de connexion. Je n\'ai pas pu vous entendre. Répétez quand elle revient.']);
+      expect(said()).toEqual(['Pas de connexion. Ce que vous dites est gardé et sera envoyé au retour du réseau.']);
     });
 
     it('says the account is being rationed, not that the connection is bad', async () => {

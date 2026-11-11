@@ -114,7 +114,7 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
     .ck-end { display: inline-flex; align-items: center; gap: .375rem; min-height: 2.5rem; padding: 0 .875rem; border-radius: .5rem; background: rgb(var(--critical-600)); color: #fff; font-weight: 700; flex: none; }
     .ck-end:disabled { opacity: .6; }
     .ck-alert { display: flex; align-items: center; gap: .5rem; margin-top: .375rem; padding: .5rem .75rem; border-radius: .5rem; background: rgb(var(--ink-100)); color: rgb(var(--ink-800)); font-size: .875rem; width: 100%; text-align: start; }
-    .ck-alert.caution { background: rgb(var(--caution-50)); color: rgb(var(--caution-900)); }
+    .ck-alert.caution { background: rgb(var(--caution-50)); color: rgb(var(--caution-800)); }
     .ck-alert.critical { background: rgb(var(--critical-50)); color: rgb(var(--critical-800)); }
     .ck-alert-btn { margin-inline-start: auto; font-weight: 700; text-decoration: underline; }
     @media (max-width: 1099.98px) {

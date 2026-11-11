@@ -79,6 +79,15 @@ describe('UtteranceSegmenter', () => {
     expect(clips).toHaveLength(1);
   });
 
+  it('marks a clip closed by the length limit mid-sentence as cut, and one closed by silence as whole', () => {
+    const segmenter = new UtteranceSegmenter({ sampleRate: RATE, maxUtteranceMs: 2_500 });
+    const cutAt: boolean[] = [];
+    for (const frame of [...times(600, () => quiet()), ...times(3500, () => voiced(0.2)), ...times(1200, () => quiet())]) {
+      if (segmenter.push(frame)) cutAt.push(segmenter.lastClosedByLength);
+    }
+    expect(cutAt).toEqual([true, false]);
+  });
+
   it('keeps audio from before the onset, so the first syllable is not clipped', () => {
     const segmenter = new UtteranceSegmenter({ sampleRate: RATE, preRollMs: 500 });
     const [clip] = feed(segmenter, [

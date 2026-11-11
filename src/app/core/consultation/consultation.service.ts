@@ -655,6 +655,7 @@ export class ConsultationService {
       this.linesSignal.update(lines => lines.map(line => line.id === event.lineId
         ? { ...line, verdict: event.verdict, summary: event.summary, latencyMs: event.latencyMs }
         : line));
+      if (event.lineId <= this.storedSeq) this.lateVerdicts.add(event.lineId);
     }
     // What changed goes on the last-action card, and the stage follows it.
     const action = actionFromUtterance(event);
@@ -675,6 +676,8 @@ export class ConsultationService {
         at: line.at ? Date.parse(line.at) : 0,
         typed: line.typed,
         phase: line.phase ?? (dto.status === 'INTAKE' ? 'INTAKE' as const : 'EXAMINATION' as const),
+        verdict: (line.verdict as TranscriptLine['verdict']) ?? undefined,
+        latencyMs: line.latencyMs ?? null,
       }));
       this.nextLineId = Math.max(this.nextLineId, ...restored.map(line => line.id + 1));
       return restored;
@@ -693,19 +696,27 @@ export class ConsultationService {
    */
   private storedSeq = -1;
 
-  /** The lines with a known time the server does not have yet, as it stores them. */
+  /** Lines already stored whose verdict came after: sent once more, so the log keeps it. */
+  private lateVerdicts = new Set<number>();
+
+  /** The lines with a known time the server does not have yet (or whose verdict it lacks), as it stores them. */
   private timedLines(): ConsultationLinePayload[] {
-    return this.linesSignal().filter(line => line.at > 0 && line.id > this.storedSeq).map(line => ({
+    return this.linesSignal().filter(line => line.at > 0 && (line.id > this.storedSeq || this.lateVerdicts.has(line.id))).map(line => ({
       seq: line.id,
       at: new Date(line.at).toISOString(),
       phase: line.phase,
       typed: line.typed,
       text: line.text,
+      ...(line.verdict ? { verdict: line.verdict } : {}),
+      ...(line.latencyMs !== null && line.latencyMs !== undefined ? { latencyMs: Math.round(line.latencyMs) } : {}),
     }));
   }
 
   private markStored(sent: ConsultationLinePayload[]): void {
-    for (const line of sent) this.storedSeq = Math.max(this.storedSeq, line.seq);
+    for (const line of sent) {
+      this.storedSeq = Math.max(this.storedSeq, line.seq);
+      if (line.verdict) this.lateVerdicts.delete(line.seq);
+    }
   }
 
   // ── The conversation ────────────────────────────────────────────────

@@ -121,6 +121,9 @@ export interface ConsultationLineDto {
   /** Typed by the doctor, not heard. */
   typed: boolean;
   text: string;
+  /** What became of it; absent on a line recorded before verdicts were kept. */
+  verdict?: string | null;
+  latencyMs?: number | null;
 }
 
 /** What the browser sends of a line: the same, with the time always known. */
@@ -130,6 +133,8 @@ export interface ConsultationLinePayload {
   phase: 'INTAKE' | 'EXAMINATION';
   typed: boolean;
   text: string;
+  verdict?: string | null;
+  latencyMs?: number | null;
 }
 
 /** One command the examination understood, as the audit trail kept it. */

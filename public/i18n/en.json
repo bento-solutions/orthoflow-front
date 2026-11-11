@@ -1504,7 +1504,11 @@
       "V_HISTORY": "History",
       "V_PLAN": "Treatment plan",
       "V_APPOINTMENT": "Next appointment",
-      "V_REPORT": "Report"
+      "V_REPORT": "Report",
+      "COUNTS": "{{sentences}} sentences · {{acted}} actions · {{proposed}} proposed · {{unsure}} not understood",
+      "MEDIAN": "median delay {{ms}} ms",
+      "EXPORT_SCENARIO": "Export as a scenario",
+      "EXPORT_HINT": "Replace names and numbers before adding it to the tests."
     },
     "ERROR_START": "The consultation could not start. Check the connection and try again.",
     "ERROR_PHASE": "Could not move on to the examination.",

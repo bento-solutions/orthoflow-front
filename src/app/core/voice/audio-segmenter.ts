@@ -92,7 +92,10 @@ export const DEFAULT_SEGMENTER_OPTIONS: Omit<SegmenterOptions, 'sampleRate'> = {
   onsetMs: 80,
   hangoverMs: 850,
   minVoicedMs: 200,
-  maxUtteranceMs: 15_000,
+  // A dentist's sentence with a list of teeth runs long; 15 s cut "44, 43 et 45
+  // couronnes" in two. A clip closed by this limit is marked cut and its text is
+  // read together with the next (VoiceOrchestratorService).
+  maxUtteranceMs: 20_000,
   minThreshold: 0.004,
   maxThreshold: 0.14,
   noiseMultiplier: 3,
@@ -295,13 +298,23 @@ export class UtteranceSegmenter {
       }
     }
     if (this.silenceRunMs >= this.options.hangoverMs || durationMs >= this.options.maxUtteranceMs) {
-      return this.close();
+      const cut = this.silenceRunMs < this.options.hangoverMs;
+      const clip = this.close();
+      this.lastClosedByLength = !!clip && cut;
+      return clip;
     }
     return null;
   }
 
+  /**
+   * Whether the last clip closed because it reached the length limit while
+   * someone was still speaking: its sentence goes on in the next clip.
+   */
+  lastClosedByLength = false;
+
   /** Closes whatever is open — the session is ending, ship what was said. */
   flush(): Float32Array | null {
+    this.lastClosedByLength = false;
     return this.open ? this.close() : null;
   }
 

@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { Component, computed, effect, inject, input, isDevMode, output, signal, untracked } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { ConsultationApiService } from '../../../core/consultation/consultation-api.service';
@@ -7,6 +7,7 @@ import { buildTimeline, TimelineRow } from '../../../core/consultation/consultat
 import { ConsultationLogDto } from '../../../core/consultation/consultation.model';
 import { spokenLanguage } from '../../../core/voice/voice-vocabulary';
 import { ModalComponent } from '../../ui/modal.component';
+import { environment } from '../../../../environments/environment';
 
 /**
  * The consultation log: what was said and when, the commands the examination
@@ -54,6 +55,9 @@ import { ModalComponent } from '../../ui/modal.component';
                     @if (row.line.typed) {
                       <span class="ms-1 rounded bg-ink-100 px-1.5 text-xs text-ink-600">{{ 'CONSULTATION.LOG.TYPED' | translate }}</span>
                     }
+                    @if (row.line.verdict && row.line.verdict !== 'heard') {
+                      <span class="ms-1 rounded px-1.5 text-xs font-semibold" [class]="verdictClass(row.line.verdict)">{{ 'COCKPIT.VERDICT.' + verdictKey(row.line.verdict) | translate }}</span>
+                    }
                   </span>
                 </li>
               }
@@ -81,6 +85,16 @@ import { ModalComponent } from '../../ui/modal.component';
         </ol>
 
         @if (l.reviewed) {
+          @if (counts(); as n) {
+            <p class="mt-4 border-t border-ink-100 pt-3 text-xs text-ink-600" data-log-counts>
+              {{ 'CONSULTATION.LOG.COUNTS' | translate: { sentences: n.sentences, acted: n.acted, proposed: n.proposed, unsure: n.unsure } }}
+              @if (n.median !== null) { · {{ 'CONSULTATION.LOG.MEDIAN' | translate: { ms: n.median } }} }
+            </p>
+          }
+          @if (devBuild && log()?.lines?.length) {
+            <p class="mt-2"><button type="button" class="btn btn-secondary btn-sm" (click)="exportScenario()">{{ 'CONSULTATION.LOG.EXPORT_SCENARIO' | translate }}</button>
+              <span class="ms-2 text-xs text-ink-500">{{ 'CONSULTATION.LOG.EXPORT_HINT' | translate }}</span></p>
+          }
           <section class="mt-5 border-t border-ink-100 pt-4">
             <h3 class="mb-2 text-sm font-bold text-ink-900">{{ 'CONSULTATION.LOG.VALIDATED' | translate }}</h3>
             <dl class="space-y-1 text-sm">
@@ -153,6 +167,60 @@ export class ConsultationLogComponent {
 
   names<T extends object>(items: T[], key: keyof T): string {
     return items.map(item => String(item[key])).join(', ');
+  }
+
+  /** Development builds only: a bad session becomes a replay fixture. */
+  readonly devBuild = isDevMode() && !environment.production;
+
+  /** The consultation in numbers: what was said, what was acted on, read, not understood, and how fast. */
+  readonly counts = computed(() => {
+    const lines = this.log()?.lines ?? [];
+    if (!lines.some(line => line.verdict)) return null;
+    const latencies = lines.map(line => line.latencyMs).filter((ms): ms is number => typeof ms === 'number').sort((a, b) => a - b);
+    return {
+      sentences: lines.length,
+      acted: lines.filter(line => line.verdict === 'acted').length,
+      proposed: lines.filter(line => line.verdict === 'proposed').length,
+      unsure: lines.filter(line => line.verdict === 'unsure').length,
+      median: latencies.length ? latencies[Math.floor(latencies.length / 2)] : null,
+    };
+  });
+
+  verdictKey(verdict: string): string {
+    return verdict.replace('-', '_').toUpperCase();
+  }
+
+  verdictClass(verdict: string): string {
+    switch (verdict) {
+      case 'acted': return 'bg-green-100 text-green-800';
+      case 'proposed': return 'bg-sky-100 text-sky-900';
+      case 'unsure': return 'bg-amber-100 text-amber-900';
+      default: return 'bg-ink-100 text-ink-700';
+    }
+  }
+
+  /** The lines and their times as a fixture file for the session replay (consultation-replay.testing.ts). */
+  exportScenario(): void {
+    const l = this.log();
+    if (!l) return;
+    const rows = l.lines.filter(line => line.text).map(line => {
+      const time = line.at ? new Date(line.at).toTimeString().slice(0, 8) : '00:00:00';
+      return `  { time: '${time}', text: ${JSON.stringify(line.text)} },`;
+    });
+    const body = [
+      '// Exported from the consultation log. Replace every name, number and identity before committing.',
+      "import { ReplayLine } from '../consultation-replay.testing';",
+      '',
+      `export const SESSION: ReplayLine[] = [`,
+      ...rows,
+      '];',
+      '',
+    ].join('\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([body], { type: 'text/plain' }));
+    link.download = `session-${l.consultationId.slice(0, 8)}.testing.ts`;
+    link.click();
+    URL.revokeObjectURL(link.href);
   }
 
   outcomeClass(outcome: string): string {

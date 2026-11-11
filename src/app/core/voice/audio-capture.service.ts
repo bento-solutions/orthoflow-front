@@ -143,10 +143,10 @@ export class AudioCaptureService {
   private bargePending = false;
   private falseBarges = 0;
 
-  private onUtterance: ((clip: Blob) => void) | null = null;
+  private onUtterance: ((clip: Blob, meta?: { cut: boolean }) => void) | null = null;
 
   /** Called with each closed utterance. Set before {@link start}. */
-  setUtteranceHandler(handler: (clip: Blob) => void): void {
+  setUtteranceHandler(handler: (clip: Blob, meta?: { cut: boolean }) => void): void {
     this.onUtterance = handler;
   }
 
@@ -340,7 +340,7 @@ export class AudioCaptureService {
 
     const clip = segmenter.push(frame);
     this.publish(segmenter.level, segmenter.speaking);
-    if (clip) this.emit(clip, this.context.sampleRate);
+    if (clip) this.emit(clip, this.context.sampleRate, segmenter.lastClosedByLength);
   }
 
   /**
@@ -434,12 +434,12 @@ export class AudioCaptureService {
     }
   }
 
-  private emit(samples: Float32Array, sampleRate: number): void {
+  private emit(samples: Float32Array, sampleRate: number, cut = false): void {
     // Something came of the last interruption: it was a person.
     this.bargePending = false;
     this.falseBarges = 0;
     const wav = toUploadWav(samples, sampleRate);
-    this.onUtterance?.(new Blob([wav], { type: 'audio/wav' }));
+    this.onUtterance?.(new Blob([wav], { type: 'audio/wav' }), { cut });
   }
 
   private syncContextState(): void {

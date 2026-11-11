@@ -77,17 +77,17 @@ import { VoiceOrchestratorService } from '../../../../core/voice/voice-orchestra
     .ck-line-text.typed { font-style: italic; }
     .ck-verdict { grid-column: 2; display: inline-flex; flex-wrap: wrap; gap: .375rem; align-items: baseline; font-size: .8125rem; }
     .ck-verdict-name { font-weight: 700; padding: 0 .4rem; border-radius: 999px; background: rgb(var(--ink-100)); color: rgb(var(--ink-800)); }
-    .ck-verdict[data-verdict='acted'] .ck-verdict-name { background: rgb(var(--positive-100)); color: rgb(var(--positive-900)); }
-    .ck-verdict[data-verdict='proposed'] .ck-verdict-name { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-900)); }
-    .ck-verdict[data-verdict='unsure'] .ck-verdict-name { background: rgb(var(--caution-100)); color: rgb(var(--caution-900)); }
+    .ck-verdict[data-verdict='acted'] .ck-verdict-name { background: rgb(var(--positive-100)); color: rgb(var(--positive-800)); }
+    .ck-verdict[data-verdict='proposed'] .ck-verdict-name { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-800)); }
+    .ck-verdict[data-verdict='unsure'] .ck-verdict-name { background: rgb(var(--caution-100)); color: rgb(var(--caution-800)); }
     .ck-verdict[data-verdict='pending'] { color: rgb(var(--ink-600)); }
     .ck-verdict-summary { color: rgb(var(--ink-800)); font-weight: 600; }
     .ck-live { display: block; color: rgb(var(--ink-600)); font-style: italic; }
     .ck-empty { color: rgb(var(--ink-600)); font-size: .875rem; }
-    .ck-newer { position: absolute; bottom: 3.5rem; left: 50%; transform: translateX(-50%); padding: .25rem .75rem; border-radius: 999px; background: rgb(var(--petrol-700)); color: #fff; font-weight: 700; font-size: .8125rem; box-shadow: 0 2px 6px rgb(0 0 0 / .2); }
+    .ck-newer { position: absolute; bottom: 3.5rem; left: 50%; transform: translateX(-50%); padding: .25rem .75rem; border-radius: 999px; background: var(--action); color: #fff; font-weight: 700; font-size: .8125rem; box-shadow: 0 2px 6px rgb(0 0 0 / .2); }
     .ck-typed { display: flex; gap: .375rem; padding: .5rem; border-top: 1px solid rgb(var(--ink-100)); }
     .ck-typed input { flex: 1; min-width: 0; min-height: 2.5rem; padding: 0 .625rem; border: 1px solid rgb(var(--ink-200)); border-radius: .5rem; background: var(--surface); color: rgb(var(--ink-900)); }
-    .ck-send { display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: .5rem; background: rgb(var(--petrol-700)); color: #fff; }
+    .ck-send { display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: .5rem; background: var(--action); color: #fff; }
   `],
 })
 export class CockpitConversationComponent {

@@ -95,6 +95,18 @@ export class SpeechFeedbackService {
   enabled = this.enabledSignal.asReadonly();
   speaking = this.speakingSignal.asReadonly();
 
+  /**
+   * When set, what would be spoken is handed to it instead of the loudspeaker —
+   * the development hook's "mute", so a scripted consultation can be checked
+   * for what it would have said without the machine saying it.
+   */
+  private recorder: ((text: string, locale: string) => void) | null = null;
+
+  setRecorder(recorder: ((text: string, locale: string) => void) | null): void {
+    this.recorder = recorder;
+    if (recorder) this.cancel();
+  }
+
   constructor() {
     if (!this.isSupported()) return;
     const load = () => {
@@ -178,7 +190,12 @@ export class SpeechFeedbackService {
    *   cares about the latest tooth, not a queue of earlier ones.
    */
   speak(text: string, locale = 'en-US', interrupt = true): void {
-    if (!this.enabledSignal() || !this.isSupported() || !text.trim()) return;
+    if (!this.enabledSignal() || !text.trim()) return;
+    if (this.recorder) {
+      this.recorder(text, locale);
+      return;
+    }
+    if (!this.isSupported()) return;
     try {
       if (interrupt) window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);

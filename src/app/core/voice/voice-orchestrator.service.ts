@@ -828,6 +828,20 @@ export class VoiceOrchestratorService {
     await this.handleTranscript(result.text, 1, result.normalized ?? null, inSession);
   }
 
+  /**
+   * As if the microphone had just heard `text`: the conversation is told first,
+   * then the gated pipeline runs — exactly what {@link acceptTranscription}
+   * does after a transcription that succeeded. The development hook and the
+   * session replay have no microphone; this is how they reach the real path
+   * rather than a copy of it.
+   */
+  async simulateHeard(text: string): Promise<void> {
+    const clean = text.trim();
+    if (!clean) return;
+    this.transcriptListener?.(clean);
+    await this.handleTranscript(clean, 1, null, true);
+  }
+
   /** Whether words were plainly meant as a command: the wake word, or dictation naming a tooth and a finding. */
   private wasAddressed(text: string): boolean {
     return detectWake(text, null).reason === 'wake-word' || isSelfEvidentDictation(text, this.context.dentition());

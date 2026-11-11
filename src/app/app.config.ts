@@ -1,4 +1,4 @@
-import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, Injector, LOCALE_ID, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { TitleStrategy, provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideTranslateService } from '@ngx-translate/core';
@@ -10,6 +10,8 @@ import localeAr from '@angular/common/locales/ar';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { TranslatedTitleStrategy } from './core/services/page-title.strategy';
+import { installVoiceTestHook } from './core/voice/testing/voice-test-hook';
+import { environment } from '../environments/environment';
 
 registerLocaleData(localeFr);
 registerLocaleData(localeAr);
@@ -29,6 +31,9 @@ function resolveLocaleId(): string {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    // Development builds only: drives the voice pipeline without a microphone.
+    // The condition is a build-time constant, so a production bundle drops it.
+    ...(environment.production ? [] : [provideAppInitializer(() => { installVoiceTestHook(inject(Injector)); })]),
     provideRouter(routes),
     { provide: TitleStrategy, useClass: TranslatedTitleStrategy },
     provideHttpClient(withInterceptors([authInterceptor])),

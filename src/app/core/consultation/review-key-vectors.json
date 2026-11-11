@@ -1,0 +1,19 @@
+{
+  "comment": "One list, used by the frontend spec (consultation-draft.review-key.spec.ts) and the backend test (ReviewKeyVectorsTest). A dictated item and the reader's reading of the same thing must get the same key. Keep the two copies identical.",
+  "text": [
+    { "text": "Pénicilline", "normalized": "penicilline" },
+    { "text": "  L'ananas ", "normalized": "l ananas" },
+    { "text": "Diabète de type 1", "normalized": "diabete de type 1" },
+    { "text": "Amoxicilline—500 mg", "normalized": "amoxicilline 500 mg" },
+    { "text": "IODE", "normalized": "iode" },
+    { "text": "Détartrage (complet)", "normalized": "detartrage complet" },
+    { "text": "", "normalized": "" }
+  ],
+  "teeth": [
+    { "teeth": "16,17", "normalized": "16,17" },
+    { "teeth": "16 17", "normalized": "16,17" },
+    { "teeth": "16;17/18", "normalized": "16,17,18" },
+    { "teeth": "", "normalized": "" },
+    { "teeth": "99", "normalized": "" }
+  ]
+}

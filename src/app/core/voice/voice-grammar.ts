@@ -10,6 +10,7 @@ import { affirmedFindings, extractEveryFinding, extractFindings, ExtractedFindin
 import { clauseAround, containsNegation, firstNegationIndex, isNegatedAt, startsNegated } from './voice-negation';
 import { WORD_END } from './voice-regex';
 import { UI_RULES } from './voice-ui-grammar';
+import { INTAKE_RULES } from './voice-intake-grammar';
 import {
   FindingEntity,
   VoiceContextSnapshot,
@@ -1307,6 +1308,8 @@ export const GRAMMAR_RULES: GrammarRule[] = [
   // Whole-sentence views, camera, reading aloud, help: before every free-text
   // rule, so "affiche les allergies du patient" is a view and never an allergy.
   ...UI_RULES,
+  // A plan line, the next appointment, a patient detail (wake word only).
+  ...INTAKE_RULES,
   createTask,
   showFindings,
   undoLast,

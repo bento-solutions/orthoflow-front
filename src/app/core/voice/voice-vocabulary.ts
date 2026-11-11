@@ -467,6 +467,8 @@ const QUESTIONS_FR: Record<string, string> = {
   'What should I add to the medical history?': 'Quel antécédent médical ?',
   'What should I add to the dental history?': 'Quel antécédent dentaire ?',
   'Which medication?': 'Quel médicament ?',
+  'Which treatment?': 'Quel acte ?',
+  'I did not get that value. Say it again.': 'Valeur non comprise. Répétez.',
 };
 
 export function spokenQuestion(question: string, language: SpokenLanguage): Spoken {

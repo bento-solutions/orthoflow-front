@@ -1556,7 +1556,11 @@
     "PLAN_DONE": "Fait aujourd'hui",
     "PLAN_DONE_HINT": "Acte réalisé pendant cette séance : il figure sur la feuille de soins comme exécuté",
     "FORM_SENT": "{{purpose}} envoyée à l'accueil : {{form}} (n° {{number}})",
-    "FORM_ERROR": "La consultation est enregistrée, mais la feuille de soins n'a pas pu être préparée. L'accueil peut la faire depuis le dossier (onglet Documents)."
+    "FORM_ERROR": "La consultation est enregistrée, mais la feuille de soins n'a pas pu être préparée. L'accueil peut la faire depuis le dossier (onglet Documents).",
+    "STATUS_DICTATED": "Dicté",
+    "APPT_IGNORE": "Ignorer",
+    "APPT_IGNORED": "Ignoré",
+    "SEC_NOTES_DICTATED": "Notes et tâches dictées"
   },
   "SET": {
     "TABS": {

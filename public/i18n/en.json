@@ -1556,7 +1556,11 @@
     "PLAN_DONE": "Done today",
     "PLAN_DONE_HINT": "Done during this session: it goes on the care form as executed",
     "FORM_SENT": "{{purpose}} sent to the front desk: {{form}} (no. {{number}})",
-    "FORM_ERROR": "The consultation is saved, but its care form could not be prepared. The front desk can make it from the record (Documents tab)."
+    "FORM_ERROR": "The consultation is saved, but its care form could not be prepared. The front desk can make it from the record (Documents tab).",
+    "STATUS_DICTATED": "Dictated",
+    "APPT_IGNORE": "Ignore",
+    "APPT_IGNORED": "Ignored",
+    "SEC_NOTES_DICTATED": "Dictated notes and tasks"
   },
   "SET": {
     "TABS": {

@@ -102,6 +102,15 @@ export interface ReviewState {
   appointmentSuggestion: DraftNextAppointment | null;
   /** What the doctor set. Null means no appointment is booked. */
   appointment: AppointmentChoice | null;
+  /**
+   * What the doctor did with the suggestion read from the conversation. Null
+   * while undecided: a suggestion with a date then counts as pending, so a
+   * "rendez-vous demain à 10 heures" said to the patient is never forgotten at
+   * save — it is used or ignored, on purpose.
+   */
+  appointmentDecision: 'used' | 'dismissed' | null;
+  /** Findings on a tooth the reader heard and could not stage: shown, never saved by themselves. */
+  chartMentions: { teeth: string | null; finding: string; quote: string }[];
 }
 
 export const PATIENT_FIELDS: readonly PatientFieldName[] = [
@@ -118,6 +127,8 @@ export function emptyReview(): ReviewState {
     plan: [],
     appointmentSuggestion: null,
     appointment: null,
+    appointmentDecision: null,
+    chartMentions: [],
   };
 }
 
@@ -219,7 +230,62 @@ export function mergeDraft(
     }), partial),
     appointmentSuggestion: draft.nextAppointment ?? (partial ? previous.appointmentSuggestion : null),
     appointment: previous.appointment,
+    // A suggestion the doctor ignored that the conversation then changed is a new one to decide.
+    appointmentDecision: previous.appointmentDecision === 'dismissed'
+      && suggestionChanged(previous.appointmentSuggestion, draft.nextAppointment ?? (partial ? previous.appointmentSuggestion : null))
+      ? null : previous.appointmentDecision ?? null,
+    chartMentions: previous.chartMentions ?? [],
   };
+}
+
+function suggestionChanged(before: DraftNextAppointment | null, after: DraftNextAppointment | null): boolean {
+  return (before?.date ?? null) !== (after?.date ?? null) || (before?.time ?? null) !== (after?.time ?? null);
+}
+
+// ── Keys ────────────────────────────────────────────────────────────────
+
+/**
+ * The server's `TranscriptText.normalize`, to the character: accents dropped,
+ * letters and digits lower-cased, every other run one space. A dictated item and
+ * the model's reading of the same thing must get the same key, or the review
+ * shows it twice. The vectors in review-key-vectors.json are checked against
+ * both implementations.
+ */
+export function normalizeKeyText(text: string | null | undefined): string {
+  if (!text) return '';
+  const decomposed = text.normalize('NFD');
+  let out = '';
+  let gap = true;
+  for (const c of decomposed) {
+    if (/\p{Mn}/u.test(c)) continue;
+    if (/[\p{L}\p{N}]/u.test(c)) {
+      out += c.toLowerCase();
+      gap = false;
+    } else if (!gap) {
+      out += ' ';
+      gap = true;
+    }
+  }
+  return out.trim();
+}
+
+/** "16 17", "16;17" → "16,17": the server's teeth list. */
+export function normalizeTeeth(teeth: string | null | undefined): string {
+  const cleaned = (teeth ?? '').replace(/[\s;/]+/g, ',').replace(/^,|,$/g, '');
+  return /^(?:[1-8][1-8])(?:,[1-8][1-8])*$/.test(cleaned) ? cleaned : '';
+}
+
+/** The key the server's reading gives the same item (ConsultationDraftParser). */
+export function reviewKey(
+  list: ListName,
+  data: { substance?: string; label?: string; category?: string; teeth?: string | null },
+): string {
+  switch (list) {
+    case 'allergies': return `allergy:${normalizeKeyText(data.substance)}`;
+    case 'medicalHistory': return `history:${data.category ?? 'OTHER'}:${normalizeKeyText(data.label)}`;
+    case 'activeTreatments': return `treatment:${normalizeKeyText(data.label)}`;
+    case 'plan': return `plan:${normalizeKeyText(data.label)}:${normalizeTeeth(data.teeth)}`;
+  }
 }
 
 // ── Keeping the review across a reload ──────────────────────────────────
@@ -393,6 +459,8 @@ export function pendingCount(state: ReviewState, record: PatientRecord, today: D
   for (const list of [state.allergies, state.medicalHistory, state.activeTreatments, state.plan] as ReviewItem<unknown>[][]) {
     pending += list.filter(item => item.status === 'proposed').length;
   }
+  // A next appointment heard in the conversation is a decision too: use it or ignore it.
+  if (state.appointmentSuggestion?.date && !state.appointment && !state.appointmentDecision) pending++;
   return pending;
 }
 

@@ -82,6 +82,8 @@ function defaultLabel(change: Omit<ReviewChange, 'label'>, state: ReviewState): 
 
 /** The view an intent's result belongs on. */
 export function viewOfIntent(intent: string): StageView | null {
+  const dictated = /^consultation\.dictate:(\w+)$/.exec(intent);
+  if (dictated) return dictated[1] === 'appointment' ? 'appointment' : dictated[1] === 'patient' ? 'patient' : viewOfList(dictated[1] as ReviewChange['list']);
   if (intent.startsWith('chart.') || intent === 'clinical.addFindings' || intent === 'clinical.retractFindings') return 'chart';
   if (intent === 'clinical.addAllergy') return 'allergies';
   if (intent === 'clinical.addMedicalHistory') return 'history';
@@ -117,7 +119,7 @@ export function actionFromUtterance(event: UtteranceEvent): ActionInput | null {
     detail: null,
     status: event.verdict === 'acted' && !isView ? 'noted' : null,
     heard: event.text,
-    target: isView || !view ? null : { view, fdi: event.fdi[0] },
+    target: isView || !view ? null : { view, fdi: event.fdi[0], ...(event.itemKey ? { itemKey: event.itemKey } : {}) },
     undoable: event.auditIds.length > 0,
     source: 'voice',
   };

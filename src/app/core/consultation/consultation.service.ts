@@ -35,6 +35,11 @@ import { EarconService } from '../voice/earcon.service';
 import { VoiceFeedbackService } from '../voice/voice-feedback.service';
 import { UtteranceEvent, UtteranceVerdict } from '../voice/voice-intent.model';
 import { ConsultationFocusService } from './consultation-focus.service';
+import { StockService } from '../services/stock.service';
+import { Treatment } from '../models/stock.model';
+import { normalizeKeyText, reviewKey } from './consultation-draft';
+import { IntakeSink } from '../voice/voice-orchestrator.service';
+import { Spoken } from '../voice/voice-vocabulary';
 import { actionFromUtterance } from './consultation-events';
 import { isStopPhrase } from '../voice/voice-wake';
 import { spokenLanguage, synthesisLocale } from '../voice/voice-vocabulary';
@@ -182,6 +187,9 @@ export class ConsultationService {
   private policy = inject(VoiceFeedbackService);
   private earcons = inject(EarconService);
   private focus = inject(ConsultationFocusService);
+  private stock = inject(StockService, { optional: true });
+  /** The clinic's treatments, for matching a dictated plan line. Loaded once, when a consultation starts. */
+  private catalog: Treatment[] = [];
   private patients = inject(PatientService);
   private clinical = inject(ClinicalRecordService);
   private schedule = inject(ScheduleService);
@@ -504,12 +512,118 @@ export class ConsultationService {
     this.voice.setTranscriptListener(text => this.onHeard(text));
     this.voice.setHandledElsewhere(text => isBeginExaminationCommand(text));
     this.voice.setUtteranceListener(event => this.onVerdict(event));
+    this.voice.setIntakeSink?.((intent, entities, quote) => this.intake(intent, entities, quote));
+    if (this.catalog.length === 0) {
+      this.stock?.getTreatments?.().subscribe({ next: list => { this.catalog = list ?? []; }, error: () => undefined });
+    }
   }
 
   private releaseVoice(): void {
     this.voice.setTranscriptListener(null);
     this.voice.setHandledElsewhere(null);
     this.voice.setUtteranceListener(null);
+    this.voice.setIntakeSink?.(null);
+  }
+
+  /**
+   * What the doctor dictated with the wake word that is not a chart finding,
+   * put straight into the review (R8): validated, badged "dicté", with the words
+   * it was said in, and keyed exactly as the reader keys the same thing — so a
+   * later reading that finds it merges into it instead of adding a second one.
+   */
+  intake: IntakeSink = (intent, entities, quote) => {
+    const language = spokenLanguage(this.context.locale());
+    const fr = language === 'fr';
+    const say = (text: string): Spoken => ({ text, locale: synthesisLocale(language) });
+    const item = <T>(key: string, data: T) => ({ key, data, quote, status: 'validated' as const, manual: false, edited: false, dictated: true });
+    const put = <T>(list: ReadonlyArray<{ key: string; data: T }>, key: string, data: T) => {
+      const others = list.filter(existing => existing.key !== key);
+      return [...others, item(key, data)];
+    };
+    const text = (name: string) => String(entities[name] ?? '').trim();
+
+    switch (intent) {
+      case 'clinical.addAllergy': {
+        const substance = text('substance');
+        if (!substance) return null;
+        const key = reviewKey('allergies', { substance });
+        this.changeReview(state => ({ ...state, allergies: put(state.allergies, key, { substance, reaction: null, severity: null }) as typeof state.allergies }));
+        return { list: 'allergies', value: substance, itemKey: key, spoken: say(fr ? `Allergie : ${substance}.` : `Allergy: ${substance}.`) };
+      }
+      case 'clinical.addMedicalHistory': {
+        const label = text('label');
+        if (!label) return null;
+        const category = text('category') || 'CONDITION';
+        if (category === 'MEDICATION') {
+          const key = reviewKey('activeTreatments', { label });
+          this.changeReview(state => ({ ...state, activeTreatments: put(state.activeTreatments, key, { label, detail: null, type: 'MEDICATION' }) as typeof state.activeTreatments }));
+          return { list: 'activeTreatments', value: label, itemKey: key, spoken: say(fr ? `Traitement en cours : ${label}.` : `Current treatment: ${label}.`) };
+        }
+        const historyCategory = (['CONDITION', 'MEDICATION', 'SURGERY', 'DENTAL_HISTORY', 'FAMILY', 'LIFESTYLE', 'OTHER'].includes(category) ? category : 'OTHER') as 'CONDITION';
+        const key = reviewKey('medicalHistory', { category: historyCategory, label });
+        this.changeReview(state => ({ ...state, medicalHistory: put(state.medicalHistory, key, { category: historyCategory, label, detail: null }) as typeof state.medicalHistory }));
+        return { list: 'medicalHistory', value: label, itemKey: key, spoken: say(fr ? `Antécédent : ${label}.` : `History: ${label}.`) };
+      }
+      case 'consultation.addPlanItem': {
+        const label = text('label');
+        if (!label) return null;
+        const teeth = text('teeth') || null;
+        const spokenPrice = typeof entities['price'] === 'number' ? entities['price'] as number : null;
+        const quantity = Math.max(1, Number(entities['quantity'] ?? 1) || 1);
+        const match = this.matchTreatment(label);
+        const price = spokenPrice ?? match?.basePrice ?? null;
+        const key = reviewKey('plan', { label, teeth });
+        this.changeReview(state => ({
+          ...state,
+          plan: put(state.plan, key, {
+            label, treatmentId: match?.id ?? null, teeth, price, quantity, notes: null,
+            priceSource: spokenPrice !== null ? 'SPOKEN' : price !== null ? 'CATALOG' : null, performed: false,
+          }) as typeof state.plan,
+        }));
+        const where = teeth ? (fr ? ` sur ${teeth.replace(/,/g, ', ')}` : ` on ${teeth.replace(/,/g, ', ')}`) : '';
+        const cost = price !== null ? `, ${price * quantity} dirhams` : '';
+        return { list: 'plan', value: label, itemKey: key, spoken: say(fr ? `Plan : ${label}${where}${cost}.` : `Plan: ${label}${where}${cost}.`) };
+      }
+      case 'consultation.setAppointment': {
+        const date = text('date');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+        const time = /^\d{2}:\d{2}$/.test(text('time')) ? text('time') : '09:00';
+        this.changeReview(state => ({
+          ...state,
+          appointment: { date, time, durationMinutes: 30, type: state.appointment?.type ?? '', notes: state.appointment?.notes ?? '' },
+          appointmentDecision: 'used',
+        }));
+        const when = this.appointmentText({ date, time, durationMinutes: 30, type: '', notes: '' }) ?? `${date} ${time}`;
+        return { list: 'appointment', value: `${date} ${time}`, itemKey: 'appointment', spoken: say(fr ? `Rendez-vous : ${when}.` : `Appointment: ${when}.`) };
+      }
+      case 'consultation.setField': {
+        const field = text('field') as keyof ReviewState['patient'];
+        const value = entities['value'];
+        if (!field || value === null || value === undefined || value === '') return null;
+        this.changeReview(state => ({
+          ...state,
+          patient: { ...state.patient, [field]: { value: value as string | number, quote, status: 'validated', manual: false, edited: false, dictated: true } },
+        }));
+        const label = this.translate.instant(`COCKPIT.FIELD.${String(field).toUpperCase()}`);
+        return { list: 'patient', value: String(value), itemKey: String(field), spoken: say(`${label} : ${value}.`) };
+      }
+      default:
+        return null;
+    }
+  };
+
+  /** A dictated plan line against the clinic's catalogue: the same name, or every word of it said. */
+  private matchTreatment(label: string): Treatment | null {
+    const wanted = normalizeKeyText(label);
+    if (!wanted) return null;
+    const active = this.catalog.filter(t => t.active !== false && t.name);
+    const exact = active.find(t => normalizeKeyText(t.name) === wanted);
+    if (exact) return exact;
+    const words = (name: string) => normalizeKeyText(name).split(' ').filter(word => word.length > 2);
+    return active.find(t => {
+      const needed = words(t.name);
+      return needed.length > 0 && needed.every(word => wanted.split(' ').includes(word));
+    }) ?? null;
   }
 
   /** Puts what became of a sentence on its line of the conversation. */
@@ -757,8 +871,13 @@ export class ConsultationService {
     this.scheduleReviewSave();
   }
 
+  /** Setting one decides a suggestion ("used"); clearing it leaves the suggestion to decide again. */
   setAppointment(choice: AppointmentChoice | null): void {
-    this.reviewSignal.update(state => ({ ...state, appointment: choice }));
+    this.reviewSignal.update(state => ({
+      ...state,
+      appointment: choice,
+      appointmentDecision: choice ? 'used' : state.appointmentDecision === 'dismissed' ? 'dismissed' : null,
+    }));
     this.scheduleReviewSave();
   }
 

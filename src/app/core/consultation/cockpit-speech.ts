@@ -19,6 +19,18 @@ function list(items: string[], language: Language): string {
   return `${shown.join(', ')}${language === 'fr' ? ` et ${rest} autre${rest > 1 ? 's' : ''}` : ` and ${rest} more`}`;
 }
 
+/** "jeudi 12 novembre à 10:00": a date said as a person says it, never "2026-11-12". */
+export function spokenWhen(date: string, time: string | null, language: Language): string {
+  const when = new Date(`${date}T${time ?? '00:00'}:00`);
+  if (Number.isNaN(when.getTime())) return [date, time].filter(Boolean).join(' ');
+  try {
+    const day = new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).format(when);
+    return time ? `${day} ${language === 'fr' ? 'à' : 'at'} ${time}` : day;
+  } catch {
+    return [date, time].filter(Boolean).join(' ');
+  }
+}
+
 function plural(count: number, one: string, many: string): string {
   return `${count} ${count > 1 ? many : one}`;
 }
@@ -47,10 +59,10 @@ export function sectionSummary(view: StageView, model: CockpitModelService, lang
     }
     case 'appointment': {
       const set = model.appointment();
-      if (set) return fr ? `Rendez-vous : ${set.date} à ${set.time}.` : `Appointment: ${set.date} at ${set.time}.`;
+      if (set) return fr ? `Rendez-vous : ${spokenWhen(set.date, set.time, language)}.` : `Appointment: ${spokenWhen(set.date, set.time, language)}.`;
       const proposed = model.appointmentSuggestion();
       if (proposed?.date) {
-        const at = [proposed.date, proposed.time].filter(Boolean).join(fr ? ' à ' : ' at ');
+        const at = spokenWhen(proposed.date, proposed.time, language);
         return fr ? `Rendez-vous proposé : ${at}.` : `Proposed appointment: ${at}.`;
       }
       return fr ? 'Aucun rendez-vous.' : 'No appointment.';

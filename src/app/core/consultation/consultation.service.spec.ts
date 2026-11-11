@@ -554,6 +554,33 @@ describe('ConsultationService', () => {
       expect(service.canSave()).toBe(true);
     });
 
+    it('takes an allergy dictated with the wake word into the review once, however often it is read after', async () => {
+      await started();
+      const taken = service.intake('clinical.addAllergy', { substance: 'pénicilline' }, 'Calypso, allergie à la pénicilline');
+      expect(taken?.spoken.text).toBe('Allergie : pénicilline.');
+      expect(service.review().allergies).toEqual([expect.objectContaining({
+        key: 'allergy:penicilline', status: 'validated', dictated: true, quote: 'Calypso, allergie à la pénicilline',
+      })]);
+
+      nextDraft = draft({ allergies: [PENICILLIN] });
+      hear('Je suis allergique à la pénicilline');
+      await service.end();
+      expect(service.review().allergies).toHaveLength(1);
+      service.validateEverything();
+      expect(await service.commit()).toBe(true);
+      expect((committed as { allergies: unknown[] }).allergies).toEqual([{ substance: 'pénicilline', reaction: null, severity: null }]);
+    });
+
+    it('sets the appointment dictated, and a current treatment apart from the history', async () => {
+      await started();
+      service.intake('consultation.setAppointment', { date: '2026-11-11', time: '10:00' }, 'Calypso, rendez-vous demain à 10 heures');
+      service.intake('clinical.addMedicalHistory', { category: 'MEDICATION', label: 'paracétamol' }, 'Calypso, le patient prend du paracétamol');
+      expect(service.review().appointment).toMatchObject({ date: '2026-11-11', time: '10:00', durationMinutes: 30 });
+      expect(service.review().appointmentDecision).toBe('used');
+      expect(service.review().activeTreatments).toEqual([expect.objectContaining({ key: 'treatment:paracetamol', dictated: true })]);
+      expect(service.review().medicalHistory).toEqual([]);
+    });
+
     it('sends the doctor\'s decisions and the chart findings they kept, then lets go of the dictated session', async () => {
       await inReview();
       buffered.set([{ auditId: 'a-1', preview: '16 : carie' }, { auditId: 'a-2', preview: '17 : fracture' }]);

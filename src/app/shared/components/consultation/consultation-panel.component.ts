@@ -250,12 +250,12 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
 
               <!-- Chart findings dictated during the examination. -->
               <section class="cp-sec">
-                <div class="cp-sec-title"><h3>{{ 'CONSULTATION.SEC_CHART' | translate }}</h3><span class="cp-count">{{ c.chartEntries().length }}</span></div>
-                @if (c.chartEntries().length === 0) {
+                <div class="cp-sec-title"><h3>{{ 'CONSULTATION.SEC_CHART' | translate }}</h3><span class="cp-count">{{ chartRows().length }}</span></div>
+                @if (chartRows().length === 0) {
                   <p class="cp-empty">{{ 'CONSULTATION.CHART_EMPTY' | translate }}</p>
                 }
                 <ul class="cp-list">
-                  @for (row of c.chartEntries(); track row.entry.auditId) {
+                  @for (row of chartRows(); track row.entry.auditId) {
                     <li class="cp-item" [class.removed]="!row.included">
                       <label class="cp-check">
                         <input type="checkbox" [checked]="row.included" (change)="c.toggleChartEntry(row.entry.auditId)" />
@@ -264,6 +264,19 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                     </li>
                   }
                 </ul>
+                @if (noteRows().length) {
+                  <div class="cp-sec-title"><h3>{{ 'CONSULTATION.SEC_NOTES_DICTATED' | translate }}</h3><span class="cp-count">{{ noteRows().length }}</span></div>
+                  <ul class="cp-list">
+                    @for (row of noteRows(); track row.entry.auditId) {
+                      <li class="cp-item" [class.removed]="!row.included">
+                        <label class="cp-check">
+                          <input type="checkbox" [checked]="row.included" (change)="c.toggleChartEntry(row.entry.auditId)" />
+                          <span>{{ chartText(row.entry) }}</span>
+                        </label>
+                      </li>
+                    }
+                  </ul>
+                }
                 @for (failure of c.failures(); track failure.auditId) {
                   <p class="cp-alert critical" role="alert"><span class="material-icons" aria-hidden="true">error</span>{{ failure.errorMessage }}</p>
                 }
@@ -280,7 +293,13 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                     </span>
                     <span class="cp-quote">« {{ s.quote }} »</span>
                     @if (!c.review().appointment) {
-                      <button type="button" class="cp-btn small" (click)="useSuggestion()">{{ 'CONSULTATION.APPT_USE' | translate }}</button>
+                      @if (c.review().appointmentDecision === 'dismissed') {
+                        <span class="cp-onfile">{{ 'CONSULTATION.APPT_IGNORED' | translate }}</span>
+                        <button type="button" class="cp-btn small" (click)="useSuggestion()">{{ 'CONSULTATION.APPT_USE' | translate }}</button>
+                      } @else {
+                        <button type="button" class="cp-btn small" (click)="useSuggestion()">{{ 'CONSULTATION.APPT_USE' | translate }}</button>
+                        <button type="button" class="cp-btn small" (click)="ignoreSuggestion()">{{ 'CONSULTATION.APPT_IGNORE' | translate }}</button>
+                      }
                     }
                   </div>
                 }
@@ -965,8 +984,20 @@ export class ConsultationPanelComponent {
     return String(value);
   }
 
-  statusKey(entry: { status: string }): string {
+  statusKey(entry: { status: string; dictated?: boolean }): string {
+    // Said to the app with the wake word: validated from the start, and marked so.
+    if (entry.dictated && entry.status !== 'removed') return 'CONSULTATION.STATUS_DICTATED';
     return `CONSULTATION.STATUS_${entry.status.toUpperCase()}`;
+  }
+
+  /** The chart's own findings, apart from notes and tasks dictated in the same session. */
+  chartRows = computed(() => this.c.chartEntries().filter(row =>
+    row.entry.intent === 'clinical.addFindings' || row.entry.intent === 'clinical.retractFindings'));
+  noteRows = computed(() => this.c.chartEntries().filter(row =>
+    row.entry.intent !== 'clinical.addFindings' && row.entry.intent !== 'clinical.retractFindings'));
+
+  ignoreSuggestion(): void {
+    this.c.changeReview(state => ({ ...state, appointmentDecision: 'dismissed' }));
   }
 
   validateField(name: PatientFieldName): void {

@@ -80,6 +80,7 @@ export class VoiceCommandsService {
     this.registry.registerMany([
       ...this.sessionCommands(),
       ...this.viewCommands(),
+      ...this.consultationCommands(),
       ...this.chartCommands(),
       ...this.clinicalCommands(),
       ...this.readCommands(),
@@ -275,6 +276,39 @@ export class VoiceCommandsService {
     return dentition === 'child'
       ? [...run(5, 5, true), ...run(6, 5, false), ...run(7, 5, true), ...run(8, 5, false)]
       : [...run(1, 8, true), ...run(2, 8, false), ...run(3, 8, true), ...run(4, 8, false)];
+  }
+
+  // ── What a consultation takes into its review ───────────────────────
+
+  /**
+   * Dictated with the wake word during a consultation, these never run here:
+   * the pipeline hands them to the consultation's review (VoiceOrchestratorService
+   * INTAKE_COMMANDS). Outside one there is no review to put them in.
+   */
+  private consultationCommands(): VoiceCommand[] {
+    const only = async (): Promise<VoiceCommandResult> => ({
+      ok: false, message: 'Available during a consultation.', spokenFr: 'Disponible pendant une consultation.',
+    });
+    return [
+      {
+        id: 'consultation.addPlanItem', description: 'Add a line to the consultation\'s treatment plan, with its teeth and its price',
+        risk: 'SAFE', requiresPatient: true, args: { label: 'the treatment', teeth: 'FDI codes, comma-separated', price: 'dirhams', quantity: 'how many' },
+        examples: ['plan : détartrage, 300 dirhams', 'ajoute au plan un composite sur la 16 et la 17, 400 dirhams chacun', 'plan: scaling, 300 dirhams'],
+        preview: (entities) => `Plan: ${entities['label']}`, execute: only,
+      },
+      {
+        id: 'consultation.setAppointment', description: 'Set the next appointment of the consultation',
+        risk: 'SAFE', requiresPatient: true, args: { date: 'YYYY-MM-DD', time: 'HH:mm' },
+        examples: ['rendez-vous demain à 10 heures', 'prochain rendez-vous dans 15 jours', 'appointment tomorrow at 10'],
+        preview: (entities) => `Appointment ${entities['date']} ${entities['time'] ?? ''}`, execute: only,
+      },
+      {
+        id: 'consultation.setField', description: 'Set or correct one of the patient\'s details: first name, last name, phone, ID card, age, date of birth, sex, insurer, policy number',
+        risk: 'SAFE', requiresPatient: true, args: { field: 'firstName | lastName | phone | cin | age | dateOfBirth | gender | insuranceProvider | insuranceNumber', value: 'the value' },
+        examples: ['prénom : Achraf', 'le prénom s\'écrit A, C, H, R, A, F', 'téléphone : 06 61 23 45 98', 'first name: Achraf'],
+        preview: (entities) => `${entities['field']}: ${entities['value']}`, execute: only,
+      },
+    ];
   }
 
   // ── What is on screen ───────────────────────────────────────────────

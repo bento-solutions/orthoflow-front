@@ -151,6 +151,21 @@ export function summaryOf(entry: Pick<BufferedEntry, 'intent' | 'entities' | 'pr
   return entry.summary || spokenConfirmation(entry.intent, entry.entities, language)?.text || entry.preview;
 }
 
+/**
+ * Where a consultation takes what the doctor dictates that is not a chart
+ * finding — an allergy, a history entry, a plan line, the next appointment, a
+ * patient detail: straight into the review, validated, with the words it came
+ * from. Null when it cannot take it (the review then says why).
+ */
+export type IntakeSink = (intent: string, entities: Record<string, unknown>, quote: string)
+  => { list: string; value: string; spoken: Spoken; itemKey?: string } | null;
+
+/** The commands a consultation's review takes instead of a staged write. */
+export const INTAKE_COMMANDS: ReadonlySet<string> = new Set([
+  'clinical.addAllergy', 'clinical.addMedicalHistory',
+  'consultation.addPlanItem', 'consultation.setAppointment', 'consultation.setField',
+]);
+
 export interface VoiceOutcome {
   ok: boolean;
   message: string;
@@ -570,6 +585,16 @@ export class VoiceOrchestratorService {
   private handledElsewhere: ((text: string) => boolean) | null = null;
   private utteranceListener: ((event: UtteranceEvent) => void) | null = null;
 
+  private intakeSink: IntakeSink | null = null;
+
+  /**
+   * Set by a consultation while it records (R8: one store per kind of fact).
+   * Outside a consultation the same commands stage as they always have.
+   */
+  setIntakeSink(sink: IntakeSink | null): void {
+    this.intakeSink = sink;
+  }
+
   /**
    * Receives every transcribed utterance, spoken or recognised, in order, and
    * returns the id of the conversation line it became — so the verdict that
@@ -983,6 +1008,7 @@ export class VoiceOrchestratorService {
           auditIds: collected.auditIds,
           fdi: [...new Set(collected.fdi)],
           latencyMs: this.speechEndedAt !== null ? Math.max(0, Date.now() - this.speechEndedAt) : null,
+          itemKey: collected.itemKey ?? null,
         };
         try {
           this.utteranceListener?.(event);
@@ -996,6 +1022,7 @@ export class VoiceOrchestratorService {
   /** What the utterance being handled has come to, gathered as the pipeline runs. */
   private verdict: {
     verdict: UtteranceVerdict | null; summary: string | null; intents: string[]; auditIds: string[]; fdi: string[];
+    itemKey?: string | null;
   } | null = null;
   private speechEndedAt: number | null = null;
   private lastChartAcceptedAt = 0;
@@ -1573,6 +1600,20 @@ export class VoiceOrchestratorService {
       return;
     }
 
+    // "Revoir dans 15 jours" outside a consultation is the follow-up note it
+    // always was: there is no review to set an appointment in.
+    if (!this.intakeSink && command.id === 'consultation.setAppointment') {
+      await this.dispatch({ ...intent, intent: 'schedule.followUp', entities: { when: intent.transcript } },
+        snapshot, recognitionConfidence, batch, humanConfirmed);
+      return;
+    }
+    // In a consultation, what is dictated with the wake word goes into the
+    // review, validated — never a PENDING write beside a reading of the same thing.
+    if (this.intakeSink && INTAKE_COMMANDS.has(command.id)) {
+      await this.toIntake(command.id, intent, snapshot, batch);
+      return;
+    }
+
     // "Enlève la carie sur la seize" during a session nearly always means the
     // caries dictated a moment ago, not one already on the record.
     if (command.id === 'chart.removeFinding' && await this.removeFromBuffer(intent)) {
@@ -1859,6 +1900,35 @@ export class VoiceOrchestratorService {
     if (fresh.length === 0) return { kind: 'already-noted', fdi, codes: duplicates };
     if (fresh.length === findings.length && refines.size === 0) return { kind: 'stage', intent, refines: [] };
     return { kind: 'stage', intent: { ...intent, entities: { ...intent.entities, findings: fresh } }, refines: [...refines] };
+  }
+
+  /**
+   * Hands a dictated item to the consultation's review and records that it was
+   * dictated — a SAFE row, `consultation.dictate`, which writes nothing and is
+   * not one of the server's write intents.
+   */
+  private async toIntake(commandId: string, intent: VoiceIntent, snapshot: VoiceContextSnapshot, batch?: StagedBatch): Promise<void> {
+    const taken = this.intakeSink!(commandId, intent.entities, intent.transcript);
+    if (!taken) {
+      this.mark('unsure', this.say('notAccepted').text);
+      if (batch) return;
+      this.settle();
+      this.announce(false, 'That could not be added to the review.', this.say('notAccepted'), 'error');
+      return;
+    }
+    this.mark('acted', taken.spoken.text, { intent: `consultation.dictate:${taken.list}` });
+    if (this.verdict) this.verdict.itemKey = taken.itemKey ?? null;
+    await this.audit(
+      { ...intent, intent: 'consultation.dictate', entities: { list: taken.list, value: taken.value } },
+      snapshot, 'SAFE', 'AUTO', 'EXECUTED',
+    );
+    this.touchWakeWindow();
+    if (batch) {
+      batch.notes.push(taken.spoken);
+      return;
+    }
+    this.settle();
+    this.announce(true, taken.spoken.text, taken.spoken, 'confirm', { brief: { text: this.language() === 'fr' ? 'Noté.' : 'Noted.', locale: taken.spoken.locale } });
   }
 
   /** "45, c'est pas couronne" with nothing said instead: the denied findings come off the staged entry. */

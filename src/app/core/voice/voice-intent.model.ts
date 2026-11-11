@@ -263,4 +263,6 @@ export interface UtteranceEvent {
   fdi: string[];
   /** ms from the end of speech to the verdict, when the clip's timing is known. */
   latencyMs: number | null;
+  /** The review row a dictated item became, so the cockpit can highlight it. */
+  itemKey?: string | null;
 }

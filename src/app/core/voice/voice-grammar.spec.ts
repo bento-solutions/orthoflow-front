@@ -640,9 +640,14 @@ describe('what the dentist says about the patient', () => {
 
 describe('a recall said in words', () => {
   it('is a follow-up, however it is phrased', () => {
-    for (const said of ['revoir dans 15 jours', 'revoir dans deux semaines', 'contrôle dans un mois',
-      'rappel dans 6 mois', 'recall in 3 months', 'programme un rendez-vous']) {
+    for (const said of ['contrôle dans un mois', 'rappel dans 6 mois', 'recall in 3 months', 'programme un rendez-vous']) {
       expectIntent(said, 'schedule.followUp');
+    }
+  });
+
+  it('is the next appointment when it says when: the pipeline makes it a follow-up outside a consultation', () => {
+    for (const said of ['revoir dans 15 jours', 'revoir dans deux semaines']) {
+      expectIntent(said, 'consultation.setAppointment');
     }
   });
 

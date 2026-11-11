@@ -138,3 +138,48 @@ describe('appendix A §8 — must stay conversation without the wake word', () =
     expect(result.rows.flatMap(row => row.stagedIntents)).toEqual([]);
   });
 });
+
+describe('what is dictated into a consultation goes to its review, not to a staged write (R8)', () => {
+  const sinkInto = (taken: Array<{ intent: string; entities: Record<string, unknown> }>) => (orchestrator: { setIntakeSink: (sink: never) => void }) =>
+    orchestrator.setIntakeSink(((intent: string, entities: Record<string, unknown>) => {
+      taken.push({ intent, entities });
+      return { list: 'allergies', value: String(entities['substance'] ?? entities['label'] ?? ''), spoken: { text: `Noté : ${entities['substance'] ?? entities['label']}.`, locale: 'fr-FR' } };
+    }) as never);
+
+  it('hands an allergy said after the wake word to the review and records it as dictated', async () => {
+    const taken: Array<{ intent: string; entities: Record<string, unknown> }> = [];
+    const result = await replayConsultation(lines('Calypso, allergie à la pénicilline'), { setUp: sinkInto(taken) as never });
+    const row = result.rows[0];
+    expect(taken).toEqual([{ intent: 'clinical.addAllergy', entities: { substance: 'pénicilline' } }]);
+    expect(row.stagedIntents).toEqual([]);
+    expect(row.ran).toEqual(['consultation.dictate']);
+    expect(row.spoken).toEqual(['Noté : pénicilline.']);
+    expect(row.verdict).toBe('acted');
+  });
+
+  it('takes several at once', async () => {
+    const taken: Array<{ intent: string; entities: Record<string, unknown> }> = [];
+    await replayConsultation(lines("Calypso, le patient est allergique au latex et à l'iode"), { setUp: sinkInto(taken) as never });
+    expect(taken.map(t => t.entities['substance'])).toEqual(['latex', 'iode']);
+  });
+
+  it('still stages chart findings as before', async () => {
+    const taken: Array<{ intent: string; entities: Record<string, unknown> }> = [];
+    const result = await replayConsultation(lines('dent 16 carie'), { setUp: sinkInto(taken) as never });
+    expect(taken).toEqual([]);
+    expect(result.rows[0].stagedIntents).toEqual(['clinical.addFindings']);
+  });
+
+  it('never takes an allergy said to the patient', async () => {
+    const taken: Array<{ intent: string; entities: Record<string, unknown> }> = [];
+    await replayConsultation(lines("vous avez une allergie à l'ananas", 'allergie à la pénicilline'), { setUp: sinkInto(taken) as never });
+    expect(taken).toEqual([]);
+  });
+});
+
+describe('outside a consultation', () => {
+  it('keeps "revoir dans 15 jours" the follow-up note it always was', async () => {
+    const result = await replayConsultation(lines('Calypso, revoir dans 15 jours'));
+    expect(result.rows[0].stagedIntents).toEqual(['clinical.addNote']);
+  });
+});

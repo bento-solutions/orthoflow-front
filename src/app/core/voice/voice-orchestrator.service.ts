@@ -6,6 +6,9 @@ import { SpeechRecognitionService } from './speech-recognition.service';
 import { AudioCaptureService } from './audio-capture.service';
 import { SessionBufferService } from './session-buffer.service';
 import { SpeechFeedbackService } from './speech-feedback.service';
+import { FeedbackCue, VoiceFeedbackService } from './voice-feedback.service';
+import { intentClass } from './intent-class';
+import { repairClinicalTerms } from './voice-fuzzy';
 import { VoiceContextService } from './voice-context.service';
 import { VoiceCommandRegistryService } from './voice-command-registry.service';
 import { TranscriptionDto, VoiceApiService } from './voice-api.service';
@@ -26,7 +29,7 @@ import {
 import { acceptsFollowUp, isSelfEvidentUiCommand, withoutFillers } from './voice-followup';
 import { InputLanguageService } from './input-language.service';
 import { InputLanguage, classifyLanguage, isLanguageNeutralAnswer, requestedLanguage } from './language-filter';
-import { affirmedFindings, allFindingCodes, extractFindings, findingKind, findingLabel, spokenFindingCovers } from './clinical-lexicon';
+import { SYMPTOM_CODES, affirmedFindings, allFindingCodes, extractFindings, findingKind, findingLabel, spokenFindingCovers } from './clinical-lexicon';
 import { describeFdi, findToothMentions, resolveTooth } from './tooth-lexicon';
 import { WORD_END } from './voice-regex';
 import {
@@ -54,6 +57,8 @@ import {
   VoiceCommand,
   VoiceContextSnapshot,
   VoiceIntent,
+  UtteranceEvent,
+  UtteranceVerdict,
   VoiceResolution,
   entityString,
   stagedFindingCodes,
@@ -204,6 +209,22 @@ const FINISH_WAIT_MS = 12_000;
  */
 const LANGUAGE_WARNING_INTERVAL_MS = 45_000;
 
+/**
+ * A finding said with no tooth is "not understood" only while the doctor is
+ * going round the mouth: within this long of the last chart command. Said while
+ * explaining the plan ("il faudra une couronne"), it is conversation.
+ */
+const ROUND_THE_MOUTH_MS = 60_000;
+/** A "not understood" cue is sounded at most this often. */
+const UNSURE_CUE_INTERVAL_MS = 4_000;
+/** "On dit zuite, carie occlusale": a finding that short, with no tooth, after a chart command. */
+const BARE_FINDING_MAX_WORDS = 6;
+
+/** Which verdict wins when one sentence produces several. */
+const VERDICT_RANK: Readonly<Record<UtteranceVerdict, number>> = {
+  'other-language': 0, heard: 1, control: 2, proposed: 3, unsure: 4, question: 5, acted: 6,
+};
+
 /** How a spoken utterance came to be treated as addressed to the system. */
 export type AddressedVia = 'wake-word' | 'dictation' | 'view' | 'follow-up' | 'explicit';
 
@@ -257,6 +278,8 @@ function distinct(values: Array<string | null | undefined>): string[] {
 interface ClipOutcome {
   result: TranscriptionDto | null;
   inSession: boolean;
+  /** When the clip closed — the end of speech — for the latency of the verdict. */
+  endedAt?: number;
   /** The HTTP status when the request itself failed; 0 for no connection. */
   transportStatus?: number;
 }
@@ -284,6 +307,7 @@ export class VoiceOrchestratorService {
   private capture = inject(AudioCaptureService);
   private buffer = inject(SessionBufferService);
   private feedback = inject(SpeechFeedbackService);
+  private policy = inject(VoiceFeedbackService);
   private context = inject(VoiceContextService);
   private inputLanguage = inject(InputLanguageService);
   private registry = inject(VoiceCommandRegistryService);
@@ -435,7 +459,7 @@ export class VoiceOrchestratorService {
   /** Says something the dentist needs to know, aloud and on screen. */
   notify(key: PhraseKey): void {
     const spoken = this.say(key);
-    this.announce(false, spoken.text, spoken);
+    this.announce(false, spoken.text, spoken, 'alarm');
   }
 
   /** Withdraws the open question, and whatever it was holding, and says so. */
@@ -453,7 +477,7 @@ export class VoiceOrchestratorService {
   private warnOfExpiry(minutes: number): void {
     if (!this.examinationModeSignal()) return;
     const spoken = expiryWarning(minutes, this.language());
-    this.announce(false, spoken.text, spoken);
+    this.announce(false, spoken.text, spoken, 'alarm');
   }
 
   private handleSignOut(reason: SignOutReason): void {
@@ -542,12 +566,26 @@ export class VoiceOrchestratorService {
   // whether it is a command. Commands themselves work from the first second of
   // a consultation: there is no stretch of it in which the chart is not listening.
 
-  private transcriptListener: ((text: string) => void) | null = null;
+  private transcriptListener: ((text: string) => number | null | void) | null = null;
   private handledElsewhere: ((text: string) => boolean) | null = null;
+  private utteranceListener: ((event: UtteranceEvent) => void) | null = null;
 
-  /** Receives every transcribed utterance, spoken or recognised, in order. Null to stop. */
-  setTranscriptListener(listener: ((text: string) => void) | null): void {
+  /**
+   * Receives every transcribed utterance, spoken or recognised, in order, and
+   * returns the id of the conversation line it became — so the verdict that
+   * follows can be put on that line. Null to stop.
+   */
+  setTranscriptListener(listener: ((text: string) => number | null | void) | null): void {
     this.transcriptListener = listener;
+  }
+
+  /**
+   * Told what became of every utterance, exactly once per utterance: acted on,
+   * kept as conversation, not understood, a question asked back, a control, or
+   * another language. The conversation puts it on the line; the cockpit shows it.
+   */
+  setUtteranceListener(listener: ((event: UtteranceEvent) => void) | null): void {
+    this.utteranceListener = listener;
   }
 
   /**
@@ -564,8 +602,8 @@ export class VoiceOrchestratorService {
   private wire(): void {
     if (this.wired) return;
     this.speech.setResultHandler(result => {
-      this.transcriptListener?.(result.transcript.trim());
-      void this.handleTranscript(result.transcript, result.confidence);
+      const lineId = (this.transcriptListener?.(result.transcript.trim()) ?? null) || null;
+      void this.handleTranscript(result.transcript, result.confidence, null, this.examinationModeSignal(), lineId);
     });
     this.capture.setUtteranceHandler(clip => this.transcribeClip(clip));
     this.wired = true;
@@ -756,6 +794,7 @@ export class VoiceOrchestratorService {
     // Read when the clip was recorded, not when its transcript returns: the
     // last clip of a session is flushed as the session ends.
     const inSession = this.examinationModeSignal();
+    const endedAt = Date.now();
     const snapshot = this.context.snapshot();
     this.pendingClipsSignal.update(count => count + 1);
 
@@ -764,10 +803,11 @@ export class VoiceOrchestratorService {
         .pipe(timeout(TRANSCRIBE_TIMEOUT_MS)),
     )
       .then(
-        (result): ClipOutcome => ({ result, inSession }),
+        (result): ClipOutcome => ({ result, inSession, endedAt }),
         (error: unknown): ClipOutcome => ({
           result: null,
           inSession,
+          endedAt,
           transportStatus: (error as { status?: number } | null)?.status,
         }),
       )
@@ -803,7 +843,7 @@ export class VoiceOrchestratorService {
    * which on a phone meant a microphone that looked dead: every clip failed
    * and nothing on screen said so.
    */
-  private async acceptTranscription({ result, inSession, transportStatus }: ClipOutcome): Promise<void> {
+  private async acceptTranscription({ result, inSession, transportStatus, endedAt }: ClipOutcome): Promise<void> {
     // The session ended while this clip was in flight; it must not be staged
     // into a consultation that is already in review. Not silently, though: if
     // it was dictation, the dentist is told what was not added.
@@ -849,8 +889,13 @@ export class VoiceOrchestratorService {
     if (detected) this.dictationLanguageSignal.set(detected);
     // Kept before the wake gate: a recorded consultation wants the whole
     // conversation, not only the part addressed to the system.
-    this.transcriptListener?.(result.text.trim());
-    await this.handleTranscript(result.text, 1, result.normalized ?? null, inSession);
+    const lineId = (this.transcriptListener?.(result.text.trim()) ?? null) || null;
+    this.speechEndedAt = endedAt ?? null;
+    try {
+      await this.handleTranscript(result.text, 1, result.normalized ?? null, inSession, lineId);
+    } finally {
+      this.speechEndedAt = null;
+    }
   }
 
   /**
@@ -863,8 +908,8 @@ export class VoiceOrchestratorService {
   async simulateHeard(text: string): Promise<void> {
     const clean = text.trim();
     if (!clean) return;
-    this.transcriptListener?.(clean);
-    await this.handleTranscript(clean, 1, null, true);
+    const lineId = (this.transcriptListener?.(clean) ?? null) || null;
+    await this.handleTranscript(clean, 1, null, true, lineId);
   }
 
   /** Whether words were plainly meant as a command: the wake word, or dictation naming a tooth and a finding. */
@@ -885,7 +930,7 @@ export class VoiceOrchestratorService {
     const now = Date.now();
     if (now - this.lastFailureSpokenAt >= FAILURE_ALARM_INTERVAL_MS) {
       this.lastFailureSpokenAt = now;
-      this.feedback.speak(this.say(phraseKey).text, this.say(phraseKey).locale);
+      this.policy.deliver('alarm', { full: this.say(phraseKey) });
     }
   }
 
@@ -917,6 +962,89 @@ export class VoiceOrchestratorService {
     recognitionConfidence = 1,
     normalized: string | null = null,
     gated = this.examinationModeSignal(),
+    lineId: number | null = null,
+  ): Promise<void> {
+    // One utterance, one verdict: a sentence that replaces a pending question
+    // is handled again from the top, and that inner pass is not a second event.
+    const outer = this.verdict === null;
+    if (outer) this.verdict = { verdict: null, summary: null, intents: [], auditIds: [], fdi: [] };
+    try {
+      await this.process(transcript, recognitionConfidence, normalized, gated);
+    } finally {
+      if (outer) {
+        const collected = this.verdict!;
+        this.verdict = null;
+        const event: UtteranceEvent = {
+          lineId,
+          text: transcript.trim() || normalized?.trim() || '',
+          verdict: collected.verdict ?? 'heard',
+          summary: collected.summary,
+          intents: collected.intents,
+          auditIds: collected.auditIds,
+          fdi: [...new Set(collected.fdi)],
+          latencyMs: this.speechEndedAt !== null ? Math.max(0, Date.now() - this.speechEndedAt) : null,
+        };
+        try {
+          this.utteranceListener?.(event);
+        } catch {
+          // A listener's failure must not take the pipeline down with it.
+        }
+      }
+    }
+  }
+
+  /** What the utterance being handled has come to, gathered as the pipeline runs. */
+  private verdict: {
+    verdict: UtteranceVerdict | null; summary: string | null; intents: string[]; auditIds: string[]; fdi: string[];
+  } | null = null;
+  private speechEndedAt: number | null = null;
+  private lastChartAcceptedAt = 0;
+  private lastUnsureCueAt = 0;
+
+  /** Records what the utterance came to; a stronger verdict wins over a weaker one. */
+  private mark(verdict: UtteranceVerdict, summary: string | null = null, extra: { intent?: string; auditId?: string; fdi?: string | null } = {}): void {
+    const current = this.verdict;
+    if (!current) return;
+    if (current.verdict === null || VERDICT_RANK[verdict] >= VERDICT_RANK[current.verdict]) {
+      current.verdict = verdict;
+      if (summary !== null) current.summary = summary;
+    }
+    if (extra.intent) current.intents.push(extra.intent);
+    if (extra.auditId) current.auditIds.push(extra.auditId);
+    if (extra.fdi) current.fdi.push(extra.fdi);
+  }
+
+  /**
+   * A sentence nobody addressed to the system that still looks like a chart
+   * command it missed: a tooth and a finding the doctor sees, or — while they
+   * are going round the mouth — a short finding with no tooth ("On dit zuite,
+   * carie occlusale"). Marked "not understood", with a falling tone at most
+   * every few seconds, so a finding is never lost in silence.
+   */
+  private looksLikeMissedCommand(readings: string[]): boolean {
+    const now = Date.now();
+    for (const reading of readings) {
+      let findings = affirmedFindings(extractFindings(reading)).filter(f => !SYMPTOM_CODES.has(f.code));
+      if (findings.length === 0) {
+        const repaired = repairClinicalTerms(reading);
+        if (repaired.corrections.length > 0) {
+          findings = affirmedFindings(extractFindings(repaired.text)).filter(f => !SYMPTOM_CODES.has(f.code));
+        }
+      }
+      if (findings.length === 0) continue;
+      const teeth = findToothMentions(reading).filter(mention => mention.valid);
+      if (teeth.length > 0) return true;
+      const words = reading.trim().split(/\s+/).filter(Boolean).length;
+      if (words <= BARE_FINDING_MAX_WORDS && now - this.lastChartAcceptedAt <= ROUND_THE_MOUTH_MS) return true;
+    }
+    return false;
+  }
+
+  private async process(
+    transcript: string,
+    recognitionConfidence: number,
+    normalized: string | null,
+    gated: boolean,
   ): Promise<void> {
     const heard = transcript.trim();
     const cleaned = normalized?.trim() || null;
@@ -942,6 +1070,7 @@ export class VoiceOrchestratorService {
     if (heardAloud) {
       const requested = readings.map(reading => requestedLanguage(reading)).find(language => language !== null) ?? null;
       if (requested) {
+        this.mark('control');
         this.switchDictationLanguage(requested);
         return;
       }
@@ -961,6 +1090,7 @@ export class VoiceOrchestratorService {
     if (heardAloud && !exempt && readings.every(reading => classifyLanguage(reading, chosenLanguage) === 'noise')) {
       this.languageNoiseSignal.update(count => count + 1);
       this.ignoredSignal.set(said);
+      this.mark('other-language');
       this.warnWrongLanguage(readings);
       this.settle();
       return;
@@ -985,6 +1115,7 @@ export class VoiceOrchestratorService {
     // wake word is being misheard must still be able to stop by voice.
     if (gated && readings.some(reading => isStopPhrase(reading))) {
       this.lastAcceptedAtSignal.set(null);
+      this.mark('control', null, { intent: 'voice.session.end' });
       await this.sessionHooks?.end();
       return;
     }
@@ -995,6 +1126,7 @@ export class VoiceOrchestratorService {
       // Paused by voice: the only thing heard is the way back.
       if (this.voicePausedSignal()) {
         if (addressed?.via === 'wake-word' && addressed.primary && isResumePhrase(addressed.primary)) {
+          this.mark('control');
           this.resumeByVoice();
         } else {
           this.ignoredSignal.set(said);
@@ -1005,23 +1137,34 @@ export class VoiceOrchestratorService {
 
       if (!addressed) {
         this.ignoredSignal.set(said);
+        if (this.looksLikeMissedCommand(readings)) {
+          this.mark('unsure');
+          const now = Date.now();
+          if (now - this.lastUnsureCueAt >= UNSURE_CUE_INTERVAL_MS) {
+            this.lastUnsureCueAt = now;
+            this.policy.deliver('unsure', { full: null });
+          }
+        }
         this.settle();
         return;
       }
       this.ignoredSignal.set(null);
       if (addressed.via === 'wake-word' && addressed.primary && isPausePhrase(addressed.primary)) {
+        this.mark('control');
         this.pauseByVoice();
         return;
       }
       // "Calypso, stop": a bare word that would end the consultation is asked
       // back rather than obeyed — ending cannot be undone without a tap.
       if (addressed.via === 'wake-word' && addressed.primary && isBareStop(addressed.primary)) {
+        this.mark('question');
         this.askToEnd(said);
         return;
       }
       // A bare wake word opens the floor and waits. It is also the answer to
       // "say Calypso to carry on", so it keeps the examination open.
       if (!addressed.primary) {
+        this.mark('control');
         this.touchWakeWindow();
         this.sessionService.touchSession();
         this.settle();
@@ -1031,6 +1174,7 @@ export class VoiceOrchestratorService {
       // never answered with "pas compris".
       const mine = this.handledElsewhere;
       if (mine && [addressed.primary, addressed.alternate].some(text => !!text && mine(text))) {
+        this.mark('control');
         this.touchWakeWindow();
         this.settle();
         return;
@@ -1057,7 +1201,7 @@ export class VoiceOrchestratorService {
     if (now - this.lastLanguageWarningAt < LANGUAGE_WARNING_INTERVAL_MS) return;
     this.lastLanguageWarningAt = now;
     const spoken = languageIgnored(this.inputLanguage.language(), this.language());
-    this.announce(false, spoken.text, spoken);
+    this.announce(false, spoken.text, spoken, 'alarm');
   }
 
   private switchDictationLanguage(language: InputLanguage): void {
@@ -1069,7 +1213,7 @@ export class VoiceOrchestratorService {
     this.sessionService.touchSession();
     this.settle();
     const spoken = languageSwitched(language, language === 'en' ? 'en' : 'fr');
-    this.announce(true, spoken.text, spoken);
+    this.announce(true, spoken.text, spoken, 'asked');
   }
 
   private pauseByVoice(): void {
@@ -1079,7 +1223,7 @@ export class VoiceOrchestratorService {
     this.sessionService.touchSession();
     this.settle();
     const spoken = this.say('pausedByVoice');
-    this.announce(true, spoken.text, spoken);
+    this.announce(true, spoken.text, spoken, 'asked');
   }
 
   private resumeByVoice(): void {
@@ -1089,7 +1233,7 @@ export class VoiceOrchestratorService {
     this.sessionService.touchSession();
     this.settle();
     const spoken = this.say('resumedByVoice');
-    this.announce(true, spoken.text, spoken);
+    this.announce(true, spoken.text, spoken, 'asked');
   }
 
   /**
@@ -1303,8 +1447,8 @@ export class VoiceOrchestratorService {
       // command it is noise — and the app's own voice deafens the microphone
       // to whatever the dentist says next.
       const asked = via === 'wake-word' || via === 'explicit';
-      this.announce(false, `No command recognised in “${resolution.transcript}”.`,
-        asked ? this.say('notUnderstood') : { text: '', locale: '' });
+      this.mark('unsure');
+      this.announce(false, `No command recognised in “${resolution.transcript}”.`, this.say('notUnderstood'), 'unsure', { asked });
       await this.audit(
         { intent: 'unknown', entities: {}, confidence: 0, resolver: 'grammar', transcript: resolution.transcript },
         snapshot, 'SAFE', 'PENDING', 'CLARIFICATION', { errorMessage: 'No matching command' },
@@ -1338,10 +1482,11 @@ export class VoiceOrchestratorService {
     // already noted, which is said here, once.
     if (batch.auditIds.length === 0) {
       if (batch.notes.length > 0) {
+        const text = batch.notes.map(note => note.text).join(' ');
+        this.mark('acted', text);
         this.touchWakeWindow();
         this.settle();
-        this.announce(true, batch.notes.map(note => note.text).join(' '),
-          { text: batch.notes.map(note => note.text).join(' '), locale: batch.notes[0].locale });
+        this.announce(true, text, { text, locale: batch.notes[0].locale });
       }
       return;
     }
@@ -1359,8 +1504,12 @@ export class VoiceOrchestratorService {
     }, ids[ids.length - 1]);
 
     this.settle();
-    this.announce(batch.failedTeeth.length === 0, batch.previews.join(' · '),
-      this.withCorrections({ text: heard.join(' '), locale: batch.spoken[0].locale }, language));
+    const spokenAll = this.withCorrections({ text: heard.join(' '), locale: batch.spoken[0].locale }, language);
+    this.mark('acted', heard.join(' '));
+    const teeth = batch.spoken.length;
+    this.announce(batch.failedTeeth.length === 0, batch.previews.join(' · '), spokenAll,
+      batch.failedTeeth.length === 0 ? 'confirm' : 'error',
+      { brief: { text: fr ? `${teeth} dents, noté.` : `${teeth} teeth, noted.`, locale: spokenAll.locale } });
   }
 
   private askClarification(clarification: VoiceClarification, snapshot: VoiceContextSnapshot): void {
@@ -1369,8 +1518,9 @@ export class VoiceOrchestratorService {
     this.stateSignal.set('awaiting-clarification');
     // A question opens the floor: the answer needs no wake word.
     this.touchWakeWindow();
+    this.mark('question', spokenQuestion(clarification.question, this.language()).text);
     this.announce(false, clarification.question,
-      spokenQuestion(clarification.question, this.language()));
+      spokenQuestion(clarification.question, this.language()), 'question');
     void this.audit(
       {
         intent: clarification.pendingIntent ?? 'clarification',
@@ -1395,7 +1545,8 @@ export class VoiceOrchestratorService {
 
     if (!command) {
       this.settle();
-      this.announce(false, 'That can\'t be done by voice from here.', this.say('notByVoiceHere'));
+      this.mark('unsure', this.say('notByVoiceHere').text);
+      this.announce(false, 'That can\'t be done by voice from here.', this.say('notByVoiceHere'), 'error');
       await this.audit(intent, snapshot, 'SAFE', 'REJECTED', 'REJECTED',
         { errorMessage: `Unknown or out-of-scope command: ${intent.intent}` });
       return;
@@ -1407,14 +1558,16 @@ export class VoiceOrchestratorService {
       this.settle();
       const message = `That one needs to be done on screen — ${command.description.toLowerCase()} `
         + 'is deliberately not available by voice.';
-      this.announce(false, message, this.say('onScreenOnly'));
+      this.mark('control', this.say('onScreenOnly').text, { intent: command.id });
+      this.announce(false, message, this.say('onScreenOnly'), 'error');
       await this.audit(intent, snapshot, 'BLOCKED', 'REJECTED', 'REJECTED', { errorMessage: 'Blocked risk tier' });
       return;
     }
 
     if (command.requiresPatient && !snapshot.patientId) {
       this.settle();
-      this.announce(false, 'Open a patient\'s dossier first, then say that again.', this.say('openPatientFirst'));
+      this.mark('unsure', this.say('openPatientFirst').text);
+      this.announce(false, 'Open a patient\'s dossier first, then say that again.', this.say('openPatientFirst'), 'error');
       await this.audit(intent, snapshot, command.risk, 'REJECTED', 'REJECTED',
         { errorMessage: 'No patient in context' });
       return;
@@ -1434,7 +1587,8 @@ export class VoiceOrchestratorService {
       const rewritten = this.rewriteCorrection(intent, snapshot);
       if (!rewritten) {
         this.settle();
-        this.announce(false, 'There is no entry to correct.', this.say('nothingToCorrect'));
+        this.mark('unsure', this.say('nothingToCorrect').text);
+        this.announce(false, 'There is no entry to correct.', this.say('nothingToCorrect'), 'error');
         return;
       }
       if (rewritten !== intent) {
@@ -1472,9 +1626,11 @@ export class VoiceOrchestratorService {
           batch.notes.push(spoken);
           return;
         }
+        this.mark('acted', spoken.text, { intent: command.id, fdi: checked.fdi });
+        this.lastChartAcceptedAt = Date.now();
         this.touchWakeWindow();
         this.settle();
-        this.announce(true, spoken.text, spoken);
+        this.announce(true, spoken.text, spoken, 'confirm', { brief: { text: this.language() === 'fr' ? `Dent ${checked.fdi}, déjà noté.` : `Tooth ${checked.fdi}, already noted.`, locale: spoken.locale } });
         return;
       }
       intent = checked.intent;
@@ -1490,7 +1646,8 @@ export class VoiceOrchestratorService {
       replaced = this.stagedToReplace(snapshot, intent);
       if (!replaced) {
         this.settle();
-        this.announce(false, 'There is no entry to correct.', this.say('nothingToCorrect'));
+        this.mark('unsure', this.say('nothingToCorrect').text);
+        this.announce(false, 'There is no entry to correct.', this.say('nothingToCorrect'), 'error');
         return;
       }
     }
@@ -1532,7 +1689,8 @@ export class VoiceOrchestratorService {
         const readback = spokenConfirmation(command.serverIntent, serverEntities, language)
           ?? { text: preview, locale: 'en-US' };
         const unsure = this.say('confirmUnsure');
-        this.announce(false, `${preview}. Confirm?`, { text: `${readback.text} ${unsure.text}`, locale: unsure.locale });
+        this.mark('question', `${readback.text} ${unsure.text}`);
+        this.announce(false, `${preview}. Confirm?`, { text: `${readback.text} ${unsure.text}`, locale: unsure.locale }, 'question');
         return;
       }
 
@@ -1549,7 +1707,8 @@ export class VoiceOrchestratorService {
           return;
         }
         this.settle();
-        this.announce(false, 'That couldn\'t be recorded safely, so nothing was staged. Say it again.', this.say('notStaged'));
+        this.mark('unsure', this.say('notStaged').text);
+        this.announce(false, 'That couldn\'t be recorded safely, so nothing was staged. Say it again.', this.say('notStaged'), 'error');
         return;
       }
 
@@ -1589,6 +1748,8 @@ export class VoiceOrchestratorService {
       let spoken = spokenConfirmation(command.serverIntent, serverEntities, language)
         ?? { text: preview, locale: 'en-US' };
       if (replaced) spoken = { ...spoken, text: `${this.say('corrected').text} ${spoken.text}` };
+      this.mark('acted', spoken.text, { intent: command.serverIntent, auditId, fdi });
+      if (intentClass(command.id) === 'chart' || intentClass(command.id) === 'correction') this.lastChartAcceptedAt = Date.now();
 
       if (batch) {
         batch.auditIds.push(auditId);
@@ -1601,7 +1762,11 @@ export class VoiceOrchestratorService {
       this.offerUndo(`Undo: ${preview}`, () => this.discardBuffered(auditId), auditId);
       this.touchWakeWindow();
       this.settle();
-      this.announce(true, preview, this.withCorrections(spoken, language));
+      const fr = language === 'fr';
+      const brief: Spoken = fdi
+        ? { text: fr ? `Dent ${fdi}, ${replaced ? 'corrigé' : 'noté'}.` : `Tooth ${fdi}, ${replaced ? 'corrected' : 'noted'}.`, locale: spoken.locale }
+        : { text: fr ? 'Noté.' : 'Noted.', locale: spoken.locale };
+      this.announce(true, preview, this.withCorrections(spoken, language), 'confirm', { brief });
       return;
     }
 
@@ -1610,8 +1775,9 @@ export class VoiceOrchestratorService {
       this.confirmationSignal.set({ intent, command, preview, reason: 'low-confidence' });
       this.stateSignal.set('awaiting-confirmation');
       this.touchWakeWindow();
+      this.mark('question', this.say('confirmUnsure').text);
       this.announce(false, `${preview}. Confirm?`,
-        this.language() === 'fr' ? this.say('confirmUnsure') : { text: `${preview}. Confirm?`, locale: 'en-US' });
+        this.language() === 'fr' ? this.say('confirmUnsure') : { text: `${preview}. Confirm?`, locale: 'en-US' }, 'question');
       return;
     }
 
@@ -1706,6 +1872,7 @@ export class VoiceOrchestratorService {
       ? { text: fr ? `Corrigé. Retiré de la dent ${fdi} : ${labels}.` : `Corrected. Removed from tooth ${fdi}: ${labels}.`, locale: synthesisLocale(language) }
       : this.say('notStaged');
     this.highlightSignal.set(fdi || null);
+    this.mark(removed ? 'acted' : 'unsure', spoken.text, { intent: 'clinical.retractFindings', fdi });
     if (batch) {
       batch.notes.push(spoken);
       return;
@@ -1731,7 +1898,7 @@ export class VoiceOrchestratorService {
     });
     this.stateSignal.set('awaiting-confirmation');
     this.touchWakeWindow();
-    this.announce(false, 'End the consultation?', this.say('confirmEnd'));
+    this.announce(false, 'End the consultation?', this.say('confirmEnd'), 'question');
   }
 
   /**
@@ -1823,7 +1990,8 @@ export class VoiceOrchestratorService {
     this.stateSignal.set('executing');
     if (!command.execute) {
       this.settle();
-      this.announce(false, 'That command can\'t run from here.', this.say('cannotRunHere'));
+      this.mark('unsure', this.say('cannotRunHere').text);
+      this.announce(false, 'That command can\'t run from here.', this.say('cannotRunHere'), 'error');
       return;
     }
     try {
@@ -1859,12 +2027,18 @@ export class VoiceOrchestratorService {
       }
 
       this.settle();
-      this.announce(result.ok, result.message, this.spokenResult(result));
+      const spoken = this.spokenResult(result);
+      this.mark(result.ok ? 'acted' : 'unsure', spoken.text, { intent: command.id, fdi: result.highlightFdi ?? null });
+      const kind = intentClass(command.id);
+      const cue: FeedbackCue = !result.ok ? 'error' : kind === 'view' ? 'view' : kind === 'read' || kind === 'control' ? 'asked' : 'confirm';
+      this.announce(result.ok, result.message, spoken, cue,
+        result.briefFr || result.briefText ? { brief: this.spokenBrief(result) } : {});
     } catch (error) {
       const message = this.describeFailure(error);
       this.outcomeSignal.set({ ok: false, message, at: Date.now() });
       this.settle();
-      this.announce(false, message, this.spokenFailure(error));
+      this.mark('unsure', this.spokenFailure(error).text);
+      this.announce(false, message, this.spokenFailure(error), 'error');
       await this.audit(intent, snapshot, command.risk, confirmation, 'FAILED', { errorMessage: message });
     }
   }
@@ -1908,7 +2082,7 @@ export class VoiceOrchestratorService {
         const message = audit.errorMessage || 'That didn\'t save. Nothing was recorded.';
         this.outcomeSignal.set({ ok: false, message, at: Date.now() });
         this.settle();
-        this.announce(false, message, this.say('saveFailed'));
+        this.announce(false, message, this.say('saveFailed'), 'error');
         return;
       }
 
@@ -1932,12 +2106,13 @@ export class VoiceOrchestratorService {
       if (result.undo) this.offerUndo(result.message, result.undo, pending.auditId!);
 
       this.settle();
+      this.mark('acted', this.spokenResult(result).text, { intent: pending.command.id });
       this.announce(true, result.message, this.spokenResult(result));
     } catch (error) {
       const message = this.describeFailure(error);
       this.outcomeSignal.set({ ok: false, message, at: Date.now() });
       this.settle();
-      this.announce(false, message, this.spokenFailure(error));
+      this.announce(false, message, this.spokenFailure(error), 'error');
     }
   }
 
@@ -1949,7 +2124,10 @@ export class VoiceOrchestratorService {
     this.interpretationSignal.set(null);
     this.highlightSignal.set(null);
     this.settle();
-    if (!silent) this.announce(false, 'Discarded. Nothing was recorded.', this.say('discarded'));
+    if (!silent) {
+      this.mark('control', this.say('discarded').text);
+      this.announce(false, 'Discarded. Nothing was recorded.', this.say('discarded'), 'confirm');
+    }
 
     if (pending.auditId) {
       try {
@@ -2125,6 +2303,7 @@ export class VoiceOrchestratorService {
       run: async () => {
         await run();
         this.undoSignal.set(null);
+        this.mark('acted', this.say('undone').text, { intent: 'voice.correction.undo' });
         this.announce(true, 'Undone.', this.say('undone'));
       },
     });
@@ -2134,13 +2313,14 @@ export class VoiceOrchestratorService {
   async undoLast(): Promise<void> {
     const undo = this.undoSignal();
     if (!undo) {
-      this.announce(false, 'There\'s nothing to undo.', this.say('nothingToUndo'));
+      this.mark('unsure', this.say('nothingToUndo').text);
+      this.announce(false, 'There\'s nothing to undo.', this.say('nothingToUndo'), 'error');
       return;
     }
     try {
       await undo.run();
     } catch (error) {
-      this.announce(false, this.describeFailure(error), this.spokenFailure(error));
+      this.announce(false, this.describeFailure(error), this.spokenFailure(error), 'error');
     }
   }
 
@@ -2177,17 +2357,20 @@ export class VoiceOrchestratorService {
                                 describe: (matches: BufferedEntry[]) => string): Promise<boolean> {
     const matches = this.bufferedSignal().filter(predicate);
     if (matches.length === 0) {
-      this.announce(false, 'That isn\'t in this session.', this.say('notInSession'));
+      this.mark('unsure', this.say('notInSession').text);
+      this.announce(false, 'That isn\'t in this session.', this.say('notInSession'), 'error');
       return false;
     }
     if (matches.length > 1) {
       const teeth = [...new Set(matches.map(match => entityString(match.entities, 'fdi')).filter(Boolean))];
+      this.mark('question');
       this.announce(false, describe(matches), this.language() === 'fr'
         ? { text: `Sur quelle dent : ${teeth.join(' ou ')} ?`, locale: 'fr-FR' }
-        : undefined);
+        : undefined, 'question');
       return false;
     }
     await this.discardBuffered(matches[0].auditId);
+    this.mark('acted', this.say('removed').text, { intent: 'voice.correction.remove' });
     this.announce(true, `Removed: ${matches[0].preview}`, this.say('removed'));
     return true;
   }
@@ -2225,12 +2408,14 @@ export class VoiceOrchestratorService {
       // Read back what was taken off, not just that something was.
       const fr = this.language() === 'fr';
       const spokenLabels = removedCodes.map(code => spokenFindingLabel(code, fr ? 'fr' : 'en')).join(', ');
+      this.mark('acted', fr ? `Retiré de la dent ${fdi} : ${spokenLabels}.` : `Removed from tooth ${fdi}: ${spokenLabels}.`, { intent: 'chart.removeFinding', fdi });
       this.announce(true, `Removed from tooth ${fdi}: ${labels}`, {
         text: fr ? `Retiré de la dent ${fdi} : ${spokenLabels}.` : `Removed from tooth ${fdi}: ${spokenLabels}.`,
         locale: synthesisLocale(fr ? 'fr' : 'en'),
       });
     } else {
-      this.announce(false, 'That couldn\'t be removed. Say it again.', this.say('notStaged'));
+      this.mark('unsure', this.say('notStaged').text);
+      this.announce(false, 'That couldn\'t be removed. Say it again.', this.say('notStaged'), 'error');
     }
     return true;
   }
@@ -2294,7 +2479,7 @@ export class VoiceOrchestratorService {
   }
 
   /** A command's result, read in the dentist's language when it has a French reading. */
-  private spokenResult(result: { message: string; spokenFr?: string; spokenText?: string }): Spoken {
+  private spokenResult(result: { message: string; spokenFr?: string; spokenText?: string; briefFr?: string; briefText?: string }): Spoken {
     if (this.language() === 'fr' && result.spokenFr) {
       return { text: result.spokenFr, locale: synthesisLocale('fr') };
     }
@@ -2311,7 +2496,18 @@ export class VoiceOrchestratorService {
     return this.say('saveFailed');
   }
 
-  private announce(ok: boolean, message: string, spoken?: Spoken): void {
+  /**
+   * Shows an outcome and hands what is to be said to the feedback policy, which
+   * decides — from the doctor's level and the kind of thing it is — whether it
+   * is spoken, said briefly, sounded as a tone, or only shown.
+   */
+  private announce(
+    ok: boolean,
+    message: string,
+    spoken?: Spoken,
+    cue: FeedbackCue = ok ? 'confirm' : 'error',
+    options: { asked?: boolean; brief?: Spoken } = {},
+  ): void {
     this.outcomeSignal.set({ ok, message, at: Date.now() });
     // A running session shows every outcome in its own panel, and a toast on
     // top of that covers the chart on a phone.
@@ -2320,8 +2516,13 @@ export class VoiceOrchestratorService {
       else this.toast.info(message);
     }
     const utterance = spoken ?? { text: message, locale: 'en-US' };
-    // Nothing to say is a choice — the outcome is on screen only.
-    if (utterance.text.trim()) this.feedback.speak(utterance.text, utterance.locale);
+    this.policy.deliver(cue, { full: utterance.text.trim() ? utterance : null, brief: options.brief ?? null }, { asked: options.asked });
+  }
+
+  /** A command's own short form, for the "brief" level. */
+  private spokenBrief(result: { briefFr?: string; briefText?: string }): Spoken {
+    if (this.language() === 'fr' && result.briefFr) return { text: result.briefFr, locale: synthesisLocale('fr') };
+    return { text: result.briefText ?? result.briefFr ?? '', locale: result.briefText ? 'en-US' : synthesisLocale('fr') };
   }
 
   private reportError(message: string): void {

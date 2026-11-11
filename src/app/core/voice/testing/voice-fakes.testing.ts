@@ -58,10 +58,11 @@ export class FakeSpeechFeedback {
   enabled = this.enabledSignal.asReadonly();
   generation = 0;
   speak(text: string, locale: string) {
-    if (!this.enabledSignal()) return;
     this.spoken.push({ text, locale });
     this.generation++;
   }
+  holdMicrophone() { /* no microphone */ }
+  voicesFor() { return []; }
   setEnabled(on: boolean) { this.enabledSignal.set(on); }
   toggle() { this.enabledSignal.update(on => !on); }
   voiceStatus() { return this.voice; }

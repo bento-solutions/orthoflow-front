@@ -11,6 +11,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { SessionRow, UserAdminService } from '../../../core/services/user-admin.service';
 import { formState } from '../../../core/utils/form-state';
 import { loadable } from '../../../core/utils/loadable';
+import { VoiceSettingsCardComponent } from '../components/voice-settings-card.component';
 
 /** Passwords the server will accept: at least ten characters, and not the one it replaces. */
 export function passwordProblem(current: string, next: string, confirm: string): 'short' | 'same' | 'mismatch' | null {
@@ -39,7 +40,7 @@ export function describeDevice(userAgent: string | null | undefined): string {
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [FormsModule, TranslateModule, DatePipe],
+  imports: [FormsModule, TranslateModule, DatePipe, VoiceSettingsCardComponent],
   template: `
     <div class="page-head">
       <div>
@@ -85,6 +86,8 @@ export function describeDevice(userAgent: string | null | undefined): string {
           <button type="submit" class="btn btn-primary" [disabled]="problem() !== null || !pw.value().current || saving()">{{ 'SET.ACCOUNT.CHANGE' | translate }}</button>
         </form>
       </section>
+
+      <app-voice-settings-card />
     </div>
 
     <section class="card mt-6">

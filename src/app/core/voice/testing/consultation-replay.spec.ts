@@ -88,7 +88,7 @@ describe('golden transcript — the consultation of 10 Nov 2026', () => {
     expect(result.byTime('22:39:06').staged).toEqual([]);
   });
 
-  it.fails('22:39:06 … and is marked not understood', () => {
+  it('22:39:06 … and is marked not understood', () => {
     expect(result.byTime('22:39:06').verdict).toBe('unsure');
   });
 
@@ -159,5 +159,31 @@ describe('golden transcript — the allergies sentence with the wake window open
     const row = result.byTime('22:32:52');
     expect(row.stagedIntents).toEqual([]);
     expect(row.staged).toEqual([]);
+  });
+});
+
+describe('golden transcript — at the other feedback levels', () => {
+  it('with "tones", the staged findings sound and nothing is said', async () => {
+    const result = await replayConsultation(SESSION_2026_11_10, { level: 'tones' });
+    expect(result.rows.flatMap(row => row.spoken)).toEqual([]);
+    for (const time of ['22:37:18', '22:37:39', '22:38:32', '22:40:28', '22:41:14', '22:41:28']) {
+      expect(result.byTime(time).tones, time).toEqual(['confirm']);
+    }
+    expect(result.byTime('22:39:06').tones).toEqual(['unsure']);
+    expect(result.byTime('22:32:52').tones).toEqual([]);
+  });
+
+  it('with "silent", nothing is said or sounded', async () => {
+    const result = await replayConsultation(SESSION_2026_11_10, { level: 'silent' });
+    expect(result.rows.flatMap(row => row.spoken)).toEqual([]);
+    expect(result.rows.flatMap(row => row.tones)).toEqual([]);
+    expect(result.finalFindings).toHaveLength(11);
+  });
+
+  it('gives every sentence a verdict', async () => {
+    const result = await replayConsultation(SESSION_2026_11_10);
+    expect(result.rows.every(row => !!row.verdict)).toBe(true);
+    expect(result.byTime('22:33:33').verdict).toBe('heard');
+    expect(result.byTime('22:37:39').summary).toBe('Dent 16 : carie occlusale.');
   });
 });

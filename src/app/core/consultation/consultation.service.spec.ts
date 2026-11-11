@@ -16,6 +16,8 @@ import { VoiceApiService } from '../voice/voice-api.service';
 import { VoiceOrchestratorService } from '../voice/voice-orchestrator.service';
 import { VoiceSessionService } from '../voice/voice-session.service';
 import { VoiceContextService } from '../voice/voice-context.service';
+import { VoiceFeedbackService } from '../voice/voice-feedback.service';
+import { EarconService } from '../voice/earcon.service';
 import { SpeechFeedbackService } from '../voice/speech-feedback.service';
 import { PatientService } from '../services/patient.service';
 import { ClinicalRecordService } from '../services/clinical-record.service';
@@ -131,6 +133,7 @@ describe('ConsultationService', () => {
             stopListening: () => calls.push('mic.stop'),
             setTranscriptListener: (l: ((t: string) => void) | null) => { listener = l; },
             setHandledElsewhere: (predicate: ((text: string) => boolean) | null) => { handledElsewhere = predicate; },
+            setUtteranceListener: () => undefined,
           },
         },
         {
@@ -148,7 +151,10 @@ describe('ConsultationService', () => {
           },
         },
         { provide: VoiceContextService, useValue: { snapshot: () => ({ patientId: 'p-1', locale: 'fr-MA' }), locale: () => 'fr-MA' } },
-        { provide: SpeechFeedbackService, useValue: { speak: (text: string) => calls.push(`say ${text}`) } },
+        { provide: SpeechFeedbackService, useValue: { speak: (text: string) => calls.push(`say ${text}`), unlock: () => undefined } },
+        // What is said goes through the feedback policy now; at the default level it is said in full.
+        { provide: VoiceFeedbackService, useValue: { deliver: (_cue: string, lines: { full: { text: string } | null }) => { if (lines.full) calls.push(`say ${lines.full.text}`); } } },
+        { provide: EarconService, useValue: { unlock: () => undefined, play: () => undefined } },
         { provide: PatientService, useValue: { currentPatient: patient, reload: () => of(PATIENT) } },
         { provide: ClinicalRecordService, useValue: { refresh: () => undefined } },
         { provide: ScheduleService, useValue: { refreshAppointments: () => undefined } },

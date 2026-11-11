@@ -114,6 +114,9 @@ export interface VoiceCommandResult {
   spokenFr?: string;
   /** The spoken form for a non-French dentist, when it differs from {@link message}. */
   spokenText?: string;
+  /** What the "brief" feedback level says instead: "Allergies.", "Dent 16, en gros plan." */
+  briefFr?: string;
+  briefText?: string;
   targetType?: string;
   targetId?: string;
   previousValue?: string;
@@ -235,4 +238,27 @@ export function stagedFindingCodes(entities: Record<string, unknown> | undefined
   }
   if (typeof entities['findingCode'] === 'string') codes.push(entities['findingCode']);
   return [...new Set(codes)];
+}
+
+/**
+ * What became of one utterance, shown as a chip on its conversation line:
+ * acted on (with the result), proposed (read from the conversation), heard
+ * (kept, nothing to do), not understood (it looked like a command), a question
+ * asked back, a control (the wake word alone, ending, pausing), or another
+ * language than the one chosen.
+ */
+export type UtteranceVerdict = 'acted' | 'proposed' | 'heard' | 'unsure' | 'question' | 'control' | 'other-language';
+
+export interface UtteranceEvent {
+  /** The conversation line this is about; null outside a consultation. */
+  lineId: number | null;
+  text: string;
+  verdict: UtteranceVerdict;
+  /** One line in the doctor's language: "Dent 16 : carie occlusale". */
+  summary: string | null;
+  intents: string[];
+  auditIds: string[];
+  fdi: string[];
+  /** ms from the end of speech to the verdict, when the clip's timing is known. */
+  latencyMs: number | null;
 }

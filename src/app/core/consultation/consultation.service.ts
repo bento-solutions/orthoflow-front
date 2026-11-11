@@ -31,6 +31,9 @@ import { VoiceOrchestratorService } from '../voice/voice-orchestrator.service';
 import { VoiceSessionService } from '../voice/voice-session.service';
 import { VoiceContextService } from '../voice/voice-context.service';
 import { SpeechFeedbackService } from '../voice/speech-feedback.service';
+import { EarconService } from '../voice/earcon.service';
+import { VoiceFeedbackService } from '../voice/voice-feedback.service';
+import { UtteranceEvent, UtteranceVerdict } from '../voice/voice-intent.model';
 import { isStopPhrase } from '../voice/voice-wake';
 import { spokenLanguage, synthesisLocale } from '../voice/voice-vocabulary';
 import { PatientService } from '../services/patient.service';
@@ -87,6 +90,12 @@ export interface TranscriptLine {
   typed: boolean;
   /** The phase it was said in: it decides whether the log shows it as the intake or the examination. */
   phase: 'INTAKE' | 'EXAMINATION';
+  /** What became of it — acted on, proposed, kept, not understood — once the pipeline has said. */
+  verdict?: UtteranceVerdict | null;
+  /** The result in the doctor's words: "Dent 16 : carie occlusale.", "Allergie : ananas". */
+  summary?: string | null;
+  /** ms from the end of speech to the verdict, when known. */
+  latencyMs?: number | null;
 }
 
 /** What a finished consultation keeps for printing and for the saved screen. */
@@ -168,6 +177,8 @@ export class ConsultationService {
   private sessions = inject(VoiceSessionService);
   private context = inject(VoiceContextService);
   private feedback = inject(SpeechFeedbackService);
+  private policy = inject(VoiceFeedbackService);
+  private earcons = inject(EarconService);
   private patients = inject(PatientService);
   private clinical = inject(ClinicalRecordService);
   private schedule = inject(ScheduleService);
@@ -341,6 +352,9 @@ export class ConsultationService {
     if (!snapshot.patientId || this.startingSignal() || this.isOpen()) return false;
     // Before anything is awaited: this is still inside the tap that asked for it.
     const microphone = this.voice.openMicrophone();
+    // iOS lets sound start only inside a gesture; the first read-back comes long after.
+    this.feedback.unlock();
+    this.earcons.unlock();
     this.startingSignal.set(true);
     try {
       // The doctor attested in the dialog before this was called; the server records when.
@@ -408,6 +422,8 @@ export class ConsultationService {
   async resumeRecording(): Promise<void> {
     if (!this.isRecording()) return;
     const microphone = this.voice.openMicrophone();
+    this.feedback.unlock();
+    this.earcons.unlock();
     try {
       await microphone;
       this.holdVoice();
@@ -480,11 +496,21 @@ export class ConsultationService {
   private holdVoice(): void {
     this.voice.setTranscriptListener(text => this.onHeard(text));
     this.voice.setHandledElsewhere(text => isBeginExaminationCommand(text));
+    this.voice.setUtteranceListener(event => this.onVerdict(event));
   }
 
   private releaseVoice(): void {
     this.voice.setTranscriptListener(null);
     this.voice.setHandledElsewhere(null);
+    this.voice.setUtteranceListener(null);
+  }
+
+  /** Puts what became of a sentence on its line of the conversation. */
+  private onVerdict(event: UtteranceEvent): void {
+    if (event.lineId === null) return;
+    this.linesSignal.update(lines => lines.map(line => line.id === event.lineId
+      ? { ...line, verdict: event.verdict, summary: event.summary, latencyMs: event.latencyMs }
+      : line));
   }
 
   /**
@@ -537,16 +563,19 @@ export class ConsultationService {
   // ── The conversation ────────────────────────────────────────────────
 
   /** A line the doctor typed instead of said — the same conversation, for when speaking is not an option. */
-  addTyped(text: string): void {
-    this.onHeard(text, true);
+  addTyped(text: string): number | null {
+    return this.onHeard(text, true);
   }
 
-  private onHeard(text: string, typed = false): void {
+  /** Adds a line to the conversation and returns its id, or null when nothing is being recorded. */
+  private onHeard(text: string, typed = false): number | null {
     const clean = text.trim();
-    if (!clean || !this.isRecording()) return;
+    if (!clean || !this.isRecording()) return null;
+    const id = this.nextLineId++;
     this.linesSignal.update(lines => [...lines, {
-      id: this.nextLineId++, text: clean, at: Date.now(), typed,
+      id, text: clean, at: Date.now(), typed,
       phase: this.phase() === 'intake' ? 'INTAKE' : 'EXAMINATION',
+      verdict: null, summary: null,
     }]);
     this.sessions.touchSession();
     this.scheduleExtraction();
@@ -559,6 +588,7 @@ export class ConsultationService {
     } else if (isBeginExaminationPhrase(clean)) {
       void this.beginExamination();
     }
+    return id;
   }
 
   // ── Reading the conversation ────────────────────────────────────────
@@ -927,7 +957,7 @@ export class ConsultationService {
 
   private say(key: keyof typeof SPOKEN['fr']): void {
     const language = spokenLanguage(this.context.locale());
-    this.feedback.speak(SPOKEN[language][key], synthesisLocale(language));
+    this.policy.deliver('confirm', { full: { text: SPOKEN[language][key], locale: synthesisLocale(language) } });
   }
 
   private describe(error: unknown, fallbackKey: string): string {

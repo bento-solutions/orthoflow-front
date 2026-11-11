@@ -4102,5 +4102,41 @@
     "FACE": "Choisir une face",
     "DETAIL": "Détails de la dent",
     "WHOLE_MOUTH": "Revenir à toute la bouche"
+  },
+  "COCKPIT": {
+    "SETTINGS": {
+      "TITLE": "Voix et consultation",
+      "HINT": "Ce que l'application vous répond pendant que vous dictez. Ce réglage vous suit sur vos autres appareils.",
+      "FEEDBACK": "Confirmations",
+      "ALERTS": "Alertes",
+      "ALERTS_HINT": "Micro perdu, reconnaissance vocale en panne, session sur le point d'expirer : dit à voix haute, quel que soit le niveau choisi.",
+      "FOLLOW": "Suivre la dernière modification",
+      "FOLLOW_HINT": "Pendant une consultation, l'écran montre ce qui vient de changer. « Garde cette vue » le fige.",
+      "RATE": "Vitesse de la voix",
+      "VOICE": "Voix",
+      "VOICE_BEST": "La meilleure disponible",
+      "TRY": "Essayer"
+    },
+    "LEVEL": {
+      "FULL": "Complètes",
+      "BRIEF": "Brèves",
+      "TONES": "Sons seulement",
+      "SILENT": "Silencieux"
+    },
+    "LEVEL_HINT": {
+      "FULL": "« Dent 16 : carie occlusale. » Chaque action est relue.",
+      "BRIEF": "« Dent 16, noté. » Le détail est à l'écran.",
+      "TONES": "Un son court pour chaque action, aucune parole.",
+      "SILENT": "Rien n'est dit ni sonné : tout est à l'écran."
+    },
+    "VERDICT": {
+      "ACTED": "Fait",
+      "PROPOSED": "Proposé",
+      "HEARD": "Entendu",
+      "UNSURE": "Pas compris",
+      "QUESTION": "Question",
+      "CONTROL": "Commande",
+      "OTHER_LANGUAGE": "Autre langue"
+    }
   }
 }

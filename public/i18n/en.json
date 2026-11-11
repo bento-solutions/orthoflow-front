@@ -4102,5 +4102,41 @@
     "FACE": "Pick a face",
     "DETAIL": "Tooth details",
     "WHOLE_MOUTH": "Back to the whole mouth"
+  },
+  "COCKPIT": {
+    "SETTINGS": {
+      "TITLE": "Voice and consultation",
+      "HINT": "What the app says back while you dictate. This follows you to your other devices.",
+      "FEEDBACK": "Confirmations",
+      "ALERTS": "Alerts",
+      "ALERTS_HINT": "Microphone lost, speech service down, session about to expire: said aloud, whatever the level.",
+      "FOLLOW": "Follow the last change",
+      "FOLLOW_HINT": "During a consultation the screen shows what just changed. \"Keep this view\" holds it.",
+      "RATE": "Voice speed",
+      "VOICE": "Voice",
+      "VOICE_BEST": "The best available",
+      "TRY": "Try it"
+    },
+    "LEVEL": {
+      "FULL": "Full",
+      "BRIEF": "Brief",
+      "TONES": "Tones only",
+      "SILENT": "Silent"
+    },
+    "LEVEL_HINT": {
+      "FULL": "\"Tooth 16: occlusal caries.\" Every action is read back.",
+      "BRIEF": "\"Tooth 16, noted.\" The detail is on screen.",
+      "TONES": "A short sound for each action, no words.",
+      "SILENT": "Nothing said or sounded: everything is on screen."
+    },
+    "VERDICT": {
+      "ACTED": "Done",
+      "PROPOSED": "Proposed",
+      "HEARD": "Heard",
+      "UNSURE": "Not understood",
+      "QUESTION": "Question",
+      "CONTROL": "Command",
+      "OTHER_LANGUAGE": "Other language"
+    }
   }
 }

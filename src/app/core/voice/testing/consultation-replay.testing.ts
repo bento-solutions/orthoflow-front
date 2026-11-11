@@ -18,6 +18,9 @@ import { VoiceApiService } from '../voice-api.service';
 import { VoiceContextService } from '../voice-context.service';
 import { BufferedEntry, VoiceOrchestratorService } from '../voice-orchestrator.service';
 import { VoiceSessionService } from '../voice-session.service';
+import { EarconService } from '../earcon.service';
+import { FeedbackLevel, VoicePreferencesService } from '../voice-preferences.service';
+import { UtteranceEvent } from '../voice-intent.model';
 import {
   FAKE_RECOGNITION, FakeAudioCapture, FakeAuth, FakeSpeechFeedback, FakeVoiceApi, FakeVoiceContext, FakeVoiceSession,
 } from './voice-fakes.testing';
@@ -60,6 +63,10 @@ export interface ReplayRow {
   stagedIntents: string[];
   /** What would have been said aloud. */
   spoken: string[];
+  /** Tones that would have sounded. */
+  tones: string[];
+  /** The line in the doctor's words the pipeline gave the sentence. */
+  summary: string | null;
   /** What the stage shows after it, once there is a stage. */
   view: string | null;
   /** Calls to the language-model fallback this sentence caused. */
@@ -88,6 +95,8 @@ export interface ReplayOptions {
   verdictOf?: (index: number) => string | null;
   /** Called once the pipeline is set up, before the first sentence. */
   setUp?: (orchestrator: VoiceOrchestratorService) => void;
+  /** The feedback level for the whole replay; full by default. */
+  level?: FeedbackLevel;
 }
 
 function findingsOf(entry: BufferedEntry): StagedFinding[] {
@@ -151,6 +160,11 @@ export async function replayConsultation(lines: ReplayLine[], options: ReplayOpt
     });
     const orchestrator = TestBed.inject(VoiceOrchestratorService);
     TestBed.inject(VoiceCommandsService).registerAll();
+    TestBed.inject(VoicePreferencesService).setSessionLevel(options.level ?? 'full');
+    const tones: string[] = [];
+    TestBed.inject(EarconService).setRecorder(tone => tones.push(tone));
+    const events: UtteranceEvent[] = [];
+    orchestrator.setUtteranceListener(event => events.push(event));
 
     let ended = false;
     orchestrator.sessionHooks = {
@@ -158,8 +172,10 @@ export async function replayConsultation(lines: ReplayLine[], options: ReplayOpt
       end: async () => { ended = true; },
       summary: async () => undefined,
     };
-    // As a consultation does: the conversation is told every sentence first.
-    orchestrator.setTranscriptListener(() => undefined);
+    // As a consultation does: the conversation is told every sentence first,
+    // and gives back the line's id.
+    let nextLine = 1;
+    orchestrator.setTranscriptListener(() => nextLine++);
     options.setUp?.(orchestrator);
 
     const rows: ReplayRow[] = [];
@@ -175,6 +191,8 @@ export async function replayConsultation(lines: ReplayLine[], options: ReplayOpt
       const rejectedBefore = api.rejected.length;
       const spokenBefore = feedback.spoken.length;
       const nluBefore = api.interpreted;
+      const tonesBefore = tones.length;
+      const eventsBefore = events.length;
       ended = false;
 
       await orchestrator.simulateHeard(line.text);
@@ -189,14 +207,17 @@ export async function replayConsultation(lines: ReplayLine[], options: ReplayOpt
       const stagedIntents = newRows.filter(row => row.confirmationStatus === 'PENDING' && row.riskTier === 'CONFIRM').map(row => row.intent);
       const staged = added.flatMap(findingsOf);
 
+      const event = events.slice(eventsBefore).at(-1) ?? null;
       rows.push({
         time: line.time,
         text: line.text,
-        verdict: options.verdictOf?.(index) ?? derivedVerdict(orchestrator, line.text, {
+        verdict: options.verdictOf?.(index) ?? event?.verdict ?? derivedVerdict(orchestrator, line.text, {
           acted: added.length > 0 || rejected.length > 0 || ran.length > 0,
           ended,
           spoken,
         }),
+        tones: tones.slice(tonesBefore),
+        summary: event?.summary ?? null,
         staged,
         rejected,
         ran,

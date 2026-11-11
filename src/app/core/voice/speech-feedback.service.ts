@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { VoicePreferencesService } from './voice-preferences.service';
 
 /**
  * Spoken confirmation back to the doctor.
@@ -71,7 +72,14 @@ export function pickVoice<T extends VoiceLike>(voices: readonly T[], locale: str
 
 @Injectable({ providedIn: 'root' })
 export class SpeechFeedbackService {
-  private enabledSignal = signal(this.readStoredPreference());
+  /** Null only where the service is made by hand (a spec of the voice picking itself). */
+  private prefs: VoicePreferencesService | null = (() => {
+    try {
+      return inject(VoicePreferencesService);
+    } catch {
+      return null;
+    }
+  })();
   private speakingSignal = signal(false);
   private audibleUntil = 0;
   private voices: SpeechSynthesisVoice[] = [];
@@ -92,8 +100,25 @@ export class SpeechFeedbackService {
     return this.generationCounter;
   }
 
-  enabled = this.enabledSignal.asReadonly();
+  /**
+   * Whether the doctor's feedback level speaks confirmations. What is said is
+   * decided by {@link VoiceFeedbackService}; an alarm or an answer to "lis les
+   * allergies" is spoken whatever this says.
+   */
+  enabled = computed(() => this.prefs?.speaks() ?? true);
   speaking = this.speakingSignal.asReadonly();
+
+  /** The voices this browser can read `language` with, for the settings' picker. */
+  voicesFor(language: string): SpeechSynthesisVoice[] {
+    if (!this.isSupported()) return [];
+    try {
+      if (this.voices.length === 0) this.voices = window.speechSynthesis.getVoices();
+    } catch {
+      return [];
+    }
+    const wanted = language.toLowerCase().slice(0, 2);
+    return this.voices.filter(v => v.lang.toLowerCase().replace('_', '-').startsWith(wanted));
+  }
 
   /**
    * When set, what would be spoken is handed to it instead of the loudspeaker —
@@ -158,26 +183,35 @@ export class SpeechFeedbackService {
     return Date.now() < this.audibleUntil;
   }
 
-  private readStoredPreference(): boolean {
-    try {
-      return localStorage.getItem('orthoflow_voice_audio') !== 'off';
-    } catch {
-      return true;
-    }
-  }
-
+  /** The old on/off switch: on is the full read-back, off is the screen only. */
   setEnabled(enabled: boolean): void {
-    this.enabledSignal.set(enabled);
-    try {
-      localStorage.setItem('orthoflow_voice_audio', enabled ? 'on' : 'off');
-    } catch {
-      // Private mode: the choice holds for this page load.
-    }
+    this.prefs?.set({ feedback: enabled ? 'full' : 'silent' });
     if (!enabled) this.cancel();
   }
 
   toggle(): void {
-    this.setEnabled(!this.enabledSignal());
+    this.setEnabled(!this.enabled());
+  }
+
+  /** Keeps the microphone shut for `ms` — a tone is the app's own sound too. */
+  holdMicrophone(ms: number): void {
+    this.audibleUntil = Math.max(this.audibleUntil, Date.now() + ms);
+  }
+
+  /**
+   * Called synchronously inside the tap that starts a consultation: iOS lets
+   * speech start only inside a gesture, and without this the first read-back,
+   * minutes later, was silently dropped.
+   */
+  unlock(): void {
+    if (!this.isSupported()) return;
+    try {
+      const silent = new SpeechSynthesisUtterance(' ');
+      silent.volume = 0;
+      window.speechSynthesis.speak(silent);
+    } catch {
+      // Nothing to unlock.
+    }
   }
 
   isSupported(): boolean {
@@ -190,7 +224,7 @@ export class SpeechFeedbackService {
    *   cares about the latest tooth, not a queue of earlier ones.
    */
   speak(text: string, locale = 'en-US', interrupt = true): void {
-    if (!this.enabledSignal() || !text.trim()) return;
+    if (!text.trim()) return;
     if (this.recorder) {
       this.recorder(text, locale);
       return;
@@ -201,9 +235,11 @@ export class SpeechFeedbackService {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = locale;
       if (this.voices.length === 0) this.voices = window.speechSynthesis.getVoices();
-      const voice = pickVoice(this.voices, locale);
+      const { voiceUri, speechRate } = this.prefs?.preferences() ?? { voiceUri: null, speechRate: 1.05 };
+      const chosen = voiceUri ? this.voices.find(v => v.voiceURI === voiceUri && v.lang.toLowerCase().startsWith(locale.slice(0, 2).toLowerCase())) : null;
+      const voice = chosen ?? pickVoice(this.voices, locale);
       if (voice) utterance.voice = voice;
-      utterance.rate = 1.05;
+      utterance.rate = speechRate;
       const finished = () => {
         // An utterance that has been replaced — by the next read-back, or by a
         // cancel — reports its end late. Letting that report set the window

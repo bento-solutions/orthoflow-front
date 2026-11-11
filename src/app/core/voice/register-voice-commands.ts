@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PatientService } from '../services/patient.service';
 import { DentalChartService } from '../services/dental-chart.service';
@@ -16,6 +16,13 @@ import { findingLabel } from './clinical-lexicon';
 import { spokenFindingLabel, spokenStagedList } from './voice-vocabulary';
 import { WAKE_WORD } from './voice-wake';
 import { isoDate } from '../utils/format';
+import { ConsultationService } from '../consultation/consultation.service';
+import { ConsultationFocusService, StageView } from '../consultation/consultation-focus.service';
+import { CockpitModelService } from '../consultation/cockpit-model.service';
+import { sectionReading, sectionSummary } from '../consultation/cockpit-speech';
+import { FeedbackLevel, VoicePreferencesService } from './voice-preferences.service';
+import { VoiceFeedbackService } from './voice-feedback.service';
+import { spokenLanguage } from './voice-vocabulary';
 import {
   FindingEntity,
   VoiceCommand,
@@ -59,16 +66,20 @@ export class VoiceCommandsService {
   private context = inject(VoiceContextService);
   private sessions = inject(VoiceSessionService);
   private orchestrator = inject(VoiceOrchestratorService);
+  /** The consultation's services are reached lazily: they depend on the pipeline this registers into. */
+  private injector = inject(Injector);
 
   /**
-   * No navigation commands. Voice works inside one patient's dossier and
-   * shows its results there; switching module, patient or tab by voice
-   * mid-examination took the chart away from a dentist who could not touch
-   * the screen to get it back.
+   * No navigation to another module or patient. Within the dossier, since Nov
+   * 2026 the owner asked for the opposite of the old rule ("voice never changes
+   * what is on screen"): during a consultation the screen follows the doctor,
+   * and "montre les allergies", "zoom sur la 16", "retour" are one sentence each
+   * — each undone by another ("retour", "toute la bouche").
    */
   registerAll(): void {
     this.registry.registerMany([
       ...this.sessionCommands(),
+      ...this.viewCommands(),
       ...this.chartCommands(),
       ...this.clinicalCommands(),
       ...this.readCommands(),
@@ -238,13 +249,256 @@ export class VoiceCommandsService {
 
   // ── Dental chart ────────────────────────────────────────────────────
 
-  /** Said aloud rather than left silent: a doctor who cannot see the screen must not think it obeyed. */
-  private chartNotShown(): VoiceCommandResult {
-    return {
-      ok: false,
-      message: 'The 3D chart is not on screen. It is on the Overview tab.',
-      spokenFr: `Le schéma 3D n'est pas à l'écran. Il est dans l'onglet Vue d'ensemble.`,
+  /** Whether the consultation cockpit is on screen: then a section can be put on its stage. */
+  private inCockpit(): boolean {
+    const consultation = this.injector.get(ConsultationService);
+    return consultation.isRecording() && consultation.cockpitEnabled();
+  }
+
+  /**
+   * A chart command shows the chart first, in the cockpit. Elsewhere the chart
+   * is where it is; a camera move asked while none is mounted waits for one.
+   */
+  private showChart(): void {
+    if (this.inCockpit()) this.injector.get(ConsultationFocusService).show('chart');
+  }
+
+  private language(): 'fr' | 'en' {
+    return spokenLanguage(this.context.locale());
+  }
+
+  /** The order a dentist goes round the mouth: upper right to upper left, lower left to lower right. */
+  private archOrder(): string[] {
+    const dentition = this.context.snapshot().dentition;
+    const run = (quadrant: number, count: number, down: boolean) =>
+      Array.from({ length: count }, (_, i) => `${quadrant}${down ? count - i : i + 1}`);
+    return dentition === 'child'
+      ? [...run(5, 5, true), ...run(6, 5, false), ...run(7, 5, true), ...run(8, 5, false)]
+      : [...run(1, 8, true), ...run(2, 8, false), ...run(3, 8, true), ...run(4, 8, false)];
+  }
+
+  // ── What is on screen ───────────────────────────────────────────────
+
+  private viewCommands(): VoiceCommand[] {
+    const names: Record<StageView, [string, string]> = {
+      chart: ['Schéma.', 'Chart.'], allergies: ['Allergies.', 'Allergies.'], history: ['Antécédents.', 'History.'],
+      treatments: ['Traitements.', 'Treatments.'], plan: ['Plan.', 'Plan.'], appointment: ['Rendez-vous.', 'Appointment.'],
+      patient: ['Patient.', 'Patient.'], summary: ['Résumé.', 'Summary.'], findings: ['Constatations.', 'Findings.'],
+      transcript: ['Conversation.', 'Conversation.'], help: ['Aide.', 'Help.'],
     };
+    const onlyInConsultation: VoiceCommandResult = {
+      ok: false, message: 'Available during a consultation.', spokenFr: 'Disponible pendant une consultation.',
+    };
+    const model = () => this.injector.get(CockpitModelService);
+    const focus = () => this.injector.get(ConsultationFocusService);
+    const view = (entities: Record<string, unknown>) => String(entities['target'] ?? 'chart') as StageView;
+
+    return [
+      {
+        id: 'ui.show',
+        description: 'Show a part of the consultation: the 3D chart, allergies, history, current treatments, the plan, the appointment, the patient details, the findings, the conversation or the summary',
+        risk: 'SAFE',
+        requiresPatient: true,
+        args: { target: 'chart | allergies | history | treatments | plan | appointment | patient | findings | transcript | summary' },
+        examples: ['je veux voir la vue 3D', 'montre les allergies', 'plan de traitement', 'ses informations', 'show the allergies', 'treatment plan'],
+        preview: (entities) => `Show ${view(entities)}`,
+        execute: async (entities) => {
+          const target = view(entities);
+          const [fr, en] = names[target];
+          if (!this.inCockpit()) {
+            // No stage to switch: the chart is already where it is, and anything else is read.
+            if (target === 'chart') return { ok: true, message: 'The chart is on screen.', spokenFr: 'Le schéma est à l\'écran.' };
+            return { ok: true, message: sectionReading(target, model(), 'en'), spokenFr: sectionReading(target, model(), 'fr'), briefFr: fr, briefText: en };
+          }
+          focus().show(target);
+          return { ok: true, message: sectionSummary(target, model(), 'en'), spokenFr: sectionSummary(target, model(), 'fr'), briefFr: fr, briefText: en };
+        },
+      },
+      {
+        id: 'ui.back',
+        description: 'Go back to the previous view of the consultation',
+        risk: 'SAFE',
+        requiresPatient: true,
+        args: {},
+        examples: ['retour', 'vue précédente', 'go back'],
+        preview: () => 'Previous view',
+        execute: async () => {
+          if (!this.inCockpit()) return onlyInConsultation;
+          return focus().back()
+            ? { ok: true, message: 'Back.', spokenFr: 'Retour.' }
+            : { ok: false, message: 'No previous view.', spokenFr: 'Pas de vue précédente.' };
+        },
+      },
+      {
+        id: 'ui.pin',
+        description: 'Keep the current view: the screen stops following the last change',
+        risk: 'SAFE',
+        requiresPatient: true,
+        args: {},
+        examples: ['garde cette vue', 'keep this view'],
+        preview: () => 'Keep this view',
+        execute: async () => {
+          if (!this.inCockpit()) return onlyInConsultation;
+          focus().pin();
+          return { ok: true, message: 'View kept.', spokenFr: 'Vue gardée.' };
+        },
+      },
+      {
+        id: 'ui.unpin',
+        description: 'Let the screen follow the last change again',
+        risk: 'SAFE',
+        requiresPatient: true,
+        args: {},
+        examples: ['suis-moi', 'follow me'],
+        preview: () => 'Follow the last change',
+        execute: async () => {
+          if (!this.inCockpit()) return onlyInConsultation;
+          focus().unpin();
+          return { ok: true, message: 'Following.', spokenFr: 'Je suis.' };
+        },
+      },
+      {
+        id: 'ui.read',
+        description: 'Read a part of the consultation aloud: allergies, history, current treatments, plan, appointment, patient details, findings or summary',
+        risk: 'SAFE',
+        requiresPatient: true,
+        args: { target: 'allergies | history | treatments | plan | appointment | patient | findings | summary' },
+        examples: ['lis les allergies', 'quelles sont ses allergies', 'relis le plan', 'read the allergies'],
+        preview: (entities) => `Read ${view(entities)}`,
+        execute: async (entities) => {
+          const target = view(entities);
+          return { ok: true, message: sectionReading(target, model(), 'en'), spokenFr: sectionReading(target, model(), 'fr') };
+        },
+      },
+      {
+        id: 'help.show',
+        description: 'Show what can be said',
+        risk: 'SAFE',
+        args: {},
+        examples: ['aide', 'qu\'est-ce que je peux dire', 'help'],
+        preview: () => 'Help',
+        execute: async () => {
+          if (this.inCockpit()) focus().show('help');
+          return {
+            ok: true,
+            message: 'Dictate: "tooth 16, occlusal caries". See: "show the allergies", "treatment plan", "back".',
+            spokenFr: 'Dictez : « dent 16, carie occlusale ». Voir : « montre les allergies », « plan de traitement », « retour ».',
+          };
+        },
+      },
+      {
+        id: 'voice.repeat',
+        description: 'Say the last confirmation again',
+        risk: 'SAFE',
+        args: {},
+        examples: ['répète', 'qu\'est-ce que tu as compris', 'repeat'],
+        preview: () => 'Repeat',
+        execute: async () => {
+          const last = this.injector.get(VoiceFeedbackService).last();
+          if (!last) return { ok: false, message: 'Nothing to repeat yet.', spokenFr: 'Rien à répéter pour l\'instant.' };
+          return { ok: true, message: last.text, spokenFr: last.text, spokenText: last.text };
+        },
+      },
+      {
+        id: 'feedback.set',
+        description: 'How much is said back for the rest of this consultation: full, brief, tones only or silent',
+        risk: 'SAFE',
+        args: { level: 'full | brief | tones | silent' },
+        examples: ['silence', 'confirmations brèves', 'sons seulement', 'parle', 'be quiet'],
+        preview: (entities) => `Feedback: ${entities['level']}`,
+        execute: async (entities) => {
+          const level = String(entities['level'] ?? 'full') as FeedbackLevel;
+          this.injector.get(VoicePreferencesService).setSessionLevel(level);
+          if (level === 'silent') {
+            // Cuts what is being said; and says nothing, which is what was asked.
+            this.injector.get(VoiceFeedbackService).cancel();
+            return { ok: true, message: 'Silent.', spokenFr: 'Silence.', quiet: true };
+          }
+          const said: Record<string, [string, string]> = {
+            full: ['Confirmations complètes.', 'Full confirmations.'], brief: ['Confirmations brèves.', 'Brief confirmations.'],
+            tones: ['Sons seulement.', 'Tones only.'],
+          };
+          return { ok: true, message: said[level][1], spokenFr: said[level][0] };
+        },
+      },
+      {
+        id: 'chart.zoom',
+        description: 'Move the 3D chart\'s camera closer or further',
+        risk: 'SAFE',
+        requiresPatient: true,
+        args: { direction: 'in | out', steps: '1 to 3' },
+        examples: ['zoom avant', 'dézoome', 'plus près', 'zoom in', 'zoom out'],
+        preview: (entities) => `Zoom ${entities['direction']}`,
+        execute: async (entities) => {
+          this.showChart();
+          const direction = entities['direction'] === 'out' ? 'out' : 'in';
+          const steps = Number(entities['steps'] ?? 1) || 1;
+          const limit = this.chartView.atLimit();
+          if (direction === 'out' && this.chartView.zoomedFdi() && limit === 'far') {
+            // At the furthest a close-up allows, further out is the whole mouth.
+            this.chartView.zoomedFdi.set(null);
+            return { ok: true, message: 'The whole mouth.', spokenFr: 'Toute la bouche.' };
+          }
+          if (direction === 'in' && limit === 'near') return { ok: true, message: 'Maximum zoom.', spokenFr: 'Zoom maximum.' };
+          if (direction === 'out' && limit === 'far' && !this.chartView.zoomedFdi()) return { ok: true, message: 'Furthest out.', spokenFr: 'Zoom minimum.' };
+          this.chartView.zoom(direction, steps);
+          return direction === 'in'
+            ? { ok: true, message: 'Zoom in.', spokenFr: 'Zoom avant.' }
+            : { ok: true, message: 'Zoom out.', spokenFr: 'Zoom arrière.' };
+        },
+      },
+      {
+        id: 'chart.rotate',
+        description: 'Turn the 3D chart left, right, up, down, or to the other side',
+        risk: 'SAFE',
+        requiresPatient: true,
+        args: { direction: 'left | right | up | down | flip' },
+        examples: ['tourne à gauche', 'tourne vers le haut', 'l\'autre côté', 'turn left'],
+        preview: (entities) => `Turn ${entities['direction']}`,
+        execute: async (entities) => {
+          this.showChart();
+          const direction = String(entities['direction'] ?? 'left') as 'left' | 'right' | 'up' | 'down' | 'flip';
+          this.chartView.rotate(direction);
+          const fr: Record<string, string> = { left: 'À gauche.', right: 'À droite.', up: 'Vers le haut.', down: 'Vers le bas.', flip: 'L\'autre côté.' };
+          return { ok: true, message: `Turned ${direction}.`, spokenFr: fr[direction] ?? 'Tourné.' };
+        },
+      },
+      {
+        id: 'chart.reset',
+        description: 'The whole mouth again, camera reset',
+        risk: 'SAFE',
+        requiresPatient: true,
+        args: {},
+        examples: ['toute la bouche', 'vue complète', 'réinitialise la vue', 'whole mouth'],
+        preview: () => 'Whole mouth',
+        execute: async () => {
+          this.showChart();
+          this.chartView.zoomedFdi.set(null);
+          this.chartView.resetCamera();
+          return { ok: true, message: 'The whole mouth.', spokenFr: 'Toute la bouche.' };
+        },
+      },
+      {
+        id: 'chart.step',
+        description: 'The next or the previous tooth along the arch, alone in close-up',
+        risk: 'SAFE',
+        requiresPatient: true,
+        args: { delta: '1 for the next tooth, -1 for the previous one' },
+        examples: ['dent suivante', 'dent précédente', 'next tooth'],
+        preview: (entities) => (Number(entities['delta']) < 0 ? 'Previous tooth' : 'Next tooth'),
+        execute: async (entities) => {
+          this.showChart();
+          const order = this.archOrder();
+          const from = this.chartView.zoomedFdi() ?? this.context.selectedFdi() ?? null;
+          const index = from ? order.indexOf(from) : -1;
+          const delta = Number(entities['delta']) < 0 ? -1 : 1;
+          const next = index < 0 ? order[0] : order[(index + delta + order.length) % order.length];
+          this.chartView.zoomedFdi.set(next);
+          this.context.selectTooth(next);
+          return { ok: true, message: `Tooth ${next}.`, spokenFr: `Dent ${next}.`, highlightFdi: next };
+        },
+      },
+    ];
   }
 
   private chartCommands(): VoiceCommand[] {
@@ -427,7 +681,7 @@ export class VoiceCommandsService {
           if (!DENTITION_VIEWS.includes(view)) {
             return { ok: false, message: `There is no ${view} view.`, spokenFr: `Cette vue n'existe pas.` };
           }
-          if (!this.chartView.mounted()) return this.chartNotShown();
+          this.showChart();
           this.chartView.zoomedFdi.set(null);
           this.chartView.view.set(view);
           return { ok: true, message: `${VIEW_WORDS[view].en} view.`, spokenFr: `Vue ${VIEW_WORDS[view].fr}.` };
@@ -442,7 +696,7 @@ export class VoiceCommandsService {
         examples: ['zoom on tooth 16', 'zoom sur la 26', 'whole mouth'],
         preview: (entities) => (entities['fdi'] ? `Zoom on tooth ${entities['fdi']}` : 'Back to the whole mouth'),
         execute: async (entities) => {
-          if (!this.chartView.mounted()) return this.chartNotShown();
+          this.showChart();
           const fdi = entities['fdi'] ? String(entities['fdi']) : null;
           this.chartView.zoomedFdi.set(fdi);
           if (!fdi) return { ok: true, message: 'The whole mouth.', spokenFr: 'Toute la bouche.' };

@@ -315,6 +315,13 @@ export class Dental3dChartComponent {
    * reach them), and the credit line stays — it is the model's licence.
    */
   readonly compact = input(false);
+  /**
+   * The camera follows the tooth voice is about: in a close-up it moves to the
+   * tooth just spoken of, and a zoomed-in view that has it off screen re-frames
+   * it. Otherwise it stays still. The cockpit turns this off when the doctor
+   * pinned the view.
+   */
+  readonly cameraFollows = input(false);
 
   readonly assignTreatment = output<string>();
 
@@ -463,6 +470,35 @@ export class Dental3dChartComponent {
     effect(() => this.engine()?.setSelected(this.selected()));
     effect(() => this.engine()?.setFocus(this.focusFdi()));
     effect(() => this.engine()?.zoomTo(this.view.zoomedFdi()));
+    // Camera moves asked by voice: each applied once, by whichever chart is on screen.
+    effect(() => {
+      const request = this.view.pending();
+      const engine = this.engine();
+      if (!request || !engine || this.state() !== 'ready') return;
+      untracked(() => {
+        this.view.consumed(request.id);
+        switch (request.kind) {
+          case 'zoom': this.view.atLimit.set(engine.zoomBy(request.factor)); break;
+          case 'rotate': engine.rotateBy(request.azimuth, request.polar); break;
+          case 'reset': this.view.zoomedFdi.set(null); engine.resetCamera(); this.view.atLimit.set(null); break;
+          case 'frame': engine.frameTooth(request.fdi); break;
+        }
+      });
+    });
+    // Following the tooth spoken of, only when asked to and only when it has to move.
+    effect(() => {
+      const fdi = this.focusFdi();
+      const engine = this.engine();
+      if (!fdi || !engine || !this.cameraFollows() || this.state() !== 'ready') return;
+      untracked(() => {
+        const zoomed = this.view.zoomedFdi();
+        if (zoomed && zoomed !== fdi) {
+          this.view.zoomedFdi.set(fdi);
+        } else if (!zoomed && this.moved() && !engine.isToothInView(fdi)) {
+          engine.frameTooth(fdi);
+        }
+      });
+    });
     effect(() => this.engine()?.setPicked(this.pickedZones()));
     effect(() => {
       this.labels = new Map(this.labelRefs().map((ref) => [ref.nativeElement.dataset['fdi']!, ref.nativeElement]));

@@ -225,8 +225,9 @@ describe('reads, and what voice deliberately cannot do', () => {
   it('opens and closes a session in French, with the article the recogniser splits', () => {
     expectIntent("Commencer l'examen.", 'voice.session.start');
     expectIntent("Fin de l'examen.", 'voice.session.end');
-    expectIntent('Montre les constatations.', 'voice.session.summary');
-    expectIntent('Résumé', 'voice.session.summary');
+    // "Montre les constatations" and "résumé" now put that section on the cockpit's stage.
+    expectIntent('Récapitule.', 'voice.session.summary');
+    expectIntent('Montre-moi le résumé des constatations', 'voice.session.summary');
   });
 
   it('undoes in French', () => {
@@ -864,14 +865,18 @@ describe('the 3D chart view by voice', () => {
     expect(intentOf('gros plan sur la 36')).toEqual({ id: 'chart.zoomTooth', entities: { fdi: '36' } });
   });
 
-  it('zooms on the tooth in hand when none is named, and asks when there is none', () => {
-    expect(intentOf('zoom', context({ selectedFdi: '46' }))).toEqual({ id: 'chart.zoomTooth', entities: { fdi: '46' } });
-    expect(intentOf('zoom')).toBe('clarification');
+  it('takes a bare "zoom" as a camera step, never the question "which tooth?"', () => {
+    expect(intentOf('zoom', context({ selectedFdi: '46' }))).toEqual({ id: 'chart.zoom', entities: { direction: 'in', steps: 1 } });
+    expect(intentOf('zoom')).toEqual({ id: 'chart.zoom', entities: { direction: 'in', steps: 1 } });
   });
 
-  it.each(['dézoome', 'zoom arrière', 'zoom out', 'toute la bouche', 'whole mouth', 'back to the whole mouth'])(
+  it.each(['dézoome', 'zoom arrière', 'zoom out'])('"%s" is a camera step back', (utterance) => {
+    expect(intentOf(utterance)).toEqual({ id: 'chart.zoom', entities: { direction: 'out', steps: 1 } });
+  });
+
+  it.each(['toute la bouche', 'whole mouth', 'back to the whole mouth'])(
     '"%s" goes back to the whole mouth', (utterance) => {
-      expect(intentOf(utterance)).toEqual({ id: 'chart.zoomTooth', entities: {} });
+      expect(intentOf(utterance)).toEqual({ id: 'chart.reset', entities: {} });
     });
 });
 

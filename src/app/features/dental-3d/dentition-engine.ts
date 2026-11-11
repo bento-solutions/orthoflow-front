@@ -1,4 +1,5 @@
 import {
+  Box3,
   BackSide,
   BufferGeometry,
   ColorManagement,
@@ -708,14 +709,43 @@ export class DentitionEngine {
     this.zoomTo(null);
   }
 
-  /** Multiplies the distance to what is framed: below 1 closes in. */
-  zoomBy(factor: number): void {
+  /**
+   * Multiplies the distance to what is framed: below 1 closes in. Held to the
+   * camera's limits, and says when it reached one — "zoom avant" at the closest
+   * answers "zoom maximum" instead of pretending to move.
+   */
+  zoomBy(factor: number): 'near' | 'far' | null {
     const direction = this.camera.position.clone().sub(this.controls.target);
-    const length = direction.length() * factor;
+    const current = direction.length();
+    const min = this.controls.minDistance;
+    const max = this.controls.maxDistance;
+    const length = Math.min(max, Math.max(min, current * factor));
+    const limit = length <= min * 1.0001 ? 'near' : length >= max * 0.9999 ? 'far' : null;
+    if (Math.abs(length - current) < current * 1e-4) return limit ?? (factor < 1 ? 'near' : 'far');
     const position = this.controls.target.clone().add(direction.setLength(length));
     this.startCamera(position, this.controls.target.clone(), true);
     this.setMoved(true);
     this.invalidate();
+    return limit;
+  }
+
+  /** Brings a tooth to the middle of the frame, at the same distance, its neighbours still in view. */
+  frameTooth(fdi: string): void {
+    const tooth = this.active?.byFdi.get(fdi);
+    if (!tooth) return;
+    const centre = new Box3().setFromObject(tooth.mesh).getCenter(new Vector3());
+    const offset = this.camera.position.clone().sub(this.controls.target);
+    this.startCamera(centre.clone().add(offset), centre, true);
+    this.setMoved(true);
+    this.invalidate();
+  }
+
+  /** Whether a tooth is inside the frame, with a margin. */
+  isToothInView(fdi: string): boolean {
+    const tooth = this.active?.byFdi.get(fdi);
+    if (!tooth || !tooth.mesh.visible) return false;
+    const point = new Box3().setFromObject(tooth.mesh).getCenter(new Vector3()).project(this.camera);
+    return Math.abs(point.x) <= 0.9 && Math.abs(point.y) <= 0.9 && point.z < 1;
   }
 
   /** Turns the view around what is framed, in radians: what dragging does, for a keyboard or a button. */

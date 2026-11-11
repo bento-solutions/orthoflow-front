@@ -114,6 +114,8 @@ export interface VoiceCommandResult {
   spokenFr?: string;
   /** The spoken form for a non-French dentist, when it differs from {@link message}. */
   spokenText?: string;
+  /** Shown on screen, not said: "Calypso, silence" is answered in silence. */
+  quiet?: boolean;
   /** What the "brief" feedback level says instead: "Allergies.", "Dent 16, en gros plan." */
   briefFr?: string;
   briefText?: string;

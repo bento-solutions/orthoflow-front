@@ -21,6 +21,10 @@ import { VoiceSessionService } from '../voice-session.service';
 import { EarconService } from '../earcon.service';
 import { FeedbackLevel, VoicePreferencesService } from '../voice-preferences.service';
 import { UtteranceEvent } from '../voice-intent.model';
+import { ConsultationService } from '../../consultation/consultation.service';
+import { ConsultationFocusService } from '../../consultation/consultation-focus.service';
+import { CockpitModelService } from '../../consultation/cockpit-model.service';
+import { emptyReview } from '../../consultation/consultation-draft';
 import {
   FAKE_RECOGNITION, FakeAudioCapture, FakeAuth, FakeSpeechFeedback, FakeVoiceApi, FakeVoiceContext, FakeVoiceSession,
 } from './voice-fakes.testing';
@@ -136,8 +140,19 @@ export function voicePipelineProviders(fakes: {
     { provide: PatientService, useValue: { currentPatient: () => ({ id: 'p-1', firstName: 'Ahmed', lastName: 'El Amrani' }) } },
     { provide: ScheduleService, useValue: {} },
     { provide: InvoiceService, useValue: {} },
+    // A consultation recording in the cockpit: view commands have a stage to change.
+    { provide: ConsultationService, useValue: { isRecording: () => true, cockpitEnabled: () => true, review: () => emptyReview(), lines: () => [] } },
+    { provide: CockpitModelService, useValue: EMPTY_COCKPIT },
   ];
 }
+
+/** A cockpit with nothing in it yet: what the sections say before anything is read. */
+const EMPTY_COCKPIT = {
+  allergiesOnRecord: () => [], allergiesNow: () => [], historyOnRecord: () => [], historyNow: () => [],
+  treatmentsOnRecord: () => [], treatmentsNow: () => [], planNow: () => [], planSummary: () => ({ total: 0, complete: true }),
+  appointment: () => null, appointmentSuggestion: () => null, patientFields: () => [], complaint: () => null,
+  chartLines: () => [], noteLines: () => [], counts: () => ({}), allergyBadges: () => [], patient: () => null,
+};
 
 /**
  * Runs `lines` through the pipeline. Uses fake timers for its whole length and
@@ -223,7 +238,7 @@ export async function replayConsultation(lines: ReplayLine[], options: ReplayOpt
         ran,
         stagedIntents,
         spoken,
-        view: options.view?.() ?? null,
+        view: options.view?.() ?? TestBed.inject(ConsultationFocusService).view(),
         nluCalls: api.interpreted - nluBefore,
         ended,
       });

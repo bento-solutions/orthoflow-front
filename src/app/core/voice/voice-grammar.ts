@@ -9,6 +9,7 @@ import {
 import { affirmedFindings, extractEveryFinding, extractFindings, ExtractedFinding } from './clinical-lexicon';
 import { clauseAround, containsNegation, firstNegationIndex, isNegatedAt, startsNegated } from './voice-negation';
 import { WORD_END } from './voice-regex';
+import { UI_RULES } from './voice-ui-grammar';
 import {
   FindingEntity,
   VoiceContextSnapshot,
@@ -418,7 +419,7 @@ const showFindings: GrammarRule = {
   id: 'grammar.session.summary',
   match: (raw, text) => {
     if (!new RegExp(`\\b(?:show|read|give|list|r[ée]capitule[rz]?|montre[rz]?)\\b.*(?:findings|summary|r[ée]sum[ée]|constatations|bilan)${WORD_END}`, 'iu').test(text)
-      && !new RegExp(`^(?:summary|r[ée]sum[ée])${WORD_END}`, 'iu').test(text)) {
+      && !new RegExp(`^(?:summary|r[ée]sum[ée]|r[ée]capitule[rz]?(?:\\s+tout)?)${WORD_END}`, 'iu').test(text)) {
       return null;
     }
     return intent('voice.session.summary', {}, CONFIDENCE_EXACT, raw);
@@ -1097,11 +1098,11 @@ function followUpIntent(raw: string): VoiceIntent {
   return makeIntent('schedule.followUp', { when: raw.trim() }, CONFIDENCE_MODERATE, raw);
 }
 
-// Navigation — to another module, another patient, or another tab of this
-// dossier — is deliberately not in the grammar. Dictation happens inside one
-// patient's dossier and its results are shown there; a misheard "ouvre" that
-// swapped the screen mid-examination cost the dentist their view of the chart
-// and could not be undone hands-free. The command palette still navigates.
+// Navigation to another module or another patient is deliberately not in the
+// grammar: dictation happens inside one patient's dossier. Within it, the
+// consultation cockpit's views are (voice-ui-grammar.ts): since Nov 2026 the
+// screen follows the doctor on their instruction, and "retour" undoes any view
+// change in one word, which is what made a misheard "ouvre" costly before.
 
 /**
  * "Montre la dent 16", "inspecte la 16", "je veux voir la 26", "gros plan sur
@@ -1303,6 +1304,9 @@ function pendingForTooth(
 export const GRAMMAR_RULES: GrammarRule[] = [
   startExamination,
   endExamination,
+  // Whole-sentence views, camera, reading aloud, help: before every free-text
+  // rule, so "affiche les allergies du patient" is a view and never an allergy.
+  ...UI_RULES,
   createTask,
   showFindings,
   undoLast,

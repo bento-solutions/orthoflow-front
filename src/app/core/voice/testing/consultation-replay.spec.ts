@@ -58,7 +58,7 @@ describe('golden transcript — the consultation of 10 Nov 2026', () => {
   it('22:35:36 the plan explained to the patient is conversation', () => heard('22:35:36'));
   it('22:35:38 its second half is conversation', () => heard('22:35:38'));
 
-  it.fails('22:36:11 "Plan de traitement." shows the plan', () => {
+  it('22:36:11 "Plan de traitement." shows the plan', () => {
     expect(result.byTime('22:36:11').ran).toContain('ui.show');
     expect(result.byTime('22:36:11').view).toBe('plan');
   });
@@ -79,7 +79,7 @@ describe('golden transcript — the consultation of 10 Nov 2026', () => {
     staged('22:38:32', ['11:caries@occlusal']);
   });
 
-  it.fails('22:38:57 "Calypso schéma dentaire" (second sentence) shows the chart', () => {
+  it('22:38:57 "Calypso schéma dentaire" (second sentence) shows the chart', () => {
     expect(result.byTime('22:38:57').ran).toContain('ui.show');
     expect(result.byTime('22:38:57').view).toBe('chart');
   });
@@ -92,7 +92,7 @@ describe('golden transcript — the consultation of 10 Nov 2026', () => {
     expect(result.byTime('22:39:06').verdict).toBe('unsure');
   });
 
-  it.fails('22:39:39 "dis-moi comment j\'interagis avec le schéma dentaire" shows the help', () => {
+  it('22:39:39 "dis-moi comment j\'interagis avec le schéma dentaire" shows the help', () => {
     expect(result.byTime('22:39:39').ran).toContain('help.show');
   });
 
@@ -163,9 +163,10 @@ describe('golden transcript — the allergies sentence with the wake window open
 });
 
 describe('golden transcript — at the other feedback levels', () => {
-  it('with "tones", the staged findings sound and nothing is said', async () => {
+  it('with "tones", the staged findings sound and nothing is said but the help asked for', async () => {
     const result = await replayConsultation(SESSION_2026_11_10, { level: 'tones' });
-    expect(result.rows.flatMap(row => row.spoken)).toEqual([]);
+    // "Calypso, dis-moi comment…" asked for help: that is spoken whatever the level.
+    expect(result.rows.filter(row => row.spoken.length).map(row => row.time)).toEqual(['22:39:39']);
     for (const time of ['22:37:18', '22:37:39', '22:38:32', '22:40:28', '22:41:14', '22:41:28']) {
       expect(result.byTime(time).tones, time).toEqual(['confirm']);
     }
@@ -173,9 +174,9 @@ describe('golden transcript — at the other feedback levels', () => {
     expect(result.byTime('22:32:52').tones).toEqual([]);
   });
 
-  it('with "silent", nothing is said or sounded', async () => {
+  it('with "silent", nothing is said or sounded but the help asked for', async () => {
     const result = await replayConsultation(SESSION_2026_11_10, { level: 'silent' });
-    expect(result.rows.flatMap(row => row.spoken)).toEqual([]);
+    expect(result.rows.filter(row => row.spoken.length).map(row => row.time)).toEqual(['22:39:39']);
     expect(result.rows.flatMap(row => row.tones)).toEqual([]);
     expect(result.finalFindings).toHaveLength(11);
   });

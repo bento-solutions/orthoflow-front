@@ -37,6 +37,7 @@ import { CockpitSectionComponent } from './cockpit-section.component';
                 [selected]="focusFdi()"
                 [sidePanel]="false"
                 [compact]="true"
+                [cameraFollows]="!focus.pinned()"
               />
             } @placeholder {
               <div class="ck-chart-placeholder" aria-hidden="true"></div>

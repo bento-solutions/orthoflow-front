@@ -148,7 +148,9 @@ export const COMMAND_EXAMPLES: ReadonlyArray<{ intent: string; fr: string; en: s
   { intent: 'chart.readTooth', fr: 'lis la dent 16', en: 'what is on tooth 16' },
   { intent: 'chart.setView', fr: 'vue occlusale', en: 'occlusal view' },
   { intent: 'chart.zoomTooth', fr: 'zoom sur la dent 16', en: 'zoom on tooth 16' },
-  { intent: 'voice.session.summary', fr: 'montre les constatations', en: 'show me today\'s findings' },
+  { intent: 'voice.session.summary', fr: 'récapitule', en: 'show me today\'s findings' },
+  { intent: 'ui.show', fr: 'montre les allergies', en: 'show the allergies' },
+  { intent: 'chart.zoom', fr: 'zoom avant', en: 'zoom in' },
   { intent: 'voice.session.end', fr: 'fin de l\'examen', en: 'end examination' },
 ];
 

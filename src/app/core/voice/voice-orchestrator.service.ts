@@ -2031,7 +2031,7 @@ export class VoiceOrchestratorService {
       this.mark(result.ok ? 'acted' : 'unsure', spoken.text, { intent: command.id, fdi: result.highlightFdi ?? null });
       const kind = intentClass(command.id);
       const cue: FeedbackCue = !result.ok ? 'error' : kind === 'view' ? 'view' : kind === 'read' || kind === 'control' ? 'asked' : 'confirm';
-      this.announce(result.ok, result.message, spoken, cue,
+      this.announce(result.ok, result.message, result.quiet ? { text: '', locale: spoken.locale } : spoken, cue,
         result.briefFr || result.briefText ? { brief: this.spokenBrief(result) } : {});
     } catch (error) {
       const message = this.describeFailure(error);

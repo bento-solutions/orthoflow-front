@@ -6011,6 +6011,11 @@ export interface components {
             version?: number;
             visitReason?: string;
         };
+        ChartMention: {
+            finding?: string;
+            quote?: string;
+            teeth?: string;
+        };
         CheckIn: {
             /** Format: uuid */
             waitingRoomId?: string;
@@ -6214,9 +6219,11 @@ export interface components {
             notes?: string;
         };
         ConsultationConfigResponse: {
+            cockpit?: boolean;
             enabled?: boolean;
             modelExtraction?: boolean;
             retainTranscript?: boolean;
+            tailReading?: boolean;
         };
         ConsultationDraft: {
             activeTreatments?: components["schemas"]["ActiveTreatment"][];
@@ -6287,6 +6294,13 @@ export interface components {
             note?: string;
             /** @enum {string} */
             result: "PENDING" | "PASSED" | "FAILED";
+        };
+        Correction: {
+            list?: string;
+            nowCategory?: string;
+            nowLabel?: string;
+            quote?: string;
+            was?: string;
         };
         Count: {
             /** Format: int64 */
@@ -6701,8 +6715,11 @@ export interface components {
             uses?: components["schemas"]["TraceEntry"][];
         };
         ExtractionResponse: {
+            chartMentions?: components["schemas"]["ChartMention"][];
+            corrections?: components["schemas"]["Correction"][];
             draft?: components["schemas"]["ConsultationDraft"];
             error?: string;
+            mode?: string;
             truncated?: boolean;
         };
         FailedCommand: {
@@ -7429,11 +7446,14 @@ export interface components {
         Line: {
             /** Format: date-time */
             at?: string;
+            /** Format: int32 */
+            latencyMs?: number;
             phase?: string;
             /** Format: int32 */
             seq?: number;
             text?: string;
             typed?: boolean;
+            verdict?: string;
         };
         LineView: {
             amount?: number;
@@ -9654,7 +9674,9 @@ export interface components {
             performedBy?: string;
         };
         TranscriptRequest: {
+            known?: string[];
             lines?: components["schemas"]["Line"][];
+            mode?: string;
             transcript: string;
         };
         TranscriptionResponse: {

@@ -2,7 +2,7 @@
 # Node 24 ships npm 11, which reads this repo's lockfileVersion-3
 # package-lock.json cleanly. npm 10 (node:20-alpine) rejects it as out of sync
 # over transitive @emnapi/* optional deps.
-FROM node:24-alpine AS build
+FROM node:25-alpine AS build
 
 WORKDIR /app
 

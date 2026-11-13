@@ -45,7 +45,8 @@ describe('FINDING_TERMS', () => {
         expect(extractFindings(term).map(f => f.code), `"${term}"`).toEqual([code]);
       }
     }
-  });
+    // Every term of every state, each read against the whole lexicon: a few seconds on a busy machine.
+  }, 30_000);
 });
 
 describe('COMMAND_EXAMPLES', () => {
@@ -182,3 +183,31 @@ describe('spokenConfirmation of a task', () => {
     expect(spokenConfirmation('tasks.create', { title: 'Order gloves' }, 'en')?.text).toBe('Task for you: Order gloves.');
   });
 });
+
+describe('what the referential adds to a read-back', () => {
+  const said = (finding: Record<string, unknown>, language: 'fr' | 'en', fdi = '46') =>
+    spokenConfirmation('clinical.addFindings', { fdi, findings: [finding] }, language)?.text;
+
+  it('says a suspicion as a suspicion', () => {
+    expect(said({ code: 'caries', certainty: 'SUSPECTED' }, 'fr', '16')).toBe('Dent 16 : suspicion de carie.');
+    expect(said({ code: 'caries', certainty: 'SUSPECTED' }, 'en', '16')).toBe('Tooth 16: suspected caries.');
+  });
+
+  it('reads the measure back with the state', () => {
+    expect(said({ code: 'gingival_recession', surface: 'buccal', note: '3 mm' }, 'fr')).toBe('Dent 46 : récession gingivale vestibulaire de 3 millimètres.');
+    expect(said({ code: 'mobility', note: 'grade 2' }, 'fr')).toBe('Dent 46 : mobilité grade 2.');
+    expect(said({ code: 'periodontal_pocket', note: '5.5 mm' }, 'fr')).toBe('Dent 46 : poche parodontale de 5,5 millimètres.');
+  });
+
+  it('does not read an ordinary note back as a measure', () => {
+    expect(said({ code: 'caries', note: 'patient anxieux' }, 'fr')).toBe('Dent 46 : carie.');
+  });
+
+  it('names the root', () => {
+    expect(said({ code: 'root_fracture', surface: 'mesialroot' }, 'fr')).toBe('Dent 46 : fracture radiculaire racine mésiale.');
+    expect(said({ code: 'periapical_lesion', surface: 'mesialroot-buccalroot' }, 'fr', '16')).toBe('Dent 16 : lésion périapicale racine mésio-vestibulaire.');
+    expect(said({ code: 'root_fracture', surface: 'distalroot' }, 'en')).toBe('Tooth 46: root fracture distal root.');
+    expect(spokenSurface('mesial-mesialroot', 'fr')).toBe('mésiale, racine mésiale');
+  });
+});
+

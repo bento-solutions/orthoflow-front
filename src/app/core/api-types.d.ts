@@ -5522,6 +5522,7 @@ export interface components {
             source: string;
         };
         AddToothFindingRequest: {
+            certainty?: string;
             findingCode: string;
             note?: string;
             origin?: string;
@@ -7851,6 +7852,7 @@ export interface components {
             phone?: string;
         };
         PassportFinding: {
+            certainty?: string;
             fdi?: string;
             findingCode?: string;
             kind?: string;
@@ -9579,6 +9581,7 @@ export interface components {
             practitionerName?: string;
         };
         ToothFindingResponse: {
+            certainty?: string;
             /** Format: date-time */
             createdAt?: string;
             fdi?: string;

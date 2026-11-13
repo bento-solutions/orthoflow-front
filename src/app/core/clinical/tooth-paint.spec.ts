@@ -166,3 +166,160 @@ describe('surfaceOfZone', () => {
     expect(surfaceOfZone('root', '16')).toBeNull();
   });
 });
+
+describe('the states of the clinical referential, on the tooth', () => {
+  const paint = (findings: Array<Parameters<typeof f>>, status: 'present' | 'caries' = 'present', fdi = '46') =>
+    paintTooth(fdi, status, findings.map((args) => f(...args)));
+
+  it('draws a cusp or a crown fracture on the faces it names, and a root fracture in the root', () => {
+    expect(paint([['cusp_fracture', 'CONDITION', 'mesial']]).zones.mesial).toEqual({ family: 'condition', pattern: 'jag' });
+    expect(paint([['crown_fracture', 'CONDITION']]).zones.occlusal?.pattern).toBe('jag');
+    const root = paint([['root_fracture', 'CONDITION', 'mesialroot']]);
+    expect(root.zones.root).toEqual({ family: 'condition', pattern: 'jag' });
+    expect(root.zones.occlusal).toBeUndefined();
+  });
+
+  it('draws the work of the referential where it stands', () => {
+    expect(paint([['existing_onlay', 'EXISTING']]).zones.occlusal).toEqual({ family: 'existing', pattern: 'solid' });
+    expect(paint([['existing_glass_ionomer', 'EXISTING', 'distal']]).zones.distal?.pattern).toBe('solid');
+    expect(paint([['bridge_pontic', 'EXISTING']]).zones.buccal?.pattern).toBe('hatch');
+    expect(paint([['temporary_crown', 'EXISTING']]).zones.occlusal?.pattern).toBe('hatch');
+    // A crown on an implant is threads in the root as well; a post and crown has the post in the root.
+    expect(paint([['implant_crown', 'EXISTING']]).zones.root?.pattern).toBe('bars');
+    const post = paint([['post_and_crown', 'EXISTING']]);
+    expect(post.zones.root?.pattern).toBe('endo');
+    expect(post.zones.occlusal?.pattern).toBe('hatch');
+  });
+
+  it('shows what is wrong with a restoration, on the part it is wrong on', () => {
+    expect(paint([['fractured_restoration', 'CONDITION', 'occlusal']]).zones.occlusal).toEqual({ family: 'condition', pattern: 'jag' });
+    expect(paint([['restoration_overhang', 'CONDITION']]).zones.mesial?.pattern).toBe('bars');
+    expect(paint([['restoration_overhang', 'CONDITION']]).zones.distal?.pattern).toBe('bars');
+    expect(paint([['defective_restoration', 'CONDITION', 'buccal']]).zones.buccal?.pattern).toBe('hatch');
+  });
+
+  it('draws endodontic states in the root, and marks the lesions at its tip', () => {
+    expect(paint([['endo_treatment_started', 'CONDITION']]).zones.root).toEqual({ family: 'condition', pattern: 'endo' });
+    expect(paint([['internal_resorption', 'CONDITION']]).zones.root?.pattern).toBe('stipple');
+    expect(paint([['canal_obstruction', 'CONDITION']]).zones.root?.pattern).toBe('bars');
+    const owed = paint([['retreatment_required', 'TREATMENT_REQUIRED']]);
+    expect(owed.zones.root).toEqual({ family: 'planned', pattern: 'owed' });
+    expect(owed.planned).toBe(true);
+    for (const code of ['apical_periodontitis', 'periapical_abscess', 'reversible_pulpitis', 'irreversible_pulpitis_symptomatic']) {
+      expect(paint([[code, 'CONDITION']]).lesion, code).toBe(true);
+    }
+  });
+
+  it('draws a tooth that never formed as absent, and one that has not come through as held', () => {
+    expect(paint([['agenesis', 'CONDITION']]).absent).toBe(true);
+    const unerupted = paint([['unerupted', 'CONDITION']]);
+    expect(unerupted.zones.root?.pattern).toBe('bars');
+    expect(unerupted.zones.occlusal?.pattern).toBe('bars');
+  });
+
+  it('flags what has no place on the tooth, and nothing that says all is well', () => {
+    for (const code of ['crowding', 'rotation', 'open_bite', 'ankylosis', 'concussion', 'supernumerary', 'pulp_calcification']) {
+      expect(paint([[code, 'CONDITION']]).flagged, code).toBe(true);
+    }
+    for (const code of ['healthy_gingiva', 'normal_pulp', 'permanent_tooth', 'normal']) {
+      expect(paint([[code, 'OBSERVATION']]).flagged, code).toBe(false);
+    }
+  });
+
+  it('keeps a derived status from being painted twice when a state of the referential explains it', () => {
+    // A root fracture is a "fracture" on the server: the status is already explained, so it is not painted again over the crown.
+    const { zones } = paint([['root_fracture', 'CONDITION']], 'present');
+    expect(zones.occlusal).toBeUndefined();
+  });
+});
+
+describe('a suspicion on the tooth', () => {
+  const suspected = (code: string, kind: ToothFinding['kind'], surface?: string) => ({ ...f(code, kind, surface), certainty: 'SUSPECTED' });
+
+  it('is drawn on the part it concerns, in its own colour, and the tooth says it holds one', () => {
+    const paint = paintTooth('16', 'present', [suspected('caries', 'CONDITION', 'mesial')]);
+    expect(paint.zones.mesial).toEqual({ family: 'suspected', pattern: 'suspect' });
+    expect(paint.suspected).toBe(true);
+    expect(paintTooth('16', 'present', [f('caries', 'CONDITION', 'mesial')]).suspected).toBe(false);
+  });
+
+  it('is under what is confirmed on the same part', () => {
+    const paint = paintTooth('16', 'present', [suspected('caries', 'CONDITION', 'occlusal'), f('existing_amalgam', 'EXISTING', 'occlusal')]);
+    expect(paint.zones.occlusal).toEqual({ family: 'existing', pattern: 'solid' });
+    const other = paintTooth('16', 'present', [f('existing_amalgam', 'EXISTING', 'occlusal'), suspected('caries', 'CONDITION', 'occlusal')]);
+    expect(other.zones.occlusal).toEqual({ family: 'existing', pattern: 'solid' });
+  });
+
+  it('is never a tooth that is gone, a lesion at the root, tartar or an effect on the gum', () => {
+    const gone = paintTooth('16', 'present', [suspected('extracted', 'CONDITION')]);
+    expect(gone.absent).toBe(false);
+    expect(gone.flagged).toBe(true);
+    const lesion = paintTooth('16', 'present', [suspected('necrosis', 'CONDITION')]);
+    expect(lesion.lesion).toBe(false);
+    expect(lesion.suspected).toBe(true);
+    const tartar = paintTooth('16', 'present', [suspected('calculus', 'CONDITION')]);
+    expect(tartar.deposit).toEqual({ calculus: 0, plaque: 0 });
+    expect(paintTooth('16', 'present', [suspected('gingivitis', 'CONDITION')]).gum).toBeNull();
+  });
+
+  it('is drawn when it was only dictated, too', () => {
+    const paint = paintTooth('16', 'present', [], [{ fdi: '16', code: 'caries', surface: 'distal', certainty: 'SUSPECTED' }]);
+    expect(paint.zones.distal?.family).toBe('suspected');
+    expect(paint.staged).toBe(true);
+  });
+});
+
+describe('tartar and plaque on the tooth', () => {
+  it('covers every face unless the finding names some', () => {
+    expect(paintTooth('36', 'present', [f('calculus', 'CONDITION')]).deposit).toEqual({ calculus: 15, plaque: 0 });
+    expect(paintTooth('36', 'present', [f('calculus', 'CONDITION', 'buccal')]).deposit).toEqual({ calculus: 4, plaque: 0 });
+    expect(paintTooth('36', 'present', [f('calculus', 'CONDITION', 'mesial-lingual')]).deposit).toEqual({ calculus: 9, plaque: 0 });
+    expect(paintTooth('36', 'present', [f('plaque', 'CONDITION')]).deposit).toEqual({ calculus: 0, plaque: 15 });
+  });
+
+  it('is both for the combined state, as it was before the two were told apart', () => {
+    expect(paintTooth('36', 'present', [f('plaque_calculus', 'CONDITION')]).deposit).toEqual({ calculus: 15, plaque: 15 });
+  });
+
+  it('is a crust and a film, not a red mark on the neck, and not a flag', () => {
+    const paint = paintTooth('36', 'present', [f('calculus', 'CONDITION')]);
+    expect(paint.zones.cervical).toBeUndefined();
+    expect(paint.flagged).toBe(false);
+  });
+});
+
+describe('what the gum of a tooth shows', () => {
+  const gum = (...findings: Array<ReturnType<typeof f> & { note?: string }>) => paintTooth('16', 'present', findings).gum;
+
+  it('is nothing until something is recorded about it', () => {
+    expect(paintTooth('16', 'present', []).gum).toBeNull();
+    expect(gum(f('caries', 'CONDITION'))).toBeNull();
+  });
+
+  it('is what each recorded state does, the strongest of each', () => {
+    expect(gum(f('gingivitis', 'CONDITION'))).toMatchObject({ inflamed: 0.75, swollen: 0.4 });
+    expect(gum(f('gingivitis', 'CONDITION'), f('gingival_enlargement', 'CONDITION'))).toMatchObject({ inflamed: 0.75, swollen: 0.8 });
+    expect(gum(f('gingival_abscess', 'CONDITION'))).toMatchObject({ abscess: 1, pus: 1 });
+    expect(gum(f('gingival_ulceration', 'CONDITION'))?.ulcer).toBe(1);
+    expect(gum(f('gingival_pigmentation', 'CONDITION'))?.pigment).toBe(1);
+  });
+
+  it('knows how far a recession was measured', () => {
+    expect(gum({ ...f('gingival_recession', 'CONDITION', 'buccal'), note: '3 mm' })).toMatchObject({ recession: 0.5, recessionMm: 3 });
+    expect(gum({ ...f('gingival_recession', 'CONDITION', 'buccal'), note: '4.5 mm · patient anxieux' })?.recessionMm).toBe(4.5);
+    expect(gum(f('gingival_recession', 'CONDITION'))?.recessionMm).toBeUndefined();
+  });
+
+  it('is an empty gum when it was recorded healthy: someone looked', () => {
+    expect(gum(f('healthy_gingiva', 'OBSERVATION'))).toEqual({});
+  });
+});
+
+describe('a root named for a state is the root', () => {
+  it('reads "racine mésiale" as the root, for a state that goes by surface too', () => {
+    const { zones } = paintTooth('46', 'present', [f('caries', 'CONDITION', 'mesialroot')]);
+    expect(zones.root?.family).toBe('condition');
+    expect(zones.mesial).toBeUndefined();
+  });
+});
+

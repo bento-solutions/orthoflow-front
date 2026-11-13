@@ -1,5 +1,5 @@
 import { entityString, stagedFindingCodes } from '../voice/voice-intent.model';
-import { spokenFindingLabel, spokenSurface, SpokenLanguage } from '../voice/voice-vocabulary';
+import { spokenFindingLabel, spokenMeasure, spokenSurface, SpokenLanguage } from '../voice/voice-vocabulary';
 
 /**
  * One chart finding dictated in the examination, worded for the paper.
@@ -25,6 +25,7 @@ interface StagedFinding {
   surface?: unknown;
   severity?: unknown;
   note?: unknown;
+  certainty?: unknown;
 }
 
 function capitalise(text: string): string {
@@ -39,9 +40,13 @@ export function chartLine(entry: StagedChartEntry, language: SpokenLanguage, too
   const detailed = Array.isArray(entry.entities['findings']) ? (entry.entities['findings'] as StagedFinding[]) : [];
   const parts = codes.map(code => {
     const finding = detailed.find(f => f?.code === code);
-    const label = capitalise(spokenFindingLabel(code, language));
+    const name = spokenFindingLabel(code, language);
+    // A suspicion is shown as one: "Suspicion de carie", never "Carie".
+    const label = capitalise(finding?.certainty === 'SUSPECTED' ? (language === 'fr' ? `suspicion de ${name}` : `suspected ${name}`) : name);
     const surface = typeof finding?.surface === 'string' && finding.surface ? spokenSurface(finding.surface, language) : null;
-    return surface ? `${label} (${surface})` : label;
+    const measure = typeof finding?.note === 'string' ? spokenMeasure(finding.note, language) : '';
+    const where = [surface, measure].filter(Boolean).join(', ');
+    return where ? `${label} (${where})` : label;
   });
   return `${toothWord} ${fdi} : ${parts.join(', ')}`;
 }

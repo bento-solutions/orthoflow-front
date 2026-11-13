@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, NgZone, afterNextRender, computed, effect, inject, input, model, output, signal, untracked, viewChild, viewChildren,
 } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DentalChartState, ToothStatus } from '../../core/models/patient.model';
@@ -8,9 +9,10 @@ import { ToothFinding } from '../../core/models/clinical-record.model';
 import { PatientTreatment } from '../../core/models/patient-treatment.model';
 import { findingLabel } from '../../core/clinical/finding-options';
 import { PAINT_ZONES, PaintZone, StagedFinding, ToothPaint, paintChart, surfaceOfZone } from '../../core/clinical/tooth-paint';
-import { SURFACE_LETTER, SURFACE_ZONES, SURFACE_ZONE_PATH, SurfaceZone, ToothSurface, formatSurface, parseSurface, surfaceMarks, surfaceShorthand } from '../../core/clinical/tooth-surfaces';
+import { SURFACE_LETTER, SURFACE_ZONES, SURFACE_ZONE_PATH, SurfaceZone, ToothSurface, formatSurface, isRootSurface, parseSurface, surfaceMarks, surfaceShorthand } from '../../core/clinical/tooth-surfaces';
 import { FAMILY_PAINT, PLANNED_PAINT, TREATMENT_PLAN_INK, toothStatusLabelKey } from '../../core/clinical/tooth-status';
 import { ToothNumberTyping, stepInGrid, toothGrid } from '../../core/clinical/tooth-grid';
+import { gumPaints } from '../../core/clinical/gum-regions';
 import { AnnouncerService } from '../../core/services/announcer.service';
 import { DENTITION_VIEWS, Dental3dViewService, DentitionView } from '../../core/services/dental-3d-view.service';
 import { ClinicalRecordService } from '../../core/services/clinical-record.service';
@@ -53,7 +55,7 @@ interface SummaryGroup {
   selector: 'app-dental-3d-chart',
   standalone: true,
   host: { '[class.d3-compact]': 'compact()' },
-  imports: [FormsModule, TranslateModule, ChartKeysComponent, DentalChartComponent, ToothDetailComponent],
+  imports: [FormsModule, NgClass, TranslateModule, ChartKeysComponent, DentalChartComponent, ToothDetailComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (fallback()) {
@@ -91,6 +93,14 @@ interface SummaryGroup {
               </div>
             }
             <div class="d3-tools">
+              @if (view.view() === 'overview' && !view.zoomedFdi()) {
+                <!-- The gums hide the roots' surroundings and the palate hides nothing: the mouth with or without them. -->
+                <button type="button" class="d3-tool" [class.on]="view.gums()" [attr.aria-pressed]="view.gums()"
+                  [title]="(view.gums() ? 'DENTAL_3D.GUMS_HIDE' : 'DENTAL_3D.GUMS_SHOW') | translate"
+                  [attr.aria-label]="'DENTAL_3D.GUMS' | translate" (click)="view.showGums()">
+                  <span class="material-icons" aria-hidden="true">{{ view.gums() ? 'visibility' : 'visibility_off' }}</span>
+                </button>
+              }
               @if (!view.zoomedFdi() && selected(); as fdi) {
                 <button type="button" class="d3-tool" [title]="'DENTAL_3D.ZOOM_TOOTH' | translate: { fdi: fdi }"
                   [attr.aria-label]="'DENTAL_3D.ZOOM_TOOTH' | translate: { fdi: fdi }" (click)="enterCloseUp(fdi)">
@@ -208,6 +218,9 @@ interface SummaryGroup {
             <span class="d3-key"><i class="sw sw-lesion"></i>{{ 'DENTAL_3D.LEGEND.LESION' | translate }}</span>
             @if (stagedTeeth().length) {
               <span class="d3-key"><i class="sw sw-staged"></i>{{ 'VOICE.LEGEND_STAGED' | translate }}</span>
+            }
+            @for (key of mouthLegend(); track key) {
+              <span class="d3-key"><i class="sw" [ngClass]="'sw-' + key.toLowerCase()"></i>{{ ('DENTAL_3D.LEGEND.' + key) | translate }}</span>
             }
             @for (ring of ringsInUse(); track ring) {
               <span class="d3-key"><i class="sw sw-ring" [style.borderColor]="ringColour(ring)"></i>{{ ('DENTAL_3D.LEGEND.RING_' + ring) | translate }}</span>
@@ -370,6 +383,27 @@ export class Dental3dChartComponent {
   private readonly marks = computed(() => surfaceMarks([
     ...this.findings().filter((f) => f.status === 'ACTIVE').map((f) => ({ fdi: f.fdi, kind: f.kind, surface: f.surface })),
   ]));
+  /**
+   * The gum round each tooth: its own findings and the assessment of its part of the mouth. Read from the
+   * gum assessments whether or not the panel is open, because the mouth draws them wherever it is.
+   */
+  private readonly gumByTooth = computed(() => gumPaints(this.allTeeth(), this.paintByFdi(), this.records.periodontal()?.current ?? []));
+
+  /** What the mouth shows that the base legend does not say: the gum's state, tartar and plaque, a suspicion. */
+  protected readonly mouthLegend = computed(() => {
+    const keys: string[] = [];
+    const gums = [...this.gumByTooth().values()];
+    const paints = this.paints();
+    const some = (test: (g: (typeof gums)[number]) => boolean) => gums.some(test);
+    if (some((g) => (g.inflamed ?? 0) >= 0.3 || (g.swollen ?? 0) >= 0.3 || (g.bleeding ?? 0) > 0)) keys.push('INFLAMED');
+    if (some((g) => (g.perio ?? 0) > 0.3)) keys.push('PERIO');
+    if (some((g) => (g.recession ?? 0) > 0.2 || g.recessionMm !== undefined)) keys.push('RECESSION');
+    if (paints.some((p) => p.deposit.calculus)) keys.push('CALCULUS');
+    if (paints.some((p) => p.deposit.plaque)) keys.push('PLAQUE');
+    if (paints.some((p) => p.suspected)) keys.push('SUSPECTED');
+    return keys;
+  });
+
   private readonly activeByTooth = computed(() => {
     const byTooth = new Map<string, ToothFinding[]>();
     for (const finding of this.findings()) {
@@ -386,13 +420,15 @@ export class Dental3dChartComponent {
   });
 
   protected readonly summary = computed<SummaryGroup[]>(() => {
-    const groups: Record<'condition' | 'planned' | 'existing' | 'absent', string[]> = { condition: [], planned: [], existing: [], absent: [] };
+    const groups: Record<'condition' | 'planned' | 'existing' | 'absent' | 'suspected', string[]> = { condition: [], planned: [], existing: [], absent: [], suspected: [] };
     for (const fdi of this.allTeeth()) {
       const paint = this.paintByFdi().get(fdi);
       if (!paint) continue;
       const families = new Set(PAINT_ZONES.map((zone) => paint.zones[zone]?.family));
       if (paint.absent) groups.absent.push(fdi);
-      if (families.has('condition') || paint.lesion || paint.flagged) groups.condition.push(fdi);
+      // Tartar and plaque are findings of the tooth even though nothing is painted on a part of it.
+      if (families.has('condition') || paint.lesion || paint.flagged || paint.deposit.calculus || paint.deposit.plaque) groups.condition.push(fdi);
+      if (paint.suspected) groups.suspected.push(fdi);
       if (paint.planned || families.has('planned')) groups.planned.push(fdi);
       if (families.has('existing')) groups.existing.push(fdi);
     }
@@ -408,6 +444,13 @@ export class Dental3dChartComponent {
 
   /** Gum state beside the teeth: it is part of the mouth, and has no shape of its own in the model. */
   protected readonly gums = computed(() => (this.sidePanel() ? this.records.periodontal()?.current ?? [] : []));
+
+  /** A finding as it is said on the chart: its name, its faces, and that it is only suspected when it is. */
+  private findingText(f: ToothFinding): string {
+    const label = findingLabel(this.translate, f.findingCode ?? '');
+    const said = f.surface ? `${label} ${surfaceShorthand(f.surface)}` : label;
+    return f.certainty === 'SUSPECTED' ? `${said} (${this.translate.instant('TOOTH_DETAIL.CERTAINTY.SUSPECTED_BADGE')})` : said;
+  }
 
   protected readonly focusCard = computed(() => {
     const fdi = this.focusFdi();
@@ -428,9 +471,10 @@ export class Dental3dChartComponent {
     const top = Math.min(Math.max(y - stage.top + 16, 4), stage.height - 96);
     const surface = hit ? surfaceOfZone(hit.zone, fdi) : null;
     const zone = hit
-      ? hit.zone === 'root' ? this.translate.instant('DENTAL_3D.ROOT') : surface ? this.translate.instant(`SURFACE.${surface.toUpperCase()}`) : null
+      ? hit.gum ? this.translate.instant('DENTAL_3D.GUM')
+        : hit.zone === 'root' ? this.translate.instant('DENTAL_3D.ROOT') : surface ? this.translate.instant(`SURFACE.${surface.toUpperCase()}`) : null
       : null;
-    const lines = (this.activeByTooth().get(fdi) ?? []).slice(0, 4).map((f) => findingLabel(this.translate, f.findingCode ?? ''));
+    const lines = (this.activeByTooth().get(fdi) ?? []).slice(0, 4).map((f) => this.findingText(f));
     return { fdi, left, top, title: `${fdi} · ${this.translate.instant(`TOOTH_NAME.${fdi}`)}`, zone, lines };
   });
 
@@ -466,6 +510,8 @@ export class Dental3dChartComponent {
       );
     });
     effect(() => this.engine()?.setPaint(this.paints()));
+    effect(() => this.engine()?.setGumPaint(this.gumByTooth()));
+    effect(() => this.engine()?.setGums(this.view.gums()));
     effect(() => this.engine()?.setView(this.view.view()));
     effect(() => this.engine()?.setSelected(this.selected()));
     effect(() => this.engine()?.setFocus(this.focusFdi()));
@@ -506,7 +552,7 @@ export class Dental3dChartComponent {
     });
     effect(() => {
       const patientId = this.chart().patientId;
-      if (this.sidePanel()) untracked(() => this.records.loadPeriodontal(patientId));
+      untracked(() => this.records.loadPeriodontal(patientId));
     });
     effect(() => {
       // Another tooth: the face picked on the last one means nothing on this one.
@@ -531,7 +577,8 @@ export class Dental3dChartComponent {
   });
 
   private readonly pickedZones = computed<PaintZone[]>(() =>
-    parseSurface(this.pickedSurface()).map((surface) => (surface === 'incisal' ? 'occlusal' : surface)));
+    parseSurface(this.pickedSurface()).map((surface): PaintZone =>
+      surface === 'incisal' ? 'occlusal' : isRootSurface(surface) ? 'root' : surface));
 
   private attachedTo: HTMLElement | null = null;
 
@@ -742,10 +789,7 @@ export class Dental3dChartComponent {
     return [
       `${fdi}, ${this.translate.instant(`TOOTH_NAME.${fdi}`)}`,
       ...(paint?.absent ? [this.translate.instant('DENTAL_3D.LEGEND.ABSENT')] : []),
-      ...(this.activeByTooth().get(fdi) ?? []).map((f) => {
-        const label = findingLabel(this.translate, f.findingCode ?? '');
-        return f.surface ? `${label} ${surfaceShorthand(f.surface)}` : label;
-      }),
+      ...(this.activeByTooth().get(fdi) ?? []).map((f) => this.findingText(f)),
       ...(paint?.staged ? [this.translate.instant('VOICE.LEGEND_STAGED')] : []),
       ...(paint?.treatment ? [this.translate.instant(`DENTAL_3D.LEGEND.RING_${paint.treatment}`)] : []),
     ].join(', ');

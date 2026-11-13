@@ -2,6 +2,7 @@ import {
   Box3,
   BackSide,
   BufferGeometry,
+  Matrix4,
   ColorManagement,
   DataTexture,
   DoubleSide,
@@ -32,13 +33,15 @@ import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.j
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DentalChartType } from '../../core/models/patient.model';
-import type { DentitionView } from '../../core/services/dental-3d-view.service';
+import { DentitionView, isArchView } from '../../core/services/dental-3d-view.service';
 import {
-  PATTERN_ID, PAINT_ZONES, PaintZone, ToothPaint, ZONE_COLOUR, ZONE_LIMITS, rgbTriplet, zoneAt,
+  GumPaint, PATTERN_ID, PAINT_ZONES, PaintZone, ToothPaint, ZONE_COLOUR, ZONE_LIMITS, rgbTriplet, zoneAt,
 } from '../../core/clinical/tooth-paint';
 import { FAMILY_PAINT, VOICE_FOCUS_INK, VOICE_STAGED_INK } from '../../core/clinical/tooth-status';
 import { DENTITION_ASSETS } from './dentition-assets.generated';
 import { DentitionLayout, ToothMetrics, fitDistance, layoutFor } from './dentition-layout';
+import { GUM_SLOT_OFFSET, GUM_SLOTS_PER_JAW, GumJaw, GumModel, buildGum, slotOfTooth, toothAtSlot } from './gum-geometry';
+import { GUM_FRAGMENT, GUM_VERTEX } from './gum-shaders';
 
 /**
  * Draws the teeth. Framework-free, one per page, kept for the life of the app.
@@ -59,9 +62,19 @@ import { DentitionLayout, ToothMetrics, fitDistance, layoutFor } from './dentiti
 
 /** Height of the state texture. Permanent and primary teeth together fit well inside. */
 const MAX_TEETH = 64;
-/** The seven parts of a tooth, plus one texel for the tooth as a whole. */
-const STATE_COLUMNS = PAINT_ZONES.length + 1;
+/** The seven parts of a tooth, one texel for the tooth as a whole, one for the tartar and plaque at its neck. */
+const STATE_COLUMNS = PAINT_ZONES.length + 2;
 const TOOTH_COLUMN = PAINT_ZONES.length;
+const DEPOSIT_COLUMN = PAINT_ZONES.length + 1;
+/** The gum's state texture: three texels of effects for each slot of each jaw. */
+const GUM_TEXELS = 3;
+const GUM_ROWS = GUM_SLOTS_PER_JAW * 2;
+const GUM_FADE_MS = 360;
+/** What a tooth's width is to a millimetre, in model units: a molar's crown is about ten across and 0.36 wide. */
+const MODEL_UNITS_PER_MM = 0.036;
+/** A gum that has receded as far as the picture goes: six millimetres, in model units. */
+const GUM_FULL_RECESSION_MM = 6;
+const GUM_FULL_RECESSION = GUM_FULL_RECESSION_MM * MODEL_UNITS_PER_MM;
 
 const FOV = 20;
 /** Pattern marks per model unit: about a millimetre apart, as on the 2D chart. Closer when one tooth fills the view. */
@@ -158,7 +171,14 @@ const FRAGMENT = /* glsl */ `
     if (id == 7) return lines(q.x - q.y, 0.24);                                 // jag
     if (id == 8) return max(lines(q.x + q.y, 0.14), lines(q.x - q.y, 0.14));    // cross
     if (id == 9) return lines((q.x + q.y) * 0.7, 0.2);                          // owed
+    if (id == 10) return dots(q * 0.9, 0.3);                                    // suspected
     return 0.0;
+  }
+
+  float hash3(vec3 p) {
+    p = fract(p * 0.3183099 + 0.1);
+    p *= 17.0;
+    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
   }
 
   void main() {
@@ -175,9 +195,26 @@ const FRAGMENT = /* glsl */ `
     vec4 paint = texelFetch(uState, ivec2(zone, uTooth), 0);
     int pattern = int(paint.a * 255.0 + 0.5);
     if (pattern > 0) {
-      float wash = pattern == 1 ? 0.78 : pattern == 9 ? 0.26 : 0.46;
+      float wash = pattern == 1 ? 0.78 : pattern == 9 ? 0.26 : pattern == 10 ? 0.16 : 0.46;
       float mark = patternMark(pattern, vObject);
       base = mix(base, paint.rgb, wash + (0.96 - wash) * mark);
+    }
+
+    // Tartar and plaque, at the neck of the faces they were recorded on: a crust, and a film.
+    vec4 deposit = texelFetch(uState, ivec2(${DEPOSIT_COLUMN}, uTooth), 0);
+    int calculus = int(deposit.r * 255.0 + 0.5) / 16;
+    int plaque = int(deposit.g * 255.0 + 0.5) / 16;
+    if ((calculus | plaque) != 0 && vLocal.z >= 0.0 && !uCrownLost) {
+      int face = abs(vLocal.x) > abs(vLocal.y) ? (vLocal.x > 0.0 ? 1 : 2) : (vLocal.y > 0.0 ? 4 : 8);
+      float grain = hash3(floor(vObject * 140.0));
+      float ragged = 0.5 * hash3(floor(vObject * 30.0 + 5.0));
+      if ((plaque & face) != 0) {
+        base = mix(base, vec3(0.93, 0.86, 0.55), 0.62 * (1.0 - smoothstep(0.1, 0.34 + ragged * 0.1, vLocal.z)));
+      }
+      if ((calculus & face) != 0) {
+        vec3 crust = mix(vec3(0.50, 0.35, 0.16), vec3(0.72, 0.56, 0.30), grain);
+        base = mix(base, crust, 0.94 * (1.0 - smoothstep(0.12, 0.30 + ragged * 0.22, vLocal.z)));
+      }
     }
 
     vec3 keyDir = normalize(vec3(0.32, 0.5, 0.8));
@@ -302,11 +339,20 @@ interface ToothObject {
   lesion: Mesh | null;
 }
 
+interface GumMesh {
+  readonly jaw: 'upper' | 'lower';
+  readonly mesh: Mesh;
+  readonly data: GumJaw;
+}
+
 interface DentitionSet {
   readonly teeth: ToothObject[];
   readonly byFdi: Map<string, ToothObject>;
   readonly group: Group;
   readonly positionScale: number;
+  /** The gums and the palate built round these teeth, and the meshes that draw them. */
+  readonly gum: GumModel;
+  readonly gumMeshes: readonly GumMesh[];
 }
 
 /** The faces named around a tooth in close-up. */
@@ -324,6 +370,8 @@ export function mesialSign(fdi: string): 1 | -1 {
 export interface DentitionHit {
   readonly fdi: string;
   readonly zone: PaintZone;
+  /** The point was on the gum of this tooth, not on the tooth: its zone is the neck. */
+  readonly gum?: boolean;
 }
 
 /** What the page wants to hear about. Called outside Angular's change detection on purpose. */
@@ -382,6 +430,21 @@ export class DentitionEngine {
   private readonly ghostUniforms = { ...this.toothUniforms, uTooth: { value: 0 }, uAnterior: { value: false }, uCrownLost: { value: false }, uAlpha: { value: 0.03 }, uHoverZone: { value: -1 }, uPickedZones: { value: 0 } };
   private readonly toothMaterial: RawShaderMaterial;
   private readonly ghostMaterial: RawShaderMaterial;
+  private readonly gumData = new Uint8Array(GUM_TEXELS * GUM_ROWS * 4);
+  private readonly gumTexture = new DataTexture(this.gumData, GUM_TEXELS, GUM_ROWS, RGBAFormat, UnsignedByteType);
+  private readonly gumUniforms = {
+    uGum: { value: this.gumTexture },
+    uFade: { value: 0 },
+    uSeeThrough: { value: 1 },
+    uHoverSlot: { value: -1 },
+    uSelectedSlot: { value: -1 },
+    uRecession: { value: GUM_FULL_RECESSION },
+  };
+  private readonly gumMaterial: RawShaderMaterial;
+  private gumPaint: ReadonlyMap<string, GumPaint> = new Map();
+  private gumsWanted = true;
+  private gumAlpha = 0;
+  private gumTarget = 0;
   private readonly selectOutline: Mesh;
   private readonly hoverOutline: Mesh;
   private readonly focusOutline: Mesh;
@@ -441,6 +504,15 @@ export class DentitionEngine {
     this.stateTexture.minFilter = NearestFilter;
     this.stateTexture.generateMipmaps = false;
     this.stateTexture.needsUpdate = true;
+
+    this.gumTexture.magFilter = NearestFilter;
+    this.gumTexture.minFilter = NearestFilter;
+    this.gumTexture.generateMipmaps = false;
+    this.gumTexture.needsUpdate = true;
+    this.gumMaterial = new RawShaderMaterial({
+      glslVersion: GLSL3, vertexShader: GUM_VERTEX, fragmentShader: GUM_FRAGMENT,
+      uniforms: this.gumUniforms, side: FrontSide, transparent: true, depthWrite: false, blending: NormalBlending,
+    });
 
     this.toothMaterial = new RawShaderMaterial({
       glslVersion: GLSL3, vertexShader: VERTEX, fragmentShader: FRAGMENT,
@@ -544,6 +616,9 @@ export class DentitionEngine {
     this.ghostUniforms.uPositionScale = this.toothUniforms.uPositionScale;
     this.applyLayout(false);
     this.applyPaint();
+    this.applyGumPaint();
+    this.gumAlpha = this.gumTarget;
+    this.syncGum();
     this.fitCamera(false);
     this.invalidate();
   }
@@ -587,7 +662,22 @@ export class DentitionEngine {
       };
       return tooth;
     });
-    return { teeth, byFdi: new Map(teeth.map((t) => [t.fdi, t])), group, positionScale };
+    // The mouth the teeth stand in: gums and palate, round the teeth as they are in the natural arch.
+    const gum = buildGum(teeth.map((t) => t.metrics));
+    const gumMeshes: GumMesh[] = [];
+    for (const jaw of ['upper', 'lower'] as const) {
+      const data = gum[jaw];
+      if (!data) continue;
+      const mesh = new Mesh(data.geometry, this.gumMaterial);
+      mesh.matrixAutoUpdate = false;
+      mesh.frustumCulled = false;
+      // After the teeth, and after the see-through ones of an absent tooth.
+      mesh.renderOrder = 10;
+      mesh.visible = false;
+      group.add(mesh);
+      gumMeshes.push({ jaw, mesh, data });
+    }
+    return { teeth, byFdi: new Map(teeth.map((t) => [t.fdi, t])), group, positionScale, gum, gumMeshes };
   }
 
   private bindTooth(tooth: ToothObject): void {
@@ -638,6 +728,13 @@ export class DentitionEngine {
         this.stateData[at + 2] = rim.colour[2];
         this.stateData[at + 3] = rim.strength;
       }
+      // Tartar and plaque at the neck: the faces each covers, in the upper four bits.
+      if (paint && (paint.deposit.calculus || paint.deposit.plaque)) {
+        const at = rowStart + DEPOSIT_COLUMN * 4;
+        this.stateData[at] = paint.deposit.calculus << 4;
+        this.stateData[at + 1] = paint.deposit.plaque << 4;
+        this.stateData[at + 3] = 255;
+      }
       tooth.absent = !!paint?.absent;
       tooth.crownLost = !!paint?.crownLost;
       tooth.mesh.material = tooth.absent ? this.ghostMaterial : this.toothMaterial;
@@ -660,6 +757,62 @@ export class DentitionEngine {
     }
   }
 
+  /**
+   * What the gum shows round each tooth, from what was recorded about it and about its part of the
+   * mouth. One small upload, like the teeth's own record.
+   */
+  setGumPaint(paints: ReadonlyMap<string, GumPaint>): void {
+    this.gumPaint = paints;
+    this.applyGumPaint();
+    this.invalidate();
+  }
+
+  private applyGumPaint(): void {
+    const set = this.active;
+    if (!set) return;
+    this.gumData.fill(0);
+    const byte = (value: number | undefined) => Math.round(Math.min(1, Math.max(0, value ?? 0)) * 255);
+    for (const [fdi, paint] of this.gumPaint) {
+      const slot = slotOfTooth(set.gum, fdi);
+      if (slot < 0) continue;
+      // A measured recession is drawn as measured; one that was only said is drawn as what it was said to be.
+      const recession = paint.recessionMm !== undefined ? paint.recessionMm / GUM_FULL_RECESSION_MM : paint.recession;
+      const at = slot * GUM_TEXELS * 4;
+      [paint.inflamed, paint.swollen, recession, paint.pocket,
+        paint.perio, paint.bleeding, paint.pus, paint.ulcer,
+        paint.pigment, paint.abscess, paint.lesion, paint.pale].forEach((value, i) => { this.gumData[at + i] = byte(value); });
+    }
+    this.gumTexture.needsUpdate = true;
+  }
+
+  /** Whether the mouth view draws its gums and palate. */
+  setGums(on: boolean): void {
+    this.gumsWanted = on;
+    this.syncGum();
+    this.invalidate();
+  }
+
+  /** Where the gum's fade is heading: in with the mouth view and its gums, out with anything else. */
+  private syncGum(): void {
+    const set = this.active;
+    this.gumTarget = this.gumsWanted && this.view === 'overview' && !!this.layout?.jaws && !this.zoomedFdi && !!set ? 1 : 0;
+    if (!set) return;
+    const jaws = this.layout?.jaws;
+    for (const { jaw, mesh } of set.gumMeshes) {
+      if (jaws) {
+        mesh.matrix.copy(jaws[jaw] as Matrix4);
+        mesh.matrixWorldNeedsUpdate = true;
+      }
+      mesh.visible = this.gumAlpha > 0.01 || this.gumTarget > 0;
+    }
+    this.gumUniforms.uFade.value = this.gumAlpha;
+  }
+
+  private gumSlot(fdi: string | null): number {
+    const set = this.active;
+    return fdi && set ? slotOfTooth(set.gum, fdi) : -1;
+  }
+
   /* ── What is being looked at ────────────────────────────────────────── */
 
   setView(view: DentitionView, animate = true): void {
@@ -672,6 +825,7 @@ export class DentitionEngine {
 
   setSelected(fdi: string | null): void {
     this.selectedFdi = fdi;
+    this.gumUniforms.uSelectedSlot.value = this.gumSlot(fdi);
     this.applyOutlines();
     this.invalidate();
   }
@@ -699,6 +853,7 @@ export class DentitionEngine {
     this.zoomedFdi = fdi && set?.byFdi.has(fdi) ? fdi : null;
     if (set) for (const tooth of set.teeth) tooth.mesh.visible = !this.zoomedFdi || tooth.fdi === this.zoomedFdi;
     this.toothUniforms.uPitch.value = this.zoomedFdi ? PATTERN_PITCH_ZOOMED : PATTERN_PITCH;
+    this.syncGum();
     this.applyOrbitLimits();
     this.applyOutlines();
     this.fitCamera(true);
@@ -770,7 +925,7 @@ export class DentitionEngine {
     place(this.hoverOutline, this.hoveredFdi === this.selectedFdi || this.hoveredFdi === this.focusFdi ? null : this.hoveredFdi);
     const set = this.active;
     if (set) {
-      const rows = this.view !== 'arch' && !this.zoomedFdi;
+      const rows = !isArchView(this.view) && !this.zoomedFdi;
       for (const tooth of set.teeth) {
         tooth.liftTarget = rows && (tooth.fdi === this.focusFdi || tooth.fdi === this.selectedFdi) ? 1 : 0;
       }
@@ -792,6 +947,7 @@ export class DentitionEngine {
       this.viewProgress = 1;
       this.composeTeeth(1);
     }
+    this.syncGum();
     this.applyOrbitLimits();
   }
 
@@ -922,6 +1078,14 @@ export class DentitionEngine {
       if (this.cameraProgress >= 1) this.cameraFrom = this.cameraTo = null;
       moving = true;
     }
+    if (this.gumAlpha !== this.gumTarget) {
+      const step = dt / GUM_FADE_MS;
+      // In unhurried, out quickly: the gum must be gone before the teeth have flown from it.
+      this.gumAlpha = this.reducedMotion ? this.gumTarget
+        : this.gumTarget > this.gumAlpha ? Math.min(this.gumTarget, this.gumAlpha + step) : Math.max(this.gumTarget, this.gumAlpha - step * 2);
+      this.syncGum();
+      moving = true;
+    }
     const set = this.active;
     if (set) {
       for (const tooth of set.teeth) {
@@ -986,7 +1150,7 @@ export class DentitionEngine {
     const events = this.events;
     if (!set || !events) return;
     this.camera.updateMatrixWorld();
-    const rows = this.view !== 'arch';
+    const rows = !isArchView(this.view);
     for (const tooth of set.teeth) {
       if (tooth.fdi === this.zoomedFdi) {
         // Alone in the frame, its number keeps one place above it: the keyboard's focus is on it.
@@ -1089,16 +1253,32 @@ export class DentitionEngine {
     for (const tooth of set.teeth) {
       if (tooth.mesh.visible) tooth.mesh.raycast(this.raycaster, this.hits);
     }
-    if (!this.hits.length) return null;
-    this.hits.sort((a, b) => a.distance - b.distance);
-    // Through the part of a tooth whose crown is gone, to whatever is behind it.
-    for (const hit of this.hits) {
-      const tooth = set.teeth.find((t) => t.mesh === hit.object)!;
-      const zone = this.zoneOfHit(tooth, hit);
-      if (tooth.crownLost && zone !== 'root') continue;
-      return { fdi: tooth.fdi, zone };
+    if (this.hits.length) {
+      this.hits.sort((a, b) => a.distance - b.distance);
+      // Through the part of a tooth whose crown is gone, to whatever is behind it.
+      for (const hit of this.hits) {
+        const tooth = set.teeth.find((t) => t.mesh === hit.object)!;
+        const zone = this.zoneOfHit(tooth, hit);
+        if (tooth.crownLost && zone !== 'root') continue;
+        return { fdi: tooth.fdi, zone };
+      }
     }
-    return null;
+    return this.pickGum(set);
+  }
+
+  /** The gum of a tooth, when nothing but gum is under the pointer: pointing at it is pointing at the tooth. */
+  private pickGum(set: DentitionSet): DentitionHit | null {
+    if (this.gumAlpha < 0.5) return null;
+    const hits: Intersection[] = [];
+    for (const { mesh } of set.gumMeshes) if (mesh.visible) mesh.raycast(this.raycaster, hits);
+    if (!hits.length) return null;
+    hits.sort((a, b) => a.distance - b.distance);
+    const marks = ((hits[0].object as Mesh).geometry as BufferGeometry).getAttribute('_g') as BufferAttribute;
+    const vertex = hits[0].face!.a;
+    // The palate and the ends of the arch belong to no tooth.
+    if (marks.getW(vertex) !== 0) return null;
+    const fdi = toothAtSlot(set.gum, marks.getX(vertex));
+    return fdi ? { fdi, zone: 'cervical', gum: true } : null;
   }
 
   private zoneOfHit(tooth: ToothObject, hit: Intersection): PaintZone {
@@ -1118,6 +1298,7 @@ export class DentitionEngine {
     const zoneIndex = zone ? PAINT_ZONES.indexOf(zone) : -1;
     if (fdi === this.hoveredFdi && zoneIndex === this.hoveredZoneIndex) return;
     this.hoveredFdi = fdi;
+    this.gumUniforms.uHoverSlot.value = this.gumSlot(fdi);
     this.hoveredZoneIndex = fdi && (fdi === this.selectedFdi || fdi === this.zoomedFdi) ? zoneIndex : -1;
     this.applyOutlines();
     this.syncOutlines();
@@ -1185,6 +1366,7 @@ export class DentitionEngine {
 
   private readonly onContextRestored = (): void => {
     this.stateTexture.needsUpdate = true;
+    this.gumTexture.needsUpdate = true;
     this.invalidate();
   };
 

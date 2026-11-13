@@ -7,7 +7,7 @@ import { ClinicalRecordService } from '../services/clinical-record.service';
 import { DentalChartService } from '../services/dental-chart.service';
 import { PatientService } from '../services/patient.service';
 import { ScheduleService } from '../services/schedule.service';
-import { VoiceCommandsService } from './register-voice-commands';
+import { VoiceCommandsService, previewSurface } from './register-voice-commands';
 import { VoiceCommandRegistryService } from './voice-command-registry.service';
 import { VoiceContextService } from './voice-context.service';
 import { VoiceContextSnapshot } from './voice-intent.model';
@@ -243,5 +243,15 @@ describe('VoiceCommandsService — a task for the team', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('previewSurface', () => {
+  it('keeps the faces of a crown as they were and names each root', () => {
+    expect(previewSurface('mesial')).toBe('mesial');
+    expect(previewSurface('mesial-occlusal')).toBe('mesial-occlusal');
+    expect(previewSurface('mesialroot')).toBe('mesial root');
+    expect(previewSurface('occlusal-mesialroot-distalroot')).toBe('occlusal, mesial root, distal root');
+    expect(previewSurface('buccalroot-lingualroot')).toBe('buccal root, lingual root');
   });
 });

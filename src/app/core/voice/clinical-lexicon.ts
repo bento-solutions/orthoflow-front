@@ -24,8 +24,16 @@
  * every French term that ends in an accent.
  */
 
-import { unicodeBoundaries } from './voice-regex';
+import { WORD_CLASS, unicodeBoundaries } from './voice-regex';
 import { clauseBounds, clauseAround, isNegatedAt } from './voice-negation';
+import { MEASURES } from '../clinical/finding-referential';
+import {
+  LEGACY_ARABIC_PATTERNS,
+  LEGACY_PATTERN_ADDITIONS,
+  REFERENTIAL_AFTER,
+  REFERENTIAL_FIRST,
+  REFERENTIAL_REQUIRED_EQUIVALENT,
+} from './clinical-lexicon-referential';
 
 export type FindingKind = 'EXISTING' | 'CONDITION' | 'TREATMENT_REQUIRED' | 'OBSERVATION';
 export type Severity = 'MILD' | 'MODERATE' | 'SEVERE';
@@ -46,11 +54,14 @@ const F = (code: string, kind: FindingKind, label: string, ...patterns: RegExp[]
   ({ code, kind, label, patterns });
 
 /**
- * Ordered most-specific first. "Treatment required" phrasings come before the
- * "already present" ones for the same restoration, because "needs a crown"
+ * The base vocabulary, ordered most-specific first. "Treatment required" phrasings come
+ * before the "already present" ones for the same restoration, because "needs a crown"
  * and "has a crown" share the word that would otherwise decide it.
+ *
+ * It is not what the lexicon finally reads: {@link FINDINGS} puts the referential's more exact
+ * states (clinical-lexicon-referential.ts) in front of it and its tartar and plaque after it.
  */
-export const FINDINGS: FindingDefinition[] = [
+const BASE_FINDINGS: FindingDefinition[] = [
   // ── Treatment required ──────────────────────────────────────────────
   F('crown_replacement_required', 'TREATMENT_REQUIRED', 'Crown replacement required',
     /\bcrowns?\s+(?:needs?|requires?|to\s+be|has\s+to\s+be|must\s+be)\s+(?:a\s+)?(?:replac\w*|redone|remade|changed)/iu,
@@ -178,14 +189,16 @@ export const FINDINGS: FindingDefinition[] = [
   F('missing', 'CONDITION', 'Missing',
     /\bmissing\b/iu, /\babsent\b/iu, /\bnot\s+present\b/iu, /\bmanquante?s?\b/iu, /\babsente?s?\b/iu),
 
+  // "Non éruptée" is its own state (unerupted): an impacted tooth is one that is held, not one that is yet to come.
   F('impacted', 'CONDITION', 'Impacted',
-    /\bimpacted\b/iu, /\bunerupted\b/iu, /\bincluse?\b/iu, /\bnon\s+[ée]rupt[ée]e?\b/iu),
+    /\bimpacted\b/iu, /\bincluse?s?\b/iu),
 
   F('abscess', 'CONDITION', 'Abscess',
     /\babscess\w*/iu, /\bfistula\b/iu, /\babc[èe]s\b/iu),
 
+  // "Suppuration" is its own state now, with the pus of the gum.
   F('infection', 'CONDITION', 'Infection',
-    /\binfect(?:ions?|ed)\b/iu, /\bsuppurat\w+/iu, /\binfect[ée]e?s?\b/iu),
+    /\binfect(?:ions?|ed)\b/iu, /\binfect[ée]e?s?\b/iu),
 
   F('mobility', 'CONDITION', 'Mobility',
     /\bmobilit(?:y|[ée])\b/iu, /\b(?:tooth\s+is\s+)?(?:loose|wobbly)\b/iu, /\bmobile\b/iu),
@@ -198,25 +211,27 @@ export const FINDINGS: FindingDefinition[] = [
     /\bpain(?:ful)?\b/iu, /\baches?\b/iu, /\baching\b/iu, /\bdouleur\w*/iu, /\bdouloureu\w+/iu,
     /\btoothache\b/iu, /\bhurts?\b/iu),
 
+  // Attrition, abrasion, erosion and abfraction are states of their own; this is wear said without a cause.
   F('tooth_wear', 'CONDITION', 'Tooth wear',
-    /\b(?:tooth\s+)?wear\b/iu, /\battrition\b/iu, /\berosion\b/iu, /\babfraction\b/iu,
-    /\bbruxism\b/iu, /\bbruxisme\b/iu, /\busure\b/iu, /\b[ée]rosion\b/iu),
+    /\b(?:tooth\s+)?wear\b/iu, /\bbruxism\b/iu, /\bbruxisme\b/iu, /\busure\b/iu),
 
   F('discoloration', 'CONDITION', 'Discoloration',
     /\bdiscolo\w+/iu, /\bstain(?:ed|ing)?\b/iu, /\bd[ée]color\w+/iu, /\btach[ée]e?\b/iu,
     /\bcolor[ée]e?\b/iu),
 
+  // Gingivitis and bleeding gums are states of their own (gingivitis, gingival_bleeding).
   F('gingival_inflammation', 'CONDITION', 'Gingival inflammation',
-    /\bgingivitis\b/iu, /\bgingival\s+inflammation\b/iu, /\b(?:inflamed|swollen|bleeding)\s+gums?\b/iu,
-    /\bgums?\s+(?:are\s+)?(?:inflamed|swollen|bleeding)\b/iu,
-    /\bgingivite\b/iu, /\bgencives?\s+(?:enflamm[ée]es?|gonfl[ée]es?|qui\s+saignent)/iu,
+    /\bgingival\s+inflammation\b/iu, /\b(?:inflamed|swollen)\s+gums?\b/iu,
+    /\bgums?\s+(?:are\s+)?(?:inflamed|swollen)\b/iu,
+    /\binflammation\s+gingivale\b/iu, /\bgencives?\s+(?:enflamm[ée]es?|gonfl[ée]es?)/iu,
     // A bare "inflammation" ("not caries, it's inflammation"): the soft tissue, unless a
     // pulp or periapical word before it has already claimed the phrase.
     /\binflammation\b/iu, /\binflamm[ée]e?s?\b/iu),
 
+  // Periodontitis is a state of its own now.
   F('periodontal_pocket', 'CONDITION', 'Periodontal pocket',
-    /\b(?:periodontal\s+)?pockets?\b/iu, /\bperiodontitis\b/iu,
-    /\bpoche\s+parodontale\b/iu, /\bparodontite\b/iu),
+    /\b(?:periodontal\s+)?pockets?\b/iu,
+    /\bpoches?\s+(?:parodontales?|pathologiques?|profondes?)\b/iu, /\bpoches?\b/iu),
 
   F('gingival_recession', 'CONDITION', 'Gingival recession',
     /\b(?:gingival\s+|gum\s+)?recession\b/iu, /\br[ée]cession(?:\s+gingivale)?\b/iu),
@@ -227,14 +242,17 @@ export const FINDINGS: FindingDefinition[] = [
   F('swelling', 'CONDITION', 'Swelling',
     /\bswell\w+/iu, /\bgonflements?\b/iu, /\bgonfl[ée]e?s?\b/iu, /\btum[ée]faction\b/iu),
 
+  // Both together, as "plaque et tartre" is said. Tartar alone and plaque alone are states of their own
+  // (calculus, plaque), read after this one has had the phrase.
   F('plaque_calculus', 'CONDITION', 'Plaque / calculus',
-    /\bcalculus\b/iu, /\btartar\b/iu, /\bplaque\b/iu, /\btartre\b/iu),
+    /\bplaque\s*(?:et|and|&|\/|\+|,)\s*(?:de\s+)?(?:tartre|calculus|tartar)\b/iu,
+    /\b(?:tartre|calculus|tartar)\s*(?:et|and|&|\/|\+|,)\s*(?:de\s+)?plaque\b/iu),
 
+  // The general word. Crowding, rotation, tilting, displacement, intrusion, extrusion and the rest are
+  // states of their own (clinical-lexicon-referential.ts).
   F('malposition', 'CONDITION', 'Malposition',
-    /\bmalpositioned?\b/iu, /\bcrowded?\b/iu, /\brotated?\b/iu, /\bmalposition\w*/iu,
-    /\bencombrement\b/iu, /\bversion\b/iu,
-    /\ben\s+rotation\b/iu, /\brotation\b/iu, /\b[ée]gression\b/iu, /\bextrusion\b/iu,
-    /\bectopi\w+/iu, /\b(?:supra|infra)[- ]?(?:position|occlusion)\b/iu),
+    /\bmalpositioned?\b/iu, /\bmalposition\w*/iu, /\bmalpos[ée]e?s?\b/iu, /\bmal[- ]?plac[ée]e?s?\b/iu,
+    /\bmal[- ]?align\w*/iu, /\bmisalign\w*/iu),
 
   // ── Existing restorations ───────────────────────────────────────────
   F('existing_crown', 'EXISTING', 'Existing crown',
@@ -260,8 +278,9 @@ export const FINDINGS: FindingDefinition[] = [
     /\b(?:post\s+and\s+core|post\b|pivot\b|inlay[- ]core)/iu, /\btenon\b/iu,
     /\breconstitution\s+corono[- ]?radiculaire\b/iu, /\bfaux[- ]moignon\b/iu, /\brcr\b/iu),
 
-  F('existing_inlay', 'EXISTING', 'Existing inlay / onlay',
-    /\b(?:inlay|onlay)s?\b/iu, /\binlays?[- ]?onlays?\b/iu),
+  // The onlay and the overlay are states of their own. "Inlay-onlay", said as one word, stays an inlay.
+  F('existing_inlay', 'EXISTING', 'Existing inlay',
+    /\binlays?[- ]?onlays?\b/iu, /\binlays?\b/iu),
 
   F('existing_amalgam', 'EXISTING', 'Existing amalgam',
     /\bamalgam\w*/iu, /\bsilver\s+filling/iu, /\bamalgame\b/iu),
@@ -272,7 +291,8 @@ export const FINDINGS: FindingDefinition[] = [
   F('existing_sealant', 'EXISTING', 'Existing sealant',
     /\bsealant\b/iu, /\bscellement\s+de\s+sillons\b/iu),
 
-  F('existing_deciduous', 'EXISTING', 'Deciduous tooth retained',
+  // A persistent one ("dent temporaire persistante") is its own state, claimed before this.
+  F('existing_deciduous', 'EXISTING', 'Deciduous tooth',
     /\b(?:retained\s+)?(?:deciduous|baby|milk|primary)\s+tooth\b/iu, /\bdent\s+de\s+lait\b/iu),
 
   // Generic "filling" last, so amalgam/composite claim their specific code first.
@@ -301,11 +321,29 @@ export const FINDINGS: FindingDefinition[] = [
 ];
 
 /**
+ * What the lexicon reads, in this order: the referential's exact states (so "fracture radiculaire" is
+ * not a "fracture"), the base vocabulary widened with the referential's synonyms and with the Arabic
+ * names of its states, then the referential's tartar and plaque (after the base's "plaque et tartre").
+ */
+export const FINDINGS: FindingDefinition[] = [
+  ...REFERENTIAL_FIRST,
+  ...BASE_FINDINGS.map(definition => ({
+    ...definition,
+    patterns: [
+      ...(LEGACY_PATTERN_ADDITIONS[definition.code] ?? []),
+      ...definition.patterns,
+      ...(LEGACY_ARABIC_PATTERNS[definition.code] ?? []),
+    ],
+  })),
+  ...REFERENTIAL_AFTER,
+];
+
+/**
  * What a patient feels or sees and says themself. "Vous avez mal à la 16" is a
  * question or a conversation; "vous avez une carie sur la 16" is the doctor
  * telling the chart. Only the second may open a sentence that needs no wake word.
  */
-export const SYMPTOM_CODES: ReadonlySet<string> = new Set(['pain', 'sensitivity', 'bleeding', 'swelling']);
+export const SYMPTOM_CODES: ReadonlySet<string> = new Set(['pain', 'sensitivity', 'bleeding', 'gingival_bleeding', 'swelling']);
 
 const FINDING_BY_CODE = new Map(FINDINGS.map(f => [f.code, f]));
 
@@ -342,8 +380,66 @@ const SURFACES: Array<{ code: string; pattern: RegExp }> = [
  */
 const PROXIMAL = /\b(?:inter)?proximal\w*|\bapproximal\w*/iu;
 
-/** A compound surface is stored joined — "mesial-occlusal" — in this order, at most this many parts. */
-const MAX_SURFACES = 3;
+/**
+ * A compound surface is stored joined — "mesial-occlusal" — in this order, at most this many parts: the
+ * five the server accepts, so that "MODB" (mésio-occluso-disto-vestibulaire) is kept whole.
+ */
+const MAX_SURFACES = 5;
+
+/**
+ * The letters a dentist charts a surface with: M, O, D, I, B or V, L or P, C (the referential's "B/V" and
+ * "L/P"). Said as a word, "une MOD sur la 46", or spelled, "M.O.D.".
+ */
+const LETTER_SURFACE: Readonly<Record<string, string>> = {
+  M: 'mesial', O: 'occlusal', D: 'distal', I: 'incisal', B: 'buccal', V: 'buccal', L: 'lingual', P: 'lingual', C: 'cervical',
+};
+
+/**
+ * Letters that read as a surface but are something else: "IV" is a stage, "ID" an identity, "OD" and "BD" a dose,
+ * "MD" a doctor, "ML" a volume, "IM" an injection.
+ */
+const NOT_SURFACE_LETTERS: ReadonlySet<string> = new Set(['IV', 'ID', 'OD', 'BD', 'MD', 'ML', 'IM']);
+
+/**
+ * The order dentists say a compound surface in: mesial (or distal, for "DO"), occlusal or incisal, distal, then
+ * the cheek or tongue side, then the neck. "MO", "DO", "MOD", "MODB", "DOL", "MI", "MIDB".
+ */
+const LETTER_ORDER = /^[MD]?[OI]?D?[BVLP]?C?$/u;
+
+/** The surfaces a run of letters names, or null when it is not a surface ("MOM", "IV", "DOM"). */
+function surfacesOfLetters(letters: string): string[] | null {
+  const upper = letters.toUpperCase();
+  const chars = [...upper];
+  if (chars.length < 2 || chars.length > 5 || chars.some(ch => !(ch in LETTER_SURFACE))) return null;
+  if (new Set(chars).size !== chars.length || NOT_SURFACE_LETTERS.has(upper) || !LETTER_ORDER.test(upper)) return null;
+  // Something of the crown has to be named: "BL" or "LC" alone is not a charting abbreviation.
+  if (!chars.some(ch => 'MODI'.includes(ch))) return null;
+  return [...new Set(chars.map(ch => LETTER_SURFACE[ch]))];
+}
+
+const WORD_START = `(?<!${WORD_CLASS})`;
+const WORD_STOP = `(?!${WORD_CLASS})`;
+/** In capitals, as a transcriber writes an abbreviation. Two letters alone are words in lower case ("do", "mo"). */
+const CAPITAL_LETTERS = new RegExp(`${WORD_START}[A-Z]{2,5}${WORD_STOP}`, 'gu');
+/** Spelled one by one: "M.O.D.", "M-O-D", "m o d". */
+const SPELLED_LETTERS = new RegExp(`${WORD_START}[MODIBVLPC](?:[.\\s-]+[MODIBVLPC]){1,4}\\.?${WORD_STOP}`, 'giu');
+/** Three letters or more are safe in lower case: "mod", "modb". */
+const MOD_FAMILY = new RegExp(`${WORD_START}mod[bvlp]?${WORD_STOP}`, 'giu');
+
+/** The surfaces said as letters in `utterance`, with the span each stands on. */
+function letterMentions(utterance: string): Array<{ codes: string[]; start: number; end: number }> {
+  const found: Array<{ codes: string[]; start: number; end: number }> = [];
+  for (const pattern of [CAPITAL_LETTERS, SPELLED_LETTERS, MOD_FAMILY]) {
+    for (const match of utterance.matchAll(pattern)) {
+      if (match.index === undefined) continue;
+      const codes = surfacesOfLetters(match[0].replace(/[^\p{L}]/gu, ''));
+      const start = match.index;
+      const end = start + match[0].length;
+      if (codes && !found.some(f => start < f.end && end > f.start)) found.push({ codes, start, end });
+    }
+  }
+  return found;
+}
 
 const SEVERITIES: Array<{ code: Severity; pattern: RegExp }> = [
   { code: 'SEVERE', pattern: /\bsevere\w*|\bdeep\b|\badvanced\b|\bs[ée]v[èe]re\b|\bprofonde?\b|\bavanc[ée]e?\b/iu },
@@ -351,16 +447,31 @@ const SEVERITIES: Array<{ code: Severity; pattern: RegExp }> = [
   { code: 'MILD', pattern: /\bmild\b|\bslight\w*|\bearly\b|\bincipient\b|\bl[ée]g[èe]re?\b|\bd[ée]butante?\b/iu },
 ];
 
-/** Every surface named in `text`, canonical order, as one value; null when none. */
-export function detectSurface(text: string): string | null {
-  const named = new Set(SURFACES.filter(s => unicodeBoundaries(s.pattern).test(text)).map(s => s.code));
-  if (unicodeBoundaries(PROXIMAL).test(text)) {
-    named.add('mesial');
-    named.add('distal');
-  }
-  const ordered = SURFACES.map(s => s.code).filter(code => named.has(code));
-  return ordered.length ? ordered.slice(0, MAX_SURFACES).join('-') : null;
-}
+/**
+ * A root of a back tooth named by what it is called: "racine mésiale", "racine mésio-vestibulaire"
+ * (the upper molar's two cheek roots are told apart by it), "palatal root". Each is stored as a
+ * surface word of its own ("mesialroot"), and the crown surface word inside it ("mésiale") is not
+ * also read as the crown's.
+ */
+const ROOT_PHRASES: ReadonlyArray<{ pattern: RegExp; codes: readonly string[] }> = [
+  { pattern: /\bracines?\s+m[ée]sio[- ]?(?:vestibulaire|buccale?)s?\b/iu, codes: ['mesialroot', 'buccalroot'] },
+  { pattern: /\bracines?\s+disto[- ]?(?:vestibulaire|buccale?)s?\b/iu, codes: ['distalroot', 'buccalroot'] },
+  { pattern: /\b(?:mesio|mesial)[- ]?buccal\s+roots?\b/iu, codes: ['mesialroot', 'buccalroot'] },
+  { pattern: /\b(?:disto|distal)[- ]?buccal\s+roots?\b/iu, codes: ['distalroot', 'buccalroot'] },
+  { pattern: /\bracines?\s+m[ée]sial\w*/iu, codes: ['mesialroot'] },
+  { pattern: /\bracines?\s+distal\w*/iu, codes: ['distalroot'] },
+  { pattern: /\bracines?\s+(?:vestibulaire|buccal)\w*/iu, codes: ['buccalroot'] },
+  { pattern: /\bracines?\s+(?:linguale?|palatine?|palatale?)s?\b/iu, codes: ['lingualroot'] },
+  { pattern: /\bmesial\s+roots?\b/iu, codes: ['mesialroot'] },
+  { pattern: /\bdistal\s+roots?\b/iu, codes: ['distalroot'] },
+  { pattern: /\bbuccal\s+roots?\b/iu, codes: ['buccalroot'] },
+  { pattern: /\b(?:palatal|palatine|lingual)\s+roots?\b/iu, codes: ['lingualroot'] },
+];
+
+const ROOT_SURFACE_CODES = ['mesialroot', 'distalroot', 'buccalroot', 'lingualroot'] as const;
+
+/** Every surface word, crown faces first, in the order a compound surface is stored. */
+const SURFACE_CODES: readonly string[] = [...SURFACES.map(s => s.code), ...ROOT_SURFACE_CODES];
 
 interface SurfaceMention {
   code: string;
@@ -368,13 +479,53 @@ interface SurfaceMention {
   end: number;
 }
 
+/** The roots named in `utterance`, with the span each phrase stands on. */
+function rootMentions(utterance: string): SurfaceMention[] {
+  const mentions: SurfaceMention[] = [];
+  const taken: Array<[number, number]> = [];
+  for (const { pattern, codes } of ROOT_PHRASES) {
+    for (const match of utterance.matchAll(unicodeBoundaries(new RegExp(pattern.source, 'giu')))) {
+      if (match.index === undefined) continue;
+      const start = match.index;
+      const end = start + match[0].length;
+      // A longer phrase said first already holds these words ("racine mésio-vestibulaire" before "racine mésiale").
+      if (taken.some(([from, to]) => start < to && end > from)) continue;
+      taken.push([start, end]);
+      for (const code of codes) mentions.push({ code, start, end });
+    }
+  }
+  return mentions;
+}
+
+/** Every surface named in `text`, canonical order, as one value; null when none. */
+export function detectSurface(text: string): string | null {
+  const roots = rootMentions(text);
+  const insideRoot = (at: number) => roots.some(r => at >= r.start && at < r.end);
+  const named = new Set(roots.map(r => r.code));
+  for (const surface of SURFACES) {
+    const pattern = unicodeBoundaries(new RegExp(surface.pattern.source, 'giu'));
+    for (const match of text.matchAll(pattern)) {
+      if (match.index !== undefined && !insideRoot(match.index)) named.add(surface.code);
+    }
+  }
+  if (unicodeBoundaries(PROXIMAL).test(text)) {
+    named.add('mesial');
+    named.add('distal');
+  }
+  for (const mention of letterMentions(text)) mention.codes.forEach(code => named.add(code));
+  const ordered = SURFACE_CODES.filter(code => named.has(code));
+  return ordered.length ? ordered.slice(0, MAX_SURFACES).join('-') : null;
+}
+
 /** Each surface word and where it stands, so it can be given to the finding it describes. */
 function surfaceMentions(utterance: string): SurfaceMention[] {
-  const mentions: SurfaceMention[] = [];
+  const roots = rootMentions(utterance);
+  const insideRoot = (at: number) => roots.some(r => at >= r.start && at < r.end);
+  const mentions: SurfaceMention[] = [...roots];
   for (const surface of SURFACES) {
     const pattern = unicodeBoundaries(new RegExp(surface.pattern.source, 'giu'));
     for (const match of utterance.matchAll(pattern)) {
-      if (match.index === undefined) continue;
+      if (match.index === undefined || insideRoot(match.index)) continue;
       mentions.push({ code: surface.code, start: match.index, end: match.index + match[0].length });
     }
   }
@@ -382,6 +533,10 @@ function surfaceMentions(utterance: string): SurfaceMention[] {
     if (match.index === undefined) continue;
     const at = { start: match.index, end: match.index + match[0].length };
     mentions.push({ code: 'mesial', ...at }, { code: 'distal', ...at });
+  }
+  // "MOD", "DO", "M.O.D.": each letter is a surface, all on the span of the abbreviation.
+  for (const { codes, start, end } of letterMentions(utterance)) {
+    for (const code of codes) mentions.push({ code, start, end });
   }
   return mentions;
 }
@@ -418,6 +573,9 @@ function surfaceClusters(utterance: string): Array<{ codes: string[]; start: num
 function assignSurfaces(utterance: string, findings: ExtractedFinding[]): void {
   const owned = new Map<ExtractedFinding, Set<string>>();
   for (const mention of surfaceClusters(utterance)) {
+    // "Déplacement vestibulaire", "migration mésiale", "lésion cervicale": the face is part of the state's
+    // own name, not where it is, and a state named for it does not also get it as a surface.
+    if (findings.some(f => mention.start >= f.at && mention.end <= f.at + f.matchedText.length)) continue;
     const clause = clauseBounds(utterance, mention.start);
     let best: ExtractedFinding | null = null;
     let bestGap = Infinity;
@@ -438,15 +596,21 @@ function assignSurfaces(utterance: string, findings: ExtractedFinding[]): void {
   for (const finding of findings) {
     const codes = owned.get(finding);
     finding.surface = codes
-      ? SURFACES.map(s => s.code).filter(code => codes.has(code)).slice(0, MAX_SURFACES).join('-')
+      ? SURFACE_CODES.filter(code => codes.has(code)).slice(0, MAX_SURFACES).join('-')
       : null;
   }
 }
 
-const MOBILITY_GRADE =
-  /\b(?:grade|degr[ée]|classe|class|stade|miller)\s*(?:de\s+)?(?:n[°o]\s*)?(1|2|3|i{1,3}|un|une|deux|trois|one|two|three)\b/iu;
+/**
+ * "Mobilité grade 2", "furcation classe II", "récession de 3 mm": a number said with a state is part
+ * of what was found. It is recorded — as the finding's note and, for a grade, as its severity —
+ * rather than dropped with the rest of the words the lexicon has no slot for.
+ */
+const GRADE_WORD =
+  /\b(?:grade|degr[ée]|classe|class|stade|miller|type)\s*(?:de\s+)?(?:n[°o]\s*)?(0|1|2|3|i{1,3}|z[ée]ro|zero|un|une|deux|trois|one|two|three)\b/iu;
 
-const GRADE_NUMBER: Readonly<Record<string, 1 | 2 | 3>> = {
+const GRADE_NUMBER: Readonly<Record<string, 0 | 1 | 2 | 3>> = {
+  '0': 0, zero: 0, 'zéro': 0,
   '1': 1, i: 1, un: 1, une: 1, one: 1,
   '2': 2, ii: 2, deux: 2, two: 2,
   '3': 3, iii: 3, trois: 3, three: 3,
@@ -454,21 +618,100 @@ const GRADE_NUMBER: Readonly<Record<string, 1 | 2 | 3>> = {
 
 const GRADE_SEVERITY: Readonly<Record<1 | 2 | 3, Severity>> = { 1: 'MILD', 2: 'MODERATE', 3: 'SEVERE' };
 
-/**
- * "Mobilité grade 2" says how mobile. The grade is recorded — as the finding's
- * severity and, verbatim, in its note — rather than dropped with the rest of
- * the words the lexicon has no slot for.
- */
-function applyMobilityGrade(utterance: string, finding: ExtractedFinding): void {
-  if (finding.code !== 'mobility') return;
+const ROMAN: Readonly<Record<number, string>> = { 1: 'I', 2: 'II', 3: 'III' };
+
+/** Millimetres, in digits or in words: "3 mm", "3,5 millimètres", "trois millimètres". */
+const MILLIMETRES =
+  /(\d+(?:[.,\u0001]\d+)?|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|one|two|three|four|five|seven|eight|nine|ten|eleven|twelve)\s*(?:mm|millim[èe]tres?|millimet(?:er|re)s?)\b/iu;
+
+const NUMBER_WORDS: Readonly<Record<string, number>> = {
+  un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6, sept: 7, huit: 8, neuf: 9, dix: 10, onze: 11, douze: 12,
+  one: 1, two: 2, three: 3, four: 4, five: 5, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
+};
+
+/** The words just after a finding, up to the end of its clause or the next finding. */
+function wordsAfter(utterance: string, finding: ExtractedFinding, findings: readonly ExtractedFinding[]): string {
   const clause = clauseBounds(utterance, finding.at);
-  const after = utterance.slice(finding.at + finding.matchedText.length, clause.end);
-  const match = unicodeBoundaries(MOBILITY_GRADE).exec(after);
+  const from = finding.at + finding.matchedText.length;
+  const next = findings.filter(f => f.at >= from && f.at < clause.end).map(f => f.at);
+  return utterance.slice(from, Math.min(clause.end, ...next, Infinity));
+}
+
+/** The words just before a finding, back to the start of its clause or the previous finding. */
+function wordsBefore(utterance: string, finding: ExtractedFinding, findings: readonly ExtractedFinding[]): string {
+  const clause = clauseBounds(utterance, finding.at);
+  const previous = findings.filter(f => f.at + f.matchedText.length <= finding.at && f.at >= clause.start)
+    .map(f => f.at + f.matchedText.length);
+  return utterance.slice(Math.max(clause.start, ...previous, 0), finding.at);
+}
+
+/** The last match of `pattern` in `text`, or null. */
+function lastMatch(pattern: RegExp, text: string): RegExpMatchArray | null {
+  let last: RegExpMatchArray | null = null;
+  for (const match of text.matchAll(unicodeBoundaries(new RegExp(pattern.source, 'giu')))) last = match;
+  return last;
+}
+
+/** A measure said before the state must stand right against it: "3 mm de récession", "grade 2, mobilité". */
+const BEFORE_STATE = String.raw`\s*(?:(?:de|d['’]|du|des|of|,)\s*)?$`;
+
+/**
+ * Takes the grade or the millimetres a state was said with: after it ("mobilité grade 2", "récession
+ * de 3 mm"), or right before it ("3 mm de récession"). A grade 0 says the opposite of the state — a
+ * tooth with "mobilité grade 0" is not mobile — so it is a denial and never a finding.
+ */
+function applyMeasure(utterance: string, finding: ExtractedFinding, findings: readonly ExtractedFinding[]): void {
+  const kind = MEASURES[finding.code];
+  if (!kind) return;
+  // A decimal point is not the end of a clause: "récession de 3,5 mm" is one thing said.
+  const text = utterance.replace(/(\d)[.,](\d)/g, '$1\u0001$2');
+  const after = wordsAfter(text, finding, findings);
+  const before = wordsBefore(text, finding, findings).slice(-32);
+
+  if (kind === 'grade') {
+    const match = unicodeBoundaries(GRADE_WORD).exec(after)
+      ?? unicodeBoundaries(new RegExp(GRADE_WORD.source + BEFORE_STATE, 'iu')).exec(before);
+    const grade = match ? GRADE_NUMBER[match[1].toLowerCase()] : undefined;
+    if (grade === undefined) return;
+    if (grade === 0) {
+      finding.negated = true;
+      return;
+    }
+    finding.severity = GRADE_SEVERITY[grade];
+    finding.note = `grade ${finding.code === 'furcation_involvement' ? ROMAN[grade] : grade}`;
+    return;
+  }
+
+  const match = unicodeBoundaries(MILLIMETRES).exec(after)
+    ?? unicodeBoundaries(new RegExp(MILLIMETRES.source + BEFORE_STATE, 'iu')).exec(before);
   if (!match) return;
-  const grade = GRADE_NUMBER[match[1].toLowerCase()];
-  if (!grade) return;
-  finding.severity = GRADE_SEVERITY[grade];
-  finding.note = `grade ${grade}`;
+  const word = match[1].toLowerCase();
+  const value = word in NUMBER_WORDS ? String(NUMBER_WORDS[word]) : word.replace(/[,\u0001]/, '.');
+  finding.note = `${value} mm`;
+}
+
+// ── "Suspected" is not "found" ─────────────────────────────────────────
+
+/**
+ * A word of doubt next to a state — "suspicion de carie", "fracture probable", "peut-être une
+ * nécrose", "à confirmer" — makes it a suspicion. The referential asks that a state stay "suspecté"
+ * until the dentist has confirmed it, so it is recorded as one and shown as one: a suspicion
+ * recorded as a fact is a false statement in a clinical record.
+ */
+const DOUBT =
+  /\b(?:suspicions?|suspect(?:e|ons|[ée]e?s?|ed|s)?|probables?|probablement|probabl[ey]|peut[- ]?[êe]tre|possibles?|possibilit[ée]|[ée]ventuel(?:le)?s?|semble(?:rait|nt)?|pr[ée]sum[ée]e?s?|[àa]\s+(?:confirmer|v[ée]rifier|rechercher)|to\s+(?:be\s+)?(?:confirmed|checked|verified)|likely|maybe|perhaps|query|queried|doubtful|douteu(?:x|se)s?|incertain\w*|[ée]voque\w*|suggestive?\s+of)\b/iu;
+
+/** How many words on either side of a state count as "next to" it. */
+const DOUBT_REACH_WORDS = 4;
+
+function suspicionAround(utterance: string, finding: ExtractedFinding, findings: readonly ExtractedFinding[]): 'SUSPECTED' | undefined {
+  const before = lastWords(wordsBefore(utterance, finding, findings), DOUBT_REACH_WORDS);
+  const after = firstWords(wordsAfter(utterance, finding, findings), DOUBT_REACH_WORDS);
+  const end = finding.at + finding.matchedText.length;
+  const asked = /\?/.test(utterance.slice(end, end + 12));
+  // "Carie, à confirmer" / "fracture, probable": the doubt is the next clause's first words.
+  const next = unicodeBoundaries(new RegExp(String.raw`^\s*[,;]\s*(?:c['’]?est\s+|it['’]?s\s+)?${DOUBT.source}`, 'iu')).test(utterance.slice(end));
+  return asked || next || unicodeBoundaries(DOUBT).test(before) || unicodeBoundaries(DOUBT).test(after) ? 'SUSPECTED' : undefined;
 }
 
 export function detectSeverity(text: string): Severity | null {
@@ -495,8 +738,13 @@ export interface ExtractedFinding {
   at: number;
   /** The clause the words sit in, for a note when the finding is negated. */
   clause: string;
-  /** A qualifier the lexicon has no slot for but that must not be lost, e.g. "grade 2". */
+  /** A qualifier the lexicon has no slot for but that must not be lost, e.g. "grade 2" or "3 mm". */
   note?: string;
+  /**
+   * "Suspicion de carie", "fracture probable", "peut-être une nécrose": the dentist has not confirmed it.
+   * It stays SUSPECTED until they do, and is never recorded as a plain finding.
+   */
+  certainty?: 'SUSPECTED';
 }
 
 /** Findings the dentist affirmed — the only ones that may be recorded as findings. */
@@ -528,6 +776,7 @@ const NEED_REACH_WORDS = 4;
 
 /** The treatment-required code an existing-restoration code turns into. */
 const REQUIRED_EQUIVALENT: Readonly<Record<string, (replacing: boolean) => string>> = {
+  ...Object.fromEntries(Object.entries(REFERENTIAL_REQUIRED_EQUIVALENT).map(([code, required]) => [code, () => required])),
   existing_crown: replacing => (replacing ? 'crown_replacement_required' : 'crown_required'),
   existing_bridge: () => 'bridge_required',
   existing_implant: () => 'implant_required',
@@ -611,6 +860,8 @@ function scanFindings(utterance: string, every: boolean): ExtractedFinding[] {
   const found: ExtractedFinding[] = [];
 
   for (const definition of FINDINGS) {
+    // Everything said has been claimed: nothing is left that a later definition could read.
+    if (!remaining.trim()) break;
     let again = true;
     while (again) {
       again = false;
@@ -664,7 +915,8 @@ function scanFindings(utterance: string, every: boolean): ExtractedFinding[] {
 
   const ordered = found.sort((a, b) => a.at - b.at);
   assignSurfaces(utterance, ordered);
-  for (const finding of ordered) applyMobilityGrade(utterance, finding);
+  for (const finding of ordered) applyMeasure(utterance, finding, ordered);
+  for (const finding of ordered) finding.certainty = suspicionAround(utterance, finding, ordered);
   return ordered;
 }
 
@@ -700,10 +952,15 @@ export function assertLexiconMatches(serverCodes: string[]): { ok: boolean; mess
  * it, or it silently stages a withdrawal of something the tooth never had.
  */
 const FINDING_FAMILIES: Readonly<Record<string, readonly string[]>> = {
-  caries: ['caries', 'recurrent_caries', 'deep_caries', 'cavity'],
-  existing_crown: ['existing_crown', 'crown_defective', 'crown_replacement_required', 'crown_required'],
-  existing_filling: ['existing_filling', 'existing_composite', 'existing_amalgam', 'filling_required'],
-  gingival_inflammation: ['gingival_inflammation', 'periodontal_pocket'],
+  caries: ['caries', 'recurrent_caries', 'deep_caries', 'cavity', 'white_spot_lesion', 'demineralisation'],
+  existing_crown: ['existing_crown', 'crown_defective', 'crown_replacement_required', 'crown_required', 'temporary_crown', 'post_and_crown', 'implant_crown'],
+  existing_filling: ['existing_filling', 'existing_composite', 'existing_amalgam', 'filling_required', 'existing_glass_ionomer', 'existing_temporary_filling', 'existing_inlay', 'existing_onlay', 'existing_overlay'],
+  gingival_inflammation: ['gingival_inflammation', 'gingivitis', 'periodontal_pocket', 'periodontitis'],
+  fracture: ['fracture', 'cracked_tooth', 'cusp_fracture', 'crown_fracture', 'root_fracture', 'enamel_fracture', 'enamel_dentin_fracture', 'complicated_crown_fracture', 'crown_root_fracture'],
+  abscess: ['abscess', 'periapical_abscess', 'gingival_abscess', 'periodontal_abscess'],
+  tooth_wear: ['tooth_wear', 'attrition', 'abrasion', 'erosion', 'abfraction'],
+  bleeding: ['bleeding', 'gingival_bleeding', 'bleeding_on_probing'],
+  plaque_calculus: ['plaque_calculus', 'plaque', 'calculus'],
 };
 
 /** True when a spoken finding code refers to a staged one — the same, or its general family. */

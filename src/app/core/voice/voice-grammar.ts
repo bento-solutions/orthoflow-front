@@ -96,6 +96,7 @@ function toEntities(findings: ExtractedFinding[]): FindingEntity[] {
     surface: f.surface,
     severity: f.severity,
     ...(f.note ? { note: f.note } : {}),
+    ...(f.certainty ? { certainty: f.certainty } : {}),
   }));
 }
 
@@ -1140,7 +1141,10 @@ const selectTooth: GrammarRule = {
 const VIEW_LEAD = '(?:(?:montre(?:\\s+moi)?|affiche|passe\\s+(?:en|a|à)|va\\s+(?:en|a|à)|reviens?\\s+(?:en|a|à)|retour\\s+(?:en|a|à)|show(?:\\s+me)?|switch\\s+to|go\\s+to|back\\s+to|change\\s+to)\\s+)?(?:(?:la|les|the)\\s+)?';
 
 const CHART_VIEWS: ReadonlyArray<{ view: string; words: RegExp }> = [
-  { view: 'overview', words: /^(?:vue\s+d\s+ensemble|vue\s+panoramique|vue\s+g[ée]n[ée]rale|vue\s+normale|vue\s+vestibulaire|vue\s+de\s+face|overview|panoramic(?:\s+view)?|full\s+chart|buccal\s+view|front\s+view)$/iu },
+  // The mouth: the natural arches with the gums and the palate, the chart's own view.
+  { view: 'overview', words: /^(?:vue\s+d\s+ensemble|vue\s+g[ée]n[ée]rale|vue\s+normale|vue\s+vestibulaire|vue\s+de\s+face|vue\s+(?:de\s+la\s+)?bouche|vue\s+compl[èe]te|overview|full\s+chart|full\s+mouth\s+view|mouth\s+view|buccal\s+view|front\s+view)$/iu },
+  // The arches unrolled like a panoramic radiograph: the old overview.
+  { view: 'panoramic', words: /^(?:vue\s+panoramique|panoramique|vue\s+d[ée]roul[ée]e|panoramic(?:\s+view)?|unrolled(?:\s+view)?)$/iu },
   { view: 'occlusal', words: /^(?:vue\s+occlusale|vue\s+de\s+dessus|faces\s+occlusales|occlusal\s+(?:view|surfaces?)|biting\s+surfaces?|top\s+view)$/iu },
   { view: 'lingual', words: /^(?:vue\s+linguale|vue\s+palatine|faces\s+linguales|faces\s+palatines|lingual\s+(?:view|surfaces?)|palatal\s+(?:view|surfaces?)|inside\s+view)$/iu },
   { view: 'arch', words: /^(?:vue\s+(?:en\s+)?arcades?|vue\s+des\s+arcades|arcades|vue\s+en\s+bouche|arch(?:es)?(?:\s+view)?|natural\s+view)$/iu },
@@ -1152,6 +1156,25 @@ const setChartView: GrammarRule = {
     const words = text.replace(new RegExp(`^${VIEW_LEAD}`, 'iu'), '');
     const found = CHART_VIEWS.find(({ words: pattern }) => pattern.test(words));
     return found ? intent('chart.setView', { view: found.view }, CONFIDENCE_EXACT, raw) : null;
+  },
+};
+
+const GUM_WORD = '(?:gencives?|gums?|gingiva|palais|palate)';
+const GUM_OBJECT = `(?:(?:la|les|le|l|the)\\s+)?${GUM_WORD}(?:\\s+(?:et|and)\\s+(?:(?:la|les|le|l|the)\\s+)?${GUM_WORD})?`;
+const SHOW_GUMS = new RegExp(`^(?:(?:(?:montre|affiche|ajoute|rajoute|remets?|mets|show|display|add)(?:\\s+moi)?|(?:vue\\s+)?(?:avec|with))\\s+)${GUM_OBJECT}$`, 'iu');
+const HIDE_GUMS = new RegExp(`^(?:(?:(?:cache|masque|enl[èe]ve|retire|supprime|efface|hide|remove|take\\s+off|turn\\s+off)(?:\\s+moi)?|(?:vue\\s+)?(?:sans|without))\\s+)${GUM_OBJECT}$`, 'iu');
+
+/**
+ * "Cache les gencives", "avec le palais", "hide the gums": the mouth view with or without its gums and
+ * palate. The whole sentence has to be the request, like the views, so a finding about the gum
+ * ("gencive enflammée") is never read as one.
+ */
+const toggleGums: GrammarRule = {
+  id: 'grammar.chart.gums',
+  match: (raw, text) => {
+    if (SHOW_GUMS.test(text)) return intent('chart.gums', { show: true }, CONFIDENCE_EXACT, raw);
+    if (HIDE_GUMS.test(text)) return intent('chart.gums', { show: false }, CONFIDENCE_EXACT, raw);
+    return null;
   },
 };
 
@@ -1312,6 +1335,8 @@ export const GRAMMAR_RULES: GrammarRule[] = [
   ...INTAKE_RULES,
   createTask,
   showFindings,
+  // Before the corrections: "enlève les gencives" is the view, not a finding to take back.
+  toggleGums,
   undoLast,
   moveToAnotherTooth,
   reclassifyFinding,

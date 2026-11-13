@@ -15,6 +15,20 @@ describe('stagedToothFindings', () => {
     ]);
   });
 
+  it('keeps a suspicion suspected, and the measure said with a finding', () => {
+    expect(stagedToothFindings([
+      { intent: 'clinical.addFindings', entities: { fdi: '46', findings: [
+        { code: 'caries', surface: 'mesial', certainty: 'SUSPECTED' },
+        { code: 'gingival_recession', surface: 'buccal', note: '3 mm' },
+        { code: 'fracture', certainty: 'CONFIRMED' },
+      ] } },
+    ])).toEqual([
+      { fdi: '46', code: 'caries', surface: 'mesial', certainty: 'SUSPECTED' },
+      { fdi: '46', code: 'gingival_recession', surface: 'buccal', note: '3 mm' },
+      { fdi: '46', code: 'fracture', surface: null },
+    ]);
+  });
+
   it('leaves out what is not a finding on a tooth', () => {
     expect(stagedToothFindings([
       { intent: 'clinical.addNote', entities: { fdi: '16', content: 'anxious' } },

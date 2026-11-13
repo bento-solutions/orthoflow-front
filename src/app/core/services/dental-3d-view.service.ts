@@ -1,8 +1,22 @@
 import { Injectable, signal } from '@angular/core';
 
-/** The chart's arrangements of the teeth. See features/dental-3d/dentition-layout.ts. */
-export const DENTITION_VIEWS = ['overview', 'occlusal', 'lingual', 'arch'] as const;
+/**
+ * The chart's arrangements of the teeth. See features/dental-3d/dentition-layout.ts.
+ *
+ *  - overview:   the mouth. The natural arches, parted like an open mouth, with the gums and the
+ *                palate, the state of the gums and the tartar. The one the chart opens on.
+ *  - panoramic:  the arches unrolled like a panoramic radiograph, every crown and root in sight.
+ *                It was the overview until Nov 2026.
+ *  - occlusal / lingual: the biting surfaces / the tongue and palate sides.
+ *  - arch:       the same natural arches, teeth only.
+ */
+export const DENTITION_VIEWS = ['overview', 'panoramic', 'occlusal', 'lingual', 'arch'] as const;
 export type DentitionView = (typeof DENTITION_VIEWS)[number];
+
+/** Whether a view keeps the teeth on their natural arches (so labels stand round them, and nothing comes forward). */
+export function isArchView(view: DentitionView): boolean {
+  return view === 'overview' || view === 'arch';
+}
 
 /** What a voice command asks the camera to do; each is applied once, by the chart on screen. */
 export type CameraMove =
@@ -31,6 +45,11 @@ export const TURN_STEP = Math.PI / 12;
 @Injectable({ providedIn: 'root' })
 export class Dental3dViewService {
   readonly view = signal<DentitionView>('overview');
+  /**
+   * Whether the mouth view draws the gums and the palate. Off, it is the arches with the teeth only
+   * ("cache les gencives"): the roots, the bone-side of things, are then in plain sight.
+   */
+  readonly gums = signal(true);
   /** The tooth the view has closed in on, or null for the whole mouth. */
   readonly zoomedFdi = signal<string | null>(null);
   /** Whether a chart is on screen to obey. */
@@ -46,6 +65,11 @@ export class Dental3dViewService {
   reset(): void {
     this.view.set('overview');
     this.zoomedFdi.set(null);
+  }
+
+  /** Shows or hides the gums and the palate of the mouth view; with no argument, the other of the two. */
+  showGums(show = !this.gums()): void {
+    this.gums.set(show);
   }
 
   zoom(direction: 'in' | 'out', steps = 1): void {

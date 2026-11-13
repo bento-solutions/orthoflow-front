@@ -33,6 +33,8 @@ export type FindingStatus = 'ACTIVE' | 'RESOLVED' | 'RETRACTED';
 export type Severity = 'MILD' | 'MODERATE' | 'SEVERE';
 /** Whether this clinic did the work or the patient brought it from elsewhere. */
 export type FindingOrigin = 'THIS_CLINIC' | 'EXTERNAL';
+/** A state the dentist has confirmed, or one they only suspect until they do. */
+export type FindingCertainty = 'CONFIRMED' | 'SUSPECTED';
 export type NoteCategory =
   | 'GENERAL' | 'CHIEF_COMPLAINT' | 'OBSERVATION' | 'DENTAL_HISTORY'
   | 'MEDICAL_HISTORY' | 'DIAGNOSIS' | 'FOLLOW_UP' | 'TREATMENT_PLAN'
@@ -43,8 +45,8 @@ export type MedicalHistoryCategory =
   | 'CONDITION' | 'MEDICATION' | 'SURGERY' | 'DENTAL_HISTORY' | 'FAMILY' | 'LIFESTYLE' | 'OTHER';
 
 export type ToothFinding =
-  Omit<ApiToothFinding, 'kind' | 'status' | 'severity' | 'origin'>
-  & { kind: FindingKind; status: FindingStatus; severity?: Severity; origin?: FindingOrigin };
+  Omit<ApiToothFinding, 'kind' | 'status' | 'severity' | 'origin' | 'certainty'>
+  & { kind: FindingKind; status: FindingStatus; severity?: Severity; origin?: FindingOrigin; certainty?: FindingCertainty };
 
 // ── Gum state ───────────────────────────────────────────────────────────
 
@@ -101,6 +103,8 @@ export interface AddToothFindingRequest {
   surface?: string;
   severity?: Severity;
   note?: string;
+  /** SUSPECTED until the dentist confirms it; omitted for a confirmed finding. */
+  certainty?: FindingCertainty;
   /** ISO date the work was done or found; omitted when unknown. */
   performedOn?: string;
   origin?: FindingOrigin;

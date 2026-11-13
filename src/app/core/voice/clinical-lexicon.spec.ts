@@ -270,3 +270,156 @@ describe('extractEveryFinding', () => {
     ]);
   });
 });
+
+describe('a number said with a state is recorded with it', () => {
+  const found = (utterance: string, code: string) => extractFindings(utterance).find(f => f.code === code);
+
+  it('takes the millimetres of a recession or a pocket, after the state or before it', () => {
+    expect(found('récession gingivale de 3 mm', 'gingival_recession')?.note).toBe('3 mm');
+    expect(found('3 mm de récession', 'gingival_recession')?.note).toBe('3 mm');
+    expect(found('récession de 3,5 millimètres', 'gingival_recession')?.note).toBe('3.5 mm');
+    expect(found('poche de cinq millimètres', 'periodontal_pocket')?.note).toBe('5 mm');
+    expect(found('perte d\'attache clinique de 4 mm', 'clinical_attachment_loss')?.note).toBe('4 mm');
+    expect(found('gingival recession of 2 mm', 'gingival_recession')?.note).toBe('2 mm');
+  });
+
+  it('gives each state its own number', () => {
+    const findings = extractFindings('récession 3 mm, poche 5 mm');
+    expect(findings.find(f => f.code === 'gingival_recession')?.note).toBe('3 mm');
+    expect(findings.find(f => f.code === 'periodontal_pocket')?.note).toBe('5 mm');
+  });
+
+  it('takes the grade of a mobility and of a furcation, and a grade 0 is a denial', () => {
+    expect(found('mobilité grade 2', 'mobility')).toMatchObject({ severity: 'MODERATE', note: 'grade 2' });
+    expect(found('atteinte de furcation classe III', 'furcation_involvement')).toMatchObject({ severity: 'SEVERE', note: 'grade III' });
+    expect(found('furcation grade 2', 'furcation_involvement')).toMatchObject({ severity: 'MODERATE', note: 'grade II' });
+    expect(found('mobilité grade 0', 'mobility')?.negated).toBe(true);
+  });
+
+  it('does not hang a measure on a state that has none', () => {
+    expect(found('carie de 3 mm', 'caries')?.note).toBeUndefined();
+  });
+});
+
+describe('a root of a back tooth can be named', () => {
+  const surfaceOf = (utterance: string, code: string) => extractFindings(utterance).find(f => f.code === code)?.surface ?? null;
+
+  it('stores the root as its own surface, not as the crown\'s', () => {
+    expect(surfaceOf('fracture radiculaire racine mésiale', 'root_fracture')).toBe('mesialroot');
+    expect(surfaceOf('résorption externe racine distale', 'external_resorption')).toBe('distalroot');
+    expect(surfaceOf('lésion périapicale racine palatine', 'periapical_lesion')).toBe('lingualroot');
+    expect(surfaceOf('abcès péri-apical racine vestibulaire', 'periapical_abscess')).toBe('buccalroot');
+    expect(surfaceOf('perforation of the mesial root', 'perforation')).toBe('mesialroot');
+  });
+
+  it('reads the two cheek roots of an upper molar by their compound names', () => {
+    expect(surfaceOf('lésion périapicale racine mésio-vestibulaire', 'periapical_lesion')).toBe('mesialroot-buccalroot');
+    expect(surfaceOf('fracture radiculaire racine disto-vestibulaire', 'root_fracture')).toBe('distalroot-buccalroot');
+  });
+
+  it('still reads the faces of the crown', () => {
+    expect(surfaceOf('carie mésio-occlusale', 'caries')).toBe('mesial-occlusal');
+    expect(detectSurface('racine mésiale')).toBe('mesialroot');
+  });
+});
+
+describe('a surface word that is part of the state\'s name is not also its surface', () => {
+  const surfaceOf = (utterance: string, code: string) => extractFindings(utterance).find(f => f.code === code)?.surface ?? null;
+
+  it('leaves a named displacement or migration without a face of its own', () => {
+    expect(surfaceOf('déplacement vestibulaire', 'buccal_displacement')).toBeNull();
+    expect(surfaceOf('migration mésiale', 'mesial_migration')).toBeNull();
+    expect(surfaceOf('interférence occlusale', 'occlusal_interference')).toBeNull();
+    expect(surfaceOf('lésion cervicale', 'abfraction')).toBeNull();
+  });
+});
+
+describe('a suspicion is not a finding', () => {
+  const certainty = (utterance: string, code: string) => extractFindings(utterance).find(f => f.code === code)?.certainty;
+
+  it('marks a state the dentist doubts', () => {
+    expect(certainty('suspicion de carie', 'caries')).toBe('SUSPECTED');
+    expect(certainty('carie probable', 'caries')).toBe('SUSPECTED');
+    expect(certainty('peut-être une nécrose', 'necrosis')).toBe('SUSPECTED');
+    expect(certainty('fracture à confirmer', 'fracture')).toBe('SUSPECTED');
+    expect(certainty('carie, à confirmer', 'caries')).toBe('SUSPECTED');
+    expect(certainty('suspected periapical lesion', 'periapical_lesion')).toBe('SUSPECTED');
+    expect(certainty('possible fracture', 'fracture')).toBe('SUSPECTED');
+  });
+
+  it('leaves a plain statement a plain statement', () => {
+    expect(certainty('carie mésiale', 'caries')).toBeUndefined();
+    expect(certainty('carie et fracture', 'fracture')).toBeUndefined();
+  });
+
+  it('keeps the doubt on the state it was said about', () => {
+    const findings = extractFindings('suspicion de carie mésiale et fracture');
+    expect(findings.find(f => f.code === 'caries')?.certainty).toBe('SUSPECTED');
+    expect(findings.find(f => f.code === 'fracture')?.certainty).toBeUndefined();
+  });
+});
+
+
+describe('a surface said as its letters', () => {
+  const surfaceOf = (utterance: string, code: string) => extractFindings(utterance).find(f => f.code === code)?.surface ?? null;
+
+  it('reads the combinations of the referential: MO, DO, MOD, MODB (stored in the order of every surface: mesial, occlusal, distal…)', () => {
+    expect(surfaceOf('carie MO', 'caries')).toBe('mesial-occlusal');
+    expect(surfaceOf('carie DO', 'caries')).toBe('occlusal-distal');
+    expect(surfaceOf('carie MOD', 'caries')).toBe('mesial-occlusal-distal');
+    // Four faces are kept whole: the server accepts five.
+    expect(surfaceOf('composite MODB', 'existing_composite')).toBe('mesial-occlusal-distal-buccal');
+    expect(surfaceOf('carie mésio-occluso-disto-vestibulaire', 'caries')).toBe('mesial-occlusal-distal-buccal');
+  });
+
+  it('reads the front teeth\'s edge and either name of the cheek and tongue sides', () => {
+    expect(surfaceOf('carie MI', 'caries')).toBe('mesial-incisal');
+    expect(surfaceOf('carie DI', 'caries')).toBe('distal-incisal');
+    expect(surfaceOf('carie OV', 'caries')).toBe('occlusal-buccal');
+    expect(surfaceOf('carie OB', 'caries')).toBe('occlusal-buccal');
+    expect(surfaceOf('carie DOL', 'caries')).toBe('occlusal-distal-lingual');
+    expect(surfaceOf('carie DOP', 'caries')).toBe('occlusal-distal-lingual');
+    expect(surfaceOf('carie MOC', 'caries')).toBe('mesial-occlusal-cervical');
+  });
+
+  it('reads them spelled out, and in lower case when they are three letters or more', () => {
+    expect(surfaceOf('carie M.O.D.', 'caries')).toBe('mesial-occlusal-distal');
+    expect(surfaceOf('carie M O D', 'caries')).toBe('mesial-occlusal-distal');
+    expect(surfaceOf('carie M-O-D-B', 'caries')).toBe('mesial-occlusal-distal-buccal');
+    expect(surfaceOf('carie mod', 'caries')).toBe('mesial-occlusal-distal');
+    expect(surfaceOf('carie modb', 'caries')).toBe('mesial-occlusal-distal-buccal');
+  });
+
+  it('gives each abbreviation to the finding it follows, as it does a surface word', () => {
+    const found = extractFindings('carie MOD et fracture DO');
+    expect(found.find(f => f.code === 'caries')?.surface).toBe('mesial-occlusal-distal');
+    expect(found.find(f => f.code === 'fracture')?.surface).toBe('occlusal-distal');
+  });
+
+  it('is the same surface as the word for it', () => {
+    expect(detectSurface('MOD')).toBe(detectSurface('mésio-occluso-distale'));
+    expect(detectSurface('une MO sur la 36')).toBe('mesial-occlusal');
+  });
+
+  it('leaves alone what only looks like a surface', () => {
+    // A stage, a dose, an identity, a doctor, a volume, an injection.
+    for (const word of ['parodontite stade IV', 'carie, ID du patient', 'amoxicilline OD', 'amoxicilline BD', 'Dr Martin MD', '5 ML', 'antibiotique IM']) {
+      expect(detectSurface(word), word).toBeNull();
+    }
+    // Two letters alone, in lower case, are ordinary words.
+    for (const word of ['carie do', 'what do you see', 'carie mo', 'caries do not hurt']) {
+      expect(detectSurface(word), word).toBeNull();
+    }
+    // Letters that no charting abbreviation spells.
+    for (const word of ['MOM', 'DOM', 'MM', 'OIL', 'BL', 'LP', 'VO']) {
+      expect(detectSurface(word), word).toBeNull();
+    }
+    // A word in capitals is still a word.
+    expect(detectSurface('CARIE MODÈLE')).toBeNull();
+  });
+
+  it('does not take the letters of a finding\'s own name', () => {
+    expect(codesOf('dent 36 carie MOD')).toEqual(['caries']);
+    expect(surfaceOf('inlay MOD', 'existing_inlay')).toBe('mesial-occlusal-distal');
+  });
+});

@@ -10,7 +10,7 @@ import { INPUT_LANGUAGES } from '../../../core/voice/language-filter';
 import { SpeechFeedbackService } from '../../../core/voice/speech-feedback.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { COMMAND_EXAMPLES, spokenFindingLabel, spokenLanguage } from '../../../core/voice/voice-vocabulary';
-import { entityString, stagedFindingCodes } from '../../../core/voice/voice-intent.model';
+import { entityString, stagedFindingCodes, stagedFindingDetails } from '../../../core/voice/voice-intent.model';
 import { stagedToothFindings } from '../../../core/voice/voice-chart-marks';
 import { findingKind } from '../../../core/voice/clinical-lexicon';
 import { describeFdi } from '../../../core/voice/tooth-lexicon';
@@ -39,7 +39,6 @@ export function sessionStatusKey(voice: VoiceOrchestratorService, awake: boolean
 }
 
 type Phase = 'consent' | 'idle' | 'interrupted' | 'live' | 'review' | 'saved' | 'consultation-review';
-
 interface ToothGroup {
   fdi: string;
   description: string;
@@ -369,7 +368,7 @@ interface ToothGroup {
                         <div class="vs-entry-body">
                           <div class="vs-chips">
                             @for (chip of chipsFor(entry); track $index) {
-                              <span class="vs-chip" [attr.data-kind]="chip.kind">{{ chip.label }}</span>
+                              <span class="vs-chip" [attr.data-kind]="chip.kind" [class.suspected]="chip.suspected">{{ chip.label }}@if (chip.measure) { · {{ chip.measure }}}@if (chip.suspected) { · {{ 'TOOTH_DETAIL.CERTAINTY.SUSPECTED_BADGE' | translate }}}</span>
                             }
                           </div>
                           @if (entry.transcript) {
@@ -572,6 +571,8 @@ interface ToothGroup {
     .vs-chip[data-kind='CONDITION'] { background: rgb(var(--critical-50)); color: rgb(var(--critical-700)); }
     .vs-chip[data-kind='TREATMENT_REQUIRED'] { background: rgb(var(--caution-50)); color: rgb(var(--caution-800)); }
     .vs-chip[data-kind='EXISTING'] { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-800)); }
+    /* Said with a doubt: not a fact yet, so it does not look like one. */
+    .vs-chip.suspected { background: transparent; color: rgb(var(--ink-700)); outline: 1.5px dashed currentColor; outline-offset: -1.5px; }
     .vs-heard { margin: .125rem 0 0; font-size: .75rem; color: rgb(var(--ink-500)); font-style: italic; overflow-wrap: anywhere; }
 
     .vs-help { display: flex; flex-direction: column; gap: .375rem; }
@@ -691,12 +692,19 @@ export class VoiceSessionPanelComponent {
 
   examples = computed(() => COMMAND_EXAMPLES.map(example => this.language() === 'fr' ? example.fr : example.en));
 
-  chipsFor(entry: BufferedEntry): Array<{ label: string; kind: string }> {
+  chipsFor(entry: BufferedEntry): Array<{ label: string; kind: string; suspected: boolean; measure: string }> {
     const codes = stagedFindingCodes(entry.entities);
-    if (codes.length === 0) return [{ label: entry.preview, kind: '' }];
+    if (codes.length === 0) return [{ label: entry.preview, kind: '', suspected: false, measure: '' }];
+    const said = stagedFindingDetails(entry.entities);
     return codes.map(code => {
       const label = spokenFindingLabel(code, this.language());
-      return { label: label.charAt(0).toUpperCase() + label.slice(1), kind: findingKind(code) ?? '' };
+      const detail = said.get(code);
+      return {
+        label: label.charAt(0).toUpperCase() + label.slice(1),
+        kind: findingKind(code) ?? '',
+        suspected: detail?.suspected ?? false,
+        measure: detail?.measure ?? '',
+      };
     });
   }
 

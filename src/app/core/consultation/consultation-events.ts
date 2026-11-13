@@ -111,7 +111,7 @@ export function actionFromUtterance(event: UtteranceEvent): ActionInput | null {
   const intent = event.intents.find(id => viewOfIntent(id) !== null) ?? event.intents[0] ?? '';
   const view = viewOfIntent(intent);
   const isView = intent.startsWith('ui.') || intent === 'help.show'
-    || ['chart.zoom', 'chart.zoomTooth', 'chart.rotate', 'chart.reset', 'chart.step', 'chart.setView', 'chart.selectTooth', 'chart.readTooth'].includes(intent);
+    || ['chart.zoom', 'chart.zoomTooth', 'chart.rotate', 'chart.reset', 'chart.step', 'chart.setView', 'chart.gums', 'chart.selectTooth', 'chart.readTooth'].includes(intent);
   const writesChart = view === 'chart' && !isView;
   return {
     kind: isView ? 'view' : writesChart ? 'chart' : view ? 'intake' : 'control',

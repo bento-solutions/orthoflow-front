@@ -194,6 +194,8 @@ export interface FindingEntity {
   surface: string | null;
   severity: Severity | null;
   note?: string;
+  /** The dentist suspects it but has not confirmed it: it stays "suspected" until they do. */
+  certainty?: 'SUSPECTED' | 'CONFIRMED';
 }
 
 /**
@@ -240,6 +242,29 @@ export function stagedFindingCodes(entities: Record<string, unknown> | undefined
   }
   if (typeof entities['findingCode'] === 'string') codes.push(entities['findingCode']);
   return [...new Set(codes)];
+}
+
+/** A measure kept in a finding's note: "3 mm", "grade 2", "grade II". Anything else in a note is not shown as one. */
+const MEASURE_NOTE = /^(?:\d+(?:[.,]\d+)?\s?mm|grade\s?(?:[0-3]|I{1,3}))$/i;
+
+/**
+ * What was said along with each finding of a staged command, by finding code: whether it was said with
+ * a doubt ("peut-être une fracture") and the measure it came with ("de 3 mm"). The session list shows
+ * both, so the dentist checking what was understood sees a suspicion as a suspicion.
+ */
+export function stagedFindingDetails(entities: Record<string, unknown> | undefined): Map<string, { suspected: boolean; measure: string }> {
+  const details = new Map<string, { suspected: boolean; measure: string }>();
+  const findings = entities?.['findings'];
+  if (!Array.isArray(findings)) return details;
+  for (const finding of findings as ({ code?: unknown; certainty?: unknown; note?: unknown } | null)[]) {
+    if (typeof finding?.code !== 'string') continue;
+    const note = typeof finding.note === 'string' ? finding.note.trim() : '';
+    details.set(finding.code, {
+      suspected: finding.certainty === 'SUSPECTED',
+      measure: MEASURE_NOTE.test(note) ? note : '',
+    });
+  }
+  return details;
 }
 
 /**

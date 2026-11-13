@@ -36,6 +36,7 @@ const CLASSES: Readonly<Record<string, IntentClass>> = {
 
   'chart.selectTooth': 'view',
   'chart.setView': 'view',
+  'chart.gums': 'view',
   'chart.zoomTooth': 'view',
   'chart.zoom': 'view',
   'chart.rotate': 'view',

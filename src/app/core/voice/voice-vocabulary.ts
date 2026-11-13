@@ -1,6 +1,7 @@
 import { WAKE_WORD } from './voice-wake';
 import { NO_SUCH_TOOTH_QUESTION, SEVERAL_TEETH_QUESTION } from './voice-grammar';
 import { findingLabel } from './clinical-lexicon';
+import { LEGACY_TERM_ADDITIONS, REFERENTIAL_TERMS } from './clinical-lexicon-referential';
 import { VoiceContextSnapshot, entityString, stagedFindingCodes } from './voice-intent.model';
 import { InputLanguage } from './language-filter';
 
@@ -39,7 +40,7 @@ export function synthesisLocale(language: SpokenLanguage): string {
  * How each finding is said. The first French term is also how it is read
  * back to a French-speaking dentist.
  */
-export const FINDING_TERMS: Readonly<Record<string, { fr: string[]; en: string[] }>> = {
+const BASE_TERMS: Readonly<Record<string, { fr: string[]; en: string[] }>> = {
   crown_replacement_required: { fr: ['couronne à remplacer', 'couronne à refaire'], en: ['crown replacement', 'replace the crown'] },
   crown_required: { fr: ['couronne à poser', 'couronne nécessaire'], en: ['needs a crown', 'crown required'] },
   root_canal_required: { fr: ['traitement canalaire à faire', 'dévitaliser'], en: ['needs a root canal', 'root canal required'] },
@@ -57,14 +58,14 @@ export const FINDING_TERMS: Readonly<Record<string, { fr: string[]; en: string[]
   deep_caries: { fr: ['carie profonde'], en: ['deep caries'] },
   caries: { fr: ['carie'], en: ['caries', 'decay'] },
   cavity: { fr: ['cavité'], en: ['cavity'] },
-  fracture: { fr: ['fracture', 'dent fêlée'], en: ['fracture', 'cracked tooth'] },
+  fracture: { fr: ['fracture', 'dent fêlée'], en: ['fracture', 'broken tooth'] },
   crown_defective: { fr: ['couronne défectueuse', 'couronne descellée'], en: ['defective crown', 'loose crown'] },
   retained_root: { fr: ['racine résiduelle'], en: ['retained root'] },
   avulsion: { fr: ['avulsion'], en: ['avulsion'] },
   extensive_destruction: { fr: ['dent délabrée'], en: ['extensive destruction'] },
   pulpitis: { fr: ['pulpite'], en: ['pulpitis'] },
   necrosis: { fr: ['nécrose pulpaire'], en: ['pulp necrosis'] },
-  periapical_lesion: { fr: ['granulome', 'lésion périapicale'], en: ['periapical lesion'] },
+  periapical_lesion: { fr: ['lésion périapicale', 'granulome'], en: ['periapical lesion'] },
   extracted: { fr: ['déjà extraite'], en: ['already extracted'] },
   missing: { fr: ['dent absente', 'manquante'], en: ['missing'] },
   impacted: { fr: ['incluse'], en: ['impacted'] },
@@ -73,15 +74,15 @@ export const FINDING_TERMS: Readonly<Record<string, { fr: string[]; en: string[]
   mobility: { fr: ['mobilité', 'dent mobile'], en: ['mobility', 'loose tooth'] },
   sensitivity: { fr: ['sensibilité', 'sensible au froid'], en: ['sensitivity'] },
   pain: { fr: ['douleur', 'douloureuse'], en: ['pain'] },
-  tooth_wear: { fr: ['usure', 'érosion'], en: ['tooth wear', 'attrition'] },
+  tooth_wear: { fr: ['usure dentaire', 'usure'], en: ['tooth wear', 'wear'] },
   discoloration: { fr: ['décoloration', 'tachée'], en: ['discoloration', 'stained'] },
-  gingival_inflammation: { fr: ['gingivite', 'gencives enflammées'], en: ['gingivitis', 'bleeding gums'] },
-  periodontal_pocket: { fr: ['poche parodontale', 'parodontite'], en: ['periodontal pocket', 'periodontitis'] },
+  gingival_inflammation: { fr: ['inflammation gingivale', 'gencives enflammées'], en: ['gingival inflammation', 'inflamed gums'] },
+  periodontal_pocket: { fr: ['poche parodontale'], en: ['periodontal pocket', 'pocket'] },
   gingival_recession: { fr: ['récession gingivale'], en: ['gingival recession'] },
   bleeding: { fr: ['saignement'], en: ['bleeding'] },
   swelling: { fr: ['gonflement'], en: ['swelling'] },
-  plaque_calculus: { fr: ['tartre', 'plaque'], en: ['calculus', 'tartar'] },
-  malposition: { fr: ['malposition', 'encombrement'], en: ['malpositioned', 'crowded'] },
+  plaque_calculus: { fr: ['plaque et tartre'], en: ['plaque and calculus'] },
+  malposition: { fr: ['malposition'], en: ['malpositioned'] },
 
   existing_crown: { fr: ['couronne', 'ancienne couronne'], en: ['existing crown', 'crown'] },
   existing_bridge: { fr: ['bridge existant'], en: ['existing bridge'] },
@@ -89,7 +90,7 @@ export const FINDING_TERMS: Readonly<Record<string, { fr: string[]; en: string[]
   existing_veneer: { fr: ['facette'], en: ['existing veneer'] },
   existing_root_canal: { fr: ['dent dévitalisée', 'traitement canalaire existant'], en: ['previous root canal', 'root canal treated'] },
   existing_post: { fr: ['tenon', 'inlay core'], en: ['post and core'] },
-  existing_inlay: { fr: ['inlay', 'onlay'], en: ['inlay', 'onlay'] },
+  existing_inlay: { fr: ['inlay'], en: ['inlay'] },
   existing_amalgam: { fr: ['amalgame'], en: ['amalgam'] },
   existing_composite: { fr: ['composite'], en: ['composite'] },
   existing_sealant: { fr: ['scellement de sillons'], en: ['sealant'] },
@@ -101,9 +102,22 @@ export const FINDING_TERMS: Readonly<Record<string, { fr: string[]; en: string[]
   normal: { fr: ['rien à signaler', 'saine'], en: ['normal', 'healthy'] },
 };
 
+/**
+ * Every state's words: the base ones, widened with the referential's synonyms, and the states the
+ * referential added (clinical-lexicon-referential.ts).
+ */
+export const FINDING_TERMS: Readonly<Record<string, { fr: string[]; en: string[] }>> = {
+  ...Object.fromEntries(Object.entries(BASE_TERMS).map(([code, terms]) => {
+    const more = LEGACY_TERM_ADDITIONS[code];
+    return [code, more ? { fr: [...terms.fr, ...more.fr], en: [...terms.en, ...more.en] } : terms];
+  })),
+  ...REFERENTIAL_TERMS,
+};
+
 const SURFACE_TERMS: Readonly<Record<SpokenLanguage, string[]>> = {
-  fr: ['occlusale', 'mésiale', 'distale', 'vestibulaire', 'linguale', 'palatine'],
-  en: ['occlusal', 'mesial', 'distal', 'buccal', 'lingual'],
+  // The charting abbreviations are hints too: a transcriber that has seen "MOD" writes it so, not as "mode".
+  fr: ['occlusale', 'mésiale', 'distale', 'vestibulaire', 'linguale', 'palatine', 'MOD', 'MO', 'DO', 'MODB'],
+  en: ['occlusal', 'mesial', 'distal', 'buccal', 'lingual', 'MOD', 'MO', 'DO', 'MODB'],
 };
 
 const SURFACE_FR: Record<string, string> = {
@@ -117,12 +131,43 @@ const SURFACE_FR_STEM: Record<string, string> = {
   lingual: 'linguo', incisal: 'incisio', cervical: 'cervico',
 };
 
+/** A root of a back tooth, said as its name: "mesialroot" is "racine mésiale". */
+const ROOT_FR: Record<string, string> = {
+  mesialroot: 'mésiale', distalroot: 'distale', buccalroot: 'vestibulaire', lingualroot: 'palatine',
+};
+const ROOT_EN: Record<string, string> = {
+  mesialroot: 'mesial', distalroot: 'distal', buccalroot: 'buccal', lingualroot: 'palatal',
+};
+
+function spokenRoots(roots: string[], language: SpokenLanguage): string {
+  const fr = language === 'fr';
+  const has = (code: string) => roots.includes(code);
+  // The two cheek roots of an upper molar have names of their own.
+  if (roots.length === 2 && has('buccalroot') && (has('mesialroot') || has('distalroot'))) {
+    const side = has('mesialroot') ? 'mesial' : 'distal';
+    return fr ? `racine ${side === 'mesial' ? 'mésio' : 'disto'}-vestibulaire` : `${side === 'mesial' ? 'mesiobuccal' : 'distobuccal'} root`;
+  }
+  return fr
+    ? `racine${roots.length > 1 ? 's' : ''} ${roots.map(r => ROOT_FR[r] ?? r).join(' et ')}`
+    : `${roots.map(r => ROOT_EN[r] ?? r).join(' and ')} root${roots.length > 1 ? 's' : ''}`;
+}
+
 /**
  * A surface as it is spoken: "mesial-occlusal" is "mésio-occlusale", as the
- * dentist said it, rather than two adjectives strung together.
+ * dentist said it, rather than two adjectives strung together. A named root is
+ * said after the faces of the crown: "mesial-mesialroot" is "mésiale, racine mésiale".
  */
 export function spokenSurface(surface: string, language: SpokenLanguage): string {
-  const parts = surface.split('-').filter(Boolean);
+  const all = surface.split('-').filter(Boolean);
+  const roots = all.filter(part => part.endsWith('root'));
+  const parts = all.filter(part => !part.endsWith('root'));
+  const crown = spokenCrownSurface(parts, language);
+  if (!roots.length) return crown;
+  return [crown, spokenRoots(roots, language)].filter(Boolean).join(', ');
+}
+
+function spokenCrownSurface(parts: string[], language: SpokenLanguage): string {
+  if (parts.length === 0) return '';
   if (language !== 'fr') return parts.join('-');
   if (parts.length === 1) return SURFACE_FR[parts[0]] ?? parts[0];
   const last = parts[parts.length - 1];
@@ -147,6 +192,8 @@ export const COMMAND_EXAMPLES: ReadonlyArray<{ intent: string; fr: string; en: s
   { intent: 'clinical.addMedicalHistory', fr: 'antécédents médicaux : diabète', en: 'medical history: diabetes' },
   { intent: 'chart.readTooth', fr: 'lis la dent 16', en: 'what is on tooth 16' },
   { intent: 'chart.setView', fr: 'vue occlusale', en: 'occlusal view' },
+  { intent: 'chart.setView', fr: 'vue panoramique', en: 'panoramic view' },
+  { intent: 'chart.gums', fr: 'cache les gencives', en: 'hide the gums' },
   { intent: 'chart.zoomTooth', fr: 'zoom sur la dent 16', en: 'zoom on tooth 16' },
   { intent: 'voice.session.summary', fr: 'récapitule', en: 'show me today\'s findings' },
   { intent: 'ui.show', fr: 'montre les allergies', en: 'show the allergies' },
@@ -154,19 +201,48 @@ export const COMMAND_EXAMPLES: ReadonlyArray<{ intent: string; fr: string; en: s
   { intent: 'voice.session.end', fr: 'fin de l\'examen', en: 'end examination' },
 ];
 
-/** One language's whole vocabulary, as the recogniser is told it. */
-function vocabularyFor(language: SpokenLanguage): string[] {
-  return [
-    ...COMMAND_EXAMPLES.map(example => example[language]),
-    ...Object.values(FINDING_TERMS).flatMap(terms => terms[language]),
-    ...SURFACE_TERMS[language],
+/**
+ * What the recogniser is told of the vocabulary, at most. The server cuts a longer hint, and from the
+ * end, so what matters most has to come first and the whole has to fit: with a hundred and sixty
+ * states a list of every way to say each one is twice the cap.
+ */
+const HINT_CHAR_BUDGET = 3500;
+
+/**
+ * One language's vocabulary, as the recogniser is told it, most useful first: the whole commands,
+ * the faces of a tooth, how each state is mainly said, then its other ways of being said, each word
+ * once and the list never over `budget` characters.
+ */
+function vocabularyFor(language: SpokenLanguage, budget = HINT_CHAR_BUDGET): string[] {
+  const terms = Object.values(FINDING_TERMS).map(entry => entry[language]);
+  const tiers: string[][] = [
+    COMMAND_EXAMPLES.map(example => example[language]),
+    SURFACE_TERMS[language],
+    terms.map(own => own[0]),
+    terms.flatMap(own => own.slice(1, 2)),
+    terms.flatMap(own => own.slice(2)),
   ];
+  const chosen: string[] = [];
+  const seen = new Set<string>();
+  let used = 0;
+  for (const tier of tiers) {
+    for (const term of tier) {
+      if (!term || seen.has(term)) continue;
+      // "; " between words.
+      if (used + term.length + 2 > budget) return chosen;
+      seen.add(term);
+      chosen.push(term);
+      used += term.length + 2;
+    }
+  }
+  return chosen;
 }
 
 const VOCABULARY_HINT: Readonly<Record<'fr' | 'en' | 'both', string>> = {
   fr: vocabularyFor('fr').join('; '),
   en: vocabularyFor('en').join('; '),
-  both: [...vocabularyFor('fr'), ...vocabularyFor('en')].join('; '),
+  // Arabic dictation says the Latin terms too: half the budget to each language.
+  both: [...vocabularyFor('fr', HINT_CHAR_BUDGET / 2), ...vocabularyFor('en', HINT_CHAR_BUDGET / 2)].join('; '),
 };
 
 /**
@@ -357,6 +433,15 @@ const READBACK_MAX_FINDINGS = 4;
 /** How many staged entries "read back what we have" speaks, the most recent. */
 const STAGED_LIST_MAX_ENTRIES = 6;
 
+/** A measure kept in a finding's note — "3 mm", "grade 2" — as it is read back; any other note is not. */
+export function spokenMeasure(note: string | null | undefined, language: SpokenLanguage): string {
+  const mm = /^(\d+(?:\.\d+)?) mm$/.exec(note ?? '');
+  if (mm) return language === 'fr' ? `de ${mm[1].replace('.', ',')} millimètres` : `${mm[1]} millimetres`;
+  const grade = /^grade (\w+)$/.exec(note ?? '');
+  if (grade) return language === 'fr' ? `grade ${grade[1]}` : `grade ${grade[1]}`;
+  return '';
+}
+
 /**
  * The read-back for a staged write, in the resolved values: tooth number and
  * findings, never an echo of the words. Null for an intent with no dedicated
@@ -374,14 +459,18 @@ export function spokenConfirmation(
     case 'clinical.addFindings': {
       const fdi = entityString(entities, 'fdi') ?? '';
       const findings = Array.isArray(entities['findings'])
-        ? entities['findings'] as Array<{ code?: string; surface?: string | null; severity?: string | null }>
+        ? entities['findings'] as Array<{ code?: string; surface?: string | null; severity?: string | null; note?: string | null; certainty?: string | null }>
         : [];
       const labels = findings.length
         ? findings.map(finding => {
           const parts = [spokenFindingLabel(String(finding.code), language)];
           if (finding.severity) parts.push(fr ? SEVERITY_FR[finding.severity] ?? '' : finding.severity.toLowerCase());
           if (finding.surface) parts.push(spokenSurface(finding.surface, language));
-          return parts.filter(Boolean).join(' ');
+          const measure = spokenMeasure(finding.note, language);
+          if (measure) parts.push(measure);
+          const said = parts.filter(Boolean).join(' ');
+          // "Suspicion de carie": said as the dentist said it, so they hear that it is not yet a fact.
+          return finding.certainty === 'SUSPECTED' ? (fr ? `suspicion de ${said}` : `suspected ${said}`) : said;
         })
         : stagedFindingCodes(entities).map(code => spokenFindingLabel(code, language));
       const spoken = labels.length > READBACK_MAX_FINDINGS

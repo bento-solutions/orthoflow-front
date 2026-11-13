@@ -9,7 +9,7 @@ interface StagedEntry {
 
 /**
  * The findings dictated and not saved yet, tooth by tooth, for drawing on the chart.
- * A staged command keeps its findings as `findings: [{ code, surface }]`; the NLU and older
+ * A staged command keeps its findings as `findings: [{ code, surface, certainty, note }]`; the NLU and older
  * rows carry bare codes, which are kept without a surface.
  */
 export function stagedToothFindings(buffered: readonly StagedEntry[]): StagedFinding[] {
@@ -19,9 +19,16 @@ export function stagedToothFindings(buffered: readonly StagedEntry[]): StagedFin
     if (!fdi || entry.intent !== 'clinical.addFindings') continue;
     const findings = entry.entities['findings'];
     if (Array.isArray(findings)) {
-      for (const finding of findings as { code?: unknown; surface?: unknown }[]) {
+      for (const finding of findings as { code?: unknown; surface?: unknown; certainty?: unknown; note?: unknown }[]) {
         if (typeof finding?.code !== 'string') continue;
-        out.push({ fdi, code: finding.code, surface: typeof finding.surface === 'string' ? finding.surface : null });
+        out.push({
+          fdi,
+          code: finding.code,
+          surface: typeof finding.surface === 'string' ? finding.surface : null,
+          // Said with a doubt, it is drawn as a suspicion; said with a measure, the gum shows it.
+          ...(finding.certainty === 'SUSPECTED' ? { certainty: 'SUSPECTED' as const } : {}),
+          ...(typeof finding.note === 'string' && finding.note ? { note: finding.note } : {}),
+        });
       }
     }
     const codes = entry.entities['findingCodes'];

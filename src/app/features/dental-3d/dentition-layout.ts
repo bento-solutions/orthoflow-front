@@ -1,10 +1,10 @@
-import { Euler, Quaternion, Vector3 } from 'three';
+import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
 import type { DentitionView } from '../../core/services/dental-3d-view.service';
 
 /**
  * Where each tooth stands in each of the chart's arrangements.
  *
- * The default arrangement unrolls the arches, like a panoramic radiograph: upper
+ * The panoramic arrangement (the chart's default until Nov 2026, and still one click away) unrolls the arches, like a panoramic radiograph: upper
  * teeth above with their crowns down, lower teeth below with their crowns up,
  * the patient's right on the left of the screen, every crown and every root in
  * sight at the same size. It is the picture a dentist already reads every day,
@@ -44,6 +44,12 @@ export interface DentitionLayout {
   readonly orbit: { readonly azimuth: number; readonly polarMin: number; readonly polarMax: number };
   /** The camera's direction from the centre of the arrangement. */
   readonly cameraDirection: Vector3;
+  /**
+   * Where each jaw stands, as the one rigid move from the natural arch (the bake's own space) to this
+   * arrangement. The gums and the palate ride on it with their teeth. Null when the teeth have left
+   * their natural arches: there is no gum round teeth laid out in a row.
+   */
+  readonly jaws: { readonly upper: Matrix4; readonly lower: Matrix4 } | null;
 }
 
 const isUpper = (fdi: string) => ['1', '2', '5', '6'].includes(fdi.charAt(0));
@@ -129,6 +135,7 @@ function rows(
     halfHeight: Math.max(top, bottom) + meanWidth * 0.4,
     orbit: { azimuth: Math.PI / 3, polarMin: Math.PI / 2 - Math.PI / 3, polarMax: Math.PI / 2 + Math.PI / 3 },
     cameraDirection: new Vector3(0, 0, 1),
+    jaws: null,
   };
 }
 
@@ -189,6 +196,7 @@ function quadrantRows(teeth: readonly ToothMetrics[], tilt: number, yaw: number)
     halfHeight: -cursor / 2 + meanWidth * 0.2,
     orbit: { azimuth: Math.PI / 3, polarMin: Math.PI / 2 - Math.PI / 3, polarMax: Math.PI / 2 + Math.PI / 3 },
     cameraDirection: new Vector3(0, 0, 1),
+    jaws: null,
   };
 }
 
@@ -196,9 +204,16 @@ function sumWidths(row: readonly ToothMetrics[]): number {
   return row.reduce((sum, t) => sum + t.halfWidth * 2, 0);
 }
 
-/** The natural arches, parted like an open mouth so neither hides the other. */
-function arches(teeth: readonly ToothMetrics[]): DentitionLayout {
-  const OPENING = 0.3;
+/** How far each jaw turns from the bite to part the arches: the teeth alone, then the mouth with its gums and palate. */
+const ARCH_OPENING = 0.3;
+const MOUTH_OPENING = 0.42;
+
+/**
+ * The natural arches, parted like an open mouth so neither hides the other. The mouth view parts them
+ * a little more: the palate and the floor between the arches are what it is for, and they are seen
+ * through the opening.
+ */
+function arches(teeth: readonly ToothMetrics[], opening = ARCH_OPENING, withGums = false): DentitionLayout {
   const upper = teeth.filter((t) => isUpper(t.fdi));
   const lower = teeth.filter((t) => !isUpper(t.fdi));
 
@@ -210,12 +225,22 @@ function arches(teeth: readonly ToothMetrics[]): DentitionLayout {
   const midX = average(teeth, 0);
   const hinge = new Vector3(midX, midY, backZ - (frontZ - backZ) * 0.25);
   const centreZ = (backZ + frontZ) / 2;
+  const centre = new Vector3(midX, midY, centreZ);
+
+  // Each jaw is one rigid body: the move of a tooth is the move of the jaw it stands in.
+  const jaw = (turn: Quaternion) => new Matrix4()
+    .makeTranslation(hinge.clone().sub(centre))
+    .multiply(new Matrix4().makeRotationFromQuaternion(turn))
+    .multiply(new Matrix4().makeTranslation(hinge.clone().negate()));
+  const turns = {
+    upper: new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), -opening),
+    lower: new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), opening),
+  };
 
   const poses = new Map<string, ToothPose>();
   const box = { x: 0, y: 0 };
   for (const tooth of teeth) {
-    const up = isUpper(tooth.fdi);
-    const turn = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), up ? -OPENING : OPENING);
+    const turn = isUpper(tooth.fdi) ? turns.upper : turns.lower;
     const position = new Vector3(...tooth.position).sub(hinge).applyQuaternion(turn).add(hinge);
     position.x -= midX;
     position.y -= midY;
@@ -229,13 +254,17 @@ function arches(teeth: readonly ToothMetrics[]): DentitionLayout {
   return {
     poses,
     labelReach: { upper: 0, lower: 0 },
-    // Perspective shrinks the far teeth, so the box of them all is a generous frame.
-    halfWidth: box.x * 0.92,
-    halfHeight: box.y * 0.86,
+    // Perspective shrinks the far teeth, so the box of them all is a generous frame; the gums go a little past the roots.
+    halfWidth: withGums ? box.x * 0.96 + GUM_FRAME : box.x * 0.92,
+    halfHeight: withGums ? box.y * 0.92 + GUM_FRAME : box.y * 0.86,
     orbit: { azimuth: Infinity, polarMin: 0.05, polarMax: Math.PI - 0.05 },
     cameraDirection: new Vector3(0, 0, 1),
+    jaws: { upper: jaw(turns.upper), lower: jaw(turns.lower) },
   };
 }
+
+/** How much further than the teeth the frame reaches for the gums that go past their roots. */
+const GUM_FRAME = 0.12;
 
 const OVERVIEW_TILT = 0.34;
 const OCCLUSAL_TILT = 1.32;
@@ -244,7 +273,8 @@ const OCCLUSAL_TILT = 1.32;
 export function layoutFor(view: DentitionView, teeth: readonly ToothMetrics[], portrait = false): DentitionLayout {
   const arrange = portrait ? quadrantRows : rows;
   switch (view) {
-    case 'overview': return arrange(teeth, OVERVIEW_TILT, 0);
+    case 'overview': return arches(teeth, MOUTH_OPENING, true);
+    case 'panoramic': return arrange(teeth, OVERVIEW_TILT, 0);
     case 'occlusal': return arrange(teeth, OCCLUSAL_TILT, 0);
     case 'lingual': return arrange(teeth, OVERVIEW_TILT, Math.PI);
     case 'arch': return arches(teeth);

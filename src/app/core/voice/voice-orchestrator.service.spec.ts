@@ -263,7 +263,8 @@ describe('VoiceOrchestratorService — staging what was dictated', () => {
       expect(api.recorded[1].intent).toBe('clinical.addFindings');
       expect(entitiesOf(1)['fdi']).toBe('16');
       expect(entitiesOf(1)['retractCodes']).toBeUndefined();
-      expect(codesOf(1).sort()).toEqual(['fracture', 'gingival_inflammation']);
+      // "Gingivite" is a state of its own in the referential, not the general "inflammation gingivale".
+      expect(codesOf(1).sort()).toEqual(['fracture', 'gingivitis']);
       expect(api.rejected).toEqual(['audit-1']);
       expect(orchestrator.buffered().map(entry => entry.auditId)).toEqual(['audit-2']);
     });
@@ -275,7 +276,7 @@ describe('VoiceOrchestratorService — staging what was dictated', () => {
       expect(api.recorded[0].intent).toBe('clinical.addFindings');
       expect(entitiesOf(0)['fdi']).toBe('17');
       expect(entitiesOf(0)['retractCodes']).toEqual(['caries']);
-      expect(codesOf(0)).toEqual(['gingival_inflammation']);
+      expect(codesOf(0)).toEqual(['gingivitis']);
     });
 
     it('moves the staged entry to the right tooth, findings and all', async () => {

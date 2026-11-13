@@ -7,12 +7,15 @@ import { DentalChartService } from '../../../core/services/dental-chart.service'
 import { ToastService } from '../../../core/services/toast.service';
 import { AnnouncerService } from '../../../core/services/announcer.service';
 import {
-  AddToothFindingRequest, FindingKind, FindingOrigin, ToothFinding,
+  AddToothFindingRequest, FindingCertainty, FindingOrigin, Severity, ToothFinding,
 } from '../../../core/models/clinical-record.model';
 import {
-  FINDING_KIND_ORDER, FINDING_OPTIONS, findingLabel, findingOption,
+  FINDING_OPTIONS, findingGroupsInUse, findingLabel, findingOption,
 } from '../../../core/clinical/finding-options';
-import { surfaceShorthand } from '../../../core/clinical/tooth-surfaces';
+import { FindingGroup, MEASURES } from '../../../core/clinical/finding-referential';
+import {
+  ROOT_SURFACES, RootSurface, ToothSurface, formatSurface, parseSurface, surfaceShorthand,
+} from '../../../core/clinical/tooth-surfaces';
 import { SurfacePickerComponent } from './surface-picker.component';
 
 /**
@@ -40,11 +43,17 @@ import { SurfacePickerComponent } from './surface-picker.component';
           <span class="finding-label">
             {{ label(f.findingCode) }}
             @if (f.surface) { <span class="surface-badge" [title]="f.surface">{{ shorthand(f.surface) }}</span> }
+            @if (f.certainty === 'SUSPECTED') { <span class="suspect-badge">{{ 'TOOTH_DETAIL.CERTAINTY.SUSPECTED_BADGE' | translate }}</span> }
           </span>
           <span class="finding-meta">{{ meta(f) }}</span>
           @if (f.note) { <span class="finding-note">{{ f.note }}</span> }
         </div>
         <div class="finding-actions">
+          @if (f.certainty === 'SUSPECTED') {
+            <button type="button" class="act" (click)="confirm(f)" [title]="'TOOTH_DETAIL.CERTAINTY.CONFIRM_HINT' | translate">
+              <span class="material-icons" aria-hidden="true">verified</span>{{ 'TOOTH_DETAIL.CERTAINTY.CONFIRM' | translate }}
+            </button>
+          }
           <button type="button" class="act" (click)="setStatus(f, 'RESOLVED')"
             [title]="(done ? 'TOOTH_DETAIL.MARK_DONE_HINT' : 'TOOTH_DETAIL.MARK_TREATED_HINT') | translate">
             <span class="material-icons" aria-hidden="true">check_circle</span>{{ (done ? 'TOOTH_DETAIL.MARK_DONE' : 'TOOTH_DETAIL.MARK_TREATED') | translate }}
@@ -92,9 +101,9 @@ import { SurfacePickerComponent } from './surface-picker.component';
         <span class="field-label">{{ 'TOOTH_DETAIL.WHAT' | translate }}</span>
         <select #what class="select" [ngModel]="code()" (ngModelChange)="pick($event)">
           <option value="" disabled>{{ 'TOOTH_DETAIL.CHOOSE' | translate }}</option>
-          @for (kind of kinds; track kind) {
-            <optgroup [label]="('TOOTH_DETAIL.KIND.' + kind) | translate">
-              @for (opt of optionsOf(kind); track opt.code) {
+          @for (group of groups; track group) {
+            <optgroup [label]="('TOOTH_DETAIL.GROUP.' + group) | translate">
+              @for (opt of optionsOf(group); track opt.code) {
                 <option [value]="opt.code">{{ label(opt.code) }}</option>
               }
             </optgroup>
@@ -108,6 +117,49 @@ import { SurfacePickerComponent } from './surface-picker.component';
           <app-surface-picker [fdi]="fdi()" [value]="surface()" (valueChange)="surface.set($event)" />
         </div>
       }
+
+      @if (chosen()?.roots && multiRooted()) {
+        <!-- A back tooth has several roots, and a lesion, a fracture or a resorption is in one of them. -->
+        <div class="field">
+          <span class="field-label">{{ 'TOOTH_DETAIL.ROOT' | translate }}</span>
+          <div class="seg seg-wrap" role="group" [attr.aria-label]="'TOOTH_DETAIL.ROOT' | translate">
+            @for (root of roots; track root) {
+              <button type="button" [attr.aria-pressed]="isRootPicked(root)" [class.on]="isRootPicked(root)"
+                (click)="toggleRoot(root)">{{ ('SURFACE.' + root.toUpperCase()) | translate }}</button>
+            }
+          </div>
+        </div>
+      }
+
+      @if (measure(); as kind) {
+        <label class="field">
+          <span class="field-label">{{ (kind === 'mm' ? 'TOOTH_DETAIL.MEASURE_MM' : 'TOOTH_DETAIL.MEASURE_GRADE') | translate }}</span>
+          @if (kind === 'mm') {
+            <input class="input" type="number" min="0" max="20" step="0.5" inputmode="decimal" [(ngModel)]="millimetres"
+              [placeholder]="'TOOTH_DETAIL.MEASURE_MM_PLACEHOLDER' | translate" />
+          } @else {
+            <select class="select" [(ngModel)]="grade">
+              <option value="">{{ 'TOOTH_DETAIL.MEASURE_NONE' | translate }}</option>
+              <option value="1">{{ gradeLabel(1) }}</option>
+              <option value="2">{{ gradeLabel(2) }}</option>
+              <option value="3">{{ gradeLabel(3) }}</option>
+            </select>
+          }
+        </label>
+      }
+
+      <div class="field">
+        <span class="field-label">{{ 'TOOTH_DETAIL.CERTAINTY.LABEL' | translate }}</span>
+        <div class="seg" role="group" [attr.aria-label]="'TOOTH_DETAIL.CERTAINTY.LABEL' | translate">
+          <button type="button" [attr.aria-pressed]="certainty() === 'CONFIRMED'" [class.on]="certainty() === 'CONFIRMED'"
+            (click)="certainty.set('CONFIRMED')">{{ 'TOOTH_DETAIL.CERTAINTY.CONFIRMED' | translate }}</button>
+          <button type="button" [attr.aria-pressed]="certainty() === 'SUSPECTED'" [class.on]="certainty() === 'SUSPECTED'"
+            (click)="certainty.set('SUSPECTED')">{{ 'TOOTH_DETAIL.CERTAINTY.SUSPECTED' | translate }}</button>
+        </div>
+        @if (certainty() === 'SUSPECTED') {
+          <span class="field-hint">{{ 'TOOTH_DETAIL.CERTAINTY.HINT' | translate }}</span>
+        }
+      </div>
 
       @if (chosen()?.kind === 'EXISTING') {
         <div class="field">
@@ -187,6 +239,8 @@ import { SurfacePickerComponent } from './surface-picker.component';
     .finding-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .125rem; }
     .finding-label { font-weight: 600; color: var(--text); display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; }
     .surface-badge { font-size: .6875rem; font-weight: 700; letter-spacing: .06em; padding: .0625rem .375rem; border-radius: .25rem; background: var(--action-tint); color: var(--action-text); }
+    .suspect-badge { font-size: .6875rem; font-weight: 700; padding: .0625rem .375rem; border-radius: .25rem; border: 1px dashed #6d28d9; background: #f5f3ff; color: #5b21b6; }
+    .seg-wrap { flex-wrap: wrap; }
     .finding-meta { font-size: .75rem; color: var(--text-muted); }
     .finding.past .finding-meta { color: var(--text-muted-on-tint); }
     .finding-note { font-size: .8125rem; color: var(--text); white-space: pre-line; }
@@ -228,17 +282,25 @@ export class ToothDetailComponent {
   private readonly announcer = inject(AnnouncerService);
   private readonly what = viewChild<ElementRef<HTMLSelectElement>>('what');
 
-  protected readonly kinds = FINDING_KIND_ORDER;
+  protected readonly groups = findingGroupsInUse();
+  protected readonly roots = ROOT_SURFACES;
   protected readonly today = new Date().toISOString().slice(0, 10);
 
   protected readonly code = signal('');
   protected readonly origin = signal<FindingOrigin>('THIS_CLINIC');
+  protected readonly certainty = signal<FindingCertainty>('CONFIRMED');
   protected provider = '';
   protected performedOn = '';
   protected note = '';
+  protected millimetres: number | null = null;
+  protected grade = '';
   protected readonly saving = signal(false);
 
   protected readonly chosen = computed(() => findingOption(this.code()));
+  /** What a number said with the chosen state means: millimetres or a grade, or null when it has none. */
+  protected readonly measure = computed(() => MEASURES[this.code()] ?? null);
+  /** One root, or one nobody has to be told from the others: the root picker is for back teeth. */
+  protected readonly multiRooted = computed(() => Number(this.fdi().charAt(1)) >= 4);
   protected readonly active = computed(() =>
     this.findings().filter((f) => f.fdi === this.fdi() && f.status === 'ACTIVE'));
   /** États: what the tooth is — pathology, work already in the mouth, things to watch. */
@@ -262,8 +324,44 @@ export class ToothDetailComponent {
     });
   }
 
-  protected optionsOf(kind: FindingKind) {
-    return FINDING_OPTIONS.filter((o) => o.kind === kind);
+  protected optionsOf(group: FindingGroup) {
+    return FINDING_OPTIONS.filter((o) => o.group === group);
+  }
+
+  protected isRootPicked(root: RootSurface): boolean {
+    return parseSurface(this.surface()).includes(root);
+  }
+
+  protected toggleRoot(root: RootSurface): void {
+    const next = new Set<ToothSurface>(parseSurface(this.surface()));
+    if (next.has(root)) next.delete(root);
+    else next.add(root);
+    this.surface.set(formatSurface(next));
+  }
+
+  /** "Grade 2", or "grade II" for a furcation, as the dentist says it. */
+  protected gradeLabel(grade: 1 | 2 | 3): string {
+    const word = this.translate.instant('TOOTH_DETAIL.GRADE');
+    return `${word} ${this.code() === 'furcation_involvement' ? ['I', 'II', 'III'][grade - 1] : grade}`;
+  }
+
+  /** Puts a suspected finding on the record as confirmed. The same finding, said again with no doubt. */
+  protected confirm(finding: ToothFinding): void {
+    const request: AddToothFindingRequest = {
+      findingCode: finding.findingCode ?? '',
+      source: 'manual',
+      certainty: 'CONFIRMED',
+      ...(finding.surface ? { surface: finding.surface } : {}),
+      ...(finding.severity ? { severity: finding.severity } : {}),
+      ...(finding.note ? { note: finding.note } : {}),
+      ...(finding.performedOn ? { performedOn: finding.performedOn } : {}),
+      ...(finding.origin ? { origin: finding.origin } : {}),
+      ...(finding.providerName ? { providerName: finding.providerName } : {}),
+    };
+    this.records.addFinding(this.patientId(), this.fdi(), request).subscribe({
+      next: () => this.afterChange(this.label(finding.findingCode ?? ''), false),
+      error: (err) => this.fail(err),
+    });
   }
 
   protected label(code: string): string {
@@ -292,19 +390,31 @@ export class ToothDetailComponent {
 
   protected pick(code: string): void {
     this.code.set(code);
+    this.millimetres = null;
+    this.grade = '';
     // A face already picked on the tooth stays for a finding that can have one.
-    if (!findingOption(code)?.surfaces) this.surface.set(null);
+    const option = findingOption(code);
+    if (!option?.surfaces && !option?.roots) this.surface.set(null);
   }
 
   protected add(): void {
     const code = this.code();
     if (!code || this.saving()) return;
     const isExisting = this.chosen()?.kind === 'EXISTING';
+    const surface = this.surface();
+    const roots = this.chosen()?.roots && this.multiRooted();
+    // Only what the chosen state can be about: the faces of the crown, and the roots when it is about one.
+    const parts = parseSurface(surface).filter((part) => (this.chosen()?.surfaces && !part.endsWith('root')) || (roots && part.endsWith('root')));
+    const named = parts.length ? formatSurface(parts) : null;
+    const measure = this.measureNote();
+    const note = [measure, this.note.trim()].filter(Boolean).join(' · ');
     const request: AddToothFindingRequest = {
       findingCode: code,
       source: 'manual',
-      ...(this.chosen()?.surfaces && this.surface() ? { surface: this.surface()! } : {}),
-      ...(this.note.trim() ? { note: this.note.trim() } : {}),
+      ...(named ? { surface: named } : {}),
+      ...(note ? { note } : {}),
+      ...(this.certainty() === 'SUSPECTED' ? { certainty: 'SUSPECTED' as const } : {}),
+      ...(this.measure() === 'grade' && this.grade ? { severity: (['MILD', 'MODERATE', 'SEVERE'] as Severity[])[Number(this.grade) - 1] } : {}),
       ...(isExisting && this.performedOn ? { performedOn: this.performedOn } : {}),
       ...(isExisting ? { origin: this.origin() } : {}),
       ...(isExisting && this.origin() === 'EXTERNAL' && this.provider.trim() ? { providerName: this.provider.trim() } : {}),
@@ -339,12 +449,24 @@ export class ToothDetailComponent {
     this.toast.error(this.translate.instant('TOOTH_DETAIL.SAVE_FAILED'));
   }
 
+  /** The measure as the voice records it: "3 mm", "grade 2", "grade II" for a furcation. */
+  private measureNote(): string {
+    if (this.measure() === 'mm') return this.millimetres != null && this.millimetres > 0 ? `${this.millimetres} mm` : '';
+    if (this.measure() === 'grade' && this.grade) {
+      return `grade ${this.code() === 'furcation_involvement' ? ['I', 'II', 'III'][Number(this.grade) - 1] : this.grade}`;
+    }
+    return '';
+  }
+
   private resetForm(): void {
     this.code.set('');
     this.surface.set(null);
     this.origin.set('THIS_CLINIC');
+    this.certainty.set('CONFIRMED');
     this.provider = '';
     this.performedOn = '';
     this.note = '';
+    this.millimetres = null;
+    this.grade = '';
   }
 }

@@ -513,15 +513,15 @@ describe('French clinical vocabulary', () => {
     ['dent 16 reconstitution', 'existing_filling'],
     ['dent 16 reconstitution à refaire', 'filling_required'],
     ['dent 16 inlay', 'existing_inlay'],
-    ['dent 26 onlay', 'existing_inlay'],
+    ['dent 26 onlay', 'existing_onlay'],
     ['dent 36 dévitalisation', 'existing_root_canal'],
     ['dent 36 dévitalisation à faire', 'root_canal_required'],
     ['dent 16 saignement', 'bleeding'],
     ['dent 36 gonflement', 'swelling'],
     ['dent 16 hypersensibilité', 'sensitivity'],
     ['dent 16 récession', 'gingival_recession'],
-    ['dent 12 en rotation', 'malposition'],
-    ['dent 13 ectopique', 'malposition'],
+    ['dent 12 en rotation', 'rotation'],
+    ['dent 13 ectopique', 'ectopic_eruption'],
     ['dent 16 colorée', 'discoloration'],
     ['dent 16 bruxisme', 'tooth_wear'],
     ['dent 16 faux moignon', 'existing_post'],
@@ -557,6 +557,17 @@ describe('the detail a finding is said with', () => {
     expect(surfaceOf('dent 26 carie occluso-distale', 'caries')).toBe('occlusal-distal');
     expect(surfaceOf('dent 16 carie mésio-occluso-distale', 'caries')).toBe('mesial-occlusal-distal');
     expect(surfaceOf('tooth 16 mesial occlusal caries', 'caries')).toBe('mesial-occlusal');
+  });
+
+  it('reads the surface a dentist charts by its letters, through the whole sentence', () => {
+    expect(surfaceOf('dent 36 carie MOD', 'caries')).toBe('mesial-occlusal-distal');
+    expect(surfaceOf('la 26 composite DO', 'existing_composite')).toBe('occlusal-distal');
+    expect(surfaceOf('dent 46 inlay MODB', 'existing_inlay')).toBe('mesial-occlusal-distal-buccal');
+    expect(surfaceOf('dent 11 carie MI', 'caries')).toBe('mesial-incisal');
+    expect(surfaceOf('tooth 36 MOD caries', 'caries')).toBe('mesial-occlusal-distal');
+    expect(surfaceOf('dent 36 carie M O D', 'caries')).toBe('mesial-occlusal-distal');
+    // Said as a stage, a dose or a word, the same letters are not a surface.
+    expect(surfaceOf('dent 36 carie profonde', 'caries')).toBeNull();
   });
 
   it('gives each surface to the finding it describes, not to both', () => {
@@ -852,11 +863,33 @@ describe('the 3D chart view by voice', () => {
   it.each([
     ['vue occlusale', 'occlusal'], ['montre la vue occlusale', 'occlusal'], ['occlusal view', 'occlusal'], ['show me the biting surfaces', 'occlusal'],
     ['vue linguale', 'lingual'], ['vue palatine', 'lingual'], ['lingual view', 'lingual'],
-    ["vue d'ensemble", 'overview'], ['vue panoramique', 'overview'], ['back to the overview', 'overview'],
+    ["vue d'ensemble", 'overview'], ['vue panoramique', 'panoramic'], ['back to the overview', 'overview'],
     ['vue des arcades', 'arch'], ['montre les arcades', 'arch'], ['show the arches', 'arch'],
   ])('"%s" arranges the chart as %s', (utterance, view) => {
     expect(intentOf(utterance)).toEqual({ id: 'chart.setView', entities: { view } });
   });
+
+  it.each([
+    ['vue de la bouche', 'overview'], ['mouth view', 'overview'], ['vue générale', 'overview'], ['full mouth view', 'overview'],
+    ['panoramique', 'panoramic'], ['vue déroulée', 'panoramic'], ['panoramic', 'panoramic'], ['unrolled view', 'panoramic'],
+    ['passe en vue panoramique', 'panoramic'], ['montre la vue panoramique', 'panoramic'],
+  ])('"%s" arranges the chart as %s', (utterance, view) => {
+    expect(intentOf(utterance)).toEqual({ id: 'chart.setView', entities: { view } });
+  });
+
+  it.each([
+    ['cache les gencives', false], ['masque la gencive', false], ['enlève les gencives et le palais', false], ['sans les gencives', false],
+    ['vue sans gencives', false], ['hide the gums', false], ['remove the palate', false], ['without the gums', false],
+    ['affiche les gencives', true], ['montre le palais', true], ['avec les gencives', true], ['vue avec les gencives et le palais', true],
+    ['show the gums', true], ['display the palate', true], ['with the gums', true], ['remets les gencives', true],
+  ])('"%s" %s the gums and the palate', (utterance, show) => {
+    expect(intentOf(utterance)).toEqual({ id: 'chart.gums', entities: { show } });
+  });
+
+  it.each(['dent 16 gencive enflammée', 'gingivite', 'dent 26 récession gingivale', 'dent 36 gencives qui saignent', 'tooth 16 gums inflamed'])(
+    'a finding about the gum is never taken for the gums command: "%s"', (utterance) => {
+      expect(intentOf(utterance)).not.toMatchObject({ id: 'chart.gums' });
+    });
 
   it.each(['dent 16 carie occlusale', 'carie occlusale sur la 26', 'tooth 36 occlusal caries'])(
     'dictation is never taken for a view change: "%s"', (utterance) => {

@@ -21,6 +21,10 @@ import { FindingKind, ToothFinding } from '../models/clinical-record.model';
 import { ToothState, ToothStatus } from '../models/patient.model';
 import { FAMILY_PAINT, PLANNED_PAINT, ToothFillGeometry, ToothStatusFamily, toothStatusDefinition } from './tooth-status';
 import { ToothSurface, parseSurface } from './tooth-surfaces';
+import {
+  DEPOSITS, GUM_EFFECTS, GumEffect, IMPLANT_THREAD_CODES, REFERENTIAL_ABSENT, REFERENTIAL_IMPLIED_STATUS, REFERENTIAL_LESIONS,
+  REFERENTIAL_RULES, ROOT_POST_CODES,
+} from './finding-referential';
 
 /** The parts of a tooth the chart can colour on their own. */
 export const PAINT_ZONES = ['root', 'cervical', 'occlusal', 'mesial', 'distal', 'buccal', 'lingual'] as const;
@@ -29,11 +33,21 @@ export type PaintZone = (typeof PAINT_ZONES)[number];
 const CROWN: readonly PaintZone[] = ['cervical', 'occlusal', 'mesial', 'distal', 'buccal', 'lingual'];
 const WHOLE: readonly PaintZone[] = ['root', ...CROWN];
 
-export type ZoneFamily = 'existing' | 'condition' | 'planned';
+/** `suspected` is what the dentist has not confirmed: drawn on the part it concerns, under everything that is. */
+export type ZoneFamily = 'existing' | 'condition' | 'planned' | 'suspected';
 
 export interface ZonePaint {
   readonly family: ZoneFamily;
-  readonly pattern: ToothFillGeometry | 'owed';
+  readonly pattern: ToothFillGeometry | 'owed' | 'suspect';
+}
+
+/** The faces of a tooth a deposit covers, as bits: tartar on the cheek side is `DEPOSIT_FACES.buccal`. */
+export const DEPOSIT_FACES = { mesial: 1, distal: 2, buccal: 4, lingual: 8, all: 15 } as const;
+
+/** What the gum round a tooth shows. Each effect is the strongest recorded on the tooth, 0 to 1. */
+export interface GumPaint extends GumEffect {
+  /** How far the gum has receded, in millimetres, when it was measured. */
+  readonly recessionMm?: number;
 }
 
 /** What the assigned-treatment tracker says about a tooth, drawn as a ring on its number. */
@@ -55,6 +69,12 @@ export interface ToothPaint {
   /** Dictated during this session and not saved yet. */
   readonly staged: boolean;
   readonly treatment: TreatmentRing | null;
+  /** Tartar and plaque at the neck of the tooth: the faces each covers (see {@link DEPOSIT_FACES}), 0 for none. */
+  readonly deposit: { readonly calculus: number; readonly plaque: number };
+  /** What was recorded about the gum at this tooth, or null when nothing was. An empty object is "healthy". */
+  readonly gum: GumPaint | null;
+  /** Something recorded on this tooth is only suspected. */
+  readonly suspected: boolean;
 }
 
 /** A finding dictated but not saved, in as much detail as the voice session has it. */
@@ -62,6 +82,16 @@ export interface StagedFinding {
   readonly fdi: string;
   readonly code: string;
   readonly surface: string | null;
+  /** Suspected, not confirmed. */
+  readonly certainty?: 'SUSPECTED' | 'CONFIRMED' | null;
+  /** What was said with it ("3 mm"). */
+  readonly note?: string | null;
+}
+
+/** What the paint reads of a finding. */
+export interface PaintableFinding extends Pick<ToothFinding, 'findingCode' | 'kind' | 'surface'> {
+  readonly note?: string | null;
+  readonly certainty?: string | null;
 }
 
 interface Rule {
@@ -77,7 +107,7 @@ const rule = (family: ZoneFamily, pattern: ToothFillGeometry | 'owed', where: re
   ({ family, pattern, where, bySurface });
 
 /** Mirrors the codes of the backend's FindingCatalog. A code missing here is flagged, never lost. */
-const RULES: Readonly<Record<string, Rule>> = {
+const BASE_RULES: Readonly<Record<string, Rule>> = {
   // Work in the mouth
   existing_crown: rule('existing', 'hatch', CROWN),
   existing_bridge: rule('existing', 'hatch', CROWN),
@@ -105,7 +135,6 @@ const RULES: Readonly<Record<string, Rule>> = {
   gingival_inflammation: rule('condition', 'stipple', ['cervical']),
   periodontal_pocket: rule('condition', 'stipple', ['cervical']),
   gingival_recession: rule('condition', 'stipple', ['cervical']),
-  plaque_calculus: rule('condition', 'stipple', ['cervical']),
   // Work still owed
   crown_required: rule('planned', 'owed', CROWN),
   crown_replacement_required: rule('planned', 'owed', CROWN),
@@ -121,21 +150,36 @@ const RULES: Readonly<Record<string, Rule>> = {
   periodontal_treatment_required: rule('planned', 'owed', ['cervical']),
 };
 
-const ABSENT = new Set(['extracted', 'missing', 'avulsion']);
-const LESION = new Set(['abscess', 'periapical_lesion', 'necrosis', 'pulpitis', 'infection']);
+/** The states of the clinical referential, resolved onto the parts of a tooth. */
+const REFERENTIAL_PAINT: Readonly<Record<string, Rule>> = Object.fromEntries(
+  Object.entries(REFERENTIAL_RULES).map(([code, r]) => [
+    code,
+    rule(r.family, r.pattern, r.where === 'CROWN' ? CROWN : r.where === 'WHOLE' ? WHOLE : (r.where as readonly PaintZone[]), r.bySurface),
+  ]),
+);
+
+const RULES: Readonly<Record<string, Rule>> = { ...BASE_RULES, ...REFERENTIAL_PAINT };
+
+const ABSENT = new Set(['extracted', 'missing', 'avulsion', ...REFERENTIAL_ABSENT]);
+const LESION = new Set(['abscess', 'periapical_lesion', 'necrosis', 'pulpitis', 'infection', ...REFERENTIAL_LESIONS]);
+/** Said of the tooth and the gum being as they should be: nothing to flag on the number. */
+const NEUTRAL = new Set(['normal', 'normal_pulp', 'healthy_gingiva', 'permanent_tooth']);
 const IMPLANT_THREADS: ZonePaint = { family: 'existing', pattern: 'bars' };
 const RETAINED_ROOT: ZonePaint = { family: 'condition', pattern: 'stipple' };
+const ROOT_POST: ZonePaint = { family: 'existing', pattern: 'endo' };
 
 /** The surfaces of the finding, on the parts of the tooth that carry them. */
 function zonesOfSurfaces(surface: string | null | undefined): PaintZone[] {
   const map: Record<ToothSurface, PaintZone> = {
     mesial: 'mesial', distal: 'distal', buccal: 'buccal', lingual: 'lingual',
     occlusal: 'occlusal', incisal: 'occlusal', cervical: 'cervical',
+    // A named root is a part of the root: the 3D model has one root zone, not one per root.
+    mesialroot: 'root', distalroot: 'root', buccalroot: 'root', lingualroot: 'root',
   };
   return parseSurface(surface).map((s) => map[s]);
 }
 
-const RANK: Readonly<Record<ZoneFamily, number>> = { planned: 1, existing: 2, condition: 3 };
+const RANK: Readonly<Record<ZoneFamily, number>> = { suspected: 0, planned: 1, existing: 2, condition: 3 };
 
 function stronger(current: ZonePaint | undefined, next: ZonePaint): boolean {
   return !current || RANK[next.family] > RANK[current.family];
@@ -182,14 +226,28 @@ function explainsStatus(code: string, status: ToothStatus): boolean {
     extracted: ['extracted'],
     missing: ['missing', 'avulsion'],
   };
-  return map[status]?.includes(code) ?? false;
+  return (map[status]?.includes(code) ?? false) || REFERENTIAL_IMPLIED_STATUS[code] === status;
+}
+
+/** The faces a finding's surface names, as deposit bits; all of them when it names none. */
+function depositFaces(surface: string | null | undefined): number {
+  const bits = parseSurface(surface).reduce((faces, s) => faces
+    | (s === 'mesial' ? DEPOSIT_FACES.mesial : s === 'distal' ? DEPOSIT_FACES.distal : s === 'buccal' ? DEPOSIT_FACES.buccal : s === 'lingual' ? DEPOSIT_FACES.lingual : 0), 0);
+  return bits || DEPOSIT_FACES.all;
+}
+
+/** "3 mm" → 3, for what a measured state does to the gum. */
+function millimetres(note: string | null | undefined): number | undefined {
+  // The measure leads the note: "3 mm", or "3 mm · patient anxieux" from the panel.
+  const match = /^(\d+(?:\.\d+)?) mm(?![\p{L}\p{N}])/u.exec(note ?? '');
+  return match ? Number(match[1]) : undefined;
 }
 
 /** One tooth's paint, from everything known about it. */
 export function paintTooth(
   fdi: string,
   status: ToothStatus,
-  findings: readonly Pick<ToothFinding, 'findingCode' | 'kind' | 'surface'>[],
+  findings: readonly PaintableFinding[],
   staged: readonly StagedFinding[] = [],
   treatment: TreatmentRing | null = null,
 ): ToothPaint {
@@ -203,31 +261,75 @@ export function paintTooth(
   let lesion = false;
   let flagged = false;
   let planned = false;
+  let suspected = false;
   let explained = status === 'present';
+  let calculus = 0;
+  let plaque = 0;
+  const gum: Record<string, number> = {};
+  let gumSeen = false;
+  let recessionMm: number | undefined;
 
-  const apply = (code: string, kind: FindingKind | undefined, surface: string | null | undefined) => {
+  const apply = (
+    code: string,
+    kind: FindingKind | undefined,
+    surface: string | null | undefined,
+    certainty?: string | null,
+    note?: string | null,
+  ) => {
+    if (certainty === 'SUSPECTED') {
+      // Not confirmed: drawn on the part it concerns in its own colour, under everything that is,
+      // and never as the tooth being absent, a lesion, tartar or an effect on the gum.
+      suspected = true;
+      const found = RULES[code];
+      if (!found || ABSENT.has(code) || LESION.has(code)) {
+        flagged = true;
+        return;
+      }
+      const named = found.bySurface ? zonesOfSurfaces(surface) : [];
+      put(named.length ? named : found.where, { family: 'suspected', pattern: 'suspect' });
+      return;
+    }
     if (explainsStatus(code, status)) explained = true;
     if (ABSENT.has(code)) { absent = true; return; }
-    if (LESION.has(code)) { lesion = true; return; }
+    if (LESION.has(code)) lesion = true;
     if (code === 'retained_root') {
       crownLost = true;
       put(['root'], RETAINED_ROOT);
       return;
     }
+    const deposit = DEPOSITS[code];
+    if (deposit) {
+      const faces = depositFaces(surface);
+      if (deposit !== 'plaque') calculus |= faces;
+      if (deposit !== 'calculus') plaque |= faces;
+    }
+    const effect = GUM_EFFECTS[code];
+    if (effect) {
+      gumSeen = true;
+      for (const [key, value] of Object.entries(effect)) gum[key] = Math.max(gum[key] ?? 0, value as number);
+      if (code === 'gingival_recession' || code === 'clinical_attachment_loss') {
+        const mm = millimetres(note);
+        if (mm !== undefined) recessionMm = Math.max(recessionMm ?? 0, mm);
+      }
+    }
     if (kind === 'TREATMENT_REQUIRED') planned = true;
     const found = RULES[code];
     if (!found) {
+      if (LESION.has(code) || deposit || NEUTRAL.has(code)) return;
       // Anything without a place on the tooth still has to be visible, or it is recorded and never seen.
       flagged = true;
       return;
     }
     const named = found.bySurface ? zonesOfSurfaces(surface) : [];
     put(named.length ? named : found.where, { family: found.family, pattern: found.pattern });
-    if (code === 'existing_implant') put(['root'], IMPLANT_THREADS);
+    if (code === 'existing_implant' || IMPLANT_THREAD_CODES.includes(code)) put(['root'], IMPLANT_THREADS);
+    if (ROOT_POST_CODES.includes(code)) put(['root'], ROOT_POST);
   };
 
-  for (const finding of findings) if (finding.findingCode) apply(finding.findingCode, finding.kind, finding.surface);
-  for (const finding of staged) apply(finding.code, kindOfCode(finding.code), finding.surface);
+  for (const finding of findings) {
+    if (finding.findingCode) apply(finding.findingCode, finding.kind, finding.surface, finding.certainty, finding.note);
+  }
+  for (const finding of staged) apply(finding.code, kindOfCode(finding.code), finding.surface, finding.certainty, finding.note);
 
   if (!explained && !absent) {
     const definition = toothStatusDefinition(status);
@@ -236,7 +338,12 @@ export function paintTooth(
     if (status === 'implant') put(['root'], IMPLANT_THREADS);
   }
 
-  return { fdi, zones, absent, crownLost, lesion, flagged, planned, staged: staged.length > 0, treatment };
+  return {
+    fdi, zones, absent, crownLost, lesion, flagged, planned, staged: staged.length > 0, treatment,
+    deposit: { calculus, plaque },
+    gum: gumSeen ? { ...gum, ...(recessionMm !== undefined ? { recessionMm } : {}) } : null,
+    suspected,
+  };
 }
 
 function kindOfCode(code: string): FindingKind | undefined {
@@ -294,15 +401,19 @@ export function rgbTriplet(css: string): [number, number, number] {
   return [r, g, b];
 }
 
+/** A suspicion is violet: no status family uses it, and it reads as "not yet" beside red, petrol and amber. */
+export const SUSPECTED_INK = '#7c3aed';
+
 export const ZONE_COLOUR: Readonly<Record<ZoneFamily, readonly [number, number, number]>> = {
   existing: rgbTriplet(FAMILY_PAINT.existing.solid),
   condition: rgbTriplet(FAMILY_PAINT.condition.solid),
   planned: rgbTriplet(PLANNED_PAINT.solid),
+  suspected: [124, 58, 237],
 };
 
 /** Pattern number the shader switches on. 0 means the part is not painted. */
 export const PATTERN_ID: Readonly<Record<ZonePaint['pattern'], number>> = {
-  none: 0, solid: 1, hatch: 2, endo: 3, dotted: 4, stipple: 5, bars: 6, jag: 7, cross: 8, owed: 9,
+  none: 0, solid: 1, hatch: 2, endo: 3, dotted: 4, stipple: 5, bars: 6, jag: 7, cross: 8, owed: 9, suspect: 10,
 };
 
 /* ── Which part of a tooth a point on it belongs to ───────────────────── */

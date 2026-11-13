@@ -20,12 +20,24 @@
 /** Canonical order, identical to the voice lexicon's. */
 export const SURFACE_ORDER = [
   'mesial', 'occlusal', 'distal', 'incisal', 'buccal', 'lingual', 'cervical',
+  // The roots of a back tooth, told apart for what is found in one of them: "racine mésiale".
+  'mesialroot', 'distalroot', 'buccalroot', 'lingualroot',
 ] as const;
 
 export type ToothSurface = (typeof SURFACE_ORDER)[number];
 
-/** The server accepts at most this many parts in one compound surface. */
+/** The server accepts at most this many parts in one compound surface... */
 export const MAX_SURFACE_PARTS = 5;
+/** ...and this many characters (the column holds 64). */
+export const MAX_SURFACE_LENGTH = 64;
+
+/** The four roots of a back tooth that can be named. */
+export const ROOT_SURFACES = ['mesialroot', 'distalroot', 'buccalroot', 'lingualroot'] as const;
+export type RootSurface = (typeof ROOT_SURFACES)[number];
+
+export function isRootSurface(surface: string): surface is RootSurface {
+  return (ROOT_SURFACES as readonly string[]).includes(surface);
+}
 
 const KNOWN = new Set<string>(SURFACE_ORDER);
 
@@ -39,7 +51,9 @@ export function parseSurface(value: string | null | undefined): ToothSurface[] {
 /** ['occlusal', 'mesial'] → "mesial-occlusal"; null when empty. */
 export function formatSurface(surfaces: Iterable<ToothSurface>): string | null {
   const set = new Set(surfaces);
-  const ordered = SURFACE_ORDER.filter((s) => set.has(s)).slice(0, MAX_SURFACE_PARTS);
+  const ordered: ToothSurface[] = SURFACE_ORDER.filter((s) => set.has(s)).slice(0, MAX_SURFACE_PARTS);
+  // Never more than the server stores: a value that does not fit is a save that fails.
+  while (ordered.length > 1 && ordered.join('-').length > MAX_SURFACE_LENGTH) ordered.pop();
   return ordered.length ? ordered.join('-') : null;
 }
 
@@ -52,6 +66,10 @@ export const SURFACE_LETTER: Readonly<Record<ToothSurface, string>> = {
   buccal: 'B',
   lingual: 'L',
   cervical: 'C',
+  mesialroot: 'Rm',
+  distalroot: 'Rd',
+  buccalroot: 'Rb',
+  lingualroot: 'Rl',
 };
 
 /** "mesial-occlusal-distal" → "MOD". */

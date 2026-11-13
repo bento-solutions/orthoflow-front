@@ -56,6 +56,7 @@
 
 import { ToothStatus } from '../models/patient.model';
 import { FindingKind, ToothFinding } from '../models/clinical-record.model';
+import { REFERENTIAL_UNPAINTED_CONDITIONS } from './finding-referential';
 
 /** The four ways a tooth can read at a glance, plus the overlay family. */
 export type ToothStatusFamily = 'sound' | 'existing' | 'condition' | 'absent';
@@ -401,6 +402,7 @@ export interface ToothOverlay {
  * same `crown` paint as a sound crown.
  */
 const CONDITIONS_THE_FILL_CANNOT_SHOW = new Set([
+  ...REFERENTIAL_UNPAINTED_CONDITIONS,
   'infection', 'abscess', 'mobility', 'sensitivity', 'pain', 'tooth_wear',
   'discoloration', 'gingival_inflammation', 'periodontal_pocket',
   'gingival_recession', 'plaque_calculus', 'malposition', 'crown_defective',

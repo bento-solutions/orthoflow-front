@@ -49,10 +49,19 @@ import {
  */
 const VIEW_WORDS: Readonly<Record<DentitionView, { fr: string; en: string }>> = {
   overview: { fr: `d'ensemble`, en: 'Overview' },
+  panoramic: { fr: 'panoramique', en: 'Panoramic' },
   occlusal: { fr: 'occlusale', en: 'Occlusal' },
   lingual: { fr: 'linguale', en: 'Lingual' },
   arch: { fr: 'des arcades', en: 'Arch' },
 };
+
+/** A surface as the review line says it: "occlusal-mesialroot" reads "occlusal, mesial root". */
+export function previewSurface(surface: string): string {
+  const all = surface.split('-').filter(Boolean);
+  const crown = all.filter(part => !part.endsWith('root')).join('-');
+  const roots = all.filter(part => part.endsWith('root')).map(part => `${part.slice(0, -'root'.length)} root`);
+  return [crown, ...roots].filter(Boolean).join(', ');
+}
 
 @Injectable({ providedIn: 'root' })
 export class VoiceCommandsService {
@@ -562,6 +571,7 @@ export class VoiceCommandsService {
             surface: f.surface ?? undefined,
             severity: f.severity ?? undefined,
             note: f.note ?? undefined,
+            certainty: f.certainty ?? undefined,
           })),
         }),
         onServerExecuted: (audit, entities, context) =>
@@ -597,6 +607,7 @@ export class VoiceCommandsService {
             code: f.code,
             surface: f.surface ?? undefined,
             severity: f.severity ?? undefined,
+            certainty: f.certainty ?? undefined,
           })),
         }),
         onServerExecuted: (audit, entities, context) => {
@@ -627,6 +638,7 @@ export class VoiceCommandsService {
             code: f.code,
             surface: f.surface ?? undefined,
             severity: f.severity ?? undefined,
+            certainty: f.certainty ?? undefined,
           })),
         }),
         onServerExecuted: (audit, entities, context) => {
@@ -652,6 +664,7 @@ export class VoiceCommandsService {
             code: f.code,
             surface: f.surface ?? undefined,
             severity: f.severity ?? undefined,
+            certainty: f.certainty ?? undefined,
           })),
         }),
         onServerExecuted: (audit, entities, context) => this.findingsRecorded(audit, entities, context),
@@ -704,11 +717,11 @@ export class VoiceCommandsService {
       },
       {
         id: 'chart.setView',
-        description: 'Change how the teeth are arranged on the 3D chart: overview (all teeth, crowns and roots), occlusal (biting surfaces), lingual (tongue side) or arch (the arches as in the mouth)',
+        description: 'Change how the teeth are arranged on the 3D chart: overview (the mouth: arches with the gums, the palate, the gum state and the tartar), panoramic (the arches unrolled, every crown and root), occlusal (biting surfaces), lingual (tongue side) or arch (the arches, teeth only)',
         risk: 'SAFE',
         requiresPatient: true,
-        args: { view: 'overview, occlusal, lingual or arch' },
-        examples: ['occlusal view', 'vue linguale', 'show the arches'],
+        args: { view: 'overview, panoramic, occlusal, lingual or arch' },
+        examples: ['occlusal view', 'vue linguale', 'show the arches', 'vue panoramique'],
         preview: (entities) => `Show the ${String(entities['view'])} view`,
         execute: async (entities) => {
           const view = String(entities['view']) as DentitionView;
@@ -719,6 +732,26 @@ export class VoiceCommandsService {
           this.chartView.zoomedFdi.set(null);
           this.chartView.view.set(view);
           return { ok: true, message: `${VIEW_WORDS[view].en} view.`, spokenFr: `Vue ${VIEW_WORDS[view].fr}.` };
+        },
+      },
+      {
+        id: 'chart.gums',
+        description: 'Show or hide the gums and the palate on the 3D mouth view (overview): hidden, the arches show their teeth and roots alone',
+        risk: 'SAFE',
+        requiresPatient: true,
+        args: { show: 'true to show the gums and the palate, false to hide them' },
+        examples: ['hide the gums', 'cache les gencives', 'show the gums', 'affiche les gencives'],
+        preview: (entities) => (entities['show'] === false ? 'Hide the gums' : 'Show the gums'),
+        execute: async (entities) => {
+          const show = entities['show'] !== false;
+          this.showChart();
+          this.chartView.zoomedFdi.set(null);
+          // The gums belong to the mouth view: asking for them is asking for it.
+          if (show) this.chartView.view.set('overview');
+          this.chartView.showGums(show);
+          return show
+            ? { ok: true, message: 'Gums and palate shown.', spokenFr: 'Gencives affichées.' }
+            : { ok: true, message: 'Gums and palate hidden.', spokenFr: 'Gencives masquées.' };
         },
       },
       {
@@ -811,7 +844,9 @@ export class VoiceCommandsService {
       // The grammar attaches a label; the NLU fallback returns codes only.
       const parts = [f.label ?? findingLabel(f.code)];
       if (f.severity) parts.push(f.severity.toLowerCase());
-      if (f.surface) parts.push(f.surface);
+      if (f.surface) parts.push(previewSurface(f.surface));
+      if (f.note && /^(?:\d+(?:\.\d+)? mm|grade \w+)$/.test(f.note)) parts.push(f.note);
+      if (f.certainty === 'SUSPECTED') parts.push('suspected');
       return parts.join(', ');
     });
     const note = entities['note'] ? ` · note: "${entities['note']}"` : '';

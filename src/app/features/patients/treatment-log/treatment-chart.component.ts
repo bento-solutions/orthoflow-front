@@ -215,6 +215,7 @@ export class TreatmentChartComponent {
       return `${entry.name}${act}${state}`;
     }
     const code = entry.code ?? '';
+    if (entry.outcome === 'SUSPECTED') return `${findingLabel(this.translate, code)} — ${this.translate.instant('TREATMENT_CHART.SUSPECTED')}`;
     if (entry.outcome !== 'TREATED') return findingLabel(this.translate, code);
     const doneKey = `TREATMENT_CHART.DONE.${code.toUpperCase()}`;
     const done = this.translate.instant(doneKey);

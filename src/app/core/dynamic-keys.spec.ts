@@ -16,6 +16,8 @@ import { VIEW_GROUPS } from '../features/patients/patient-photos/patient-photos.
 import { DENTITION_VIEWS } from './services/dental-3d-view.service';
 import { ADULT_TEETH, CHILD_TEETH } from './models/patient.model';
 import { FINDING_KIND_ORDER, FINDING_OPTIONS } from './clinical/finding-options';
+import { FINDING_GROUPS } from './clinical/finding-referential';
+import { allFindingCodes } from './voice/clinical-lexicon';
 import { SURFACE_ORDER } from './clinical/tooth-surfaces';
 import { INPUT_LANGUAGES } from './voice/language-filter';
 import { PERIO_REGIONS } from './models/clinical-record.model';
@@ -50,8 +52,8 @@ const FAMILIES: Record<string, readonly string[]> = {
   'PATIENTS.DOSSIER.UI.NOTE_CAT': ['GENERAL', 'CHIEF_COMPLAINT', 'OBSERVATION', 'DENTAL_HISTORY', 'MEDICAL_HISTORY', 'DIAGNOSIS', 'FOLLOW_UP', 'TREATMENT_PLAN'],
   'DENTAL_3D.VIEW_NAME': DENTITION_VIEWS,
   'DENTAL_3D.VIEW_HINT': DENTITION_VIEWS,
-  'DENTAL_3D.GROUP': ['CONDITION', 'PLANNED', 'EXISTING', 'ABSENT'],
-  'DENTAL_3D.LEGEND': ['EXISTING', 'CONDITION', 'PLANNED', 'ABSENT', 'LESION', 'RING_COMPLETED', 'RING_ACTIVE', 'RING_PLANNED'],
+  'DENTAL_3D.GROUP': ['CONDITION', 'PLANNED', 'EXISTING', 'ABSENT', 'SUSPECTED'],
+  'DENTAL_3D.LEGEND': ['EXISTING', 'CONDITION', 'PLANNED', 'ABSENT', 'LESION', 'RING_COMPLETED', 'RING_ACTIVE', 'RING_PLANNED', 'INFLAMED', 'PERIO', 'RECESSION', 'CALCULUS', 'PLAQUE', 'SUSPECTED'],
   'TOOTH_NAME': [...ADULT_TEETH, ...CHILD_TEETH],
   'TREATMENT_CHART.GROUP': ['DONE', 'CONDITION', 'PLANNED', 'WATCH', 'ABSENT'],
   'INSURANCE.STATUS': INSURANCE_FORM_STATUSES,
@@ -60,7 +62,7 @@ const FAMILIES: Record<string, readonly string[]> = {
   'INSURANCE.MISSING': MISSING_FIELDS,
   'RX.CAT': PRESCRIPTION_CATEGORIES,
   'TASK.OPEN_DOC': ['INSURANCE_FORM', 'PRESCRIPTION'],
-  'TREATMENT_LOG.OUTCOME': ['IN_PLACE', 'TREATED', 'COMPLETED', 'REQUIRED', 'PLANNED', 'IN_PROGRESS'],
+  'TREATMENT_LOG.OUTCOME': ['IN_PLACE', 'TREATED', 'COMPLETED', 'REQUIRED', 'PLANNED', 'IN_PROGRESS', 'SUSPECTED'],
   'VOICE.LANG': INPUT_LANGUAGES,
   'COCKPIT.VIEW': STAGE_VIEWS.map(v => v.toUpperCase()),
   'COCKPIT.LEVEL': FEEDBACK_LEVELS.map(l => l.toUpperCase()),
@@ -81,7 +83,9 @@ const FAMILIES: Record<string, readonly string[]> = {
   'PERIO.PROGRESSION': [...TREND_KEYS.flatMap(k => [`${k}_TITLE`, `${k}_DESC`]), ...TREND_METRICS.map(m => `METRIC_${m}`)],
   'PERIO.TOUR': ['PICK', 'TYPE', 'TEETH', 'SAVE'].flatMap(step => [`${step}_TITLE`, `${step}_TEXT`]),
   'GUMS.CONDITION': ['HEALTHY', 'GINGIVITIS', 'PERIODONTITIS'],
-  'FINDING': FINDING_OPTIONS.map(o => o.code.toUpperCase()),
+  // Every state the lexicon can record, whether or not the panel lists it: a voice finding is shown by its name too.
+  'FINDING': [...new Set([...FINDING_OPTIONS.map(o => o.code), ...allFindingCodes()])].map(code => code.toUpperCase()),
+  'TOOTH_DETAIL.GROUP': FINDING_GROUPS.map(g => g.toUpperCase()),
   'SURFACE': SURFACE_ORDER.map(s => s.toUpperCase()),
   'TOOTH_DETAIL.KIND': FINDING_KIND_ORDER,
   'REC.KINDS': RECALL_KINDS,

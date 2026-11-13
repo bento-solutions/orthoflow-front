@@ -25,6 +25,7 @@
 }
 .d3-tool:hover:not(:disabled) { background: var(--surface-hover); }
 .d3-tool:disabled { opacity: .4; cursor: default; }
+.d3-tool.on { background: var(--action-tint); color: var(--action-text); }
 .d3-tool .material-icons { font-size: 1.125rem; }
 .d3-tool:focus-visible, .d3-back:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 .d3-back {
@@ -130,6 +131,12 @@
 .sw-absent { background: var(--surface); border: 1px dashed var(--text-muted); }
 .sw-lesion { background: rgb(var(--critical-500)); border-radius: 50%; }
 .sw-staged { background: transparent; border: 2px solid #d97706; }
+.sw-inflamed { background: #cc2129; border-color: #8f1319; border-radius: 50% 50% 40% 40%; }
+.sw-perio { background: #84194d; border-color: #5a1136; border-radius: 50% 50% 40% 40%; }
+.sw-recession { background: linear-gradient(#e6928e 0 55%, #f1e6c9 55%); border-color: #b4605c; }
+.sw-calculus { background: radial-gradient(#a98a50 1.3px, #7d5a28 1.6px) 0 0 / 4px 4px; border-color: #6b4a1f; }
+.sw-plaque { background: #ede19a; border-color: #b5a64f; }
+.sw-suspected { background: radial-gradient(#7c3aed 1.2px, #f5f3ff 1.4px) 0 0 / 4px 4px; border: 1px dashed #6d28d9; }
 .sw-ring { background: var(--surface); border: 2px solid; border-radius: 50%; }
 
 .d3-credit { margin: 0; font-size: .6875rem; line-height: 1.4; color: var(--text-muted); }

@@ -21,8 +21,10 @@ import {
   setComplaint,
   setItem,
   setPatientField,
+  invoiceableLines,
+  PaymentData,
 } from '../../../core/consultation/consultation-draft';
-import { PatientFieldName } from '../../../core/consultation/consultation.model';
+import { ConsultationPaymentMethod, PatientFieldName } from '../../../core/consultation/consultation.model';
 import { chartLine } from '../../../core/consultation/consultation-chart';
 import { spokenLanguage } from '../../../core/voice/voice-vocabulary';
 import { InputLanguageService } from '../../../core/voice/input-language.service';
@@ -60,11 +62,13 @@ interface EditModel {
   quantity: number;
   treatmentId: string;
   performed: boolean;
+  method: string;
+  reference: string;
 }
 
 const EMPTY_EDIT: EditModel = {
   text: '', detail: '', reaction: '', severity: '', category: 'CONDITION', type: 'MEDICATION',
-  teeth: '', price: null, quantity: 1, treatmentId: '', performed: false,
+  teeth: '', price: null, quantity: 1, treatmentId: '', performed: false, method: '', reference: '',
 };
 
 const FIELDS: FieldDef[] = [
@@ -111,7 +115,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
             <span class="cp-dot" [class.live]="c.listening()" aria-hidden="true"></span>
             <h2>{{ 'CONSULTATION.TITLE' | translate }}</h2>
             @if (mode() === 'recording') {
-              <span class="cp-badge">{{ 'CONSULTATION.PHASE_RECORDING' | translate }}</span>
+              <span class="cp-badge">{{ (c.deferred() ? 'CONSULTATION.PHASE_RECORDING_DEFERRED' : 'CONSULTATION.PHASE_RECORDING') | translate }}</span>
             } @else if (mode() === 'review') {
               <span class="cp-badge review">{{ 'CONSULTATION.PHASE_REVIEW' | translate }}</span>
             }
@@ -128,15 +132,32 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
               <div class="cp-card">
                 <span class="material-icons cp-hero" aria-hidden="true">graphic_eq</span>
                 <p>{{ 'CONSULTATION.INTRO_BODY' | translate }}</p>
+                <!-- When what is said turns into commands: at the end (the default) or as it is said. -->
+                <fieldset class="cp-mode" data-mode-choice>
+                  <legend>{{ 'CONSULTATION.MODE_TITLE' | translate }}</legend>
+                  <label class="cp-mode-option" [class.on]="c.chosenMode() === 'DEFERRED'">
+                    <input type="radio" name="consultation-mode" value="DEFERRED" [checked]="c.chosenMode() === 'DEFERRED'"
+                           (change)="c.chooseMode('DEFERRED')" />
+                    <span><strong>{{ 'CONSULTATION.MODE_DEFERRED' | translate }}</strong>
+                      <small>{{ 'CONSULTATION.MODE_DEFERRED_HINT' | translate }}</small></span>
+                  </label>
+                  <label class="cp-mode-option" [class.on]="c.chosenMode() === 'LIVE'">
+                    <input type="radio" name="consultation-mode" value="LIVE" [checked]="c.chosenMode() === 'LIVE'"
+                           (change)="c.chooseMode('LIVE')" />
+                    <span><strong>{{ 'CONSULTATION.MODE_LIVE' | translate }}</strong>
+                      <small>{{ 'CONSULTATION.MODE_LIVE_HINT' | translate }}</small></span>
+                  </label>
+                </fieldset>
                 <ul class="cp-steps">
                   <li>{{ 'CONSULTATION.STEP_1' | translate }}</li>
-                  <li>{{ 'CONSULTATION.STEP_2' | translate }}</li>
-                  <li>{{ 'CONSULTATION.STEP_3' | translate }}</li>
+                  <li>{{ (c.chosenMode() === 'DEFERRED' ? 'CONSULTATION.STEP_2_DEFERRED' : 'CONSULTATION.STEP_2') | translate }}</li>
+                  <li>{{ (c.chosenMode() === 'DEFERRED' ? 'CONSULTATION.STEP_3_DEFERRED' : 'CONSULTATION.STEP_3') | translate }}</li>
                 </ul>
-                <p class="cp-notice"><span class="material-icons" aria-hidden="true">info</span>{{ (c.retainTranscript() ? 'CONSULTATION.INTRO_NOTICE' : 'CONSULTATION.INTRO_NOTICE_NOT_KEPT') | translate }}</p>
+                <p class="cp-notice"><span class="material-icons" aria-hidden="true">info</span>{{ (c.retainTranscript() ? 'CONSULTATION.INTRO_NOTICE' : 'CONSULTATION.INTRO_NOTICE_NOT_KEPT') | translate }}
+                  @if (c.keepAudio()) { {{ 'CONSULTATION.INTRO_NOTICE_AUDIO' | translate }} }</p>
                 <label class="cp-ack">
                   <input type="checkbox" [ngModel]="informed()" (ngModelChange)="informed.set($event)" />
-                  <span>{{ (c.retainTranscript() ? 'CONSULTATION.INTRO_ACK' : 'CONSULTATION.INTRO_ACK_NOT_KEPT') | translate }}</span>
+                  <span>{{ (!c.retainTranscript() ? 'CONSULTATION.INTRO_ACK_NOT_KEPT' : c.keepAudio() ? 'CONSULTATION.INTRO_ACK_AUDIO' : 'CONSULTATION.INTRO_ACK') | translate }}</span>
                 </label>
                 <ng-container *ngTemplateOutlet="languagePicker" />
                 @if (voice.error(); as error) {
@@ -159,6 +180,9 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
           <!-- ── Recording ───────────────────────────────────────────── -->
           @case ('recording') {
             <div class="cp-body">
+              @if (c.analysis(); as a) {
+                <ng-container *ngTemplateOutlet="analysisCard; context: { a: a }" />
+              } @else {
               @if (!c.listening()) {
                 <div class="cp-alert caution" role="status">
                   <span class="material-icons" aria-hidden="true">mic_off</span>
@@ -182,10 +206,13 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
               <div class="cp-controls">
                 <button type="button" class="cp-btn danger" (click)="c.end()" [disabled]="c.busy()">
                   <span class="material-icons" aria-hidden="true">stop_circle</span>
-                  {{ (c.busy() ? 'VOICE.ENDING' : 'CONSULTATION.END') | translate }}
+                  {{ (c.busy() ? 'VOICE.ENDING' : c.deferred() ? 'CONSULTATION.END_DEFERRED' : 'CONSULTATION.END') | translate }}
                 </button>
               </div>
-              <p class="cp-hint">{{ 'CONSULTATION.HINT_RECORDING' | translate }}</p>
+              <p class="cp-hint">{{ (c.deferred() ? 'CONSULTATION.HINT_RECORDING_DEFERRED' : 'CONSULTATION.HINT_RECORDING') | translate }}</p>
+              @if (c.audioState() === 'recording') {
+                <p class="cp-hint cp-audio"><span class="material-icons" aria-hidden="true">graphic_eq</span>{{ 'CONSULTATION.AUDIO_RECORDING' | translate }}</p>
+              }
 
               <ng-container *ngTemplateOutlet="languagePicker" />
               @if (voice.languageNoiseCount() > 0) {
@@ -220,14 +247,18 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                 }
               </section>
 
-              <div class="cp-caught-head">
-                <h3>{{ 'CONSULTATION.CAUGHT_TITLE' | translate }}</h3>
-                @if (c.extracting()) { <span class="cp-reading">{{ 'CONSULTATION.READING' | translate }}</span> }
-              </div>
-              @if (noteKey(); as key) {
-                <p class="cp-hint note"><span class="material-icons" aria-hidden="true">info</span>{{ key | translate }}</p>
+              <!-- Deferred, nothing is caught while it records: it is all read at the end. -->
+              @if (!c.deferred()) {
+                <div class="cp-caught-head">
+                  <h3>{{ 'CONSULTATION.CAUGHT_TITLE' | translate }}</h3>
+                  @if (c.extracting()) { <span class="cp-reading">{{ 'CONSULTATION.READING' | translate }}</span> }
+                </div>
+                @if (noteKey(); as key) {
+                  <p class="cp-hint note"><span class="material-icons" aria-hidden="true">info</span>{{ key | translate }}</p>
+                }
+                <ng-container *ngTemplateOutlet="items; context: { editable: false }" />
               }
-              <ng-container *ngTemplateOutlet="items; context: { editable: false }" />
+              }
             </div>
           }
 
@@ -249,10 +280,17 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
               <ng-container *ngTemplateOutlet="items; context: { editable: true }" />
 
               <!-- Chart findings dictated during the examination. -->
-              <section class="cp-sec">
-                <div class="cp-sec-title"><h3>{{ 'CONSULTATION.SEC_CHART' | translate }}</h3><span class="cp-count">{{ chartRows().length }}</span></div>
+              <section class="cp-sec" data-review-chart>
+                <div class="cp-sec-title">
+                  <h3>{{ 'CONSULTATION.SEC_CHART' | translate }}</h3><span class="cp-count">{{ chartRows().length }}</span>
+                  @if (chartWaiting() > 0) {
+                    <button type="button" class="cp-btn small" (click)="c.keepAllChartEntries()">{{ 'CONSULTATION.CHART_VALIDATE_ALL' | translate }}</button>
+                  }
+                </div>
                 @if (chartRows().length === 0) {
                   <p class="cp-empty">{{ 'CONSULTATION.CHART_EMPTY' | translate }}</p>
+                } @else if (c.deferred()) {
+                  <p class="cp-hint">{{ 'CONSULTATION.CHART_DEFERRED_HINT' | translate }}</p>
                 }
                 <ul class="cp-list">
                   @for (row of chartRows(); track row.entry.auditId) {
@@ -262,7 +300,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                         <span>{{ chartText(row.entry) }}</span>
                       </label>
                       @if (row.entry.needsConfirmation && !c.decided().has(row.entry.auditId)) {
-                        <span class="cp-status" data-status="proposed">{{ 'COCKPIT.LINE.TO_CONFIRM' | translate }}</span>
+                        <span class="cp-status" data-status="proposed">{{ (row.entry.deferred ? 'CONSULTATION.STATUS_TO_VALIDATE' : 'COCKPIT.LINE.TO_CONFIRM') | translate }}</span>
                         <button type="button" class="cp-btn small" (click)="c.keepChartEntry(row.entry.auditId)">{{ 'CONSULTATION.KEEP' | translate }}</button>
                         <span class="cp-quote">« {{ row.entry.transcript }} »</span>
                       }
@@ -271,10 +309,15 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                 </ul>
                 @if (c.review().chartMentions.length) {
                   <div class="cp-sec-title"><h3>{{ 'CONSULTATION.SEC_MENTIONS' | translate }}</h3></div>
-                  <p class="cp-hint">{{ 'CONSULTATION.MENTIONS_HINT' | translate }}</p>
+                  <p class="cp-hint">{{ (c.deferred() ? 'CONSULTATION.MENTIONS_HINT_DEFERRED' : 'CONSULTATION.MENTIONS_HINT') | translate }}</p>
                   <ul class="cp-list">
                     @for (m of c.review().chartMentions; track m.quote) {
-                      <li class="cp-item"><span>{{ m.teeth ? ('CONSULTATION.DOC.TOOTH' | translate) + ' ' + m.teeth + ' : ' : '' }}{{ m.finding }}</span>
+                      <li class="cp-item" [attr.data-unresolved]="m.unresolved ? '' : null">
+                        @if (m.unresolved) {
+                          <span><span class="cp-status" data-status="proposed">{{ 'CONSULTATION.UNRESOLVED' | translate }}</span> {{ m.finding }}</span>
+                        } @else {
+                          <span>{{ m.teeth ? ('CONSULTATION.DOC.TOOTH' | translate) + ' ' + m.teeth + ' : ' : '' }}{{ m.finding }}</span>
+                        }
                         <span class="cp-quote">« {{ m.quote }} »</span></li>
                     }
                   </ul>
@@ -356,6 +399,8 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                 <p class="cp-hint">{{ 'CONSULTATION.REPORT_HINT' | translate }}</p>
               </section>
 
+              <ng-container *ngTemplateOutlet="audioStatus" />
+
               <div class="cp-footer">
                 <button type="button" class="cp-btn primary big" (click)="c.commit()" [disabled]="!c.canSave()">
                   <span class="material-icons" aria-hidden="true">task_alt</span>
@@ -396,6 +441,13 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                   <button type="button" class="cp-link" (click)="c.dismiss()">{{ 'CONSULTATION.CLOSE' | translate }}</button>
                 </div>
                 @if (c.saved(); as saved) {
+                  @if (saved.invoiceNumber) {
+                    <p class="cp-hint" data-saved-invoice><span class="material-icons" aria-hidden="true">receipt_long</span>{{ 'CONSULTATION.SAVED_INVOICE' | translate: { number: saved.invoiceNumber } }}</p>
+                  }
+                  @if (saved.receipts > 0) {
+                    <p class="cp-hint" data-saved-receipts><span class="material-icons" aria-hidden="true">payments</span>{{ 'CONSULTATION.SAVED_RECEIPTS' | translate: { count: saved.receipts } }}</p>
+                  }
+                  <ng-container *ngTemplateOutlet="audioStatus" />
                   @if (saved.insuranceForms.length) {
                     <ul class="cp-forms" [attr.aria-label]="'INSURANCE.TITLE' | translate">
                       @for (f of saved.insuranceForms; track f.id) {
@@ -421,6 +473,38 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
         }
       </aside>
     }
+
+    <!-- ── The end-of-consultation analysis, while it runs ─────────────── -->
+    <ng-template #analysisCard let-a="a">
+      <div class="cp-card center cp-analysis" role="status" aria-live="polite" data-analysis [attr.data-step]="a.step">
+        <span class="material-icons cp-hero spin" aria-hidden="true">autorenew</span>
+        <h3>{{ 'CONSULTATION.ANALYSIS_TITLE' | translate }}</h3>
+        <p>
+          @switch (a.step) {
+            @case ('finishing') { {{ 'CONSULTATION.ANALYSIS_FINISHING' | translate }} }
+            @case ('commands') { {{ 'CONSULTATION.ANALYSIS_COMMANDS' | translate: { done: a.done, total: a.total } }} }
+            @case ('reading') { {{ 'CONSULTATION.ANALYSIS_READING' | translate }} }
+            @default { {{ 'CONSULTATION.ANALYSIS_REPORT' | translate }} }
+          }
+        </p>
+        @if (a.step === 'commands' && a.total > 0) {
+          <progress [value]="a.done" [max]="a.total" [attr.aria-label]="'CONSULTATION.ANALYSIS_TITLE' | translate"></progress>
+        }
+        <p class="cp-hint">{{ 'CONSULTATION.ANALYSIS_HINT' | translate }}</p>
+      </div>
+    </ng-template>
+
+    <!-- ── What became of the recording ──────────────────────────────── -->
+    <ng-template #audioStatus>
+      @switch (c.audioState()) {
+        @case ('uploading') { <p class="cp-hint cp-audio" role="status"><span class="material-icons" aria-hidden="true">cloud_upload</span>{{ 'CONSULTATION.AUDIO_UPLOADING' | translate }}</p> }
+        @case ('kept') { <p class="cp-hint cp-audio" data-audio="kept"><span class="material-icons" aria-hidden="true">graphic_eq</span>{{ 'CONSULTATION.AUDIO_KEPT' | translate }}</p> }
+        @case ('failed') {
+          <p class="cp-alert caution" role="alert" data-audio="failed"><span class="material-icons" aria-hidden="true">error</span>{{ 'CONSULTATION.AUDIO_FAILED' | translate }}
+            <button type="button" class="cp-btn small" (click)="c.retryAudio()">{{ 'CONSULTATION.AUDIO_RETRY' | translate }}</button></p>
+        }
+      }
+    </ng-template>
 
     <!-- ── The language the doctor dictates in ───────────────────────────
          Everything said in another language is kept in the conversation but
@@ -593,6 +677,32 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
               <strong>{{ planSummary().total | number:'1.0-2' }} MAD</strong>
             </div>
           }
+          @if (list.name === 'payments' && editable) {
+            <p class="cp-hint">{{ 'CONSULTATION.PAYMENTS_HINT' | translate }}</p>
+          }
+          <!-- The acts done today, priced: invoiced as a draft for the front desk, or not — on purpose. -->
+          @if (list.name === 'plan' && editable && invoiceable().count > 0) {
+            <div class="cp-invoice" data-invoice-decision [attr.data-decision]="c.review().invoiceDecision ?? 'pending'">
+              <strong>{{ 'CONSULTATION.INVOICE_TITLE' | translate }}</strong>
+              <span>{{ 'CONSULTATION.INVOICE_BODY' | translate: { count: invoiceable().count, total: (invoiceable().total | number:'1.0-2') } }}</span>
+              @switch (c.review().invoiceDecision) {
+                @case ('create') {
+                  <span class="cp-onfile">{{ 'CONSULTATION.INVOICE_CREATE_CHOSEN' | translate }}</span>
+                  <button type="button" class="cp-btn small" (click)="c.setInvoiceDecision(null)">{{ 'CONSULTATION.INVOICE_CHANGE' | translate }}</button>
+                }
+                @case ('skip') {
+                  <span class="cp-onfile">{{ 'CONSULTATION.INVOICE_SKIP_CHOSEN' | translate }}</span>
+                  <button type="button" class="cp-btn small" (click)="c.setInvoiceDecision(null)">{{ 'CONSULTATION.INVOICE_CHANGE' | translate }}</button>
+                }
+                @default {
+                  <span class="cp-row-actions">
+                    <button type="button" class="cp-btn small primary" (click)="c.setInvoiceDecision('create')" [disabled]="!canBill()">{{ 'CONSULTATION.INVOICE_CREATE' | translate }}</button>
+                    <button type="button" class="cp-btn small" (click)="c.setInvoiceDecision('skip')">{{ 'CONSULTATION.INVOICE_SKIP' | translate }}</button>
+                  </span>
+                }
+              }
+            </div>
+          }
           @if (editable && editKey() !== list.name + ':new') {
             <button type="button" class="cp-btn small" (click)="newItem(list.name)">
               <span class="material-icons" aria-hidden="true">add</span>{{ list.addKey | translate }}
@@ -666,9 +776,19 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
             <input [attr.aria-label]="'CONSULTATION.F_NOTES' | translate" type="text" class="cp-input" [(ngModel)]="edit.detail" [placeholder]="'CONSULTATION.F_NOTES' | translate" maxlength="500" />
             <label class="cp-check"><input type="checkbox" [(ngModel)]="edit.performed" /> {{ 'CONSULTATION.PLAN_DONE_HINT' | translate }}</label>
           }
+          @case ('payments') {
+            <span class="cp-editor row">
+              <input [attr.aria-label]="'CONSULTATION.F_AMOUNT' | translate" type="number" class="cp-input narrow" [(ngModel)]="edit.text" min="0.01" step="0.01" [placeholder]="'CONSULTATION.F_AMOUNT' | translate" />
+              <select class="cp-input" [attr.aria-label]="'CONSULTATION.F_METHOD' | translate" [(ngModel)]="edit.method">
+                <option value="">{{ 'CONSULTATION.F_METHOD' | translate }}</option>
+                @for (m of paymentMethods; track m) { <option [value]="m">{{ 'CONSULTATION.METHOD_' + m | translate }}</option> }
+              </select>
+            </span>
+            <input [attr.aria-label]="'CONSULTATION.F_REFERENCE' | translate" type="text" class="cp-input" [(ngModel)]="edit.reference" [placeholder]="'CONSULTATION.F_REFERENCE' | translate" maxlength="128" />
+          }
         }
         <span class="cp-editor row">
-          <button type="button" class="cp-btn small primary" (click)="saveItem(list, key)" [disabled]="!edit.text.trim()">{{ 'CONSULTATION.SAVE_EDIT' | translate }}</button>
+          <button type="button" class="cp-btn small primary" (click)="saveItem(list, key)" [disabled]="!canSaveEdit(list)">{{ 'CONSULTATION.SAVE_EDIT' | translate }}</button>
           <button type="button" class="cp-btn small" (click)="editKey.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
         </span>
       </div>
@@ -718,6 +838,25 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-notice { display: flex; gap: .5rem; font-size: .8125rem; color: rgb(var(--ink-700)); background: rgb(var(--caution-50)); border-radius: 10px; padding: .625rem .75rem; }
     .cp-notice .material-icons { font-size: 1.125rem; color: rgb(var(--caution-700)); flex-shrink: 0; }
     .cp-ack { display: flex; gap: .625rem; align-items: flex-start; font-size: .875rem; font-weight: 600; color: rgb(var(--ink-900)); cursor: pointer; }
+    .cp-mode { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+    .cp-mode legend { font-size: .8125rem; font-weight: 700; color: rgb(var(--ink-800)); margin-bottom: .25rem; }
+    .cp-mode-option { display: flex; gap: .625rem; align-items: flex-start; padding: .625rem .75rem; border-radius: 10px;
+      border: 1px solid rgb(var(--ink-200)); background: var(--surface); cursor: pointer; }
+    .cp-mode-option.on { border-color: rgb(var(--petrol-600)); box-shadow: 0 0 0 1px rgb(var(--petrol-600)); }
+    .cp-mode-option input { margin-top: .2rem; flex-shrink: 0; }
+    .cp-mode-option span { display: flex; flex-direction: column; gap: .125rem; }
+    .cp-mode-option strong { font-size: .875rem; color: rgb(var(--ink-900)); }
+    .cp-mode-option small { font-size: .8125rem; color: rgb(var(--ink-700)); line-height: 1.35; }
+    .cp-analysis progress { width: 100%; height: .5rem; accent-color: rgb(var(--petrol-600)); }
+    .cp-analysis .spin { animation: cp-spin 1.4s linear infinite; }
+    @keyframes cp-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .cp-analysis .spin { animation: none; } }
+    .cp-invoice { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .625rem; margin-top: .5rem; padding: .625rem .75rem;
+      border-radius: 10px; background: rgb(var(--caution-50)); color: rgb(var(--ink-800)); font-size: .8125rem; }
+    .cp-invoice[data-decision='create'], .cp-invoice[data-decision='skip'] { background: rgb(var(--ink-100)); }
+    .cp-invoice strong { width: 100%; }
+    .cp-audio { display: flex; align-items: center; gap: .375rem; }
+    .cp-audio .material-icons { font-size: 1rem; }
     .cp-ack input { margin-top: .2rem; width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
 
     .cp-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
@@ -866,7 +1005,11 @@ export class ConsultationPanelComponent {
     { name: 'activeTreatments', titleKey: 'CONSULTATION.SEC_ACTIVE', emptyKey: 'CONSULTATION.EMPTY_ACTIVE', addKey: 'CONSULTATION.ADD_ACTIVE' },
     { name: 'medicalHistory', titleKey: 'CONSULTATION.SEC_HISTORY', emptyKey: 'CONSULTATION.EMPTY_HISTORY', addKey: 'CONSULTATION.ADD_HISTORY' },
     { name: 'plan', titleKey: 'CONSULTATION.SEC_PLAN', emptyKey: 'CONSULTATION.EMPTY_PLAN', addKey: 'CONSULTATION.ADD_PLAN' },
+    { name: 'payments', titleKey: 'CONSULTATION.SEC_PAYMENTS', emptyKey: 'CONSULTATION.EMPTY_PAYMENTS', addKey: 'CONSULTATION.ADD_PAYMENT' },
   ];
+  readonly paymentMethods: ConsultationPaymentMethod[] = ['CASH', 'CARD', 'CHEQUE', 'BANK_TRANSFER'];
+  /** Payments and invoices need the right to bill; without it they are listed, not saved. */
+  readonly canBill = computed(() => this.permissions.can('BILLING_WRITE'));
 
   informed = signal(false);
   showHeard = signal(true);
@@ -920,6 +1063,14 @@ export class ConsultationPanelComponent {
   });
 
   planItems = computed(() => this.c.review().plan.filter(item => item.status !== 'removed'));
+  /** The acts a draft invoice would bill: done today, priced, not removed. */
+  invoiceable = computed(() => {
+    const lines = invoiceableLines(this.c.review());
+    return { count: lines.length, total: planTotal(lines.map(item => item.data)).total };
+  });
+  /** Chart findings still waiting for the doctor: replayed at the end, or recovered by the reader. */
+  chartWaiting = computed(() => this.c.chartEntries()
+    .filter(row => row.entry.needsConfirmation && !this.c.decided().has(row.entry.auditId)).length);
   planSummary = computed(() => planTotal(this.planItems().map(item => item.data)));
 
   // ── Starting ────────────────────────────────────────────────────────
@@ -1000,7 +1151,9 @@ export class ConsultationPanelComponent {
   }
 
   statusKey(entry: { status: string; dictated?: boolean }): string {
-    // Said to the app with the wake word: validated from the start, and marked so.
+    // Said to the app with the wake word: validated from the start, and marked so — except when a
+    // deferred consultation was replayed at the end, where nobody heard it read back yet.
+    if (entry.dictated && entry.status === 'proposed') return 'CONSULTATION.STATUS_DICTATED_TO_VALIDATE';
     if (entry.dictated && entry.status !== 'removed') return 'CONSULTATION.STATUS_DICTATED';
     return `CONSULTATION.STATUS_${entry.status.toUpperCase()}`;
   }
@@ -1096,7 +1249,19 @@ export class ConsultationPanelComponent {
         const price = p.price === null ? '' : ` — ${p.price} MAD`;
         return `${p.label}${where}${qty}${price}`;
       }
+      case 'payments': {
+        const pay = item.data as PaymentData;
+        const method = pay.method ? this.translate.instant(`CONSULTATION.METHOD_${pay.method}`)
+          : this.translate.instant('CONSULTATION.PAYMENT_NO_METHOD');
+        return [`${pay.amount} MAD — ${method}`, pay.reference ? `(${pay.reference})` : null].filter(Boolean).join(' ');
+      }
     }
+  }
+
+  /** What an editor needs before it can be saved: a label, or for a payment an amount and how it was paid. */
+  canSaveEdit(list: ListName): boolean {
+    if (list === 'payments') return Number(this.edit.text) > 0 && !!this.edit.method;
+    return !!this.edit.text.toString().trim();
   }
 
   isPerformed(item: ReviewItem<unknown>): boolean {
@@ -1124,6 +1289,14 @@ export class ConsultationPanelComponent {
   }
 
   validateItem(list: ListName, key: string): void {
+    // A payment cannot become a receipt without saying how it was paid: complete it first.
+    if (list === 'payments') {
+      const item = this.c.review().payments.find(p => p.key === key);
+      if (item && !item.data.method) {
+        this.editItem(list, item);
+        return;
+      }
+    }
     this.c.changeReview(state => setItem(state, list, key, { status: 'validated' }));
   }
 
@@ -1166,6 +1339,11 @@ export class ConsultationPanelComponent {
         });
         break;
       }
+      case 'payments': {
+        const pay = item.data as PaymentData;
+        Object.assign(e, { text: String(pay.amount), method: pay.method ?? '', reference: pay.reference ?? '' });
+        break;
+      }
     }
     this.edit = e;
     this.editKey.set(`${list}:${item.key}`);
@@ -1182,8 +1360,8 @@ export class ConsultationPanelComponent {
 
   saveItem(list: ListName, key: string): void {
     const e = this.edit;
-    const text = e.text.trim();
-    if (!text) return;
+    const text = e.text.toString().trim();
+    if (!this.canSaveEdit(list)) return;
 
     const data = ((): ReviewState_ItemData => {
       switch (list) {
@@ -1203,6 +1381,12 @@ export class ConsultationPanelComponent {
             performed: !!e.performed,
           };
         }
+        case 'payments':
+          return {
+            amount: Math.round(Number(text) * 100) / 100,
+            method: e.method as ConsultationPaymentMethod,
+            reference: e.reference.trim() || null,
+          };
       }
     })();
 
@@ -1258,4 +1442,4 @@ export class ConsultationPanelComponent {
   readonly fieldNames = PATIENT_FIELDS;
 }
 
-type ReviewState_ItemData = AllergyData | ActiveTreatmentData | HistoryData | PlanData;
+type ReviewState_ItemData = AllergyData | ActiveTreatmentData | HistoryData | PlanData | PaymentData;

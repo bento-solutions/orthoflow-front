@@ -9,6 +9,26 @@
 
 export type ConsultationStatus = 'INTAKE' | 'EXAMINATION' | 'REVIEW' | 'COMPLETED' | 'ABANDONED';
 
+/**
+ * When what is said turns into commands. DEFERRED (the default): nothing acts while recording;
+ * when the consultation ends the whole conversation is replayed through the commands and read by
+ * the model, for the doctor to validate. LIVE: the chart commands act while the doctor speaks.
+ */
+export type ConsultationMode = 'LIVE' | 'DEFERRED';
+
+/** A receipt's methods a consultation can propose (INSURANCE is the insurer paying, not the patient). */
+export type ConsultationPaymentMethod = 'CASH' | 'CARD' | 'CHEQUE' | 'BANK_TRANSFER';
+
+/** The recording kept with a consultation; `GET /consultations/{id}/audio` serves it. */
+export interface ConsultationAudioDto {
+  fileId: string;
+  contentType: string;
+  sizeBytes: number;
+  /** When recording started: a line's `at` minus this is its place in the audio. */
+  startedAt: string | null;
+  durationMs: number | null;
+}
+
 /** A value and the words it was taken from. */
 export interface Quoted<T> {
   value: T;
@@ -68,6 +88,16 @@ export interface DraftPlanItem {
   priceSource: 'SPOKEN' | 'CATALOG' | null;
   notes: string | null;
   quote: string;
+  /** Done during the consultation rather than proposed for later. Absent on an older server. */
+  performed?: boolean;
+}
+
+/** Money the patient handed over during the consultation, said in figures. */
+export interface DraftPayment {
+  key: string;
+  amount: number;
+  method: ConsultationPaymentMethod | null;
+  quote: string;
 }
 
 export interface DraftNextAppointment {
@@ -89,6 +119,8 @@ export interface ConsultationDraftDto {
   nextAppointment: DraftNextAppointment | null;
   /** `rules`, or `vendor:model` when a model read the conversation. */
   source: string;
+  /** Absent on an older server. */
+  payments?: DraftPayment[];
 }
 
 export interface ExtractionResponseDto {
@@ -174,6 +206,8 @@ export interface ConsultationLogDto {
   commands: ConsultationLogCommandDto[];
   reviewed: CommitConsultationDto | null;
   report: string | null;
+  mode?: ConsultationMode;
+  audio?: ConsultationAudioDto | null;
 }
 
 export interface ConsultationConfigDto {
@@ -185,6 +219,11 @@ export interface ConsultationConfigDto {
   cockpit?: boolean;
   /** The fast "tail" reading of the conversation's last sentences. */
   tailReading?: boolean;
+  /** How a consultation acts on what is said unless the doctor picks the other. Absent on an older server: live. */
+  defaultMode?: 'deferred' | 'live';
+  /** The audio of the conversation is recorded and kept with its transcript. */
+  keepAudio?: boolean;
+  maxAudioMegabytes?: number;
 }
 
 export interface ConsultationDto {
@@ -206,6 +245,10 @@ export interface ConsultationDto {
   reviewed: CommitConsultationDto | null;
   report: string | null;
   appointmentId: string | null;
+  mode?: ConsultationMode;
+  /** The draft invoice the save made for the acts done during the consultation. */
+  invoiceId?: string | null;
+  audio?: ConsultationAudioDto | null;
   startedAt: string;
   examinationStartedAt: string | null;
   endedAt: string | null;
@@ -277,9 +320,19 @@ export interface CommitConsultationDto {
   treatmentPlan: CommitPlanLineDto[];
   nextAppointment?: CommitAppointmentDto | null;
   report?: string | null;
+  /** Make a draft invoice of the plan lines done today with a price. */
+  createInvoice?: boolean;
+  /** Money handed over, as the doctor validated it: one receipt each. */
+  payments?: CommitPaymentDto[];
   approvedAuditIds: string[];
   rejectedAuditIds: string[];
   amendments: CommitAmendmentDto[];
+}
+
+export interface CommitPaymentDto {
+  amount: number;
+  method: ConsultationPaymentMethod;
+  reference?: string | null;
 }
 
 export interface CommitConsultationResultDto {
@@ -296,6 +349,10 @@ export interface CommitConsultationResultDto {
   insuranceForms?: InsuranceFormIssuedDto[];
   /** Set when the record saved but its insurance forms could not be made. */
   insuranceFormError?: string | null;
+  invoiceId?: string | null;
+  invoiceNumber?: string | null;
+  /** How many payments were recorded as receipts. */
+  receipts?: number;
 }
 
 /** A care form a saved consultation produced, as the save reports it. */

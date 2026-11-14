@@ -24,8 +24,13 @@ import {
 import { isBeginExaminationCommand, isBeginExaminationPhrase } from './consultation-phrases';
 import { chartLine } from './consultation-chart';
 import {
-  ChartMentionDto, CommitConsultationDto, ConsultationDto, ConsultationConfigDto, ConsultationLinePayload, InsuranceFormIssuedDto,
+  ChartMentionDto, CommitConsultationDto, ConsultationDto, ConsultationConfigDto, ConsultationLinePayload, ConsultationMode,
+  InsuranceFormIssuedDto,
 } from './consultation.model';
+import { ConsultationRecorderService, ConsultationRecording } from './consultation-recorder.service';
+import { InputLanguageService } from '../voice/input-language.service';
+import { InputLanguage } from '../voice/language-filter';
+import { ReplayUnresolved } from '../voice/voice-orchestrator.service';
 import { VoiceApiService } from '../voice/voice-api.service';
 import { VoiceOrchestratorService } from '../voice/voice-orchestrator.service';
 import { VoiceSessionService } from '../voice/voice-session.service';
@@ -117,7 +122,33 @@ export interface SavedConsultation {
   /** The insurer forms the save sent to the front desk, and why none were made if it failed to. */
   insuranceForms: InsuranceFormIssuedDto[];
   insuranceFormError: string | null;
+  /** The draft invoice made for the acts done today, and how many payments became receipts. */
+  invoiceId: string | null;
+  invoiceNumber: string | null;
+  receipts: number;
 }
+
+/**
+ * Where the end-of-consultation analysis is (the deferred mode): the last sentences being
+ * transcribed, every sentence through the commands (`done` of `total`), the model reading the
+ * whole conversation, the report.
+ */
+export interface ConsultationAnalysis {
+  step: 'finishing' | 'commands' | 'reading' | 'report';
+  done: number;
+  total: number;
+}
+
+/** What became of the consultation's recording. */
+export type ConsultationAudioState = 'off' | 'recording' | 'uploading' | 'kept' | 'failed';
+
+/**
+ * While a deferred consultation records, the conversation is kept on the server this long after
+ * the last sentence (and never later than {@link LINE_SAVE_MAX_WAIT_MS} after the first one not
+ * kept yet), so a crashed tab loses at most a few sentences although nothing is read yet.
+ */
+export const LINE_SAVE_DEBOUNCE_MS = 4_000;
+export const LINE_SAVE_MAX_WAIT_MS = 15_000;
 
 /**
  * Wait this long after the doctor's last change before keeping the review on the
@@ -168,17 +199,28 @@ export function extractionInterval(transcriptChars: number, consecutiveFailures:
 const SPOKEN = {
   fr: {
     started: 'Consultation démarrée. Les commandes sont actives.',
+    startedDeferred: 'Consultation démarrée. J’écoute ; tout sera analysé à la fin.',
     examination: 'Consultation en cours. Les commandes sont actives.',
+    examinationDeferred: 'Consultation en cours. Tout sera analysé à la fin.',
     ended: 'Consultation terminée. Relisez et validez à l’écran.',
+    analysing: 'Consultation terminée. J’analyse la conversation.',
+    analysed: 'Analyse terminée. Relisez et validez à l’écran.',
     saved: 'Consultation enregistrée.',
   },
   en: {
     started: 'Consultation started. Commands are active.',
+    startedDeferred: 'Consultation started. I am listening; everything will be analysed at the end.',
     examination: 'Consultation running. Commands are active.',
+    examinationDeferred: 'Consultation running. Everything will be analysed at the end.',
     ended: 'Consultation ended. Please review and validate on screen.',
+    analysing: 'Consultation ended. Analysing the conversation.',
+    analysed: 'Analysis done. Please review and validate on screen.',
     saved: 'Consultation saved.',
   },
 } as const;
+
+/** Where the doctor's choice of mode is remembered, per person on a shared PC. */
+const MODE_PREFERENCE_KEY = 'orthoflow.consultation.mode';
 
 /** Keys of the labels the printed documents are built from (`CONSULTATION.DOC.*`). */
 export const DOC_LABEL_KEYS = [
@@ -211,6 +253,8 @@ export class ConsultationService {
   private toast = inject(ToastService);
   private translate = inject(TranslateService);
   private languageService = inject(LanguageService);
+  private recorder = inject(ConsultationRecorderService);
+  private inputLanguage = inject(InputLanguageService);
 
   // ── State ───────────────────────────────────────────────────────────
 
@@ -229,6 +273,9 @@ export class ConsultationService {
   private savedSignal = signal<SavedConsultation | null>(null);
   private savedVersionSignal = signal(0);
   private introSignal = signal(false);
+  private chosenModeSignal = signal<ConsultationMode | null>(null);
+  private analysisSignal = signal<ConsultationAnalysis | null>(null);
+  private audioStateSignal = signal<ConsultationAudioState>('off');
 
   config = this.configSignal.asReadonly();
   consultation = this.consultationSignal.asReadonly();
@@ -261,6 +308,21 @@ export class ConsultationService {
   cockpitEnabled = computed(() => this.configSignal()?.cockpit !== false);
   /** Whether the transcript is kept after saving — it decides what the patient is told. */
   retainTranscript = computed(() => this.configSignal()?.retainTranscript === true);
+  /** Whether the audio is recorded and kept with the transcript — also part of what the patient is told. */
+  keepAudio = computed(() => this.configSignal()?.keepAudio === true);
+
+  /** The clinic's default; an older server that does not say acts live, as it always did. */
+  defaultMode = computed<ConsultationMode>(() => this.configSignal()?.defaultMode === 'deferred' ? 'DEFERRED' : 'LIVE');
+  /** What the next consultation will be: the doctor's choice in the intro, else the clinic's default. */
+  chosenMode = computed<ConsultationMode>(() => this.chosenModeSignal() ?? this.defaultMode());
+  /** This consultation keeps everything for the end: nothing acts while it records. */
+  deferred = computed(() => this.consultationSignal()?.mode === 'DEFERRED');
+
+  /** The end-of-consultation analysis, while it runs. */
+  analysis = this.analysisSignal.asReadonly();
+  analyzing = computed(() => this.analysisSignal() !== null);
+  /** What became of the recording: being made, being sent, kept, or failed (and can be sent again). */
+  audioState = this.audioStateSignal.asReadonly();
 
   phase = computed<ConsultationPhase | null>(() => {
     switch (this.consultationSignal()?.status) {
@@ -315,7 +377,8 @@ export class ConsultationService {
     return this.chartEntries().filter(row => row.included).map(row => chartLine(row.entry, language, tooth));
   });
 
-  canSave = computed(() => this.phase() === 'review' && this.pending() === 0 && !this.savingSignal() && !this.busySignal());
+  canSave = computed(() => this.phase() === 'review' && this.pending() === 0 && !this.savingSignal() && !this.busySignal()
+    && !this.analyzing());
 
   // ── Timers and flags ────────────────────────────────────────────────
 
@@ -328,6 +391,12 @@ export class ConsultationService {
   /** Readings in a row that produced nothing — the server refused, or no model answered. */
   private failedReadings = 0;
   private reviewSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private lineSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private firstUnkeptAt = 0;
+  /** The dictation language when recording began: a replay starts from it. */
+  private languageAtStart: InputLanguage | null = null;
+  /** The recording made, kept until the server has it so a failed upload can be sent again. */
+  private pendingRecording: ConsultationRecording | null = null;
   /** Who {@link loadConfig}'s answer is for; undefined when it should be asked again. */
   private configUser: string | null | undefined = undefined;
 
@@ -336,10 +405,37 @@ export class ConsultationService {
     // "examination", without a word: it records when the chart was first
     // spoken to, and changes nothing about what is heard.
     effect(() => {
-      if (this.phase() === 'intake' && this.voice.buffered().length > 0) {
+      if (this.phase() === 'intake' && this.voice.buffered().length > 0 && !this.analysisSignal()) {
         untracked(() => void this.beginExamination({ announce: false }));
       }
     });
+  }
+
+  /**
+   * The doctor picks how the next consultation acts on what is said, in the intro; the choice is
+   * remembered for them (the PC is shared, so per person) until they pick the other.
+   */
+  chooseMode(mode: ConsultationMode): void {
+    this.chosenModeSignal.set(mode);
+    try {
+      localStorage.setItem(this.modePreferenceKey(), mode);
+    } catch {
+      // A browser that keeps nothing asks again next time; the clinic's default stands meanwhile.
+    }
+  }
+
+  private modePreferenceKey(): string {
+    const user = this.auth.currentUser();
+    return `${MODE_PREFERENCE_KEY}.${user?.id ?? user?.email ?? 'anyone'}`;
+  }
+
+  private restoreModePreference(): void {
+    try {
+      const stored = localStorage.getItem(this.modePreferenceKey());
+      this.chosenModeSignal.set(stored === 'LIVE' || stored === 'DEFERRED' ? stored : null);
+    } catch {
+      this.chosenModeSignal.set(null);
+    }
   }
 
   // ── Availability ────────────────────────────────────────────────────
@@ -368,7 +464,9 @@ export class ConsultationService {
   // ── Starting, resuming, leaving ─────────────────────────────────────
 
   openIntro(): void {
-    if (this.available() && !this.isOpen()) this.introSignal.set(true);
+    if (!this.available() || this.isOpen()) return;
+    this.restoreModePreference();
+    this.introSignal.set(true);
   }
 
   closeIntro(): void {
@@ -393,15 +491,17 @@ export class ConsultationService {
     this.startingSignal.set(true);
     try {
       // The doctor attested in the dialog before this was called; the server records when.
-      const dto = await firstValueFrom(this.api.start(snapshot.patientId, snapshot.locale, true));
+      const dto = await firstValueFrom(this.api.start(snapshot.patientId, snapshot.locale, true, this.chosenMode()));
       this.attach(dto);
       if (dto.voiceSessionId) {
         await this.sessions.adopt(await firstValueFrom(this.voiceApi.getSession(dto.voiceSessionId)));
       }
       await microphone;
       await this.voice.startExaminationMode({ announce: false });
+      this.languageAtStart = this.inputLanguage.language();
+      this.startAudio();
       this.introSignal.set(false);
-      this.say('started');
+      this.say(this.deferred() ? 'startedDeferred' : 'started');
       return true;
     } catch (error) {
       this.voice.stopListening();
@@ -463,6 +563,8 @@ export class ConsultationService {
       await microphone;
       this.holdVoice();
       await this.voice.startExaminationMode({ announce: false });
+      // What was recorded before the crash is lost with the tab; the rest is kept from here.
+      this.startAudio();
     } catch {
       this.voice.stopListening();
     }
@@ -475,8 +577,13 @@ export class ConsultationService {
   detach(): void {
     this.focus.reset();
     this.flushReviewSave();
+    this.flushLineSave();
     this.clearExtractTimer();
     this.clearFullTimer();
+    this.recorder.discard();
+    this.pendingRecording = null;
+    this.audioStateSignal.set('off');
+    this.analysisSignal.set(null);
     this.releaseVoice();
     this.sessions.setRouting(null);
     this.consultationSignal.set(null);
@@ -520,6 +627,8 @@ export class ConsultationService {
     this.ending = false;
     this.failedReadings = 0;
     this.lastExtractAt = 0;
+    this.firstUnkeptAt = 0;
+    this.audioStateSignal.set(dto.audio ? 'kept' : this.recorder.recording() ? 'recording' : 'off');
 
     // Everything that ends a session — the dock, the header, the spoken "fin de
     // la consultation", the inactivity timeout — now ends the consultation.
@@ -532,6 +641,8 @@ export class ConsultationService {
 
   /** The conversation is kept, and the consultation's own phrases are its to answer. */
   private holdVoice(): void {
+    // Deferred: everything is kept and nothing acts until the consultation ends.
+    this.voice.setDeferred?.(this.deferred());
     this.voice.setTranscriptListener(text => this.onHeard(text));
     this.voice.setHandledElsewhere(text => isBeginExaminationCommand(text));
     this.voice.setUtteranceListener(event => this.onVerdict(event));
@@ -542,6 +653,7 @@ export class ConsultationService {
   }
 
   private releaseVoice(): void {
+    this.voice.setDeferred?.(false);
     this.voice.setTranscriptListener(null);
     this.voice.setHandledElsewhere(null);
     this.voice.setUtteranceListener(null);
@@ -558,7 +670,10 @@ export class ConsultationService {
     const language = spokenLanguage(this.context.locale());
     const fr = language === 'fr';
     const say = (text: string): Spoken => ({ text, locale: synthesisLocale(language) });
-    const item = <T>(key: string, data: T) => ({ key, data, quote, status: 'validated' as const, manual: false, edited: false, dictated: true });
+    // Dictated live, the doctor heard it read back: validated. Found when a deferred consultation is
+    // replayed, nobody heard anything yet: it waits for the doctor like everything else.
+    const status = this.analysisSignal() ? 'proposed' as const : 'validated' as const;
+    const item = <T>(key: string, data: T) => ({ key, data, quote, status, manual: false, edited: false, dictated: true });
     const put = <T>(list: ReadonlyArray<{ key: string; data: T }>, key: string, data: T) => {
       const others = list.filter(existing => existing.key !== key);
       return [...others, item(key, data)];
@@ -625,7 +740,7 @@ export class ConsultationService {
         if (!field || value === null || value === undefined || value === '') return null;
         this.changeReview(state => ({
           ...state,
-          patient: { ...state.patient, [field]: { value: value as string | number, quote, status: 'validated', manual: false, edited: false, dictated: true } },
+          patient: { ...state.patient, [field]: { value: value as string | number, quote, status, manual: false, edited: false, dictated: true } },
         }));
         const label = this.translate.instant(`COCKPIT.FIELD.${String(field).toUpperCase()}`);
         return { list: 'patient', value: String(value), itemKey: String(field), spoken: say(`${label} : ${value}.`) };
@@ -651,13 +766,18 @@ export class ConsultationService {
 
   /** Puts what became of a sentence on its line of the conversation. */
   private onVerdict(event: UtteranceEvent): void {
+    // Deferred, a sentence is only kept while it records: what it comes to is decided at the end,
+    // and the server fills a line's verdict in once — so "heard" is not put on it now.
+    if (event.verdict === 'heard' && this.deferred() && this.isRecording() && !this.analysisSignal()) return;
     if (event.lineId !== null) {
       this.linesSignal.update(lines => lines.map(line => line.id === event.lineId
         ? { ...line, verdict: event.verdict, summary: event.summary, latencyMs: event.latencyMs }
         : line));
       if (event.lineId <= this.storedSeq) this.lateVerdicts.add(event.lineId);
     }
-    // What changed goes on the last-action card, and the stage follows it.
+    // What changed goes on the last-action card, and the stage follows it — not during the
+    // analysis at the end, which would sweep the screen through the whole consultation.
+    if (this.analysisSignal()) return;
     const action = actionFromUtterance(event);
     if (action) this.focus.touch(action);
   }
@@ -729,7 +849,7 @@ export class ConsultationService {
   /** Adds a line to the conversation and returns its id, or null when nothing is being recorded. */
   private onHeard(text: string, typed = false): number | null {
     const clean = text.trim();
-    if (!clean || !this.isRecording()) return null;
+    if (!clean || !this.isRecording() || this.analysisSignal()) return null;
     const id = this.nextLineId++;
     this.linesSignal.update(lines => [...lines, {
       id, text: clean, at: Date.now(), typed,
@@ -737,8 +857,13 @@ export class ConsultationService {
       verdict: null, summary: null,
     }]);
     this.sessions.touchSession();
-    this.markUnread();
-    this.scheduleExtraction();
+    if (this.deferred()) {
+      // Nothing is read until the end; the conversation is only kept, so a crash loses nothing.
+      this.scheduleLineSave();
+    } else {
+      this.markUnread();
+      this.scheduleExtraction();
+    }
 
     // Ending is also the voice pipeline's to hear, and it does, with or without
     // the wake word; this is the safety net for a question left open that would
@@ -772,12 +897,14 @@ export class ConsultationService {
 
   private scheduleExtraction(immediate = false): void {
     if (!this.consultationSignal()) return;
+    // A deferred consultation is read once, at the end (endDeferred); nothing before.
+    if (this.deferred() && this.isRecording() && !this.analysisSignal()) return;
     if (!this.dirty && !this.firstUnreadAt) this.firstUnreadAt = Date.now();
     this.dirty = true;
     if (this.inFlight) return; // runs again when this one finishes
     this.clearExtractTimer();
     const now = Date.now();
-    if (this.tailReading() && !immediate && this.isRecording()) {
+    if (this.tailReading() && !immediate && this.isRecording() && !this.analysisSignal()) {
       const due = Math.max(
         Math.min(this.lastLineAt + TAIL_DEBOUNCE_MS, this.firstUnreadAt + TAIL_MAX_WAIT_MS),
         this.lastTailAt + TAIL_MIN_GAP_MS,
@@ -838,10 +965,13 @@ export class ConsultationService {
     const changes = diffReview(before, after).filter(change => change.kind !== 'removed');
     if (changes.length === 0) return;
     const language = spokenLanguage(this.context.locale());
-    const action = actionFromChanges(changes, language);
-    if (action) this.focus.touch(action);
-    const line = describeChanges(changes, language);
-    if (line) this.policy.deliver('proposal', { full: { text: line, locale: synthesisLocale(language) } });
+    // The analysis at the end says what it found once, when it is done; the lines still get their chips.
+    if (!this.analysisSignal()) {
+      const action = actionFromChanges(changes, language);
+      if (action) this.focus.touch(action);
+      const line = describeChanges(changes, language);
+      if (line) this.policy.deliver('proposal', { full: { text: line, locale: synthesisLocale(language) } });
+    }
 
     const quotes = this.quotesOf(after, changes);
     if (quotes.length === 0) return;
@@ -876,7 +1006,7 @@ export class ConsultationService {
    * mention the doctor sees at review and that is never saved by itself.
    */
   private async takeChartMentions(mentions: ChartMentionDto[]): Promise<void> {
-    if (!this.isRecording() || mentions.length === 0) return;
+    if ((!this.isRecording() && !this.analysisSignal()) || mentions.length === 0) return;
     const unstaged: ChartMentionDto[] = [];
     for (const mention of mentions) {
       const result = await this.voice.stageRecovered?.(mention.teeth, mention.finding, mention.quote) ?? 'rejected';
@@ -959,14 +1089,15 @@ export class ConsultationService {
     const announce = options.announce !== false;
     const consultation = this.consultationSignal();
     if (!consultation || !this.isRecording() || this.busySignal()) return;
+    const phrase = this.deferred() ? 'examinationDeferred' : 'examination';
     if (this.phase() === 'examination') {
-      if (announce) this.say('examination');
+      if (announce) this.say(phrase);
       return;
     }
     this.busySignal.set(true);
     try {
       this.consultationSignal.set(await firstValueFrom(this.api.beginExamination(consultation.id)));
-      if (announce) this.say('examination');
+      if (announce) this.say(phrase);
     } catch (error) {
       if (announce) this.toast.error(this.describe(error, 'CONSULTATION.ERROR_PHASE'));
     } finally {
@@ -983,6 +1114,7 @@ export class ConsultationService {
    * wait on.
    */
   async end(options: { waitForClips?: boolean } = {}): Promise<void> {
+    if (this.deferred()) return this.endDeferred(options);
     const consultation = this.consultationSignal();
     if (!consultation || !this.isRecording() || this.ending) return;
     this.ending = true;
@@ -992,10 +1124,12 @@ export class ConsultationService {
     try {
       await this.sessions.end({ waitForClips: options.waitForClips, direct: true });
       this.releaseVoice();
+      const recording = await this.stopAudio();
 
       const lines = this.timedLines();
       this.consultationSignal.set(await firstValueFrom(this.api.end(consultation.id, this.transcript(), lines)));
       this.markStored(lines);
+      void this.sendAudio(recording);
       // One last, complete reading of the finished conversation.
       this.dirty = true;
       await this.extractNow();
@@ -1009,14 +1143,214 @@ export class ConsultationService {
     }
   }
 
+  /**
+   * Ends a deferred consultation and turns the whole of it into what the doctor validates.
+   *
+   * In this order, each step feeding the next:
+   *
+   * 1. **The last sentences** are transcribed (what was said just before "fin" is still in
+   *    flight), the recording stops, and the conversation is kept on the server.
+   * 2. **Every sentence, in order, through the chart commands** ({@link VoiceOrchestratorService.replayConsultation}):
+   *    the same wake word, follow-up window, grammar, corrections and removals as a live command,
+   *    on each sentence's own time, silently. Findings go to the 3D and 2D chart as staged entries
+   *    to validate; what was dictated after the wake word (an allergy, a plan line, the next
+   *    appointment, a patient detail) goes to the review as dictated, to validate.
+   * 3. **The model reads the whole conversation** — who the patient is, the clinical record, the
+   *    plan and what was done today, the next appointment, payments — and the findings on a tooth
+   *    the commands did not take come in "à confirmer".
+   * 4. **Recording ends** (the voice session and the consultation move to review), the report is
+   *    written from the findings, and the audio is sent.
+   *
+   * A crash part-way leaves a consultation that is still recording on the server, with every line
+   * kept: opened again, ending it runs the analysis again, and what was staged the first time is
+   * recognised as already noted rather than added twice.
+   */
+  private async endDeferred(options: { waitForClips?: boolean } = {}): Promise<void> {
+    const consultation = this.consultationSignal();
+    if (!consultation || !this.isRecording() || this.ending) return;
+    this.ending = true;
+    this.busySignal.set(true);
+    this.clearExtractTimer();
+    this.clearFullTimer();
+    this.clearLineSaveTimer();
+    this.analysisSignal.set({ step: 'finishing', done: 0, total: 0 });
+    this.say('analysing');
+    let recording: ConsultationRecording | null = null;
+    try {
+      if (options.waitForClips === false) this.voice.stopListening();
+      else await this.voice.finishListening();
+      recording = await this.stopAudio();
+      await this.keepLinesNow();
+
+      // Typed lines were never commands, live or not: they go to the reading only.
+      const spoken = this.linesSignal().filter(line => !line.typed);
+      this.analysisSignal.set({ step: 'commands', done: 0, total: spoken.length });
+      const replay = await this.voice.replayConsultation(
+        spoken.map(line => ({ id: line.id, text: line.text, at: line.at })),
+        {
+          language: this.languageAtStart ?? undefined,
+          onProgress: (done, total) => this.analysisSignal.set({ step: 'commands', done, total }),
+        },
+      );
+
+      this.analysisSignal.set({ step: 'reading', done: 0, total: 0 });
+      this.dirty = true;
+      await this.extractNow('full', true);
+      this.addUnresolved(replay.unresolved);
+
+      await this.sessions.end({ waitForClips: false, direct: true });
+      this.releaseVoice();
+      const lines = this.timedLines();
+      this.consultationSignal.set(await firstValueFrom(this.api.end(consultation.id, this.transcript(), lines)));
+      this.markStored(lines);
+      void this.sendAudio(recording);
+      recording = null;
+
+      this.analysisSignal.set({ step: 'report', done: 0, total: 0 });
+      await this.regenerateReport();
+      this.scheduleReviewSave();
+      this.say('analysed');
+    } catch (error) {
+      // Still recording on the server, every line kept: ending again runs the analysis again.
+      if (recording) this.pendingRecording = recording;
+      this.toast.error(this.describe(error, 'CONSULTATION.ERROR_END'));
+    } finally {
+      this.analysisSignal.set(null);
+      this.ending = false;
+      this.busySignal.set(false);
+    }
+  }
+
+  /**
+   * What the replay could not settle — a sentence addressed to the app that asked a question
+   * nobody answered, or one naming a tooth and a finding the commands did not take — listed with
+   * the review's mentions, unless the reader or the commands already put it on the chart.
+   */
+  private addUnresolved(unresolved: ReplayUnresolved[]): void {
+    if (unresolved.length === 0) return;
+    const staged = this.voice.buffered().map(entry => normalizeKeyText(entry.transcript));
+    this.changeReview(state => {
+      const known = state.chartMentions.map(m => normalizeKeyText(m.quote));
+      const covered = (text: string) => {
+        const said = normalizeKeyText(text);
+        return [...known, ...staged].some(quote => !!quote && (said.includes(quote) || quote.includes(said)));
+      };
+      const added = unresolved
+        .filter(item => item.text.trim() && !covered(item.text))
+        .map(item => ({ teeth: null, finding: item.question ?? '', quote: item.text.trim(), unresolved: true }));
+      return added.length ? { ...state, chartMentions: [...state.chartMentions, ...added] } : state;
+    });
+  }
+
+  // ── Keeping a deferred conversation while it records ────────────────
+
+  private scheduleLineSave(): void {
+    const now = Date.now();
+    if (!this.firstUnkeptAt) this.firstUnkeptAt = now;
+    this.clearLineSaveTimer();
+    const due = Math.min(now + LINE_SAVE_DEBOUNCE_MS, this.firstUnkeptAt + LINE_SAVE_MAX_WAIT_MS);
+    this.lineSaveTimer = setTimeout(() => void this.keepLinesNow(), Math.max(0, due - now));
+  }
+
+  private clearLineSaveTimer(): void {
+    if (this.lineSaveTimer !== null) clearTimeout(this.lineSaveTimer);
+    this.lineSaveTimer = null;
+  }
+
+  /** Sends what is waiting now — the doctor is leaving the dossier. */
+  private flushLineSave(): void {
+    if (this.lineSaveTimer === null) return;
+    this.clearLineSaveTimer();
+    void this.keepLinesNow();
+  }
+
+  /** Keeps the lines the server does not have yet. Best effort: the next call carries them again. */
+  private async keepLinesNow(): Promise<void> {
+    this.lineSaveTimer = null;
+    const consultation = this.consultationSignal();
+    if (!consultation || !this.isOpen()) return;
+    const lines = this.timedLines();
+    if (lines.length === 0) {
+      this.firstUnkeptAt = 0;
+      return;
+    }
+    try {
+      await firstValueFrom(this.api.keepLines(consultation.id, this.transcript(), lines));
+      this.markStored(lines);
+      this.firstUnkeptAt = 0;
+    } catch {
+      if (this.isRecording() && !this.analysisSignal()) this.scheduleLineSave();
+    }
+  }
+
+  // ── The recording ───────────────────────────────────────────────────
+
+  private startAudio(): void {
+    if (!this.keepAudio() || this.recorder.recording()) {
+      if (!this.recorder.recording()) this.audioStateSignal.set('off');
+      return;
+    }
+    const megabytes = this.configSignal()?.maxAudioMegabytes ?? 100;
+    const started = this.recorder.start({ maxBytes: megabytes * 1024 * 1024 });
+    this.audioStateSignal.set(started ? 'recording' : 'off');
+  }
+
+  private async stopAudio(): Promise<ConsultationRecording | null> {
+    if (!this.recorder.recording()) return null;
+    try {
+      return await this.recorder.stop();
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Sends the recording; kept here until the server has it, so a failure can be sent again from
+   * the review ({@link retryAudio}). Twice more on its own, a little later each time.
+   */
+  private async sendAudio(recording: ConsultationRecording | null): Promise<void> {
+    if (recording) this.pendingRecording = recording;
+    const pending = this.pendingRecording;
+    const consultation = this.consultationSignal();
+    if (!pending || !consultation) {
+      if (this.audioStateSignal() === 'recording') this.audioStateSignal.set('off');
+      return;
+    }
+    this.audioStateSignal.set('uploading');
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const updated = await firstValueFrom(this.api.uploadAudio(consultation.id, pending.blob, pending.startedAt, pending.durationMs));
+        // The answer is the list view of the consultation (no transcript): only its recording is taken.
+        this.consultationSignal.update(current => current && current.id === consultation.id ? { ...current, audio: updated.audio ?? null } : current);
+        this.pendingRecording = null;
+        this.audioStateSignal.set('kept');
+        return;
+      } catch (error) {
+        const status = (error as HttpErrorResponse)?.status;
+        // Refused for what it is (too large, not kept here, discarded): sending it again changes nothing.
+        if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) break;
+        if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 2_000 * (attempt + 1)));
+      }
+    }
+    if (this.consultationSignal()?.id === consultation.id) this.audioStateSignal.set('failed');
+  }
+
+  /** The doctor asks for the recording to be sent again. */
+  retryAudio(): Promise<void> {
+    return this.sendAudio(null);
+  }
+
   /** Throws the consultation away, transcript included. */
   async abandon(): Promise<void> {
     const consultation = this.consultationSignal();
     if (!consultation) return;
     this.busySignal.set(true);
     this.cancelReviewSave();
+    this.clearLineSaveTimer();
     try {
       this.voice.stopListening();
+      this.recorder.discard();
+      this.pendingRecording = null;
       await firstValueFrom(this.api.abandon(consultation.id));
     } catch (error) {
       // Still unfinished on the server; it will be offered again rather than lost.
@@ -1040,9 +1374,27 @@ export class ConsultationService {
     this.scheduleReviewSave();
   }
 
+  /**
+   * Validates everything still waiting, the chart included: the findings the end-of-consultation
+   * replay staged and the ones the reader recovered are kept too. An explicit click on a screen
+   * that lists each of them.
+   */
   validateEverything(): void {
     this.reviewSignal.update(validateAll);
+    const waiting = this.voice.buffered().filter(entry => entry.needsConfirmation).map(entry => entry.auditId);
+    if (waiting.length) this.decidedSignal.update(set => new Set([...set, ...waiting]));
     this.scheduleReviewSave();
+  }
+
+  /** Keeps every chart finding still waiting — the chart section's own "validate all". */
+  keepAllChartEntries(): void {
+    const waiting = this.voice.buffered().filter(entry => entry.needsConfirmation).map(entry => entry.auditId);
+    this.decidedSignal.update(set => new Set([...set, ...waiting]));
+  }
+
+  /** Invoice the acts done today as a draft for the front desk, or not. */
+  setInvoiceDecision(decision: 'create' | 'skip' | null): void {
+    this.changeReview(state => ({ ...state, invoiceDecision: decision }));
   }
 
   /** Setting one decides a suggestion ("used"); clearing it leaves the suggestion to decide again. */
@@ -1181,6 +1533,9 @@ export class ConsultationService {
         consultationId: consultation.id,
         insuranceForms: result.insuranceForms ?? [],
         insuranceFormError: result.insuranceFormError ?? null,
+        invoiceId: result.invoiceId ?? null,
+        invoiceNumber: result.invoiceNumber ?? null,
+        receipts: result.receipts ?? 0,
       });
       this.savedVersionSignal.update(v => v + 1);
       this.say('saved');

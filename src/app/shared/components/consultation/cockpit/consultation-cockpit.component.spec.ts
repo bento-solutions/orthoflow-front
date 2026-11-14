@@ -23,6 +23,8 @@ describe('ConsultationCockpitComponent', () => {
   let pending: ReturnType<typeof signal<number>>;
   let undo: ReturnType<typeof signal<{ label: string } | null>>;
   let counts: ReturnType<typeof signal<Record<string, number>>>;
+  let deferred: ReturnType<typeof signal<boolean>>;
+  let analysis: ReturnType<typeof signal<{ step: string; done: number; total: number } | null>>;
   let ended = 0;
 
   const render = async () => {
@@ -37,6 +39,8 @@ describe('ConsultationCockpitComponent', () => {
     pending = signal(0);
     undo = signal<{ label: string } | null>(null);
     counts = signal<Record<string, number>>({ chart: 2, allergies: 3 });
+    deferred = signal(false);
+    analysis = signal<{ step: string; done: number; total: number } | null>(null);
     ended = 0;
     TestBed.configureTestingModule({
       imports: [ConsultationCockpitComponent, TranslateModule.forRoot()],
@@ -46,6 +50,7 @@ describe('ConsultationCockpitComponent', () => {
           useValue: {
             lines, listening: () => true, busy: () => false, consultation: () => ({ startedAt: new Date().toISOString() }),
             end: () => { ended++; }, resumeRecording: () => undefined, addTyped: () => 1,
+            deferred, analysis,
           },
         },
         {
@@ -170,5 +175,29 @@ describe('ConsultationCockpitComponent', () => {
     expect(document.documentElement.classList.contains('cockpit-mode')).toBe(true);
     fixture.destroy();
     expect(document.documentElement.classList.contains('cockpit-mode')).toBe(false);
+  });
+  it('says, in the bar, that a deferred consultation is analysed at the end, and its End says so too', async () => {
+    expect(element.querySelector('[data-cockpit-mode]')).toBeNull();
+    deferred.set(true);
+    await render();
+    expect(element.querySelector('[data-cockpit-mode="deferred"]')).not.toBeNull();
+    expect(element.querySelector('[data-cockpit-end]')?.textContent).toContain('CONSULTATION.END_DEFERRED');
+  });
+
+  it('shows the analysis over the stage, sentence by sentence, while the conversation stays in view', async () => {
+    lines.set([{ id: 1, text: 'dent 16 carie', at: Date.now(), typed: false, phase: 'INTAKE', verdict: 'heard' }]);
+    analysis.set({ step: 'commands', done: 3, total: 12 });
+    await render();
+    const card = element.querySelector('[data-analysis]')!;
+    expect(card.getAttribute('data-step')).toBe('commands');
+    expect((card.querySelector('progress') as HTMLProgressElement).value).toBe(3);
+    expect(element.querySelector('.ck-a-side')).not.toBeNull();
+
+    analysis.set({ step: 'reading', done: 0, total: 0 });
+    await render();
+    expect(element.querySelector('[data-analysis]')?.textContent).toContain('CONSULTATION.ANALYSIS_READING');
+    analysis.set(null);
+    await render();
+    expect(element.querySelector('[data-analysis]')).toBeNull();
   });
 });

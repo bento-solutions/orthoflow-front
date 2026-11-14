@@ -118,6 +118,13 @@ export class AudioCaptureService {
   paused = this.pausedSignal.asReadonly();
   lastError = this.errorSignal.asReadonly();
 
+  private streamSignal = signal<MediaStream | null>(null);
+  /**
+   * The open microphone, for whoever records the conversation itself (a consultation keeps its
+   * audio). A new stream each time the microphone is reopened; null while it is closed.
+   */
+  mediaStream = this.streamSignal.asReadonly();
+
   private context: AudioContext | null = null;
   private stream: MediaStream | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
@@ -235,6 +242,7 @@ export class AudioCaptureService {
       return false;
     }
     this.stream = stream;
+    this.streamSignal.set(stream);
 
     try {
       this.source = context.createMediaStreamSource(stream);
@@ -499,6 +507,7 @@ export class AudioCaptureService {
 
     this.context = null;
     this.stream = null;
+    this.streamSignal.set(null);
     this.source = null;
     this.tap = null;
     this.sink = null;

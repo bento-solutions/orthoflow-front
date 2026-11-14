@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, effect, inject, input, isDevMode, output, signal, untracked } from '@angular/core';
+import { Component, computed, effect, inject, input, isDevMode, output, signal, untracked, viewChild } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { ConsultationApiService } from '../../../core/consultation/consultation-api.service';
@@ -7,6 +7,7 @@ import { buildTimeline, TimelineRow } from '../../../core/consultation/consultat
 import { ConsultationLogDto } from '../../../core/consultation/consultation.model';
 import { spokenLanguage } from '../../../core/voice/voice-vocabulary';
 import { ModalComponent } from '../../ui/modal.component';
+import { ConsultationAudioPlayerComponent } from './consultation-audio-player.component';
 import { environment } from '../../../../environments/environment';
 
 /**
@@ -21,7 +22,7 @@ import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'app-consultation-log',
   standalone: true,
-  imports: [DatePipe, TranslateModule, ModalComponent],
+  imports: [DatePipe, TranslateModule, ModalComponent, ConsultationAudioPlayerComponent],
   template: `
     <app-modal [open]="!!consultationId()" [title]="'CONSULTATION.LOG.TITLE' | translate" size="lg" (closed)="closed.emit()">
       @if (loading()) {
@@ -32,7 +33,15 @@ import { environment } from '../../../../environments/environment';
         <p class="mb-3 text-sm text-ink-500">
           {{ l.startedAt | date: 'dd/MM/yyyy HH:mm' }}
           · {{ 'CONSULTATION.LOG.INFORMED_AT' | translate }} {{ l.patientInformedAt | date: 'HH:mm:ss' }}
+          @if (l.mode) { · {{ (l.mode === 'DEFERRED' ? 'CONSULTATION.MODE_LABEL_DEFERRED' : 'CONSULTATION.MODE_LABEL_LIVE') | translate }} }
         </p>
+        <!-- The recording beside its transcript: each line can be heard where it was said. -->
+        @if (l.audio) {
+          <section class="mb-4 rounded-md border border-ink-200 p-3" data-log-audio>
+            <h3 class="mb-2 text-sm font-bold text-ink-900">{{ 'CONSULTATION.LOG_AUDIO' | translate }}</h3>
+            <app-consultation-audio-player #player [consultationId]="l.consultationId" [audio]="l.audio" />
+          </section>
+        }
 
         @if (!l.transcriptKept) {
           <p class="mb-3 rounded-md border border-ink-200 bg-ink-50 p-3 text-sm text-ink-700">{{ 'CONSULTATION.LOG.NOT_KEPT' | translate }}</p>
@@ -49,7 +58,15 @@ import { environment } from '../../../../environments/environment';
               }
               @case ('line') {
                 <li class="flex gap-3 text-sm">
-                  <time class="w-16 shrink-0 tabular-nums text-ink-500">{{ row.at ? (row.at | date: 'HH:mm:ss') : '—' }}</time>
+                  @if (l.audio && row.at) {
+                    <button type="button" class="w-16 shrink-0 text-start tabular-nums text-petrol-700 underline decoration-dotted"
+                            (click)="playFrom(row.at)" data-log-seek
+                            [attr.aria-label]="'CONSULTATION.LOG_PLAY_FROM' | translate: { time: (row.at | date: 'HH:mm:ss') }">
+                      <time>{{ row.at | date: 'HH:mm:ss' }}</time>
+                    </button>
+                  } @else {
+                    <time class="w-16 shrink-0 tabular-nums text-ink-500">{{ row.at ? (row.at | date: 'HH:mm:ss') : '—' }}</time>
+                  }
                   <span class="text-ink-900">
                     {{ row.line.text }}
                     @if (row.line.typed) {
@@ -132,6 +149,13 @@ export class ConsultationLogComponent {
   readonly closed = output<void>();
 
   readonly log = signal<ConsultationLogDto | null>(null);
+  private readonly player = viewChild<ConsultationAudioPlayerComponent>('player');
+
+  /** Plays the recording from where this line was said. */
+  playFrom(at: Date | string | number): void {
+    const ms = at instanceof Date ? at.getTime() : typeof at === 'number' ? at : Date.parse(at);
+    if (!Number.isNaN(ms)) void this.player()?.playFrom(ms);
+  }
   readonly loading = signal(false);
   readonly error = signal(false);
 

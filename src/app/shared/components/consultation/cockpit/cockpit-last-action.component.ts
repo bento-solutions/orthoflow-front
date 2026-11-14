@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { ConsultationFocusService } from '../../../../core/consultation/consultation-focus.service';
+import { ConsultationService } from '../../../../core/consultation/consultation.service';
 import { VoiceOrchestratorService } from '../../../../core/voice/voice-orchestrator.service';
 
 /**
@@ -32,7 +33,7 @@ import { VoiceOrchestratorService } from '../../../../core/voice/voice-orchestra
           </p>
         }
       } @else {
-        <p class="ck-last-empty">{{ 'COCKPIT.LAST_EMPTY' | translate }}</p>
+        <p class="ck-last-empty">{{ (c.deferred() ? 'COCKPIT.DEFERRED_HINT' : 'COCKPIT.LAST_EMPTY') | translate }}</p>
       }
     </section>
   `,
@@ -59,6 +60,7 @@ import { VoiceOrchestratorService } from '../../../../core/voice/voice-orchestra
 export class CockpitLastActionComponent {
   protected readonly focus = inject(ConsultationFocusService);
   protected readonly voice = inject(VoiceOrchestratorService);
+  protected readonly c = inject(ConsultationService);
 
   protected icon(kind: string, status: string | null): string {
     if (kind === 'unsure') return 'help';

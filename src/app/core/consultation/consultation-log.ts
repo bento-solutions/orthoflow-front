@@ -8,7 +8,7 @@ import { SpokenLanguage } from '../voice/voice-vocabulary';
  * timeline so the doctor reads a command beside the sentence it came from.
  */
 export type TimelineRow =
-  | { kind: 'milestone'; key: 'STARTED' | 'EXAMINATION' | 'ENDED' | 'SAVED'; at: number }
+  | { kind: 'milestone'; key: 'STARTED' | 'EXAMINATION' | 'ANALYSIS' | 'ENDED' | 'SAVED'; at: number }
   | { kind: 'line'; at: number | null; line: ConsultationLineDto }
   | { kind: 'command'; at: number; command: ConsultationLogCommandDto; text: string; decision: CommandDecision };
 
@@ -56,6 +56,12 @@ export function buildTimeline(log: ConsultationLogDto, language: SpokenLanguage,
   if (log.examinationStartedAt) {
     const at = Date.parse(log.examinationStartedAt);
     add({ kind: 'milestone', key: 'EXAMINATION', at }, at, RANK.milestone);
+  }
+  // A deferred consultation's commands were all made at the end, from the whole conversation: they
+  // come after the sentences they were read from, under the analysis that made them.
+  if (log.mode === 'DEFERRED' && log.commands.length) {
+    const at = Math.min(...log.commands.map(command => Date.parse(command.occurredAt)));
+    add({ kind: 'milestone', key: 'ANALYSIS', at }, at, RANK.milestone);
   }
   if (log.endedAt) {
     const at = Date.parse(log.endedAt);

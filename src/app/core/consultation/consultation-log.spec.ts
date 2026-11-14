@@ -60,6 +60,24 @@ describe('consultation log timeline', () => {
     expect(rows[1].kind).toBe('line');
   });
 
+  it('puts the commands of a deferred consultation under the analysis that made them, after the conversation', () => {
+    const rows = buildTimeline(log({
+      mode: 'DEFERRED', examinationStartedAt: null, endedAt: at('10:06:00'),
+      lines: [
+        { seq: 0, at: at('10:00:05'), phase: 'INTAKE', typed: false, text: 'dent 16 carie' },
+        { seq: 1, at: at('10:04:00'), phase: 'INTAKE', typed: false, text: 'fin de la consultation' },
+      ],
+      commands: [command({ occurredAt: at('10:05:10') }), command({ id: 'c2', occurredAt: at('10:05:11') })],
+    }), 'fr', 'Dent');
+    expect(rows.map(row => row.kind === 'milestone' ? row.key : row.kind)).toEqual(
+      ['STARTED', 'line', 'line', 'ANALYSIS', 'command', 'command', 'ENDED', 'SAVED']);
+  });
+
+  it('has no analysis milestone for a live consultation', () => {
+    const rows = buildTimeline(log({ commands: [command()] }), 'fr', 'Dent');
+    expect(rows.some(row => row.kind === 'milestone' && row.key === 'ANALYSIS')).toBe(false);
+  });
+
   it('shows what the doctor decided about each command', () => {
     const reviewed = {
       allergies: [], medicalHistory: [], activeTreatments: [], treatmentPlan: [], amendments: [],

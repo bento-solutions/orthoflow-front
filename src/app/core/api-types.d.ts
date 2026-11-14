@@ -660,6 +660,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/consultations/{id}/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["audio"];
+        put?: never;
+        post: operations["uploadAudio"];
+        delete: operations["deleteAudio"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/consultations/{id}/commit": {
         parameters: {
             query?: never;
@@ -718,6 +734,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["extract"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/consultations/{id}/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["keepLines"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6153,9 +6185,11 @@ export interface components {
             amendments: components["schemas"]["Amendment"][];
             approvedAuditIds: string[];
             chiefComplaint?: string;
+            createInvoice?: boolean;
             medicalHistory?: components["schemas"]["HistoryItem"][];
             nextAppointment?: components["schemas"]["AppointmentSlot"];
             patient?: components["schemas"]["PatientChanges"];
+            payments?: components["schemas"]["PaymentItem"][];
             rejectedAuditIds: string[];
             report?: string;
             treatmentPlan?: components["schemas"]["PlanLine"][];
@@ -6171,8 +6205,13 @@ export interface components {
             failed?: components["schemas"]["FailedCommand"][];
             insuranceFormError?: string;
             insuranceForms?: components["schemas"]["InsuranceFormIssued"][];
+            /** Format: uuid */
+            invoiceId?: string;
+            invoiceNumber?: string;
             /** Format: int32 */
             notReviewed?: number;
+            /** Format: int32 */
+            receipts?: number;
             /** Format: int32 */
             rejected?: number;
             saved?: boolean;
@@ -6219,9 +6258,24 @@ export interface components {
         ConsentRequest: {
             notes?: string;
         };
+        ConsultationAudioResponse: {
+            contentType?: string;
+            /** Format: int64 */
+            durationMs?: number;
+            /** Format: uuid */
+            fileId?: string;
+            /** Format: int64 */
+            sizeBytes?: number;
+            /** Format: date-time */
+            startedAt?: string;
+        };
         ConsultationConfigResponse: {
             cockpit?: boolean;
+            defaultMode?: string;
             enabled?: boolean;
+            keepAudio?: boolean;
+            /** Format: int32 */
+            maxAudioMegabytes?: number;
             modelExtraction?: boolean;
             retainTranscript?: boolean;
             tailReading?: boolean;
@@ -6233,12 +6287,14 @@ export interface components {
             medicalHistory?: components["schemas"]["HistoryEntry"][];
             nextAppointment?: components["schemas"]["NextAppointment"];
             patient?: components["schemas"]["PatientFields"];
+            payments?: components["schemas"]["Payment"][];
             source?: string;
             treatmentPlan?: components["schemas"]["PlanItem"][];
         };
         ConsultationLogResponse: {
             /** Format: uuid */
             actorId?: string;
+            audio?: components["schemas"]["ConsultationAudioResponse"];
             commands?: components["schemas"]["VoiceCommandAuditResponse"][];
             /** Format: date-time */
             completedAt?: string;
@@ -6250,6 +6306,7 @@ export interface components {
             examinationStartedAt?: string;
             lines?: components["schemas"]["Line"][];
             locale?: string;
+            mode?: string;
             /** Format: uuid */
             patientId?: string;
             /** Format: date-time */
@@ -6266,6 +6323,7 @@ export interface components {
             actorId?: string;
             /** Format: uuid */
             appointmentId?: string;
+            audio?: components["schemas"]["ConsultationAudioResponse"];
             /** Format: date-time */
             completedAt?: string;
             draft?: components["schemas"]["JsonNode"];
@@ -6275,8 +6333,11 @@ export interface components {
             examinationStartedAt?: string;
             /** Format: uuid */
             id?: string;
+            /** Format: uuid */
+            invoiceId?: string;
             lines?: components["schemas"]["Line"][];
             locale?: string;
+            mode?: string;
             /** Format: uuid */
             patientId?: string;
             /** Format: date-time */
@@ -6739,7 +6800,7 @@ export interface components {
             /** Format: uuid */
             ownerId?: string;
             /** @enum {string} */
-            ownerType?: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "INSURANCE_FORM" | "PRESCRIPTION" | "CLINICAL_PHOTO";
+            ownerType?: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "INSURANCE_FORM" | "PRESCRIPTION" | "CLINICAL_PHOTO" | "CONSULTATION_AUDIO";
             /** Format: int64 */
             sizeBytes?: number;
         };
@@ -8246,25 +8307,14 @@ export interface components {
         };
         Payment: {
             amount?: number;
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: uuid */
-            id?: string;
-            invoice?: components["schemas"]["Invoice"];
-            /** @enum {string} */
-            method?: "CASH" | "CARD" | "BANK_TRANSFER" | "INSURANCE" | "CHEQUE";
-            notes?: string;
-            /** Format: date */
-            paymentDate?: string;
-            /** Format: uuid */
-            practiceId?: string;
-            /** Format: uuid */
-            receiptId?: string;
-            /** Format: uuid */
-            recordedBy?: string;
+            key?: string;
+            method?: string;
+            quote?: string;
+        };
+        PaymentItem: {
+            amount: number;
+            method: string;
             reference?: string;
-            /** Format: int64 */
-            version?: number;
         };
         PaymentPlanCreate: {
             downPayment?: number;
@@ -8401,6 +8451,7 @@ export interface components {
             key?: string;
             label?: string;
             notes?: string;
+            performed?: boolean;
             price?: number;
             priceSource?: string;
             quote?: string;
@@ -9113,6 +9164,7 @@ export interface components {
         };
         StartConsultationRequest: {
             locale?: string;
+            mode?: string;
             /** Format: uuid */
             patientId: string;
             patientInformed?: boolean;
@@ -11453,6 +11505,82 @@ export interface operations {
             };
         };
     };
+    audio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    uploadAudio: {
+        parameters: {
+            query?: {
+                startedAt?: string;
+                durationMs?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultationResponse"];
+                };
+            };
+        };
+    };
+    deleteAudio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultationResponse"];
+                };
+            };
+        };
+    };
     commit: {
         parameters: {
             query?: never;
@@ -11550,6 +11678,30 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["ExtractionResponse"];
                 };
+            };
+        };
+    };
+    keepLines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TranscriptRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -11806,7 +11958,7 @@ export interface operations {
     list_8: {
         parameters: {
             query: {
-                ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "INSURANCE_FORM" | "PRESCRIPTION" | "CLINICAL_PHOTO";
+                ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "INSURANCE_FORM" | "PRESCRIPTION" | "CLINICAL_PHOTO" | "CONSULTATION_AUDIO";
                 ownerId: string;
             };
             header?: never;
@@ -11829,7 +11981,7 @@ export interface operations {
     upload_1: {
         parameters: {
             query: {
-                ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "INSURANCE_FORM" | "PRESCRIPTION" | "CLINICAL_PHOTO";
+                ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "INSURANCE_FORM" | "PRESCRIPTION" | "CLINICAL_PHOTO" | "CONSULTATION_AUDIO";
                 ownerId?: string;
             };
             header?: never;

@@ -144,6 +144,32 @@ export interface BufferedEntry {
   summary?: string;
   /** Recovered by the reader from a sentence the grammar did not take: undecided until the doctor says. */
   needsConfirmation?: boolean;
+  /**
+   * Found when a finished consultation was replayed through the commands (the deferred mode): no
+   * read-back was heard when it was said, so it waits, like a recovered one, for the doctor to
+   * validate it at review — but it is the grammar's reading, not a guess, and is labelled so.
+   */
+  deferred?: boolean;
+}
+
+/** One line of a finished consultation, replayed through the commands in the order it was said. */
+export interface ReplayLine {
+  id: number;
+  text: string;
+  /** When it was transcribed (ms since the epoch); 0 when unknown. The wake window is timed on it. */
+  at: number;
+}
+
+/**
+ * A sentence the replay could not turn into a command although it was addressed to the app or
+ * looked like a chart command: it asked a question nobody was there to answer ("which tooth?"),
+ * or named a finding without the system being sure. Put in front of the doctor at review.
+ */
+export interface ReplayUnresolved {
+  lineId: number | null;
+  text: string;
+  /** The question the live pipeline would have asked, when it asked one. */
+  question: string | null;
 }
 
 /** An entry's line in the doctor's language, computed when it has none. */
@@ -598,6 +624,112 @@ export class VoiceOrchestratorService {
   private utteranceListener: ((event: UtteranceEvent) => void) | null = null;
 
   private intakeSink: IntakeSink | null = null;
+
+  /**
+   * A consultation in the deferred mode is recording: everything heard is kept, and only the
+   * consultation's own phrases act — end it, pause and resume, change the dictation language, the
+   * warning that a command was said in the wrong language. Nothing else is acted on, read back or
+   * staged until the consultation ends and {@link replayConsultation} turns the whole of it into
+   * commands for the doctor to validate.
+   */
+  private deferredSignal = signal(false);
+  deferred = this.deferredSignal.asReadonly();
+
+  setDeferred(on: boolean): void {
+    this.deferredSignal.set(on);
+  }
+
+  /**
+   * Set while a finished consultation is replayed. The pipeline then runs silently on the
+   * replay's own clock — each line's time, so the wake word's follow-up window closes when it
+   * closed in the room, not a few milliseconds later — and asks nothing: there is nobody to answer.
+   */
+  private replay: {
+    clock: number;
+    language: InputLanguage;
+    paused: boolean;
+    lineId: number | null;
+    unresolved: ReplayUnresolved[];
+  } | null = null;
+  private replayingSignal = signal(false);
+  /** A finished consultation is being turned into commands. */
+  replaying = this.replayingSignal.asReadonly();
+  private undoOfferedAt = 0;
+
+  /** The clock the pipeline reasons on: the line's time while replaying, now otherwise. */
+  private now(): number {
+    return this.replay ? this.replay.clock : Date.now();
+  }
+
+  /** Whether "Calypso, pause" is in force — in the room, or at this point of the replay. */
+  private isVoicePaused(): boolean {
+    return this.replay ? this.replay.paused : this.voicePausedSignal();
+  }
+
+  /**
+   * Turns a finished consultation into commands: every line, in order, through exactly the path a
+   * live command takes — the wake word and its follow-up window, the language filter, the grammar,
+   * the forgiving repairs and the NLU fallback, "non, en fait…" corrections, denials, refinements,
+   * removals and undo — so the deferred mode finds at least what the live one would have, and
+   * nothing a live command would have refused.
+   *
+   * What differs is only what needs a person in the room: nothing is said, shown as a toast, put
+   * on screen or asked. A finding is staged *to validate* ({@link BufferedEntry.deferred}); a
+   * question the live pipeline would have asked comes back in `unresolved`, with the sentence,
+   * for the review; view, read and session commands are not replayed.
+   *
+   * @param options.language the dictation language at the start of the consultation; a "Calypso,
+   *        dictée en anglais" said during it changes the language for the lines after it, as it did live
+   */
+  async replayConsultation(
+    lines: ReplayLine[],
+    options: { language?: InputLanguage; onProgress?: (done: number, total: number) => void } = {},
+  ): Promise<{ unresolved: ReplayUnresolved[]; staged: number }> {
+    if (this.replay) return { unresolved: [], staged: 0 };
+    const before = this.bufferedSignal().length;
+    this.confirmationSignal.set(null);
+    this.clarificationSignal.set(null);
+    this.lastAcceptedAtSignal.set(null);
+    this.undoSignal.set(null);
+    this.lastChartAcceptedAt = 0;
+    this.replay = {
+      clock: lines[0]?.at || Date.now(),
+      language: options.language ?? this.inputLanguage.language(),
+      paused: false,
+      lineId: null,
+      unresolved: [],
+    };
+    this.replayingSignal.set(true);
+    try {
+      let done = 0;
+      for (const line of lines) {
+        const replay = this.replay;
+        // A line with no time keeps the last one: it was said after it.
+        replay.clock = line.at > 0 ? Math.max(line.at, replay.clock) : replay.clock;
+        replay.lineId = line.id;
+        if (this.undoSignal() && replay.clock - this.undoOfferedAt > UNDO_WINDOW_MS) this.undoSignal.set(null);
+        try {
+          await this.handleTranscript(line.text, 1, null, true, line.id);
+        } catch (error) {
+          // One sentence that fails must not cost the doctor the rest of the consultation.
+          console.warn('Voice: a line could not be replayed', error);
+        }
+        // The replay asks nothing; a question a line left open must not swallow the next one.
+        this.confirmationSignal.set(null);
+        this.clarificationSignal.set(null);
+        options.onProgress?.(++done, lines.length);
+      }
+      return { unresolved: [...this.replay.unresolved], staged: Math.max(0, this.bufferedSignal().length - before) };
+    } finally {
+      this.replay = null;
+      this.replayingSignal.set(false);
+      this.lastAcceptedAtSignal.set(null);
+      this.undoSignal.set(null);
+      this.highlightSignal.set(null);
+      this.interpretationSignal.set(null);
+      this.settle();
+    }
+  }
 
   /**
    * Set by a consultation while it records (R8: one store per kind of fact).
@@ -1154,7 +1286,7 @@ export class VoiceOrchestratorService {
    * every few seconds, so a finding is never lost in silence.
    */
   private looksLikeMissedCommand(readings: string[]): boolean {
-    const now = Date.now();
+    const now = this.now();
     for (const reading of readings) {
       let findings = affirmedFindings(extractFindings(reading)).filter(f => !SYMPTOM_CODES.has(f.code));
       if (findings.length === 0) {
@@ -1203,7 +1335,8 @@ export class VoiceOrchestratorService {
       const requested = readings.map(reading => requestedLanguage(reading)).find(language => language !== null) ?? null;
       if (requested) {
         this.mark('control');
-        this.switchDictationLanguage(requested);
+        if (this.replay) this.replay.language = requested;
+        else this.switchDictationLanguage(requested);
         return;
       }
     }
@@ -1218,8 +1351,13 @@ export class VoiceOrchestratorService {
     const answeringQuestion = !!(this.confirmationSignal() || this.clarificationSignal());
     const exempt = (answeringQuestion && readings.every(reading => isLanguageNeutralAnswer(reading)))
       || readings.some(reading => isStopPhrase(reading));
-    const chosenLanguage = this.inputLanguage.language();
+    const chosenLanguage = this.replay?.language ?? this.inputLanguage.language();
     if (heardAloud && !exempt && readings.every(reading => classifyLanguage(reading, chosenLanguage) === 'noise')) {
+      if (this.replay) {
+        // Already counted, and warned about, when it was said.
+        this.mark('other-language');
+        return;
+      }
       this.languageNoiseSignal.update(count => count + 1);
       this.ignoredSignal.set(said);
       this.mark('other-language');
@@ -1248,7 +1386,8 @@ export class VoiceOrchestratorService {
     if (gated && readings.some(reading => isStopPhrase(reading))) {
       this.lastAcceptedAtSignal.set(null);
       this.mark('control', null, { intent: 'voice.session.end' });
-      await this.sessionHooks?.end();
+      // Replayed, it is the end it already was.
+      if (!this.replay) await this.sessionHooks?.end();
       return;
     }
 
@@ -1256,10 +1395,11 @@ export class VoiceOrchestratorService {
       const addressed = this.addressedCommand(readings);
 
       // Paused by voice: the only thing heard is the way back.
-      if (this.voicePausedSignal()) {
+      if (this.isVoicePaused()) {
         if (addressed?.via === 'wake-word' && addressed.primary && isResumePhrase(addressed.primary)) {
           this.mark('control');
-          this.resumeByVoice();
+          if (this.replay) this.replay.paused = false;
+          else this.resumeByVoice();
         } else {
           this.ignoredSignal.set(said);
           this.settle();
@@ -1269,6 +1409,19 @@ export class VoiceOrchestratorService {
 
       if (!addressed) {
         this.ignoredSignal.set(said);
+        // Deferred, nothing is missed yet: the whole consultation is read when it ends.
+        if (this.deferredSignal() && !this.replay) {
+          this.settle();
+          return;
+        }
+        if (this.replay) {
+          // Not addressed, but it names a tooth and a finding: put in front of the doctor, never lost.
+          if (this.looksLikeMissedCommand(readings)) {
+            this.mark('unsure');
+            this.replay.unresolved.push({ lineId: this.replay.lineId, text: said, question: null });
+          }
+          return;
+        }
         if (this.looksLikeMissedCommand(readings)) {
           this.mark('unsure');
           const now = Date.now();
@@ -1283,12 +1436,17 @@ export class VoiceOrchestratorService {
       this.ignoredSignal.set(null);
       if (addressed.via === 'wake-word' && addressed.primary && isPausePhrase(addressed.primary)) {
         this.mark('control');
-        this.pauseByVoice();
+        if (this.replay) this.replay.paused = true;
+        else this.pauseByVoice();
         return;
       }
       // "Calypso, stop": a bare word that would end the consultation is asked
       // back rather than obeyed — ending cannot be undone without a tap.
       if (addressed.via === 'wake-word' && addressed.primary && isBareStop(addressed.primary)) {
+        if (this.replay) {
+          this.mark('control');
+          return;
+        }
         this.mark('question');
         this.askToEnd(said);
         return;
@@ -1307,6 +1465,13 @@ export class VoiceOrchestratorService {
       const mine = this.handledElsewhere;
       if (mine && [addressed.primary, addressed.alternate].some(text => !!text && mine(text))) {
         this.mark('control');
+        this.touchWakeWindow();
+        this.settle();
+        return;
+      }
+      // Deferred: addressed to the app, kept for the replay at the end — not acted on, not read back.
+      if (this.deferredSignal() && !this.replay) {
+        this.mark('heard');
         this.touchWakeWindow();
         this.settle();
         return;
@@ -1382,7 +1547,7 @@ export class VoiceOrchestratorService {
   private addressedCommand(
     readings: string[],
   ): { primary: string; alternate: string | null; via: AddressedVia } | null {
-    const now = Date.now();
+    const now = this.now();
     const wakes = readings.map(reading => detectWake(reading, this.lastAcceptedAtSignal(), now));
 
     // Either reading being a bare wake word makes the utterance one: the
@@ -1516,7 +1681,7 @@ export class VoiceOrchestratorService {
    * once.
    */
   private touchWakeWindow(): void {
-    this.lastAcceptedAtSignal.set(Date.now());
+    this.lastAcceptedAtSignal.set(this.now());
   }
 
   /** Back to listening during a session, idle otherwise. */
@@ -1645,6 +1810,26 @@ export class VoiceOrchestratorService {
   }
 
   private askClarification(clarification: VoiceClarification, snapshot: VoiceContextSnapshot): void {
+    if (this.replay) {
+      // Nobody is there to answer: the sentence and its question go to the review.
+      this.mark('unsure', spokenQuestion(clarification.question, this.language()).text);
+      this.replay.unresolved.push({
+        lineId: this.replay.lineId,
+        text: clarification.transcript ?? '',
+        question: spokenQuestion(clarification.question, this.language()).text,
+      });
+      void this.audit(
+        {
+          intent: clarification.pendingIntent ?? 'clarification',
+          entities: clarification.pendingEntities ?? {},
+          confidence: 0,
+          resolver: 'grammar',
+          transcript: clarification.transcript,
+        },
+        snapshot, 'SAFE', 'PENDING', 'CLARIFICATION', { errorMessage: clarification.question },
+      );
+      return;
+    }
     this.clarificationSignal.set(clarification);
     this.interpretationSignal.set(null);
     this.stateSignal.set('awaiting-clarification');
@@ -1773,7 +1958,7 @@ export class VoiceOrchestratorService {
           return;
         }
         this.mark('acted', spoken.text, { intent: command.id, fdi: checked.fdi });
-        this.lastChartAcceptedAt = Date.now();
+        this.lastChartAcceptedAt = this.now();
         this.touchWakeWindow();
         this.settle();
         this.announce(true, spoken.text, spoken, 'confirm', { brief: { text: this.language() === 'fr' ? `Dent ${checked.fdi}, déjà noté.` : `Tooth ${checked.fdi}, already noted.`, locale: spoken.locale } });
@@ -1827,7 +2012,8 @@ export class VoiceOrchestratorService {
       // recognition — is read back and waits for a yes before it is staged.
       // The read-back alone is not enough: staging is what puts it on the
       // review list and in the summary.
-      if (!batch && !humanConfirmed && combinedConfidence < CONFIDENCE_FLOOR) {
+      // Replayed, it is staged to validate like everything else the replay finds.
+      if (!batch && !humanConfirmed && !this.replay && combinedConfidence < CONFIDENCE_FLOOR) {
         this.confirmationSignal.set({ intent, command, preview, reason: 'low-confidence', serverEntities });
         this.stateSignal.set('awaiting-confirmation');
         this.touchWakeWindow();
@@ -1866,8 +2052,9 @@ export class VoiceOrchestratorService {
         preview,
         transcript: intent.transcript,
         corrections: this.pendingCorrections,
-        at: Date.now(),
+        at: this.now(),
         summary: spokenConfirmation(command.serverIntent, serverEntities, language)?.text ?? preview,
+        ...(this.replay ? { needsConfirmation: true, deferred: true } : {}),
       };
       this.stage(entry, snapshot.sessionId);
       // The correction is in place; only now is the entry it replaces taken
@@ -1895,7 +2082,7 @@ export class VoiceOrchestratorService {
         ?? { text: preview, locale: 'en-US' };
       if (replaced) spoken = { ...spoken, text: `${this.say('corrected').text} ${spoken.text}` };
       this.mark('acted', spoken.text, { intent: command.serverIntent, auditId, fdi });
-      if (intentClass(command.id) === 'chart' || intentClass(command.id) === 'correction') this.lastChartAcceptedAt = Date.now();
+      if (intentClass(command.id) === 'chart' || intentClass(command.id) === 'correction') this.lastChartAcceptedAt = this.now();
 
       if (batch) {
         batch.auditIds.push(auditId);
@@ -1913,6 +2100,22 @@ export class VoiceOrchestratorService {
         ? { text: fr ? `Dent ${fdi}, ${replaced ? 'corrigé' : 'noté'}.` : `Tooth ${fdi}, ${replaced ? 'corrected' : 'noted'}.`, locale: spoken.locale }
         : { text: fr ? 'Noté.' : 'Noted.', locale: spoken.locale };
       this.announce(true, preview, this.withCorrections(spoken, language), 'confirm', { brief });
+      return;
+    }
+
+    // Replayed, a SAFE command is only a correction of what the replay staged ("enlève la carie
+    // sur la 16", "annule"). Showing a view, reading aloud or controlling the session meant
+    // something in the room, at the time; at the end it would only move the screen.
+    if (this.replay) {
+      if (command.id !== 'voice.correction.remove' && command.id !== 'voice.correction.undo') {
+        this.mark('control', null, { intent: command.id });
+        return;
+      }
+      if (combinedConfidence < CONFIDENCE_FLOOR) {
+        this.mark('unsure');
+        return;
+      }
+      await this.run(command, intent, snapshot, 'AUTO');
       return;
     }
 
@@ -2514,6 +2717,8 @@ export class VoiceOrchestratorService {
    */
   private offerUndo(label: string, run: () => Promise<void>, _auditId: string | null): void {
     if (this.undoTimer) clearTimeout(this.undoTimer);
+    // Replayed, the window is timed on the lines (replayConsultation closes it), not on the wall clock.
+    this.undoOfferedAt = this.now();
     this.undoSignal.set({
       label,
       run: async () => {
@@ -2523,7 +2728,7 @@ export class VoiceOrchestratorService {
         this.announce(true, 'Undone.', this.say('undone'));
       },
     });
-    this.undoTimer = setTimeout(() => this.undoSignal.set(null), UNDO_WINDOW_MS);
+    if (!this.replay) this.undoTimer = setTimeout(() => this.undoSignal.set(null), UNDO_WINDOW_MS);
   }
 
   async undoLast(): Promise<void> {
@@ -2724,6 +2929,8 @@ export class VoiceOrchestratorService {
     cue: FeedbackCue = ok ? 'confirm' : 'error',
     options: { asked?: boolean; brief?: Spoken } = {},
   ): void {
+    // A replay is silent: what it finds is put in front of the doctor at review, all at once.
+    if (this.replay) return;
     this.outcomeSignal.set({ ok, message, at: Date.now() });
     // A running session shows every outcome in its own panel, and a toast on
     // top of that covers the chart on a phone.

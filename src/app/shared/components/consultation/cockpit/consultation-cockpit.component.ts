@@ -55,6 +55,26 @@ import { CockpitStageComponent } from './cockpit-stage.component';
       <app-cockpit-rail class="ck-a-rail" />
       <app-cockpit-stage class="ck-a-stage" [chart]="chart()" [findings]="findings()" [treatments]="treatments()" />
 
+      <!-- The end-of-consultation analysis, over the stage: the conversation stays in view beside it. -->
+      @if (c.analysis(); as a) {
+        <div class="ck-analysis ck-a-stage" role="status" aria-live="polite" data-analysis [attr.data-step]="a.step">
+          <span class="material-icons ck-analysis-icon" aria-hidden="true">autorenew</span>
+          <strong>{{ 'CONSULTATION.ANALYSIS_TITLE' | translate }}</strong>
+          <span>
+            @switch (a.step) {
+              @case ('finishing') { {{ 'CONSULTATION.ANALYSIS_FINISHING' | translate }} }
+              @case ('commands') { {{ 'CONSULTATION.ANALYSIS_COMMANDS' | translate: { done: a.done, total: a.total } }} }
+              @case ('reading') { {{ 'CONSULTATION.ANALYSIS_READING' | translate }} }
+              @default { {{ 'CONSULTATION.ANALYSIS_REPORT' | translate }} }
+            }
+          </span>
+          @if (a.step === 'commands' && a.total > 0) {
+            <progress [value]="a.done" [max]="a.total" [attr.aria-label]="'CONSULTATION.ANALYSIS_TITLE' | translate"></progress>
+          }
+          <small>{{ 'CONSULTATION.ANALYSIS_HINT' | translate }}</small>
+        </div>
+      }
+
       <aside class="ck-a-side" [attr.aria-label]="'COCKPIT.SIDE' | translate">
         <app-cockpit-last-action />
         <app-cockpit-conversation class="ck-side-conv" />
@@ -82,6 +102,15 @@ import { CockpitStageComponent } from './cockpit-stage.component';
     .ck-a-controls { grid-area: controls; min-width: 0; }
     .ck-a-rail { grid-area: rail; min-width: 0; }
     .ck-a-stage { grid-area: stage; min-height: 0; min-width: 0; }
+    .ck-analysis { z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .625rem;
+      padding: 1.5rem; text-align: center; border-radius: .75rem; background: rgb(var(--ink-50) / .94);
+      color: rgb(var(--ink-900)); font-size: .9375rem; }
+    .ck-analysis strong { font-size: 1.125rem; }
+    .ck-analysis small { color: rgb(var(--ink-700)); }
+    .ck-analysis progress { width: min(24rem, 100%); height: .5rem; accent-color: rgb(var(--petrol-600)); }
+    .ck-analysis-icon { font-size: 2.5rem; color: rgb(var(--petrol-600)); animation: ck-spin 1.4s linear infinite; }
+    @keyframes ck-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .ck-analysis-icon { animation: none; } }
     .ck-a-side { grid-area: side; display: flex; flex-direction: column; gap: .5rem; min-height: 0; }
     .ck-side-conv { flex: 1; min-height: 0; }
     .ck-a-now { display: none; }

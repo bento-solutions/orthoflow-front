@@ -9,6 +9,7 @@ import {
   ConsultationDto,
   ConsultationLinePayload,
   ConsultationLogDto,
+  ConsultationMode,
   ExtractionResponseDto,
 } from './consultation.model';
 
@@ -28,8 +29,8 @@ export class ConsultationApiService {
    * patient was told the conversation is transcribed and kept; the server
    * refuses to start without it.
    */
-  start(patientId: string, locale: string, patientInformed: boolean): Observable<ConsultationDto> {
-    return this.http.post<ConsultationDto>(this.base, { patientId, locale, patientInformed });
+  start(patientId: string, locale: string, patientInformed: boolean, mode?: ConsultationMode): Observable<ConsultationDto> {
+    return this.http.post<ConsultationDto>(this.base, { patientId, locale, patientInformed, ...(mode ? { mode } : {}) });
   }
 
   /** The patient's unfinished consultation, or null (the server answers 204). */
@@ -66,6 +67,30 @@ export class ConsultationApiService {
   }
 
   /** The doctor called the consultation: the chart commands start to work. */
+  /** Keeps the conversation without reading it: a deferred consultation, while it records. */
+  keepLines(id: string, transcript: string, lines: ConsultationLinePayload[]): Observable<void> {
+    return this.http.post<void>(`${this.base}/${id}/lines`, { transcript, lines });
+  }
+
+  /** Sends the recording of the conversation; sending it again replaces it. */
+  uploadAudio(id: string, audio: Blob, startedAt: number, durationMs: number): Observable<ConsultationDto> {
+    const form = new FormData();
+    const extension = audio.type.includes('ogg') ? 'ogg' : audio.type.includes('mp4') ? 'm4a' : 'webm';
+    form.append('file', audio, `consultation.${extension}`);
+    form.append('startedAt', new Date(startedAt).toISOString());
+    form.append('durationMs', String(Math.round(durationMs)));
+    return this.http.post<ConsultationDto>(`${this.base}/${id}/audio`, form);
+  }
+
+  /** The recording, as bytes: it needs the signed-in user's token, so it cannot be a plain <audio src>. */
+  audio(id: string): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/audio`, { responseType: 'blob' });
+  }
+
+  deleteAudio(id: string): Observable<ConsultationDto> {
+    return this.http.delete<ConsultationDto>(`${this.base}/${id}/audio`);
+  }
+
   beginExamination(id: string): Observable<ConsultationDto> {
     return this.http.post<ConsultationDto>(`${this.base}/${id}/examination`, {});
   }

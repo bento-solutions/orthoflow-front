@@ -43,6 +43,13 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
 
       <span class="ck-spacer"></span>
 
+      @if (c.deferred()) {
+        <span class="ck-chip ck-mode" data-cockpit-mode="deferred" [title]="'COCKPIT.DEFERRED_HINT' | translate">
+          <span class="material-icons" aria-hidden="true">schedule</span>
+          <span class="ck-chip-label">{{ 'COCKPIT.DEFERRED' | translate }}</span>
+        </span>
+      }
+
       <span class="ck-mic" [attr.aria-label]="'COCKPIT.MIC' | translate" role="img">
         <span class="ck-meter" aria-hidden="true"><span [style.transform]="'scaleY(' + (voice.paused() ? 0 : voice.inputLevel()) + ')'"></span></span>
         <span class="material-icons" aria-hidden="true">{{ voice.paused() ? 'mic_off' : 'mic' }}</span>
@@ -60,9 +67,9 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
         <span class="material-icons" aria-hidden="true">help_outline</span>
       </button>
       <button type="button" class="ck-end" data-cockpit-end (click)="c.end()" [disabled]="c.busy()"
-              [attr.aria-label]="(c.busy() ? 'VOICE.ENDING' : 'CONSULTATION.END') | translate">
+              [attr.aria-label]="(c.busy() ? 'VOICE.ENDING' : c.deferred() ? 'CONSULTATION.END_DEFERRED' : 'CONSULTATION.END') | translate">
         <span class="material-icons" aria-hidden="true">stop_circle</span>
-        <span class="ck-end-label">{{ (c.busy() ? 'VOICE.ENDING' : 'CONSULTATION.END') | translate }}</span>
+        <span class="ck-end-label">{{ (c.busy() ? 'VOICE.ENDING' : c.deferred() ? 'CONSULTATION.END_DEFERRED' : 'CONSULTATION.END') | translate }}</span>
       </button>
     </div>
 
@@ -111,6 +118,7 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
     .ck-meter span { display: block; width: 100%; height: 100%; background: rgb(var(--positive-500)); transform-origin: bottom; transition: transform .1s linear; }
     .ck-chip { display: inline-flex; align-items: center; gap: .25rem; min-height: 2.5rem; padding: 0 .625rem; border-radius: .5rem; border: 1px solid rgb(var(--ink-200)); font-weight: 600; font-size: .8125rem; color: rgb(var(--ink-800)); flex: none; }
     .ck-chip .material-icons { font-size: 1.1rem; }
+    .ck-mode { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-800)); border-color: rgb(var(--petrol-200)); }
     .ck-end { display: inline-flex; align-items: center; gap: .375rem; min-height: 2.5rem; padding: 0 .875rem; border-radius: .5rem; background: rgb(var(--critical-600)); color: #fff; font-weight: 700; flex: none; }
     .ck-end:disabled { opacity: .6; }
     .ck-alert { display: flex; align-items: center; gap: .5rem; margin-top: .375rem; padding: .5rem .75rem; border-radius: .5rem; background: rgb(var(--ink-100)); color: rgb(var(--ink-800)); font-size: .875rem; width: 100%; text-align: start; }

@@ -15,6 +15,7 @@ import { stagedToothFindings } from '../../../core/voice/voice-chart-marks';
 import { findingKind } from '../../../core/voice/clinical-lexicon';
 import { describeFdi } from '../../../core/voice/tooth-lexicon';
 import { Dental3dChartComponent } from '../../../features/dental-3d/dental-3d-chart.component';
+import { DentalChartComponent } from '../../../features/dental-chart/dental-chart.component';
 import { SessionReviewComponent } from '../../../features/patients/session-review/session-review.component';
 import { DentalChartState } from '../../../core/models/patient.model';
 import { ToothFinding } from '../../../core/models/clinical-record.model';
@@ -64,7 +65,7 @@ interface ToothGroup {
 @Component({
   selector: 'app-voice-session-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, Dental3dChartComponent, SessionReviewComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, Dental3dChartComponent, DentalChartComponent, SessionReviewComponent],
   template: `
     <section class="vs" [attr.data-phase]="phase()">
       <header class="vs-head">
@@ -293,6 +294,29 @@ interface ToothGroup {
 
         @case ('consultation-review') {
           <ng-container *ngTemplateOutlet="chartCard" />
+          <!-- The same findings on the 2D schema: what is waiting to be validated is marked on both. -->
+          @if (chart(); as state) {
+            <div class="card vs-chart vs-chart-2d" data-review-2d>
+              <div class="vs-card-head">
+                <h3>{{ 'CONSULTATION.CHART_2D' | translate }}</h3>
+                @if (stagedTeeth().length) {
+                  <div class="vs-legend"><span><i class="swatch staged"></i>{{ 'VOICE.LEGEND_STAGED' | translate }}</span></div>
+                }
+              </div>
+              <app-dental-chart
+                [chartType]="state.chartType"
+                [patientId]="state.patientId"
+                [teeth]="state.teeth"
+                [interactive]="false"
+                [statusMenu]="false"
+                [summary]="true"
+                [patientTreatments]="treatments()"
+                [findings]="findings()"
+                [stagedTeeth]="stagedTeeth()"
+                [highlightTeeth]="stagedTeeth()"
+              />
+            </div>
+          }
         }
 
         @case ('review') {

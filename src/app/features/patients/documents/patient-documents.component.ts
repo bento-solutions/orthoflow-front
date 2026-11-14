@@ -14,6 +14,7 @@ import { StockService } from '../../../core/services/stock.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Treatment } from '../../../core/models/stock.model';
 import { PrescriptionEditorComponent } from '../../../shared/components/prescription/prescription-editor.component';
+import { ConsultationRecordsComponent } from '../../../shared/components/consultation/consultation-records.component';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { ModalComponent } from '../../../shared/ui/modal.component';
 import { TreatmentSummaryComponent } from '../treatment-log/treatment-chart.component';
@@ -57,7 +58,7 @@ export function actLines(acts: readonly ActDraft[]): InsuranceFormLineInput[] {
 @Component({
   selector: 'app-patient-documents',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent, PrescriptionEditorComponent, TreatmentSummaryComponent],
+  imports: [DatePipe, DecimalPipe, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent, PrescriptionEditorComponent, TreatmentSummaryComponent, ConsultationRecordsComponent],
   template: `
     <div class="space-y-6">
       @if (canForms()) {
@@ -132,6 +133,11 @@ export function actLines(acts: readonly ActDraft[]): InsuranceFormLineInput[] {
             </ul>
           }
         </section>
+      }
+
+      <!-- Each recorded consultation: its timestamped transcript and its audio. -->
+      @if (canPrescriptions()) {
+        <app-consultation-records [patientId]="patientId()" />
       }
 
       @if (canPrescriptions()) {

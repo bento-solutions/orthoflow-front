@@ -5,7 +5,9 @@ import {
   DraftActiveTreatment,
   DraftAllergy,
   DraftHistoryEntry,
+  ConsultationPaymentMethod,
   DraftNextAppointment,
+  DraftPayment,
   DraftPlanItem,
   PatientFieldName,
 } from './consultation.model';
@@ -81,6 +83,14 @@ export interface PlanData {
   performed?: boolean;
 }
 
+/** Money handed over during the consultation; a validated one is a receipt in the patient's account. */
+export interface PaymentData {
+  amount: number;
+  /** Null until the doctor says how it was paid: a receipt needs it. */
+  method: ConsultationPaymentMethod | null;
+  reference: string | null;
+}
+
 export interface AppointmentChoice {
   /** `YYYY-MM-DD` */
   date: string;
@@ -109,8 +119,21 @@ export interface ReviewState {
    * save — it is used or ignored, on purpose.
    */
   appointmentDecision: 'used' | 'dismissed' | null;
-  /** Findings on a tooth the reader heard and could not stage: shown, never saved by themselves. */
-  chartMentions: { teeth: string | null; finding: string; quote: string }[];
+  /** Payments said during the consultation (the patient's account). */
+  payments: ReviewItem<PaymentData>[];
+  /**
+   * What the doctor decided about invoicing the acts done today (plan lines marked done, with a
+   * price): a draft invoice for the front desk, or none. Null while undecided — pending as long as
+   * there is such an act, so it is never forgotten at save, nor made without being asked.
+   */
+  invoiceDecision: 'create' | 'skip' | null;
+  /**
+   * Findings on a tooth the reader heard and could not stage, and — after a deferred consultation
+   * is replayed — sentences addressed to the app that the commands could not settle on their own
+   * (`unresolved`, with the question the live pipeline would have asked). Shown, never saved by
+   * themselves.
+   */
+  chartMentions: { teeth: string | null; finding: string; quote: string; unresolved?: boolean }[];
 }
 
 export const PATIENT_FIELDS: readonly PatientFieldName[] = [
@@ -128,6 +151,8 @@ export function emptyReview(): ReviewState {
     appointmentSuggestion: null,
     appointment: null,
     appointmentDecision: null,
+    payments: [],
+    invoiceDecision: null,
     chartMentions: [],
   };
 }
@@ -144,7 +169,8 @@ function mergeField<T extends string | number>(
   incoming: { value: T; quote: string } | null,
   partial = false,
 ): ReviewField<T> | null {
-  if (previous && isSettled(previous.status, previous.manual, previous.edited)) return previous;
+  // Dictated is the doctor's own words, even while it waits to be validated (a deferred consultation).
+  if (previous && (isSettled(previous.status, previous.manual, previous.edited) || previous.dictated)) return previous;
 
   if (!incoming && partial) return previous ?? null;
   if (!incoming) {
@@ -175,7 +201,7 @@ function mergeList<TDraft extends { key: string; quote: string }, TData>(
     const existing = previous.find(item => item.key === draft.key);
     if (!existing) {
       next.push({ key: draft.key, data: toData(draft), quote: draft.quote, status: 'proposed', manual: false, edited: false });
-    } else if (isSettled(existing.status, existing.manual, existing.edited) || existing.status === 'removed') {
+    } else if (isSettled(existing.status, existing.manual, existing.edited) || existing.status === 'removed' || existing.dictated) {
       next.push(existing);
     } else {
       // Untouched: follow the model, so a correction in the conversation lands.
@@ -188,7 +214,7 @@ function mergeList<TDraft extends { key: string; quote: string }, TData>(
     // Not in this draft. Anything the doctor acted on, or typed, stays; a
     // proposal nobody touched and the model has dropped goes with it — unless
     // the model only saw part of the conversation.
-    if (partial || item.manual || item.edited || item.status === 'validated' || item.status === 'removed') next.push(item);
+    if (partial || item.manual || item.edited || item.dictated || item.status === 'validated' || item.status === 'removed') next.push(item);
   }
   return next;
 }
@@ -226,8 +252,12 @@ export function mergeDraft(
     }), partial),
     plan: mergeList(previous.plan, draft.treatmentPlan ?? [], d => ({
       label: d.label, treatmentId: d.treatmentId, teeth: d.teeth, price: d.price, quantity: 1,
-      notes: d.notes, priceSource: d.priceSource, performed: false,
+      notes: d.notes, priceSource: d.priceSource, performed: d.performed === true,
     }), partial),
+    payments: mergeList<DraftPayment, PaymentData>(previous.payments ?? [], draft.payments ?? [], d => ({
+      amount: d.amount, method: d.method, reference: null,
+    }), partial),
+    invoiceDecision: previous.invoiceDecision ?? null,
     appointmentSuggestion: draft.nextAppointment ?? (partial ? previous.appointmentSuggestion : null),
     appointment: previous.appointment,
     // A suggestion the doctor ignored that the conversation then changed is a new one to decide.
@@ -278,14 +308,20 @@ export function normalizeTeeth(teeth: string | null | undefined): string {
 /** The key the server's reading gives the same item (ConsultationDraftParser). */
 export function reviewKey(
   list: ListName,
-  data: { substance?: string; label?: string; category?: string; teeth?: string | null },
+  data: { substance?: string; label?: string; category?: string; teeth?: string | null; amount?: number; method?: string | null },
 ): string {
   switch (list) {
     case 'allergies': return `allergy:${normalizeKeyText(data.substance)}`;
     case 'medicalHistory': return `history:${data.category ?? 'OTHER'}:${normalizeKeyText(data.label)}`;
     case 'activeTreatments': return `treatment:${normalizeKeyText(data.label)}`;
     case 'plan': return `plan:${normalizeKeyText(data.label)}:${normalizeTeeth(data.teeth)}`;
+    case 'payments': return paymentKey(data.amount ?? 0, data.method ?? null);
   }
+}
+
+/** The server's key for a payment: the amount as Java's `stripTrailingZeros().toPlainString()` writes it, and the method. */
+export function paymentKey(amount: number, method: string | null): string {
+  return `payment:${String(Number(amount))}:${method ?? ''}`;
 }
 
 // ── Keeping the review across a reload ──────────────────────────────────
@@ -320,6 +356,9 @@ export function fromStoredReview(value: unknown): StoredReview | null {
     review: {
       ...emptyReview(),
       ...review,
+      // A review kept before payments existed has none.
+      payments: Array.isArray(review.payments) ? review.payments : [],
+      invoiceDecision: review.invoiceDecision === 'create' || review.invoiceDecision === 'skip' ? review.invoiceDecision : null,
     } as ReviewState,
     report: typeof stored.report === 'string' ? stored.report : '',
     excluded: Array.isArray(stored.excluded) ? stored.excluded.filter((id): id is string => typeof id === 'string') : [],
@@ -328,7 +367,7 @@ export function fromStoredReview(value: unknown): StoredReview | null {
 
 // ── The doctor's decisions ──────────────────────────────────────────────
 
-export type ListName = 'allergies' | 'medicalHistory' | 'activeTreatments' | 'plan';
+export type ListName = 'allergies' | 'medicalHistory' | 'activeTreatments' | 'plan' | 'payments';
 
 export function setPatientField(
   state: ReviewState, name: PatientFieldName, patch: Partial<ReviewField>,
@@ -378,6 +417,9 @@ export function addManualItem<K extends ListName>(
 export function validateAll(state: ReviewState): ReviewState {
   const settle = <T>(item: ReviewItem<T>): ReviewItem<T> =>
     item.status === 'proposed' ? { ...item, status: 'validated' } : item;
+  // A payment with no method cannot become a receipt: it stays for the doctor to complete.
+  const settlePayment = (item: ReviewItem<PaymentData>): ReviewItem<PaymentData> =>
+    item.data.method ? settle(item) : item;
   const patient: ReviewState['patient'] = {};
   for (const name of PATIENT_FIELDS) {
     const field = state.patient[name];
@@ -392,7 +434,18 @@ export function validateAll(state: ReviewState): ReviewState {
     medicalHistory: state.medicalHistory.map(settle),
     activeTreatments: state.activeTreatments.map(settle),
     plan: state.plan.map(settle),
+    payments: (state.payments ?? []).map(settlePayment),
+    invoiceDecision: state.invoiceDecision ?? (invoiceableLines({ ...state, plan: state.plan.map(settle) }).length > 0 ? 'create' : null),
   };
+}
+
+/**
+ * The acts a draft invoice would be made of: plan lines not removed, done today, with a price.
+ * Saving sends only the validated ones; the server bills those of them that are done and priced.
+ */
+export function invoiceableLines(state: Pick<ReviewState, 'plan'>): ReviewItem<PlanData>[] {
+  return state.plan.filter(item => item.status !== 'removed' && item.data.performed === true
+    && item.data.price !== null && item.data.price !== undefined);
 }
 
 // ── What is waiting for a decision ──────────────────────────────────────
@@ -456,9 +509,11 @@ export function pendingCount(state: ReviewState, record: PatientRecord, today: D
     if (field && field.status === 'proposed' && changesRecord(name, field, record, today)) pending++;
   }
   if (state.chiefComplaint?.status === 'proposed') pending++;
-  for (const list of [state.allergies, state.medicalHistory, state.activeTreatments, state.plan] as ReviewItem<unknown>[][]) {
+  for (const list of [state.allergies, state.medicalHistory, state.activeTreatments, state.plan, state.payments ?? []] as ReviewItem<unknown>[][]) {
     pending += list.filter(item => item.status === 'proposed').length;
   }
+  // Acts done today with a price: invoice them or not, on purpose.
+  if (!state.invoiceDecision && invoiceableLines(state).length > 0) pending++;
   // A next appointment heard in the conversation is a decision too: use it or ignore it.
   if (state.appointmentSuggestion?.date && !state.appointment && !state.appointmentDecision) pending++;
   return pending;
@@ -539,6 +594,13 @@ export function toCommitRequest(
       }
       : null,
     report: text(options.report),
+    createInvoice: state.invoiceDecision === 'create'
+      && invoiceableLines(state).some(item => item.status === 'validated'),
+    payments: kept(state.payments ?? []).filter(p => p.method && p.amount > 0).map(p => ({
+      amount: Math.round(p.amount * 100) / 100,
+      method: p.method as ConsultationPaymentMethod,
+      reference: text(p.reference),
+    })),
     approvedAuditIds: [],
     rejectedAuditIds: [],
     amendments: [],

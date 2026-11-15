@@ -2,18 +2,21 @@ import { Component, OnDestroy, computed, effect, inject, input, output, signal, 
 import { DatePipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { DocumentCategory, PatientFile, PatientFilesApi } from '../../../core/services/patient-files-api.service';
+import { ModelType, isModel } from './scan-model';
+import { ScanViewerComponent } from './scan-viewer.component';
 
 type PaneKind = Extract<DocumentCategory, 'XRAY' | 'INTRAORAL_3D'>;
 
 /**
  * The picture the doctor cross-references with the 3D chart: the latest panoramic X-ray,
- * or with one tap the latest 3D intraoral scan. Both are images uploaded from the
- * Documents tab with that type. Older ones of the same type are a click away.
+ * or with one tap the latest 3D intraoral scan. Both are uploaded from the Documents tab
+ * with that type; the scan may be a picture of it or the model itself (STL, PLY, OBJ, 3MF,
+ * glTF), which is shown in a viewer that turns and zooms. Older ones are a click away.
  */
 @Component({
   selector: 'app-patient-imaging-pane',
   standalone: true,
-  imports: [DatePipe, TranslateModule],
+  imports: [DatePipe, TranslateModule, ScanViewerComponent],
   host: { class: 'flex min-h-0 min-w-0 flex-col' },
   template: `
     <div class="flex flex-wrap items-center justify-between gap-2 pb-2">
@@ -42,16 +45,24 @@ type PaneKind = Extract<DocumentCategory, 'XRAY' | 'INTRAORAL_3D'>;
 
     <div class="relative min-h-0 flex-1">
       @if (current(); as f) {
-        @if (urls().get(f.id); as url) {
+        @if (modelOf(f); as type) {
+          @if (blobs().get(f.id); as blob) {
+            <app-scan-viewer class="h-full" [blob]="blob" [type]="type" />
+          } @else {
+            <div class="grid h-full place-items-center text-sm text-ink-500">{{ 'COMMON.LOADING' | translate }}</div>
+          }
+        } @else if (urls().get(f.id); as url) {
           <a [href]="url" target="_blank" rel="noopener" class="block h-full w-full" [title]="f.name">
             <img [src]="url" [alt]="('PFILES.CAT.' + kind() | translate) + ' — ' + f.name" class="h-full w-full object-contain" />
           </a>
         } @else {
           <div class="grid h-full place-items-center text-sm text-ink-500">{{ 'COMMON.LOADING' | translate }}</div>
         }
-        <p class="pointer-events-none absolute bottom-1 start-1 rounded bg-surface/80 px-1.5 py-0.5 text-2xs text-ink-600">
-          {{ f.createdAt | date:'mediumDate' }} · {{ f.name }}
-        </p>
+        @if (!modelOf(f)) {
+          <p class="pointer-events-none absolute bottom-1 start-1 rounded bg-surface/80 px-1.5 py-0.5 text-2xs text-ink-600">
+            {{ f.createdAt | date:'mediumDate' }} · {{ f.name }}
+          </p>
+        }
       } @else if (!loading()) {
         <div class="grid h-full place-items-center p-4 text-center">
           <div>
@@ -75,8 +86,13 @@ export class PatientImagingPaneComponent implements OnDestroy {
   readonly loading = signal(true);
   private readonly files = signal<PatientFile[]>([]);
   readonly urls = signal<ReadonlyMap<string, string>>(new Map());
+  /** Scans that are 3D models, kept as bytes for the viewer. */
+  readonly blobs = signal<ReadonlyMap<string, Blob>>(new Map());
 
-  readonly list = computed(() => this.files().filter((f) => f.category === this.kind() && f.contentType.startsWith('image/')));
+  /** Pictures for either kind; for the intraoral scan, the 3D model too. */
+  readonly list = computed(() =>
+    this.files().filter((f) => f.category === this.kind() && (f.contentType.startsWith('image/') || (this.kind() === 'INTRAORAL_3D' && isModel(f.contentType)))),
+  );
   readonly current = computed(() => this.list()[this.index()] ?? null);
 
   constructor() {
@@ -107,10 +123,19 @@ export class PatientImagingPaneComponent implements OnDestroy {
     }
   }
 
+  modelOf(f: PatientFile): ModelType | null {
+    return isModel(f.contentType) ? f.contentType : null;
+  }
+
   private async fetch(id: string): Promise<void> {
-    if (this.urls().has(id)) return;
+    if (this.urls().has(id) || this.blobs().has(id)) return;
     try {
-      const url = URL.createObjectURL(await this.api.blob(id));
+      const blob = await this.api.blob(id);
+      if (this.files().some((f) => f.id === id && isModel(f.contentType))) {
+        this.blobs.update((m) => new Map(m).set(id, blob));
+        return;
+      }
+      const url = URL.createObjectURL(blob);
       this.urls.update((m) => new Map(m).set(id, url));
     } catch { /* the pane says it is loading; the Documents tab shows the failure */ }
   }

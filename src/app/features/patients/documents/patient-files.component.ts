@@ -9,15 +9,18 @@ import { PermissionService } from '../../../core/services/permission.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { IconComponent } from '../../../shared/ui/icon.component';
+import { MODEL_EXTENSIONS, ModelType, hasModelExtension, isModel, modelLabel } from '../patient-dossier/scan-model';
+import { ScanViewerComponent } from '../patient-dossier/scan-viewer.component';
 
 /**
  * The patient's uploaded pictures, each with a type: X-ray, 3D intraoral scan or other
  * image. The latest X-ray and intraoral scan are what the overview shows beside the 3D chart.
+ * A 3D intraoral scan may also be the model itself: STL, PLY, OBJ, 3MF or glTF.
  */
 @Component({
   selector: 'app-patient-files',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, IconComponent],
+  imports: [DatePipe, FormsModule, TranslateModule, IconComponent, ScanViewerComponent],
   template: `
     <section class="card p-4" aria-labelledby="pf-title">
       <header class="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -31,12 +34,15 @@ import { IconComponent } from '../../../shared/ui/icon.component';
             <label class="btn btn-primary btn-sm cursor-pointer" [class.opacity-60]="uploading()">
               <app-icon name="upload" [size]="14" />
               {{ (uploading() ? 'PFILES.UPLOADING' : 'PFILES.UPLOAD') | translate }}
-              <input type="file" class="sr-only" multiple [accept]="accept" [disabled]="uploading()" (change)="onPick($event)" />
+              <input type="file" class="sr-only" multiple [accept]="accept()" [disabled]="uploading()" (change)="onPick($event)" />
             </label>
           </div>
         }
       </header>
 
+      @if (category() === 'INTRAORAL_3D' && canWrite()) {
+        <p class="mb-2 text-xs text-ink-500">{{ 'PFILES.MODEL_FORMATS' | translate }}</p>
+      }
       <div class="mb-3 flex flex-wrap gap-1.5" role="group" [attr.aria-label]="'PFILES.FILTER' | translate">
         <button type="button" class="pill pill-nodot pill-round" [class.pill-active]="filter() === null" [class.pill-idle]="filter() !== null"
           [attr.aria-pressed]="filter() === null" (click)="filter.set(null)">{{ 'PFILES.ALL' | translate }} · {{ files().length }}</button>
@@ -54,12 +60,22 @@ import { IconComponent } from '../../../shared/ui/icon.component';
         <ul class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           @for (f of shown(); track f.id) {
             <li class="group relative overflow-hidden rounded-lg border border-ink-200 bg-surface">
-              <a class="block aspect-[4/3] bg-ink-50" [href]="urls().get(f.id) ?? null" target="_blank" rel="noopener"
-                 [attr.aria-label]="f.name">
-                @if (urls().get(f.id); as url) {
-                  <img [src]="url" [alt]="f.name" class="h-full w-full object-cover" loading="lazy" />
-                }
-              </a>
+              @if (modelOf(f); as type) {
+                <button type="button" class="grid aspect-[4/3] w-full place-items-center bg-[#10181b] text-[#d6dfe1]" (click)="openModel(f, type)"
+                  [attr.aria-label]="('PFILES.OPEN_MODEL' | translate) + ' ' + f.name">
+                  <span class="grid justify-items-center gap-1">
+                    <span class="material-icons text-[2.25rem]" aria-hidden="true">view_in_ar</span>
+                    <span class="text-xs font-bold tracking-wide">{{ label(type) }}</span>
+                  </span>
+                </button>
+              } @else {
+                <a class="block aspect-[4/3] bg-ink-50" [href]="urls().get(f.id) ?? null" target="_blank" rel="noopener"
+                   [attr.aria-label]="f.name">
+                  @if (urls().get(f.id); as url) {
+                    <img [src]="url" [alt]="f.name" class="h-full w-full object-cover" loading="lazy" />
+                  }
+                </a>
+              }
               <div class="flex items-start justify-between gap-1 p-2">
                 <div class="min-w-0">
                   <span class="pill pill-nodot" [class.pill-active]="f.category === 'XRAY'" [class.pill-done]="f.category === 'INTRAORAL_3D'" [class.pill-idle]="f.category !== 'XRAY' && f.category !== 'INTRAORAL_3D'">
@@ -80,6 +96,13 @@ import { IconComponent } from '../../../shared/ui/icon.component';
         </ul>
       }
     </section>
+
+    @if (viewing(); as v) {
+      <div class="fixed inset-0 z-[60] bg-black/90 p-4" role="dialog" aria-modal="true" [attr.aria-label]="v.name" (keydown.escape)="viewing.set(null)">
+        <app-scan-viewer class="!h-full" [blob]="v.blob" [type]="v.type" />
+        <button type="button" class="btn btn-secondary btn-sm absolute start-6 top-6" (click)="viewing.set(null)">{{ 'COMMON.CLOSE' | translate }}</button>
+      </div>
+    }
   `,
 })
 export class PatientFilesComponent implements OnDestroy {
@@ -92,7 +115,11 @@ export class PatientFilesComponent implements OnDestroy {
   private readonly permissions = inject(PermissionService);
 
   readonly categories = DOCUMENT_CATEGORIES;
-  readonly accept = PATIENT_FILE_TYPES.join(',');
+  /** Pictures for every type; for a 3D intraoral scan, its model files too. */
+  readonly accept = computed(() =>
+    this.category() === 'INTRAORAL_3D' ? [...PATIENT_FILE_TYPES, ...MODEL_EXTENSIONS].join(',') : PATIENT_FILE_TYPES.join(','),
+  );
+  readonly viewing = signal<{ name: string; blob: Blob; type: ModelType } | null>(null);
   readonly canWrite = computed(() => this.permissions.can('CLINICAL_WRITE'));
 
   readonly files = signal<PatientFile[]>([]);
@@ -121,9 +148,9 @@ export class PatientFilesComponent implements OnDestroy {
 
   private async load(patientId: string): Promise<void> {
     try {
-      const list = (await this.api.list(patientId)).filter((f) => f.contentType.startsWith('image/'));
+      const list = (await this.api.list(patientId)).filter((f) => f.contentType.startsWith('image/') || isModel(f.contentType));
       this.files.set(list);
-      for (const f of list) void this.fetch(f.id);
+      for (const f of list) if (!isModel(f.contentType)) void this.fetch(f.id);
     } catch {
       this.toast.error(this.translate.instant('PFILES.LOAD_FAILED'));
     } finally {
@@ -144,9 +171,12 @@ export class PatientFilesComponent implements OnDestroy {
     const picked = Array.from(input.files ?? []);
     input.value = '';
     if (!picked.length) return;
-    const bad = picked.filter((f) => !(PATIENT_FILE_TYPES as readonly string[]).includes(f.type));
+    // A model's type is often blank in the browser; its extension says what it is, and the server checks the bytes.
+    const models = this.category() === 'INTRAORAL_3D';
+    const bad = picked.filter((f) => !(PATIENT_FILE_TYPES as readonly string[]).includes(f.type) && !(models && hasModelExtension(f.name)));
     if (bad.length) {
-      this.toast.error(this.translate.instant('PFILES.WRONG_TYPE'));
+      const key = models ? 'PFILES.WRONG_TYPE_3D' : bad.some((f) => hasModelExtension(f.name)) ? 'PFILES.MODEL_NEEDS_3D' : 'PFILES.WRONG_TYPE';
+      this.toast.error(this.translate.instant(key));
       return;
     }
     this.uploading.set(true);
@@ -157,6 +187,22 @@ export class PatientFilesComponent implements OnDestroy {
       this.toast.error(this.translate.instant('PFILES.UPLOAD_FAILED'));
     } finally {
       this.uploading.set(false);
+    }
+  }
+
+  modelOf(f: PatientFile): ModelType | null {
+    return isModel(f.contentType) ? f.contentType : null;
+  }
+
+  label(type: ModelType): string {
+    return modelLabel(type);
+  }
+
+  async openModel(f: PatientFile, type: ModelType): Promise<void> {
+    try {
+      this.viewing.set({ name: f.name, blob: await this.api.blob(f.id), type });
+    } catch {
+      this.toast.error(this.translate.instant('PFILES.MODEL_FAILED'));
     }
   }
 

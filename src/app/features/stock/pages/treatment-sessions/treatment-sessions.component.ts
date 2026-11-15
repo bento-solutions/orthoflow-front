@@ -31,10 +31,6 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
       
       <!-- Top Title Bar -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 class="text-3xl font-bold tracking-tight text-ink-900">{{ "TREATMENTS.SESSIONS_BILLING_TITLE" | translate }}</h1>
-          <p class="text-sm text-ink-500">{{ "TREATMENTS.SESSIONS_BILLING_SUBTITLE" | translate }}</p>
-        </div>
         <div class="flex items-center gap-3">
           <button type="button" (click)="openLogModal()" class="flex items-center gap-2 px-4 py-2.5 bg-petrol-600 text-white font-medium rounded-xl hover:bg-petrol-700 transition shadow-sm">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>

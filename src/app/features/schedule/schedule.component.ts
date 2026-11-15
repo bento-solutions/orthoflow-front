@@ -27,7 +27,6 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     <div class="schedule-container" [class.rtl]="translate.currentLang === 'ar'">
       <header class="schedule-header">
         <div class="header-left">
-          <h1>{{ 'SCHEDULE.TITLE' | translate }}</h1>
           <div class="view-switcher" role="group" [attr.aria-label]="'SCHEDULE.TITLE' | translate">
             <button type="button" [class.active]="view() === 'day'" [attr.aria-pressed]="view() === 'day'" (click)="view.set('day')">{{ 'SCHEDULE.DAY' | translate }}</button>
             <button type="button" [class.active]="view() === 'week'" [attr.aria-pressed]="view() === 'week'" (click)="view.set('week')">{{ 'SCHEDULE.WEEK' | translate }}</button>

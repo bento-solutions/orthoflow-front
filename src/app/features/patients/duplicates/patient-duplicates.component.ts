@@ -52,14 +52,6 @@ export function preferSourceFields(choices: Record<string, Side>, differences: R
   imports: [DatePipe, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent],
   template: `
     <div class="anim-rise">
-      <header class="page-head">
-        <div>
-          <a routerLink="/patients" class="back-link"><app-icon name="chevron-left" [size]="14" /> {{ 'PAT.DUP.BACK' | translate }}</a>
-          <h1 class="page-title">{{ 'PAT.DUP.TITLE' | translate }}</h1>
-          <p class="page-sub">{{ 'PAT.DUP.SUBTITLE' | translate }}</p>
-        </div>
-      </header>
-
       <div class="space-y-4" [attr.aria-busy]="pairs.loading()">
         @for (pair of pairs.data(); track pair.first.id + pair.second.id) {
           <section class="card">

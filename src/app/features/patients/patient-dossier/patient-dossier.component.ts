@@ -17,6 +17,7 @@ import { Dental3dChartComponent } from '../../dental-3d/dental-3d-chart.componen
 import { InvoiceService } from '../../billing/services/invoice.service';
 import { Invoice } from '../../billing/models/billing.model';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { PageLabelService } from '../../../core/services/page-label.service';
 import { FormsModule } from '@angular/forms';
 import { PatientTreatmentService, PatientTreatmentRequestPayload } from '../../../core/services/patient-treatment.service';
 import { StockService } from '../../../core/services/stock.service';
@@ -69,7 +70,6 @@ import { findingLabel } from '../../../core/clinical/finding-options';
             <span class="material-icons" aria-hidden="true">arrow_back</span>
           </button>
           <div class="patient-title">
-            <h1>{{ patient.firstName }} {{ patient.lastName }}</h1>
             <span class="status-badge active">{{ 'PATIENTS.DOSSIER.STATUS_' + patient.status | translate }}</span>
           </div>
           <div class="header-actions no-print">
@@ -1837,6 +1837,16 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
    * Declared as a field rather than created in ngOnInit: `effect()` requires
    * an injection context, and a field initializer is one.
    */
+  /** The breadcrumb ends on the patient's name; it is read again when a navigation clears it. */
+  private readonly pageLabel = inject(PageLabelService);
+  private readonly breadcrumbName = effect(() => {
+    const patient = this.patientService.currentPatient();
+    this.pageLabel.label();
+    if (patient && String(patient.id) === this.route.snapshot.paramMap.get('id')) {
+      this.pageLabel.set(`${patient.firstName} ${patient.lastName}`);
+    }
+  });
+
   private readonly voiceToothSync = effect(() => {
     const fdi = this.voiceContext.selectedFdi();
     if (fdi && fdi !== this.selectedToothForTreatments()) this.selectedToothForTreatments.set(fdi);

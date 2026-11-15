@@ -21,10 +21,6 @@ import { ModalComponent } from '../../shared/ui/modal.component';
   template: `
     <div class="anim-rise">
       <header class="page-head">
-        <div>
-          <h1 class="page-title">{{ 'MSG.TITLE' | translate }}</h1>
-          <p class="page-sub">{{ 'MSG.SUBTITLE' | translate }}</p>
-        </div>
         <div class="page-actions">
           <button type="button" class="btn btn-primary" (click)="openNew()"><app-icon name="plus" [size]="16" /> {{ 'MSG.NEW' | translate }}</button>
         </div>

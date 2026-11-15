@@ -9,12 +9,6 @@ import { NavCounts } from '../../core/services/nav-counts.service';
   standalone: true,
   imports: [RouterLink, RouterLinkActive, RouterOutlet, TranslateModule],
   template: `
-    <div class="page-head">
-      <div>
-        <h1 class="page-title">{{ 'NAV.BOOKING' | translate }}</h1>
-        <p class="page-sub">{{ 'INT.SUBTITLE' | translate }}</p>
-      </div>
-    </div>
     <nav class="tabs mb-6" [attr.aria-label]="'NAV.BOOKING' | translate">
       <a class="tab" routerLink="requests" routerLinkActive="is-active" ariaCurrentWhenActive="page">
         {{ 'INT.TABS.REQUESTS' | translate }}

@@ -39,10 +39,6 @@ const blankLine = (): LineDraft => ({ drug: '', form: '', dci: '', posology: '' 
   template: `
     <div class="anim-rise">
       <header class="page-head">
-        <div>
-          <h1 class="page-title">{{ 'RX.TEMPLATES_TITLE' | translate }}</h1>
-          <p class="page-sub">{{ 'RX.TEMPLATES_SUB' | translate }}</p>
-        </div>
         <div class="page-actions">
           <button type="button" class="btn btn-primary" (click)="openNew()"><app-icon name="plus" [size]="16" /> {{ 'RX.NEW_TEMPLATE' | translate }}</button>
         </div>

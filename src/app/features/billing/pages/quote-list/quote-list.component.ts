@@ -15,10 +15,6 @@ import { InvoiceService } from '../../services/invoice.service';
           <button type="button" class="back-btn" [attr.aria-label]="'COMMON.BACK' | translate" routerLink="/billing/invoices">
             <span class="material-icons" aria-hidden="true">arrow_back</span>
           </button>
-          <div class="title-meta">
-            <h1>{{ 'BILLING.QUOTES_TITLE' | translate }}</h1>
-            <p>{{ 'BILLING.QUOTES_SUBTITLE' | translate }}</p>
-          </div>
         </div>
         <button type="button" class="btn btn-primary">
           <span aria-hidden="true" class="material-icons">add</span>

@@ -8,12 +8,6 @@ import { TranslateModule } from '@ngx-translate/core';
   standalone: true,
   imports: [RouterLink, RouterLinkActive, RouterOutlet, TranslateModule],
   template: `
-    <div class="page-head">
-      <div>
-        <h1 class="page-title">{{ 'NAV.STERILIZATION' | translate }}</h1>
-        <p class="page-sub">{{ 'STER.SUBTITLE' | translate }}</p>
-      </div>
-    </div>
     <nav class="tabs mb-6 overflow-x-auto" data-tour="ster-tabs" [attr.aria-label]="'NAV.STERILIZATION' | translate">
       @for (tab of tabs; track tab.path) {
         <a class="tab whitespace-nowrap" [routerLink]="tab.path" routerLinkActive="is-active" ariaCurrentWhenActive="page">{{ tab.key | translate }}</a>

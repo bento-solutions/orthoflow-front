@@ -61,7 +61,6 @@ export type ChartOptions = {
     IconComponent, StatusPillComponent,
   ],
   template: `
-    <h1 class="sr-only">{{ 'COMMON.OVERVIEW' | translate }}</h1>
     <div class="space-y-6 anim-rise">
 
       <!-- ── Key figures ──────────────────────────────────────────────────

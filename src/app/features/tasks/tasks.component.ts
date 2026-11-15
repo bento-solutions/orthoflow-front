@@ -57,10 +57,6 @@ const blankTask = (assignee = ''): TaskForm => ({ title: '', description: '', as
   template: `
     <div class="anim-rise">
       <header class="page-head">
-        <div>
-          <h1 class="page-title">{{ 'TASK.TITLE' | translate }}</h1>
-          <p class="page-sub">{{ 'TASK.SUBTITLE' | translate }}</p>
-        </div>
         <div class="page-actions">
           <button type="button" class="btn btn-primary" (click)="openNew()"><app-icon name="plus" [size]="16" /> {{ 'TASK.NEW' | translate }}</button>
         </div>

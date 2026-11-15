@@ -1162,6 +1162,7 @@
     "SAVE_WORKING_HOURS": "Save Working Hours"
   },
   "NAV": {
+    "BREADCRUMB": "Breadcrumb",
     "MAIN": "Main navigation",
     "CLINICAL": "Clinical",
     "PRACTICE": "Practice",

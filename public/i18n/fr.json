@@ -4463,5 +4463,31 @@
     "MENTIONS": "Mentions non enregistrées",
     "DEFERRED": "Analyse à la fin",
     "DEFERRED_HINT": "Rien n’est appliqué maintenant : tout sera analysé à la fin, pour validation."
+  },
+  "PFILES": {
+    "TITLE": "Images et radiographies",
+    "TYPE": "Type",
+    "UPLOAD": "Importer",
+    "UPLOADING": "Import…",
+    "FILTER": "Filtrer par type",
+    "ALL": "Tous",
+    "EMPTY": "Aucune image importée.",
+    "LOAD_FAILED": "Impossible de charger les images.",
+    "WRONG_TYPE": "Seules les images JPEG, PNG ou WebP peuvent être importées.",
+    "UPLOADED": "{{count}} image(s) importée(s).",
+    "UPLOAD_FAILED": "L'import a échoué.",
+    "DELETE_CONFIRM": "Supprimer {{name}} ? Cette action est définitive.",
+    "DELETE_FAILED": "Impossible de supprimer l'image.",
+    "PANE_LABEL": "Afficher la radio ou l'empreinte intra-orale",
+    "OLDER": "Plus ancienne",
+    "NEWER": "Plus récente",
+    "NO_XRAY": "Aucune radio panoramique importée.",
+    "NO_INTRAORAL": "Aucune empreinte intra-orale 3D importée.",
+    "GO_UPLOAD": "Importer dans Documents",
+    "CAT": {
+      "XRAY": "Radio",
+      "INTRAORAL_3D": "Intra-orale 3D",
+      "IMAGE": "Image"
+    }
   }
 }

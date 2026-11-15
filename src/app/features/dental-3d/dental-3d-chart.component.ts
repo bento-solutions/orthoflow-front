@@ -54,7 +54,7 @@ interface SummaryGroup {
 @Component({
   selector: 'app-dental-3d-chart',
   standalone: true,
-  host: { '[class.d3-compact]': 'compact()' },
+  host: { '[class.d3-compact]': 'compact()', '[class.d3-overlay]': 'overlayPanel()' },
   imports: [FormsModule, NgClass, TranslateModule, ChartKeysComponent, DentalChartComponent, ToothDetailComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -73,7 +73,7 @@ interface SummaryGroup {
         (toothSelected)="select($event.id)"
       />
     } @else {
-      <div class="d3" [class.d3--panel]="sidePanel()">
+      <div class="d3" [class.d3--panel]="sidePanel() && !overlayPanel()">
         <div class="d3-main">
           <div class="d3-toolbar">
             @if (!compact()) {
@@ -236,7 +236,7 @@ interface SummaryGroup {
           </p>
         </div>
 
-        @if (sidePanel()) {
+        @if (sidePanel() && (!overlayPanel() || selected())) {
           <aside #panel class="d3-panel" [attr.aria-label]="'DENTAL_3D.PANEL' | translate" (keydown.escape)="backFromPanel($event)">
             @if (selected(); as fdi) {
               <header class="d3-panel-head">
@@ -328,6 +328,14 @@ export class Dental3dChartComponent {
    * reach them), and the credit line stays — it is the model's licence.
    */
   readonly compact = input(false);
+  /**
+   * The patient file's one-view layout: the chart fills the height it is given, without
+   * a frame, and a picked tooth's panel opens over whatever sits beside the chart (the
+   * X-ray) instead of taking a column of its own, so nothing moves. The panel is placed
+   * against the nearest positioned ancestor outside this component; it sizes itself with
+   * --d3-overlay-width.
+   */
+  readonly overlayPanel = input(false);
   /**
    * The camera follows the tooth voice is about: in a close-up it moves to the
    * tooth just spoken of, and a zoomed-in view that has it off screen re-frames

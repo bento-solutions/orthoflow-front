@@ -40,6 +40,8 @@ import { PermissionService } from '../../../core/services/permission.service';
 import { PatientAccountComponent } from '../account/patient-account.component';
 import { RegistrationInviteComponent } from '../registration-invite.component';
 import { PatientDocumentsComponent } from '../documents/patient-documents.component';
+import { PatientFilesComponent } from '../documents/patient-files.component';
+import { PatientImagingPaneComponent } from './patient-imaging-pane.component';
 import { PatientPhotosComponent } from '../patient-photos/patient-photos.component';
 import { DialogDirective } from '../../../shared/ui/dialog.directive';
 import { findingLabel } from '../../../core/clinical/finding-options';
@@ -47,7 +49,7 @@ import { findingLabel } from '../../../core/clinical/finding-options';
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [DialogDirective, CommonModule, RouterModule, Dental3dChartComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, ConsultationCockpitComponent, ConsultationLogComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent, PatientPhotosComponent, GumStatusComponent, TreatmentLogComponent, TreatmentSummaryComponent],
+  imports: [DialogDirective, CommonModule, RouterModule, Dental3dChartComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, ConsultationCockpitComponent, ConsultationLogComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent, PatientFilesComponent, PatientImagingPaneComponent, PatientPhotosComponent, GumStatusComponent, TreatmentLogComponent, TreatmentSummaryComponent],
   template: `
     <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive() && !cockpit()"
          [class.has-consultation]="consultation.visible() && !cockpit()" [class.is-cockpit]="cockpit()">
@@ -63,15 +65,35 @@ import { findingLabel } from '../../../core/clinical/finding-options';
           (leave)="leaveForList()"
         />
       } @else {
-      <!-- Dossier Header -->
+      <div class="dossier-top">
+      <!-- Tabs first: the sections of the file, above whose file it is. -->
+      <nav class="dossier-tabs no-print" role="tablist" [attr.aria-label]="'PATIENTS.DOSSIER.TITLE' | translate" (keydown)="onTabKeydown($event, navTabs(), activeTab(), setActiveTab.bind(this), 'dossier-tab-')">
+        @for (tab of navTabs(); track tab.id) {
+          <button type="button"
+            [id]="'dossier-tab-' + tab.id"
+            role="tab"
+            [attr.aria-selected]="activeTab() === tab.id"
+            [attr.aria-controls]="'dossier-panel-' + tab.id"
+            [tabindex]="activeTab() === tab.id ? 0 : -1"
+            [class.active]="activeTab() === tab.id"
+            [class.voice-tab]="tab.id === 'voice'"
+            (click)="activeTab.set(tab.id)"
+          >
+            <span class="material-icons" aria-hidden="true">{{ tab.icon }}</span>
+            {{ tab.key | translate }}
+            @if (tab.id === 'voice' && voiceSession.isActive()) {
+              <span class="tab-live-dot" aria-hidden="true"></span>
+            }
+          </button>
+        }
+      </nav>
+
+      <!-- Patient banner: the name and every action on one line, then the facts.
+           It scrolls away with the page. -->
       <header class="dossier-header">
         <div class="header-top">
-          <button type="button" class="back-btn" routerLink="/patients" [attr.aria-label]="'COMMON.BACK' | translate">
-            <span class="material-icons" aria-hidden="true">arrow_back</span>
-          </button>
           <div class="patient-title">
-            <!-- The breadcrumb names the patient on screen, but the header is not printed: the paper still says whose it is. -->
-            <p class="print-name">{{ patient.firstName }} {{ patient.lastName }}</p>
+            <h1>{{ patient.firstName }} {{ patient.lastName }}</h1>
             <span class="status-badge active">{{ 'PATIENTS.DOSSIER.STATUS_' + patient.status | translate }}</span>
           </div>
           <div class="header-actions no-print">
@@ -163,33 +185,32 @@ import { findingLabel } from '../../../core/clinical/finding-options';
             <span class="label">{{ 'PATIENTS.DOSSIER.INSURANCE' | translate }}</span>
             <span class="value">{{ patient.insuranceProvider || ('PATIENTS.DOSSIER.PRIVATE' | translate) }}</span>
           </div>
+          <!-- The two figures the doctor wants without opening anything. -->
+          <div class="info-divider"></div>
+          <div class="info-item info-kpi">
+            <span class="label">{{ 'PATIENTS.NEXT_APPOINTMENT' | translate }}</span>
+            <span class="value">
+              @if (nextAppointment(); as appt) {
+                {{ appt.dateTime | date:'mediumDate' }} · {{ appt.dateTime | date:'shortTime' }}
+                @if (appt.type) { <span class="value-sub">{{ appt.type }}</span> }
+              } @else { <span class="value-unknown">{{ 'PATIENTS.DOSSIER.NO_UPCOMING_APPOINTMENT' | translate }}</span> }
+            </span>
+          </div>
+          <div class="info-divider"></div>
+          <div class="info-item info-kpi">
+            <span class="label">{{ 'BILLING.OUTSTANDING' | translate }}</span>
+            <span class="value">
+              @if (balanceDueForPatient() > 0) {
+                <button type="button" class="link-btn balance-due" (click)="activeTab.set('financial')">{{ balanceDueForPatient() | number:'1.2-2' }} MAD</button>
+              } @else { <span class="value-unknown">0.00 MAD</span> }
+            </span>
+          </div>
         </div>
-
-        <!-- Tabs Navigation -->
-        <nav class="dossier-tabs no-print" role="tablist" [attr.aria-label]="'PATIENTS.DOSSIER.TITLE' | translate" (keydown)="onTabKeydown($event, navTabs(), activeTab(), setActiveTab.bind(this), 'dossier-tab-')">
-          @for (tab of navTabs(); track tab.id) {
-            <button type="button"
-              [id]="'dossier-tab-' + tab.id"
-              role="tab"
-              [attr.aria-selected]="activeTab() === tab.id"
-              [attr.aria-controls]="'dossier-panel-' + tab.id"
-              [tabindex]="activeTab() === tab.id ? 0 : -1"
-              [class.active]="activeTab() === tab.id"
-              [class.voice-tab]="tab.id === 'voice'"
-              (click)="activeTab.set(tab.id)"
-            >
-              <span class="material-icons" aria-hidden="true">{{ tab.icon }}</span>
-              {{ tab.key | translate }}
-              @if (tab.id === 'voice' && voiceSession.isActive()) {
-                <span class="tab-live-dot" aria-hidden="true"></span>
-              }
-            </button>
-          }
-        </nav>
       </header>
+      </div>
 
       <!-- Main Content Area -->
-      <div class="dossier-content">
+      <div class="dossier-content" [class.is-one-view]="activeTab() === 'overview'">
         @switch (activeTab()) {
           @case ('voice') {
             <!-- Every voice result is shown here: the chart with what is staged
@@ -210,19 +231,35 @@ import { findingLabel } from '../../../core/clinical/finding-options';
           }
           @case ('overview') {
             <div class="tab-pane" role="tabpanel" id="dossier-panel-overview" aria-labelledby="dossier-tab-overview" tabindex="0">
-              <div class="overview-grid">
-                <!-- Summary Cards -->
-                <div class="summary-card">
-                  <h2>{{ 'PATIENTS.NEXT_APPOINTMENT' | translate }}</h2>
-                  <div class="card-content">
-                    @if (nextAppointment(); as appt) {
-                      <span class="date">{{ appt.dateTime | date:'longDate' }} - {{ appt.dateTime | date:'shortTime' }}</span>
-                      <span class="desc">{{ appt.type }}</span>
-                    } @else {
-                      <p class="empty-hint">{{ 'PATIENTS.DOSSIER.NO_UPCOMING_APPOINTMENT' | translate }}</p>
+              <!-- One view: the 3D chart and the X-ray / intraoral scan side by side,
+                   frameless and as large as the window allows. A picked tooth opens
+                   over the picture, so the chart never moves. -->
+              <h2 class="sr-only">{{ 'DENTAL_3D.TITLE' | translate }}</h2>
+              <div class="one-view-row">
+                <div class="one-view-chart">
+                  @if (dentalChartState(); as chart) {
+                    <!-- three.js and the model load only when the chart comes into view. -->
+                    @defer (on viewport; prefetch on idle) {
+                      <app-dental-3d-chart
+                        [chart]="chart"
+                        [findings]="clinicalRecordService.findings()"
+                        [treatments]="patientTreatments()"
+                        [staged]="stagedFindings()"
+                        [focusFdi]="voiceFocusFdi()"
+                        [selected]="selectedToothForTreatments()"
+                        [overlayPanel]="true"
+                        (selectedChange)="onToothSelected3D($event)"
+                        (assignTreatment)="openAssignModalFrom3D($event)"
+                      />
+                    } @placeholder {
+                      <div class="chart-placeholder" aria-hidden="true"></div>
                     }
-                  </div>
+                  }
                 </div>
+                <app-patient-imaging-pane class="one-view-image" [patientId]="patient.id" (openDocuments)="activeTab.set('documents')" />
+              </div>
+
+              <div class="overview-grid">
                 <div class="summary-card">
                   <h2>{{ 'PATIENTS.DOSSIER.ACTIVE_TREATMENTS' | translate }}</h2>
                   <div class="card-content">
@@ -231,17 +268,6 @@ import { findingLabel } from '../../../core/clinical/finding-options';
                       <span class="desc">{{ 'PATIENTS.DOSSIER.ACTIVE_TREATMENTS' | translate }}</span>
                     } @else {
                       <p class="empty-hint">{{ 'PATIENTS.DOSSIER.NO_ACTIVE_TREATMENTS' | translate }}</p>
-                    }
-                  </div>
-                </div>
-                <div class="summary-card">
-                  <h2>{{ 'BILLING.OUTSTANDING' | translate }}</h2>
-                  <div class="card-content">
-                    @if (balanceDueForPatient() > 0) {
-                      <span class="date" [class.balance-due]="balanceDueForPatient() > 0">{{ balanceDueForPatient() | number:'1.2-2' }} MAD</span>
-                      <button type="button" class="desc link-btn" (click)="activeTab.set('financial')">{{ 'BILLING.TITLE' | translate }}</button>
-                    } @else {
-                      <p class="empty-hint">{{ 'PATIENTS.DOSSIER.NO_INVOICES' | translate }}</p>
                     }
                   </div>
                 </div>
@@ -272,26 +298,6 @@ import { findingLabel } from '../../../core/clinical/finding-options';
                       <p class="empty-hint">{{ 'PATIENTS.DOSSIER.NO_ALLERGIES' | translate }}</p>
                     }
                   </div>
-                </div>
-                <div class="summary-card dental-chart-card">
-                  <h2>{{ 'DENTAL_3D.TITLE' | translate }}</h2>
-                  @if (dentalChartState(); as chart) {
-                    <!-- three.js and the model load only when the chart comes into view. -->
-                    @defer (on viewport; prefetch on idle) {
-                      <app-dental-3d-chart
-                        [chart]="chart"
-                        [findings]="clinicalRecordService.findings()"
-                        [treatments]="patientTreatments()"
-                        [staged]="stagedFindings()"
-                        [focusFdi]="voiceFocusFdi()"
-                        [selected]="selectedToothForTreatments()"
-                        (selectedChange)="onToothSelected3D($event)"
-                        (assignTreatment)="openAssignModalFrom3D($event)"
-                      />
-                    } @placeholder {
-                      <div class="chart-placeholder" aria-hidden="true"></div>
-                    }
-                  }
                 </div>
               </div>
             </div>
@@ -665,6 +671,7 @@ import { findingLabel } from '../../../core/clinical/finding-options';
           }
           @case ('documents') {
             <div class="tab-pane" role="tabpanel" id="dossier-panel-documents" aria-labelledby="dossier-tab-documents" tabindex="0">
+              <app-patient-files class="mb-6 block" [patientId]="patient.id" />
               <app-patient-documents [patientId]="patient.id" [patientName]="patient.firstName + ' ' + patient.lastName" />
             </div>
           }
@@ -826,20 +833,19 @@ import { findingLabel } from '../../../core/clinical/finding-options';
     /* The cockpit sizes itself to the window below the bar; the container must not add to it. */
     .dossier-container.is-cockpit { min-height: 0; }
 
+    /* Not sticky: the banner scrolls away so the chart below gets the window. */
+    .dossier-top { background: var(--surface); border-bottom: 1px solid rgb(var(--ink-200)); }
     .dossier-header {
-      background: var(--surface);
-      padding: 1.5rem 2rem 0 2rem;
-      border-bottom: 1px solid rgb(var(--ink-200));
-      position: sticky;
-      top: 0;
-      z-index: 10;
+      padding: .75rem 1.25rem .75rem;
     }
 
+    /* Name, status and every action on one line; buttons shrink to fit. */
     .header-top {
       display: flex;
+      flex-wrap: nowrap;
       align-items: center;
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
+      gap: .75rem;
+      margin-bottom: .625rem;
     }
 
     .back-btn {
@@ -857,43 +863,59 @@ import { findingLabel } from '../../../core/clinical/finding-options';
     }
 
     .patient-title {
-      flex: 1;
+      flex: 0 1 auto;
+      min-width: 0;
       display: flex;
       align-items: center;
-      gap: 1rem;
-    }
-
-    .print-name { display: none; margin: 0; }
-    @media print {
-      .print-name { display: block; font-size: 1.5rem; font-weight: 800; }
+      gap: .625rem;
     }
 
     .patient-title h1 {
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 700;
       color: rgb(var(--ink-900));
       margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+    .patient-title .status-badge { flex: none; }
 
     .header-actions {
       display: flex;
-      gap: 0.75rem;
-      /* Five actions with the consultation button: wrap instead of running
-         off the edge on a narrow window. */
+      gap: .375rem;
       flex: 1 1 auto;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       justify-content: flex-end;
+      align-items: center;
       min-width: 0;
+    }
+    .header-actions > * { flex: none; }
+    .header-actions .btn, .header-actions ::ng-deep .btn {
+      min-height: 2rem;
+      padding: .3125rem .625rem;
+      font-size: .8125rem;
+      white-space: nowrap;
+      border-radius: .5rem;
+    }
+    .header-actions .material-icons { font-size: 1.0625rem; }
+    /* Below a wide window the secondary actions keep their icon and tooltip only. */
+    @media (max-width: 1440px) {
+      .header-actions .btn-compact .btn-label { display: none; }
+      .header-actions .btn-compact { padding-inline: .5rem; }
     }
 
     .patient-quick-info {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 2rem;
-      padding-bottom: 1.5rem;
+      gap: .5rem 1.25rem;
       color: rgb(var(--ink-500));
-      font-size: 0.9rem;
+      font-size: 0.875rem;
     }
+    .info-item .value-sub { margin-inline-start: .375rem; font-weight: 500; color: rgb(var(--ink-500)); }
+    .info-item .link-btn.balance-due { color: rgb(var(--critical-700)); font-weight: 700; text-decoration: none; }
+    .info-item .link-btn.balance-due:hover { text-decoration: underline; }
 
     .info-item {
       display: flex;
@@ -944,7 +966,7 @@ import { findingLabel } from '../../../core/clinical/finding-options';
     .dossier-container.has-consultation > .dossier-content { grid-row: 3; }
     @media (min-width: 1100px) {
       .dossier-container.has-consultation { grid-template-columns: minmax(0, 1fr) 27rem; grid-template-rows: auto 1fr; }
-      .dossier-container.has-consultation > .dossier-header { grid-column: 1; grid-row: 1; }
+      .dossier-container.has-consultation > .dossier-top { grid-column: 1; grid-row: 1; }
       .dossier-container.has-consultation > .dossier-content { grid-column: 1; grid-row: 2; }
       .dossier-container.has-consultation > .dossier-consultation {
         /* Below the app's own sticky bar (h-16), and no taller than what is left of the viewport. */
@@ -964,13 +986,17 @@ import { findingLabel } from '../../../core/clinical/finding-options';
 
     .dossier-tabs {
       display: flex;
-      gap: 2rem;
+      gap: 1.75rem;
+      padding: 0 1.25rem;
+      border-bottom: 1px solid rgb(var(--ink-100));
+      overflow-x: auto;
     }
 
     .dossier-tabs button {
       background: transparent;
       border: none;
-      padding: 1rem 0;
+      white-space: nowrap;
+      padding: .75rem 0;
       color: rgb(var(--ink-500));
       font-weight: 600;
       font-size: 0.95rem;
@@ -1009,6 +1035,31 @@ import { findingLabel } from '../../../core/clinical/finding-options';
       padding: 2rem;
       max-width: 1200px;
       margin: 0 auto;
+    }
+
+    /* Overview: the whole width, with only a hairline of margin, for the 3D. */
+    .dossier-content.is-one-view { max-width: none; padding: .5rem 0 1.5rem; }
+    .one-view-row {
+      position: relative; /* the picked tooth's panel is placed against this row */
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: .75rem;
+      /* What is left of the window under the app bar, the tabs and the banner. */
+      height: max(24rem, calc(100vh - 17.25rem));
+      --d3-overlay-width: calc(50% - .375rem);
+      /* Into the page's own padding (main: p-4 / md:p-6 / lg:p-8), leaving half a rem. */
+      margin-inline: -.5rem;
+    }
+    @media (min-width: 768px) { .one-view-row { margin-inline: -1rem; } }
+    @media (min-width: 1024px) { .one-view-row { margin-inline: -1.5rem; } }
+    .one-view-chart { min-width: 0; min-height: 0; height: 100%; }
+    .one-view-chart .chart-placeholder { height: 100%; }
+    .one-view-image { height: 100%; }
+    .dossier-content.is-one-view .overview-grid { margin-top: 1rem; }
+    @media (max-width: 1099px) {
+      .one-view-row { grid-template-columns: minmax(0, 1fr); height: auto; }
+      .one-view-chart { height: 62vh; }
+      .one-view-image { height: 50vh; }
     }
 
     .tab-pane {

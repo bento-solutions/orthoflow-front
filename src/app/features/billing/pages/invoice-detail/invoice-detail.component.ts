@@ -25,6 +25,7 @@ import { PatientService } from '../../../../core/services/patient.service';
               <span class="material-icons" aria-hidden="true">arrow_back</span>
             </button>
             <div class="title-with-status">
+              <p class="print-name">{{ 'BILLING.INVOICE_NUMBER' | translate }} {{ inv.invoiceNumber }}</p>
               <span class="status-badge" [class]="inv.status.toLowerCase().replace('_', '-')">
                 {{ 'BILLING.STATUS.' + inv.status | translate }}
               </span>
@@ -251,6 +252,11 @@ import { PatientService } from '../../../../core/services/patient.service';
       display: flex;
       align-items: center;
       gap: 1rem;
+    }
+
+    .print-name { display: none; margin: 0; }
+    @media print {
+      .print-name { display: block; font-size: 1.5rem; font-weight: 800; }
     }
 
     .title-with-status h1 {

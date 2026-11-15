@@ -70,6 +70,8 @@ import { findingLabel } from '../../../core/clinical/finding-options';
             <span class="material-icons" aria-hidden="true">arrow_back</span>
           </button>
           <div class="patient-title">
+            <!-- The breadcrumb names the patient on screen, but the header is not printed: the paper still says whose it is. -->
+            <p class="print-name">{{ patient.firstName }} {{ patient.lastName }}</p>
             <span class="status-badge active">{{ 'PATIENTS.DOSSIER.STATUS_' + patient.status | translate }}</span>
           </div>
           <div class="header-actions no-print">
@@ -859,6 +861,11 @@ import { findingLabel } from '../../../core/clinical/finding-options';
       display: flex;
       align-items: center;
       gap: 1rem;
+    }
+
+    .print-name { display: none; margin: 0; }
+    @media print {
+      .print-name { display: block; font-size: 1.5rem; font-weight: 800; }
     }
 
     .patient-title h1 {

@@ -1506,7 +1506,7 @@
       "V_PLAN": "Plan de traitement",
       "V_APPOINTMENT": "Prochain rendez-vous",
       "V_REPORT": "Compte rendu",
-      "COUNTS": "{{sentences}} phrases · {{acted}} actions · {{proposed}} proposées · {{unsure}} pas comprises",
+      "COUNTS": "{{sentences}} phrases · {{acted}} actions · {{proposed}} proposées · {{unsure}} à confirmer",
       "MEDIAN": "délai médian {{ms}} ms",
       "EXPORT_SCENARIO": "Exporter comme scénario",
       "EXPORT_HINT": "Remplacez noms et numéros avant de l'ajouter aux tests."
@@ -1637,7 +1637,21 @@
     "DOCS_LOAD_FAILED": "L’audio n’a pas pu être chargé.",
     "LOG_AUDIO": "Enregistrement audio",
     "LOG_PLAY_FROM": "Écouter à partir de {{time}}",
-    "STATUS_DICTATED_TO_VALIDATE": "Dicté · à valider"
+    "STATUS_DICTATED_TO_VALIDATE": "Dicté · à valider",
+    "SUGGEST": {
+      "STATE": "État suggéré",
+      "TREATMENT": "Soin suggéré",
+      "BOTH": "Suggestion",
+      "NONE": "Pas de suggestion : réécoutez ce moment",
+      "TO_CONFIRM": "à confirmer",
+      "SUSPECTED": "(suspicion)",
+      "TEETH": "Dents",
+      "ADD_TO_CHART": "Ajouter au schéma",
+      "NOT_ADDED": "Cette suggestion n’a pas pu être placée sur le schéma. Ajoutez-la à la main."
+    },
+    "CONTINUE": "Continuer la consultation",
+    "CONTINUE_HINT": "Un oubli ou quelque chose à ajouter au dossier : l’enregistrement reprend, rien de ce qui est déjà relevé n’est perdu.",
+    "ERROR_CONTINUE": "La consultation n’a pas pu reprendre. Réessayez."
   },
   "SET": {
     "TABS": {

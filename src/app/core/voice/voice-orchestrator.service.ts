@@ -1745,6 +1745,11 @@ export class VoiceOrchestratorService {
       // to whatever the dentist says next.
       const asked = via === 'wake-word' || via === 'explicit';
       this.mark('unsure');
+      // Replayed, it was said to the app and nobody is there to say it again: the review shows it
+      // with what it most likely meant, to be confirmed.
+      if (this.replay && asked) {
+        this.replay.unresolved.push({ lineId: this.replay.lineId, text: resolution.transcript, question: null });
+      }
       this.announce(false, `No command recognised in “${resolution.transcript}”.`, this.say('notUnderstood'), 'unsure', { asked });
       await this.audit(
         { intent: 'unknown', entities: {}, confidence: 0, resolver: 'grammar', transcript: resolution.transcript },

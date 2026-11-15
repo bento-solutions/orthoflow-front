@@ -311,6 +311,24 @@ export class VoiceSessionService {
   }
 
   /**
+   * A recorded consultation the doctor continues after its end: the server has already taken the
+   * session back to dictating; this follows it. What the session staged stays staged.
+   */
+  async reopen(): Promise<void> {
+    const session = this.sessionSignal();
+    if (!session) return;
+    try {
+      this.sessionSignal.set(await firstValueFrom(this.api.getSession(session.id)));
+    } catch {
+      this.sessionSignal.set({ ...session, status: 'ACTIVE' });
+    }
+    if (this.isActive()) {
+      this.startedAtSignal.set(this.startedAtSignal() ?? Date.now());
+      this.armSessionTimeout();
+    }
+  }
+
+  /**
    * The session was saved by something other than {@link commit} — a recorded
    * consultation commits the chart findings together with the rest of the
    * record. Clears what this service holds for it, as a normal save does.

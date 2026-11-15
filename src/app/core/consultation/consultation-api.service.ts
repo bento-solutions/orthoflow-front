@@ -100,6 +100,11 @@ export class ConsultationApiService {
     return this.http.post<ConsultationDto>(`${this.base}/${id}/end`, { transcript, lines });
   }
 
+  /** The doctor forgot something: recording starts again, everything caught so far kept. */
+  continue(id: string): Observable<ConsultationDto> {
+    return this.http.post<ConsultationDto>(`${this.base}/${id}/continue`, {});
+  }
+
   /** The consultation log: what was said and when, the commands, what the doctor validated. */
   log(id: string): Observable<ConsultationLogDto> {
     return this.http.get<ConsultationLogDto>(`${this.base}/${id}/log`);

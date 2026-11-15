@@ -40,6 +40,8 @@ import { Treatment } from '../../../core/models/stock.model';
 import { PermissionService } from '../../../core/services/permission.service';
 import { PrescriptionEditorComponent } from '../prescription/prescription-editor.component';
 import { ConsultationLogComponent } from './consultation-log.component';
+import { ConsultationSuggestionComponent } from './consultation-suggestion.component';
+import { canChart, suggestFromSentence } from '../../../core/consultation/consultation-suggestion';
 
 type Mode = 'intro' | 'recording' | 'review' | 'saved';
 
@@ -106,7 +108,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
 @Component({
   selector: 'app-consultation-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, PrescriptionEditorComponent, ConsultationLogComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, PrescriptionEditorComponent, ConsultationLogComponent, ConsultationSuggestionComponent],
   template: `
     @if (c.visible()) {
       <aside class="cp" [attr.data-mode]="mode()" [attr.aria-label]="'CONSULTATION.TITLE' | translate">
@@ -314,7 +316,14 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                     @for (m of c.review().chartMentions; track m.quote) {
                       <li class="cp-item" [attr.data-unresolved]="m.unresolved ? '' : null">
                         @if (m.unresolved) {
-                          <span><span class="cp-status" data-status="proposed">{{ 'CONSULTATION.UNRESOLVED' | translate }}</span> {{ m.finding }}</span>
+                          <!-- Not settled by the analysis: what it most likely meant, to be confirmed. -->
+                          <app-consultation-suggestion [sentence]="m.quote" [question]="m.finding || null" />
+                          @if (chartable(m.quote)) {
+                            <button type="button" class="cp-btn small" data-chart-suggestion (click)="chartSuggestion(m.quote)"
+                                    [disabled]="charting() === m.quote">
+                              <span class="material-icons" aria-hidden="true">add_circle</span>{{ 'CONSULTATION.SUGGEST.ADD_TO_CHART' | translate }}
+                            </button>
+                          }
                         } @else {
                           <span>{{ m.teeth ? ('CONSULTATION.DOC.TOOTH' | translate) + ' ' + m.teeth + ' : ' : '' }}{{ m.finding }}</span>
                         }
@@ -409,6 +418,11 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                 @if (c.pending() > 0) {
                   <p class="cp-hint">{{ 'CONSULTATION.SAVE_BLOCKED' | translate: { count: c.pending() } }}</p>
                 }
+                <!-- Forgot something, or more to add to the dossier: back to recording, nothing lost. -->
+                <button type="button" class="cp-btn big" data-continue (click)="continueConsultation()"
+                        [disabled]="c.busy() || c.saving() || c.analyzing()" [title]="'CONSULTATION.CONTINUE_HINT' | translate">
+                  <span class="material-icons" aria-hidden="true">mic</span>{{ 'CONSULTATION.CONTINUE' | translate }}
+                </button>
                 <button type="button" class="cp-link danger" (click)="discard()" [disabled]="c.saving()">{{ 'CONSULTATION.DISCARD' | translate }}</button>
               </div>
             </div>
@@ -1103,6 +1117,28 @@ export class ConsultationPanelComponent {
   }
 
   /** A chart finding as the doctor reads it — the words that were read back to them, not the audit text. */
+  /** The sentence being put on the chart, while it is. */
+  readonly charting = signal<string | null>(null);
+
+  /** Whether a sentence left to confirm can go on the chart as its suggestion reads it. */
+  chartable(quote: string): boolean {
+    return canChart(suggestFromSentence(quote, this.voiceContext.dentition()));
+  }
+
+  async chartSuggestion(quote: string): Promise<void> {
+    this.charting.set(quote);
+    try {
+      await this.c.chartSuggestion(quote);
+    } finally {
+      this.charting.set(null);
+    }
+  }
+
+  /** Back to recording, from a tap: the microphone must open inside it. */
+  continueConsultation(): void {
+    void this.c.continueConsultation();
+  }
+
   chartText(entry: BufferedEntry): string {
     return chartLine(entry, spokenLanguage(this.voiceContext.locale()), this.translate.instant('CONSULTATION.DOC.TOOTH'));
   }

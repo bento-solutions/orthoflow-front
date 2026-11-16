@@ -376,7 +376,13 @@
       "LOAD_FAILED": "Impossible de charger les photos du patient.",
       "COMPARE": "Comparer",
       "COMPARE_WITH": "Comparer avec",
-      "NO_PICTURE": "Pas de photo"
+      "NO_PICTURE": "Pas de photo",
+      "DOCS_TITLE": "Ajoutées dans Documents",
+      "DOCS_HINT": "Les radios et images du patient, depuis l'onglet Documents.",
+      "NO_SERIES_TITLE": "Aucune séance photo pour l'instant",
+      "NO_SERIES_TEXT": "Les images ci-dessus ont été ajoutées dans Documents. Commencez le bilan initial pour disposer les vues standard ; une radio déjà ajoutée peut y être placée sans choisir le fichier à nouveau.",
+      "FROM_DOCS": "Depuis Documents",
+      "PICK_TITLE": "Choisir une image pour : {{view}}"
     }
   },
   "BILLING": {

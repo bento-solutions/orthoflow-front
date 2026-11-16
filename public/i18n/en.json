@@ -376,7 +376,13 @@
       "LOAD_FAILED": "Could not load the patient's photos.",
       "COMPARE": "Compare",
       "COMPARE_WITH": "Compare with",
-      "NO_PICTURE": "No photo"
+      "NO_PICTURE": "No photo",
+      "DOCS_TITLE": "Uploaded in Documents",
+      "DOCS_HINT": "The patient's X-rays and images from the Documents tab.",
+      "NO_SERIES_TITLE": "No photo sitting yet",
+      "NO_SERIES_TEXT": "The pictures above were uploaded in Documents. Start the initial records to lay out the standard views; an uploaded X-ray can go into a sitting without choosing the file again.",
+      "FROM_DOCS": "From Documents",
+      "PICK_TITLE": "Choose a picture for: {{view}}"
     }
   },
   "BILLING": {

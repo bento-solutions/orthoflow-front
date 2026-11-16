@@ -1,12 +1,14 @@
 import '@angular/compiler';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TranslateModule } from '@ngx-translate/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screenMocks } from '../../../testing/screen-mocks';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { ClinicalPhotoApi, PHOTO_STAGES, PhotoSeries } from '../../../core/services/clinical-photo-api.service';
+import { PatientFile, PatientFilesApi } from '../../../core/services/patient-files-api.service';
 import { PatientPhotosComponent, VIEW_GROUPS } from './patient-photos.component';
 
 const series = (over: Partial<PhotoSeries> = {}): PhotoSeries => ({
@@ -17,6 +19,7 @@ const photo = (view: PhotoSeries['photos'][number]['view'], fileId: string) =>
 
 describe('PatientPhotosComponent', () => {
   let api: Record<string, ReturnType<typeof vi.fn>>;
+  let files: { list: ReturnType<typeof vi.fn>; blob: ReturnType<typeof vi.fn>; version: ReturnType<typeof signal<number>> };
   let mocks: ReturnType<typeof screenMocks>;
   let confirmAnswer = true;
 
@@ -26,6 +29,7 @@ describe('PatientPhotosComponent', () => {
       imports: [PatientPhotosComponent, TranslateModule.forRoot()],
       providers: [
         { provide: ClinicalPhotoApi, useValue: api },
+        { provide: PatientFilesApi, useValue: files },
         { provide: ConfirmDialogService, useValue: { confirm: async () => confirmAnswer } },
         ...mocks.providers,
       ],
@@ -58,6 +62,62 @@ describe('PatientPhotosComponent', () => {
       removePhoto: vi.fn(async () => series()),
       image: vi.fn(async () => new Blob(['x'], { type: 'image/jpeg' })),
     };
+    files = {
+      list: vi.fn(async () => [] as PatientFile[]),
+      blob: vi.fn(async () => new Blob(['x'], { type: 'image/png' })),
+      version: signal(0),
+    };
+  });
+
+  const doc = (over: Partial<PatientFile> = {}): PatientFile => ({
+    id: 'd1', name: 'panoramique.png', contentType: 'image/png', sizeBytes: 10, createdAt: '2026-11-16T10:00:00Z', category: 'XRAY', ...over,
+  });
+
+  it('shows the X-rays and images uploaded in Documents, even before any sitting', async () => {
+    files.list.mockResolvedValue([
+      doc(),
+      doc({ id: 'd2', name: 'smile.jpg', contentType: 'image/jpeg', category: 'IMAGE', createdAt: '2026-11-17T10:00:00Z' }),
+      doc({ id: 'd3', name: 'arch.stl', contentType: 'model/stl', category: 'INTRAORAL_3D' }),
+    ]);
+    await mount();
+
+    const tiles = [...document.querySelectorAll('.doc-tile')];
+    // Pictures only, newest first; a 3D scan is not a picture this tab can show.
+    expect(tiles.map(t => t.querySelector('img')?.getAttribute('alt'))).toEqual(['smile.jpg', 'panoramique.png']);
+    expect(document.querySelector('.empty-title')?.textContent).toContain('PATIENTS.PHOTOS.NO_SERIES_TITLE');
+    expect(button('PATIENTS.PHOTOS.START_INITIAL')).toBeTruthy();
+  });
+
+  it('keeps the usual empty state when Documents has no picture either', async () => {
+    await mount();
+
+    expect(document.querySelector('.docs')).toBeNull();
+    expect(document.querySelector('.empty-title')?.textContent).toContain('PATIENTS.PHOTOS.EMPTY_TITLE');
+  });
+
+  it('puts an X-ray from Documents into the panoramic slot without choosing the file again', async () => {
+    files.list.mockResolvedValue([doc({ id: 'img', name: 'face.jpg', contentType: 'image/jpeg', category: 'IMAGE' }), doc()]);
+    api['list'].mockResolvedValue([series()]);
+    api['upload'].mockResolvedValue(series({ photos: [photo('PANORAMIC_XRAY', 'f9')] }));
+    const fixture = await mount();
+
+    const slot = [...document.querySelectorAll('.slot')].find(el => el.textContent?.includes('PATIENTS.PHOTOS.VIEWS.PANORAMIC_XRAY'))!;
+    ([...slot.querySelectorAll('button')].find(b => b.textContent?.includes('PATIENTS.PHOTOS.FROM_DOCS')) as HTMLButtonElement).click();
+    await settle(fixture);
+
+    // The X-ray comes first for a radiograph slot.
+    const items = [...document.querySelectorAll<HTMLButtonElement>('.picker-item')];
+    expect(items.map(i => i.querySelector('.picker-name')?.textContent)).toEqual(['panoramique.png', 'face.jpg']);
+    items[0].click();
+    await settle(fixture);
+
+    expect(files.blob).toHaveBeenCalledWith('d1');
+    const [seriesId, view, file] = api['upload'].mock.calls[0];
+    expect(seriesId).toBe('s1');
+    expect(view).toBe('PANORAMIC_XRAY');
+    expect((file as File).name).toBe('panoramique.png');
+    expect((file as File).type).toBe('image/png');
+    expect(document.querySelector('.picker')).toBeNull();
   });
 
   afterEach(() => {

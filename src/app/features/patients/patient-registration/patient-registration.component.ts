@@ -261,7 +261,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
       padding: 2rem;
       border-radius: 16px;
       border: 1px solid rgb(var(--ink-200));
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+      box-shadow: var(--shadow-xs);
     }
 
     .section-title {
@@ -337,7 +337,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
     .form-group select:focus, 
     .form-group textarea:focus {
       border-color: rgb(var(--petrol-900));
-      box-shadow: 0 0 0 3px rgba(3, 4, 94, 0.1);
+      box-shadow: 0 0 0 3px rgb(var(--petrol-500) / 0.15);
     }
 
     .form-actions {

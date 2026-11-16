@@ -1,3 +1,4 @@
+import { ChartColors } from '../../core/utils/chart-colors';
 import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 import { NumPipe } from '../../shared/pipes/money.pipe';
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
@@ -23,9 +24,6 @@ import { describedChart } from '../../core/utils/chart-summary';
    properties, so these three token values are mirrored here. They are the
    only hardcoded colours left in the screen; if the palette in
    `tokens.css` moves, these move with it. */
-const PETROL_500 = '#2f8fa2';  // --petrol-500
-const INK_500 = '#63747a';     // --ink-500
-const INK_100 = '#eaeef0';     // --ink-100
 
 export type ChartOptions = {
   series: ApexAxisChartSeries;
@@ -272,6 +270,7 @@ export type ChartOptions = {
   `,
 })
 export class DashboardComponent implements OnInit {
+  private readonly chartColors = inject(ChartColors);
   readonly patientService = inject(PatientService);
   private readonly directory = inject(PatientDirectoryApi);
   private readonly scheduleService = inject(ScheduleService);
@@ -417,6 +416,7 @@ export class DashboardComponent implements OnInit {
     const monthly = this.admissionsByMonth();
     const quarterly = [0, 1, 2, 3].map((q) => monthly.slice(q * 3, q * 3 + 3).reduce((a, b) => a + b, 0));
     const isQuarterly = this.granularity() === 'quarterly';
+    const c = this.chartColors.palette();
 
     const locale = this.locale();
     const monthLabels = Array.from({ length: 12 }, (_, m) =>
@@ -436,7 +436,7 @@ export class DashboardComponent implements OnInit {
       },
       /* petrol-500 — the action colour. The chart is brand surface, not
          status, so it must not borrow green/amber/red. */
-      colors: [PETROL_500],
+      colors: [c.action],
       dataLabels: { enabled: false },
       stroke: { curve: 'smooth', width: 2.5 },
       markers: { size: 0, hover: { size: 5 } },
@@ -444,16 +444,16 @@ export class DashboardComponent implements OnInit {
         categories: isQuarterly ? ['Q1', 'Q2', 'Q3', 'Q4'] : monthLabels,
         axisBorder: { show: false },
         axisTicks: { show: false },
-        labels: { style: { colors: INK_500, fontSize: '11px', fontWeight: 600 } },
+        labels: { style: { colors: c.muted, fontSize: '11px', fontWeight: 600 } },
       },
       yaxis: {
         labels: {
-          style: { colors: INK_500, fontSize: '11px', fontWeight: 600 },
+          style: { colors: c.muted, fontSize: '11px', fontWeight: 600 },
           formatter: (v: number) => String(Math.round(v)),
         },
       },
       grid: {
-        borderColor: INK_100,
+        borderColor: c.grid,
         strokeDashArray: 4,
         padding: { left: 8, right: 8, top: 0 },
         xaxis: { lines: { show: false } },

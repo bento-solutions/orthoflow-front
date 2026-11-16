@@ -70,7 +70,7 @@
 .d3-label[data-ring='PLANNED'] { box-shadow: 0 0 0 2px rgb(var(--caution-500)); }
 .d3-label.staged { box-shadow: 0 0 0 2px var(--voice-staged); }
 .d3-label.selected { background: var(--action); color: var(--text-inverse); border-color: var(--action); }
-.d3-label.focus { background: var(--voice-focus); color: rgb(var(--on-inverse)); border-color: var(--voice-focus); box-shadow: 0 0 0 3px rgba(14, 116, 144, .3); font-size: .8125rem; height: 1.625rem; z-index: 2; }
+.d3-label.focus { background: var(--voice-focus); color: rgb(var(--on-inverse)); border-color: var(--voice-focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voice-focus) calc(.3 * 100%), transparent); font-size: .8125rem; height: 1.625rem; z-index: 2; }
 .d3-marks { width: .875rem; height: .875rem; flex: none; }
 .d3-flag { width: .375rem; height: .375rem; border-radius: 50%; background: rgb(var(--critical-500)); flex: none; }
 
@@ -94,7 +94,7 @@
 .d3-tip {
   position: absolute; left: 0; top: 0; z-index: 3; display: flex; flex-direction: column; gap: .125rem; max-width: 14rem;
   padding: .375rem .5rem; pointer-events: none; font-size: .75rem; line-height: 1.3;
-  background: var(--surface-inverse); color: var(--text-inverse); border-radius: .375rem; box-shadow: 0 4px 14px rgb(0 0 0 / .18);
+  background: var(--surface-inverse); color: var(--text-inverse); border-radius: .375rem; box-shadow: var(--shadow-md);
 }
 .d3-tip-zone { font-weight: 700; opacity: .85; }
 
@@ -214,7 +214,7 @@
 :host(.d3-overlay) .d3-stage { aspect-ratio: auto; flex: 1 1 auto; min-height: 16rem; max-height: none; border: 0; border-radius: 0; background: transparent; }
 :host(.d3-overlay) .d3-panel {
   position: absolute; inset-block: 0; inset-inline-end: 0; z-index: 6; width: var(--d3-overlay-width, 50%);
-  max-height: none; overflow-y: auto; border-radius: .75rem; box-shadow: 0 12px 32px -12px rgb(0 0 0 / .35);
+  max-height: none; overflow-y: auto; border-radius: .75rem; box-shadow: var(--shadow-lg);
 }
 @media (max-width: 1099px) { :host(.d3-overlay) .d3-panel { width: 100%; } }
 

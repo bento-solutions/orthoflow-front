@@ -89,7 +89,7 @@ import { ConsultationSuggestionComponent } from '../consultation-suggestion.comp
     .ck-verdict-summary { color: rgb(var(--ink-800)); font-weight: 600; }
     .ck-live { display: block; color: rgb(var(--ink-600)); font-style: italic; }
     .ck-empty { color: rgb(var(--ink-600)); font-size: .875rem; }
-    .ck-newer { position: absolute; bottom: 3.5rem; left: 50%; transform: translateX(-50%); padding: .25rem .75rem; border-radius: 999px; background: var(--action); color: rgb(var(--on-inverse)); font-weight: 700; font-size: .8125rem; box-shadow: 0 2px 6px rgb(0 0 0 / .2); }
+    .ck-newer { position: absolute; bottom: 3.5rem; left: 50%; transform: translateX(-50%); padding: .25rem .75rem; border-radius: 999px; background: var(--action); color: rgb(var(--on-inverse)); font-weight: 700; font-size: .8125rem; box-shadow: var(--shadow-sm); }
     .ck-typed { display: flex; gap: .375rem; padding: .5rem; border-top: 1px solid rgb(var(--ink-100)); }
     .ck-typed input { flex: 1; min-width: 0; min-height: 2.5rem; padding: 0 .625rem; border: 1px solid rgb(var(--ink-200)); border-radius: .5rem; background: var(--surface); color: rgb(var(--ink-900)); }
     .ck-send { display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: .5rem; background: var(--action); color: rgb(var(--on-inverse)); }

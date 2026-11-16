@@ -1,3 +1,4 @@
+import { ChartColors } from '../../../core/utils/chart-colors';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -9,8 +10,6 @@ import { describedChart } from '../../../core/utils/chart-summary';
 
 /* ApexCharts is configured in JavaScript and cannot read CSS custom properties: the grey of the axes and
    gridlines is mirrored here from tokens.css (ink-500, ink-100). */
-const INK_500 = '#63747a';
-const INK_100 = '#eaeef0';
 
 interface TrendView {
   readonly key: Trend['key'];
@@ -66,6 +65,7 @@ interface TrendView {
   `],
 })
 export class PerioProgressionComponent {
+  private readonly chartColors = inject(ChartColors);
   readonly charts = input.required<readonly PerioChartListItem[]>();
 
   private readonly translate = inject(TranslateService);
@@ -91,6 +91,7 @@ export class PerioProgressionComponent {
     const points = this.points();
     const categories = points.map((p) => this.date(p.date));
     this.lang();
+    const c = this.chartColors.palette();
     return trendsOf(points).map((trend) => ({
       key: trend.key,
       options: describedChart(this.translate.instant(`PERIO.PROGRESSION.${trend.key}_TITLE`), {
@@ -105,13 +106,13 @@ export class PerioProgressionComponent {
         dataLabels: { enabled: false },
         xaxis: {
           categories, axisBorder: { show: false }, axisTicks: { show: false },
-          labels: { style: { colors: INK_500, fontSize: '11px', fontWeight: 600 }, rotate: -30, hideOverlappingLabels: true },
+          labels: { style: { colors: c.muted, fontSize: '11px', fontWeight: 600 }, rotate: -30, hideOverlappingLabels: true },
         },
         yaxis: {
           min: 0, forceNiceScale: true,
-          labels: { style: { colors: INK_500, fontSize: '11px', fontWeight: 600 }, formatter: (v: number) => `${Math.round(v * 10) / 10}${trend.unit === '%' ? '%' : ''}` },
+          labels: { style: { colors: c.muted, fontSize: '11px', fontWeight: 600 }, formatter: (v: number) => `${Math.round(v * 10) / 10}${trend.unit === '%' ? '%' : ''}` },
         },
-        grid: { borderColor: INK_100, strokeDashArray: 4, padding: { left: 8, right: 8, top: 0 }, xaxis: { lines: { show: false } } },
+        grid: { borderColor: c.grid, strokeDashArray: 4, padding: { left: 8, right: 8, top: 0 }, xaxis: { lines: { show: false } } },
         tooltip: { theme: 'light', y: { formatter: (v: number) => (v == null ? '—' : `${v}${trend.unit === '%' ? '%' : ' mm'}`) } },
         legend: { show: trend.series.length > 1, position: 'bottom', fontSize: '12px', markers: { size: 6 } },
       } as ApexOptions),

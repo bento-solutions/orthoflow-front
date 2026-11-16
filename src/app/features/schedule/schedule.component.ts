@@ -357,7 +357,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       background: var(--surface);
       border-radius: 20px;
       border: 1px solid var(--border);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      box-shadow: var(--shadow-lg);
       overflow: hidden;
       position: relative;
     }
@@ -401,7 +401,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .view-switcher button.active {
       background: var(--surface);
       color: var(--action-text);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      box-shadow: var(--shadow-sm);
     }
 
     .header-right {
@@ -611,7 +611,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       border-inline-start: 4px solid var(--action);
       border-radius: 8px;
       padding: 0.5rem 1rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      box-shadow: var(--shadow-md);
       display: flex;
       gap: 1rem;
       z-index: 1;
@@ -699,7 +699,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.4);
+      background: var(--overlay);
       backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
@@ -713,7 +713,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       max-width: 500px;
       border-radius: 20px;
       padding: 2rem;
-      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      box-shadow: var(--shadow-xl);
     }
 
     .modal-header {

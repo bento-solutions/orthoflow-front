@@ -168,13 +168,13 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
   `,
   styles: [`
     .summary-backdrop {
-      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 2100;
+      position: fixed; inset: 0; background: var(--overlay); z-index: 2100;
       display: flex; align-items: center; justify-content: center; padding: 1rem;
     }
     .summary-panel {
       background: var(--surface); border-radius: 16px; width: 100%; max-width: 40rem;
       max-height: 88vh; display: flex; flex-direction: column;
-      box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.35); color: rgb(var(--ink-900));
+      box-shadow: var(--shadow-xl); color: rgb(var(--ink-900));
     }
     .summary-header {
       display: flex; align-items: flex-start; justify-content: space-between;

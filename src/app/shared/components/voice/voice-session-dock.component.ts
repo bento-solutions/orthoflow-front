@@ -61,7 +61,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
       display: flex; align-items: center; gap: .5rem;
       padding: .5rem; border-radius: 18px;
       background: var(--surface-inverse); color: var(--text-inverse);
-      box-shadow: 0 16px 40px -12px rgba(15, 23, 42, .5);
+      box-shadow: var(--shadow-lg);
     }
 
     .dock-mic {
@@ -69,7 +69,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
       width: 3.25rem; height: 3.25rem; border-radius: 50%; border: none; flex-shrink: 0; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       background: rgb(var(--critical-600)); color: rgb(var(--on-inverse));
-      box-shadow: 0 0 0 calc(var(--level) * 12px) rgba(248, 113, 113, .45);
+      box-shadow: 0 0 0 calc(var(--level) * 12px) rgb(var(--critical-400) / .45);
       transition: box-shadow 80ms linear, background .15s;
     }
     .dock-mic.off { background: rgb(var(--ink-600)); box-shadow: none; }

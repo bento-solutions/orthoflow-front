@@ -42,6 +42,11 @@ describe('one design language', () => {
     expect(offending(/hour12:\s*true/)).toEqual([]);
   });
 
+  it('lets the tokens do dark mode: no Tailwind dark: variants (UI V2 audit M3)', () => {
+    // The tokens already re-theme every colour; a dark: variant on top inverts it a second time.
+    expect(offending(/(^|[\s"'`])dark:[a-z]/)).toEqual([]);
+  });
+
   it('draws icons with app-icon only', () => {
     expect(offending(/class="[^"]*\bmaterial-icons\b/)).toEqual([]);
   });
@@ -49,6 +54,15 @@ describe('one design language', () => {
   it('never sets text under 12 px', () => {
     const small = /font-size:\s*(0?\.(?:[0-6]\d*|7[0-4]\d*)rem|(?:[0-9]|1[01])(?:\.\d+)?px)\b|text-\[(?:[0-9]|1[01])px\]/;
     expect(offending(small, path => /svg-data|generated/.test(path))).toEqual([]);
+  });
+
+  it('takes shadows and overlays from the tokens (UI V2 audit M7)', () => {
+    // Elevation is --shadow-*; a ring (0 0 0 Npx) is an outline and may take a token colour.
+    const literalShadow = /box-shadow:\s*(?!var\(--shadow|none)(?![^;]*\b0 0 0 )[^;]*rgba?\(\s*\d/;
+    // The photo lightbox stays black behind the picture on purpose.
+    const literalOverlay = /background(-color)?:\s*rgba?\(\s*(0[ ,]+0[ ,]+0|15[ ,]+23[ ,]+42)/;
+    expect(offending(literalShadow)).toEqual([]);
+    expect(offending(literalOverlay, path => /patient-photos|scan-viewer/.test(path))).toEqual([]);
   });
 
   it('only reads custom properties that are defined (UI V2 audit H2)', () => {

@@ -54,7 +54,7 @@ const millimetres = (value: number | null): string => (value === null || Number.
     :host { display: block; }
     p, h3 { margin: 0; }
     .sum-card { border: 1px solid var(--perio-border); border-radius: 8px; background: rgb(var(--on-inverse)); color: var(--perio-fg);
-                box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.1); }
+                box-shadow: var(--shadow-xs); }
     header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 24px 24px 16px; }
     .title { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.025em; color: var(--perio-fg); }
     .description { margin-top: 4px; font-size: 14px; line-height: 20px; color: var(--perio-muted-fg); }

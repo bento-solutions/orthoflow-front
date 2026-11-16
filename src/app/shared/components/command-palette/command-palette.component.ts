@@ -91,7 +91,7 @@ import { DialogDirective } from '../../ui/dialog.directive';
     .palette-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.5);
+      background: var(--overlay);
       z-index: 3000;
       display: flex;
       align-items: flex-start;
@@ -104,7 +104,7 @@ import { DialogDirective } from '../../ui/dialog.directive';
       border-radius: 16px;
       width: 100%;
       max-width: 34rem;
-      box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.35);
+      box-shadow: var(--shadow-xl);
       overflow: hidden;
       animation: panel-in 0.15s ease-out;
       display: flex;

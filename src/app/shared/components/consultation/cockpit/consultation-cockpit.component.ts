@@ -128,7 +128,7 @@ import { CockpitStageComponent } from './cockpit-stage.component';
       .ck-now-action[data-kind='unsure'] { color: rgb(var(--caution-800)); }
       .ck-now-action app-icon.mi { font-size: 1.125rem; }
     }
-    .ck-sheet { position: fixed; inset: 0; z-index: 50; background: rgb(0 0 0 / .4); display: flex; align-items: flex-end; }
+    .ck-sheet { position: fixed; inset: 0; z-index: 50; background: var(--overlay); display: flex; align-items: flex-end; }
     .ck-sheet-body { position: relative; width: 100%; height: 80dvh; display: flex; flex-direction: column; gap: .5rem; padding: 2.75rem .5rem calc(.5rem + env(safe-area-inset-bottom, 0px)); background: var(--app-bg); border-radius: 1rem 1rem 0 0; }
     .ck-sheet-close { position: absolute; top: .375rem; inset-inline-end: .375rem; width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border-radius: .5rem; }
   `],

@@ -127,15 +127,14 @@
   font-size: 1.125rem;
 }
 
-/* The drawing is black on white in every theme: its lines and patterns are made for paper,
-   and they mean what the printed chart means. */
+/* The drawing is black on paper in every theme: its lines and patterns are made for print, and
+   they mean what the printed chart means. The paper is softer in the dark theme (--chart-paper). */
 .svg-container {
-  background: rgb(var(--on-inverse));
+  background: var(--chart-paper);
   border-radius: 10px;
   width: 100%;
   max-width: 320px;
   margin: 0 auto;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.02));
   overflow: hidden;
 }
 
@@ -225,7 +224,7 @@
   border-color: rgb(var(--petrol-600));
   background: rgb(var(--petrol-50));
   color: rgb(var(--petrol-700));
-  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .status-dot {
@@ -338,7 +337,7 @@
   outline: none;
   border-color: rgb(var(--petrol-600));
   background: var(--surface);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 0 0 3px rgb(var(--petrol-500) / 0.15);
 }
 
 /* Report Section */
@@ -354,7 +353,7 @@
 .report-container.open {
   background: var(--surface);
   border-color: rgb(var(--ink-200));
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+  box-shadow: var(--shadow-lg);
 }
 
 .report-toggle {
@@ -437,7 +436,7 @@
   border-color: rgb(var(--petrol-600));
   background: var(--surface);
   transform: translateX(4px);
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  box-shadow: var(--shadow-md);
 }
 
 .item-header {

@@ -156,7 +156,7 @@ interface ToothView {
     .row-label { width: 112px; flex-shrink: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.025em; color: var(--perio-muted-fg); }
     .track { position: relative; }
     svg { display: block; vertical-align: middle; }
-    .cells-pill-filled { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)); }
+    .cells-pill-filled { filter: drop-shadow(0 1px 2px rgb(var(--ink-950) / 0.1)); }
     .perio-cell { cursor: pointer; transition: transform .14s ease-out; transform-box: fill-box; transform-origin: center; }
     .perio-cell-bg { transition: fill .14s ease-out, stroke .14s ease-out, opacity .14s ease-out; }
     .perio-cell:hover { transform: scale(1.08); }
@@ -186,7 +186,7 @@ export class PerioRowComponent {
   private readonly tooltip = inject(PerioTooltipService, { optional: true });
 
   protected readonly p = PERIO;
-  protected readonly shadow = 'drop-shadow(0 1px 3px rgba(0,0,0,0.1))';
+  protected readonly shadow = 'drop-shadow(0 1px 3px rgb(var(--ink-950) / 0.1))';
   protected readonly labelKey = computed(() => modeKey(this.kind()));
   protected readonly width = computed(() => archWidth(this.arch()));
   /** Where the gap between the two halves of the arch starts: right after the eighth tooth. */

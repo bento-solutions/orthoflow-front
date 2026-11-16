@@ -567,7 +567,7 @@ interface ToothGroup {
     .vs-legend span { display: inline-flex; align-items: center; gap: .25rem; }
     .swatch { display: inline-block; width: .75rem; height: .75rem; border-radius: 3px; border: 2px solid; }
     .swatch.staged { border-color: var(--voice-staged); }
-    .swatch.focus { border-color: var(--voice-focus); box-shadow: 0 0 3px rgba(14, 116, 144, .9); }
+    .swatch.focus { border-color: var(--voice-focus); box-shadow: var(--shadow-md); }
     .vs-hint { margin: .25rem 0 0; font-size: .8125rem; color: rgb(var(--ink-500)); line-height: 1.4; }
     .vs-chart-placeholder { height: clamp(22rem, 58vh, 40rem); border-radius: .75rem; background: var(--surface-hover); }
     .vs-empty { margin: .5rem 0 0; font-size: .875rem; color: rgb(var(--ink-600)); }
@@ -584,7 +584,7 @@ interface ToothGroup {
       background: var(--surface)eb; color: rgb(var(--ink-900)); font-weight: 800; font-size: 1rem; cursor: pointer;
       font-variant-numeric: tabular-nums; flex-shrink: 0;
     }
-    .vs-tooth.focus .vs-fdi { border-color: var(--voice-focus); background: rgb(var(--petrol-50)); box-shadow: 0 0 0 3px rgba(14, 116, 144, .18); }
+    .vs-tooth.focus .vs-fdi { border-color: var(--voice-focus); background: rgb(var(--petrol-50)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voice-focus) calc(.18 * 100%), transparent); }
     .vs-entries { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .25rem; }
     .vs-entry { display: flex; align-items: flex-start; gap: .25rem; }
     .vs-entry-body { flex: 1; min-width: 0; padding-top: .25rem; }

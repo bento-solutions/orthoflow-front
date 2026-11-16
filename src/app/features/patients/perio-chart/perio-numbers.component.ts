@@ -94,7 +94,7 @@ const POPOVER_WIDTH = 224;
     .i-missing { color: rgb(var(--critical-700)); } .i-implant { color: rgb(var(--petrol-700)); } .i-pontic { color: rgb(var(--caution-700)); }
     .popover { position: fixed; z-index: 50; width: 224px; padding: 4px; border: 1px solid var(--perio-border); border-radius: 6px;
                background: rgb(var(--on-inverse)); color: var(--perio-fg); font-size: 14px; line-height: 20px;
-               box-shadow: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1); }
+               box-shadow: var(--shadow-md); }
     .option { display: flex; width: 100%; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 6px; background: transparent;
               color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background-color .15s; }
     .option:hover, .option:focus-visible { background: var(--perio-muted); outline: none; }

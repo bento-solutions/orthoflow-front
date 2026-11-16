@@ -218,6 +218,13 @@
   --anat-plaque:         #ede19a;
   --anat-plaque-edge:    #b5a64f;
 
+  /* What is behind a dialog or a sheet: the page, dimmed. Fixed in both themes. */
+  --overlay: rgb(13 20 23 / 0.5);
+
+  /* The paper the 2D dental chart is drawn on: its lines are black, made for print. In the dark
+     theme the paper is a soft grey rather than white, so it does not glare (UI V2 audit M1). */
+  --chart-paper: rgb(255 255 255);
+
   /* The 3D scan viewer's stage, dark in both themes like a radiograph light box. */
   --scan-bg:   #10181b;
   --scan-bg-2: #26343a;
@@ -387,6 +394,8 @@
   --critical-200: 96 38 40;
   --critical-700: 250 170 170;
   --critical-800: 253 200 200;
+
+  --chart-paper: rgb(198 208 212);
 
   /* A hover or pressed state is lighter than the button, not darker. */
   --action-hover:  rgb(var(--petrol-500));

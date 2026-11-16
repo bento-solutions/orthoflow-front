@@ -1,3 +1,4 @@
+import { ChartColors } from '../../../core/utils/chart-colors';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { NgApexchartsModule, ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexGrid, ApexLegend, ApexPlotOptions, ApexStroke, ApexTooltip, ApexXAxis, ApexYAxis } from 'ng-apexcharts';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -15,11 +16,6 @@ import { describedChart } from '../../../core/utils/chart-summary';
 
 /* ApexCharts is configured in JavaScript and cannot read CSS custom properties, so the
    series colours are mirrored here (petrol-500, positive-500, caution-500). */
-const PRODUCTION = '#2f8fa2';
-const COLLECTIONS = '#1a9a5c';
-const EXPENSES = '#cf7008';
-const INK_500 = '#63747a';
-const INK_100 = '#eaeef0';
 
 export interface TrendChart {
   series: ApexAxisChartSeries;
@@ -118,6 +114,7 @@ export function equation(d: FinanceDashboard): EquationLine[] {
   `],
 })
 export class FinanceDashboardComponent {
+  private readonly chartColors = inject(ChartColors);
   private readonly api = inject(FinanceApi);
   private readonly language = inject(LanguageService);
   private readonly profile = inject(PracticeProfileService);
@@ -139,6 +136,7 @@ export class FinanceDashboardComponent {
     const d = this.data.data();
     const lang = this.language.currentLang();
     const currency = this.profile.currency();
+    const c = this.chartColors.palette();
     const points = d?.trend ?? [];
     const month = (key: string) => new Intl.DateTimeFormat(lang, { month: 'short', year: '2-digit' }).format(new Date(`${key.slice(0, 7)}-01T00:00:00`));
     return describedChart(this.translate.instant('FIN.DASH.TREND'), {
@@ -148,15 +146,15 @@ export class FinanceDashboardComponent {
         { name: this.translate.instant('FIN.DASH.EXPENSES'), data: points.map(p => p.expenses) },
       ],
       chart: { type: 'bar', height: 280, toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif', parentHeightOffset: 0, animations: { enabled: false } },
-      colors: [PRODUCTION, COLLECTIONS, EXPENSES],
+      colors: [c.action, c.positive, c.caution],
       plotOptions: { bar: { columnWidth: '60%', borderRadius: 3 } },
       dataLabels: { enabled: false },
       stroke: { show: true, width: 2, colors: ['transparent'] },
-      xaxis: { categories: points.map(p => month(p.month)), axisBorder: { show: false }, axisTicks: { show: false }, labels: { style: { colors: INK_500, fontSize: '11px', fontWeight: 600 } } },
-      yaxis: { labels: { style: { colors: INK_500, fontSize: '11px', fontWeight: 600 }, formatter: (v: number) => formatMoney(v, currency, lang).replace(/[.,]00(?=\D*$)/, '') } },
-      grid: { borderColor: INK_100, strokeDashArray: 4, padding: { left: 8, right: 8, top: 0 }, xaxis: { lines: { show: false } } },
+      xaxis: { categories: points.map(p => month(p.month)), axisBorder: { show: false }, axisTicks: { show: false }, labels: { style: { colors: c.muted, fontSize: '11px', fontWeight: 600 } } },
+      yaxis: { labels: { style: { colors: c.muted, fontSize: '11px', fontWeight: 600 }, formatter: (v: number) => formatMoney(v, currency, lang).replace(/[.,]00(?=\D*$)/, '') } },
+      grid: { borderColor: c.grid, strokeDashArray: 4, padding: { left: 8, right: 8, top: 0 }, xaxis: { lines: { show: false } } },
       tooltip: { theme: 'light', y: { formatter: (v: number) => formatMoney(v, currency, lang) } },
-      legend: { position: 'top', horizontalAlign: 'left', fontSize: '12px', labels: { colors: INK_500 } },
+      legend: { position: 'top', horizontalAlign: 'left', fontSize: '12px', labels: { colors: c.muted } },
     });
   });
 

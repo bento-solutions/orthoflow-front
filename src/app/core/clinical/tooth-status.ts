@@ -176,10 +176,23 @@ export const TREATMENT_PLAN_INK = {
   PLANNED: `rgb(${CAUTION_500})`,
 } as const;
 
+/**
+ * A colour defined in tokens.css, read once the stylesheet is in, as the 2D drawing and the WebGL
+ * engine need a plain value. tokens.css is the one place it is set (UI V2 audit M7); the fallback
+ * is the same value, for tests and for a page with no stylesheet.
+ */
+function tokenValue(name: string, fallback: string): string {
+  try {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 /** Dictated, not yet saved. Amber reads as "pending" beside every status family. */
-export const VOICE_STAGED_INK = '#d97706';
+export const VOICE_STAGED_INK = tokenValue('--voice-staged', '#d97706');
 /** The tooth the last voice command was about. */
-export const VOICE_FOCUS_INK = '#0e7490';
+export const VOICE_FOCUS_INK = tokenValue('--voice-focus', '#0e7490');
 
 /**
  * Planned work is drawn *over* whatever the tooth already is, never instead

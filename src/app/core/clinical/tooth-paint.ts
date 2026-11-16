@@ -402,7 +402,14 @@ export function rgbTriplet(css: string): [number, number, number] {
 }
 
 /** A suspicion is violet: no status family uses it, and it reads as "not yet" beside red, petrol and amber. */
-export const SUSPECTED_INK = '#7c3aed';
+/** The 'suspected' violet, set in tokens.css (--suspected-dot); a plain value for the drawings. */
+export const SUSPECTED_INK = (() => {
+  try {
+    return getComputedStyle(document.documentElement).getPropertyValue('--suspected-dot').trim() || '#7c3aed';
+  } catch {
+    return '#7c3aed';
+  }
+})();
 
 export const ZONE_COLOUR: Readonly<Record<ZoneFamily, readonly [number, number, number]>> = {
   existing: rgbTriplet(FAMILY_PAINT.existing.solid),

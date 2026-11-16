@@ -122,7 +122,7 @@ const ERROR_MS = 4000;
     p { margin: 0; }
     .error-wrap { margin-bottom: 12px; display: flex; justify-content: center; }
     .error { background: hsl(0 84.2% 60.2%); color: hsl(0 0% 98%); font-size: 12px; line-height: 16px; font-weight: 600; padding: 4px 12px;
-             border-radius: 6px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1); }
+             border-radius: 6px; box-shadow: var(--shadow-lg); }
     .tip { margin-bottom: 8px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: var(--perio-muted-fg); }
     .tip p { line-height: 1.375; }
     .tip app-perio-icon { flex-shrink: 0; }
@@ -135,7 +135,7 @@ const ERROR_MS = 4000;
     .tooltip { position: fixed; z-index: 60; transform: translate(-50%, -100%); min-width: 160px; box-sizing: content-box; pointer-events: none;
                padding: 8px 12px; border: 1px solid rgba(228, 228, 231, 0.6); border-radius: 8px; background: rgba(255, 255, 255, 0.95);
                backdrop-filter: blur(4px); font-size: 12px; line-height: 1.625; color: var(--perio-fg); display: flex; flex-direction: column; gap: 4px;
-               box-shadow: 0 0 0 1px rgba(228, 228, 231, 0.05), 0 8px 16px -4px rgb(0 0 0 / .12), 0 4px 6px -2px rgb(0 0 0 / .08); }
+               box-shadow: var(--shadow-md); }
     .line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
     .strong { font-weight: 600; } .muted { color: var(--perio-muted-fg); }
     .tooth-no { font-size: 12px; line-height: 16px; text-transform: uppercase; letter-spacing: 0.025em; color: var(--perio-muted-fg); }

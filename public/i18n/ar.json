@@ -299,7 +299,9 @@
           "TREATMENT_PLAN": "خطة العلاج"
         },
         "TEETH": "الأسنان: {{teeth}}",
-        "PROGRESS": "التقدم ({{value}}%)"
+        "PROGRESS": "التقدم ({{value}}%)",
+        "HISTORY_DELETE_CONFIRM": "حذف «{{label}}» من السوابق الطبية؟ لا يمكن التراجع عن ذلك.",
+        "NOTE_DELETE_CONFIRM": "حذف هذه الملاحظة؟ «{{excerpt}}» لا يمكن التراجع عن ذلك."
       },
       "REPORT": {
         "TITLE": "التقرير الطبي",
@@ -3846,7 +3848,8 @@
     "MEASURE_MM_PLACEHOLDER": "مثال: 3",
     "MEASURE_GRADE": "الدرجة",
     "MEASURE_NONE": "غير محدد",
-    "GRADE": "درجة"
+    "GRADE": "درجة",
+    "REMOVE_CONFIRM": "إزالة «{{what}}» من السن {{fdi}}؟ ستُحذف من المخطط."
   },
   "GUMS": {
     "TAB": "اللثة",

@@ -135,7 +135,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                 [ngModel]="catalogSearchValue"
                 (ngModelChange)="onCatalogSearchChange($event)"
                 [placeholder]="'STOCK.UI.SEARCH_CATALOG' | translate"
-                class="w-full ps-10 pe-4 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition"
+                class="w-full ps-10 pe-4 py-2 bg-surface text-ink-900 border border-ink-200 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition"
               />
             </div>
 

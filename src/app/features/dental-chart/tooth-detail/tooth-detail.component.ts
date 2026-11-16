@@ -1,3 +1,4 @@
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input, model, output, signal, viewChild } from '@angular/core';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -278,6 +279,7 @@ export class ToothDetailComponent {
   private readonly records = inject(ClinicalRecordService);
   private readonly charts = inject(DentalChartService);
   private readonly toast = inject(ToastService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly translate = inject(TranslateService);
   private readonly announcer = inject(AnnouncerService);
   private readonly what = viewChild<ElementRef<HTMLSelectElement>>('what');
@@ -426,7 +428,14 @@ export class ToothDetailComponent {
     });
   }
 
-  protected setStatus(finding: ToothFinding, status: 'RESOLVED' | 'RETRACTED'): void {
+  protected async setStatus(finding: ToothFinding, status: 'RESOLVED' | 'RETRACTED'): Promise<void> {
+    // Remove takes the finding off the record and sits right under Treated: it asks first (P0-4).
+    if (status === 'RETRACTED') {
+      const confirmed = await this.confirmDialog.confirm(
+        this.translate.instant('TOOTH_DETAIL.REMOVE_CONFIRM', { what: this.label(finding.findingCode), fdi: this.fdi() }),
+        { danger: true, confirmLabel: this.translate.instant('TOOTH_DETAIL.REMOVE') });
+      if (!confirmed) return;
+    }
     this.records.changeFindingStatus(this.patientId(), finding.id, status).subscribe({
       next: () => this.afterChange(this.label(finding.findingCode), false),
       error: (err) => this.fail(err),

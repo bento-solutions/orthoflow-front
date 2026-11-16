@@ -30,9 +30,11 @@ import { NavCounts } from '../../core/services/nav-counts.service';
   imports: [TranslateModule, IconComponent, NotificationBellComponent, BreadcrumbsComponent, RouterLink, CanDirective],
   template: `
     <header
-      class="z-20 flex min-h-16 flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-ink-100 bg-surface/85 px-4 py-2 backdrop-blur-md md:sticky md:top-0 md:h-16 md:flex-nowrap md:px-6 md:py-0"
+      class="z-20 flex h-16 flex-nowrap items-center justify-between gap-x-3 border-b border-ink-100 bg-surface/85 px-4 backdrop-blur-md md:sticky md:top-0 md:gap-x-4 md:px-6"
     >
-      <div class="flex min-w-0 items-center gap-2">
+      <!-- One row at every width: the trail truncates, the search folds to an icon under 1280 px
+           and the date goes under 1024 px, rather than the bar wrapping and clipping (P0-6). -->
+      <div class="flex min-w-0 flex-1 items-center gap-2">
         <button
           type="button"
           (click)="menuToggle.emit()"
@@ -47,18 +49,18 @@ import { NavCounts } from '../../core/services/nav-counts.service';
         <div class="min-w-0">
           <!-- Where this screen is. Screens carry no title of their own: this trail is it. -->
           <app-breadcrumbs />
-          <p class="truncate text-xs font-medium text-ink-500">{{ today() }}</p>
+          <p class="hidden truncate text-xs font-medium text-ink-500 lg:block">{{ today() }}</p>
         </div>
       </div>
 
-      <div class="flex flex-wrap items-center gap-1 sm:gap-2">
+      <div class="flex shrink-0 flex-nowrap items-center gap-1 sm:gap-2">
         <!-- Search is the command palette's affordance. Showing the shortcut
              on the control is how the shortcut gets learned. -->
         <button
           type="button"
           (click)="commandRegistry.open()"
           data-tour="search"
-          class="hidden items-center gap-2 rounded-md border border-ink-200 bg-app-bg px-2.5 py-1.5 text-sm text-ink-500 transition-colors duration-1 ease-out hover:border-ink-300 hover:text-ink-900 lg:flex"
+          class="hidden items-center gap-2 rounded-md border border-ink-200 bg-app-bg px-2.5 py-1.5 text-sm text-ink-500 transition-colors duration-1 ease-out hover:border-ink-300 hover:text-ink-900 xl:flex"
           aria-keyshortcuts="Meta+K Control+K"
         >
           <app-icon name="search" [size]="15" />
@@ -69,16 +71,16 @@ import { NavCounts } from '../../core/services/nav-counts.service';
         <button
           type="button"
           (click)="commandRegistry.open()"
-          class="btn btn-ghost btn-icon lg:hidden"
+          class="btn btn-ghost btn-icon xl:hidden"
           [attr.aria-label]="'COMMON.OPEN_SEARCH' | translate"
         >
           <app-icon name="search" [size]="18" />
         </button>
 
-        <button type="button" class="btn btn-ghost btn-icon" data-tour="theme" (click)="theme.toggle()" [attr.aria-label]="'COMMON.TOGGLE_THEME' | translate" [title]="'COMMON.TOGGLE_THEME' | translate">
+        <button type="button" class="btn btn-ghost btn-icon hidden sm:inline-flex" data-tour="theme" (click)="theme.toggle()" [attr.aria-label]="'COMMON.TOGGLE_THEME' | translate" [title]="'COMMON.TOGGLE_THEME' | translate">
           <app-icon [name]="theme.effective() === 'dark' ? 'sun' : 'moon'" [size]="18" />
         </button>
-        <button type="button" class="btn btn-ghost btn-icon" (click)="help.toggle()" [attr.aria-label]="'COMMON.HELP' | translate" [title]="'COMMON.HELP' | translate"
+        <button type="button" class="btn btn-ghost btn-icon hidden sm:inline-flex" (click)="help.toggle()" [attr.aria-label]="'COMMON.HELP' | translate" [title]="'COMMON.HELP' | translate"
           data-tour="help">
           <app-icon name="help-circle" [size]="18" />
         </button>

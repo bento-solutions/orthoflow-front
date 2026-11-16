@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToothFinding } from '../../../core/models/clinical-record.model';
 import { ClinicalRecordService } from '../../../core/services/clinical-record.service';
 import { DentalChartService } from '../../../core/services/dental-chart.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { expectNoA11yViolations } from '../../../testing/axe';
 import { screenMocks } from '../../../testing/screen-mocks';
 import { ToothDetailComponent } from './tooth-detail.component';
@@ -19,13 +20,14 @@ const finding = (over: Partial<ToothFinding>): ToothFinding => ({
 describe('ToothDetailComponent', () => {
   let records: { history: ReturnType<typeof signal<ToothFinding[]>>; loadHistory: ReturnType<typeof vi.fn>; addFinding: ReturnType<typeof vi.fn>; changeFindingStatus: ReturnType<typeof vi.fn> };
   let charts: { reloadChart: ReturnType<typeof vi.fn> };
+  let confirm: { confirm: ReturnType<typeof vi.fn> };
   let mocks: ReturnType<typeof screenMocks>;
 
   const mount = async (fdi: string, findings: ToothFinding[]) => {
     mocks = screenMocks();
     TestBed.configureTestingModule({
       imports: [ToothDetailComponent, TranslateModule.forRoot()],
-      providers: [{ provide: ClinicalRecordService, useValue: records }, { provide: DentalChartService, useValue: charts }, ...mocks.providers],
+      providers: [{ provide: ClinicalRecordService, useValue: records }, { provide: DentalChartService, useValue: charts }, { provide: ConfirmDialogService, useValue: confirm }, ...mocks.providers],
     });
     const fixture = TestBed.createComponent(ToothDetailComponent);
     fixture.componentRef.setInput('patientId', 'p1');
@@ -58,6 +60,7 @@ describe('ToothDetailComponent', () => {
       changeFindingStatus: vi.fn(() => of({})),
     };
     charts = { reloadChart: vi.fn() };
+    confirm = { confirm: vi.fn(async () => true) };
   });
 
   it('shows every state the tooth carries, each with its surface and where the work was done', async () => {
@@ -173,8 +176,20 @@ describe('ToothDetailComponent', () => {
 
     button('TOOTH_DETAIL.REMOVE').click();
     await flush(fixture);
+    expect(confirm.confirm).toHaveBeenCalledTimes(1);
     expect(records.changeFindingStatus).toHaveBeenCalledWith('p1', caries.id, 'RETRACTED');
     expect(charts.reloadChart).toHaveBeenCalledTimes(2);
+  });
+
+  it('asks before removing a finding, and keeps it when the doctor cancels', async () => {
+    const caries = finding({ findingCode: 'caries' });
+    confirm.confirm.mockResolvedValue(false);
+    const fixture = await mount('16', [caries]);
+
+    button('TOOTH_DETAIL.REMOVE').click();
+    await flush(fixture);
+    expect(confirm.confirm).toHaveBeenCalledWith('TOOTH_DETAIL.REMOVE_CONFIRM', expect.objectContaining({ danger: true }));
+    expect(records.changeFindingStatus).not.toHaveBeenCalled();
   });
 
   it('lists what was treated on this tooth', async () => {

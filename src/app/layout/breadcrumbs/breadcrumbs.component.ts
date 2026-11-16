@@ -36,9 +36,10 @@ export function routeCrumbs(root: ActivatedRouteSnapshot): Crumb[] {
   imports: [RouterLink, TranslateModule, IconComponent],
   template: `
     <nav [attr.aria-label]="'NAV.BREADCRUMB' | translate" class="min-w-0">
-      <ol class="flex min-w-0 flex-wrap items-center gap-x-1.5 text-sm text-ink-500">
+      <ol class="flex min-w-0 flex-nowrap items-center gap-x-1.5 text-sm text-ink-500">
         @for (crumb of trail(); track crumb.url; let last = $last; let first = $first) {
-          <li class="flex min-w-0 items-center gap-x-1.5">
+          <!-- Earlier crumbs give way first; the last one, where you are, keeps the room. -->
+          <li class="flex min-w-0 items-center gap-x-1.5" [class.shrink-[3]]="!last">
             @if (!first) {
               <app-icon name="chevron-right" [size]="14" class="shrink-0 text-ink-300 rtl:rotate-180" aria-hidden="true" />
             }

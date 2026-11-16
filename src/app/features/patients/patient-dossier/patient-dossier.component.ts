@@ -1,4 +1,5 @@
 import { Component, effect, inject, OnInit, OnDestroy, signal, computed, ElementRef } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subject, switchMap, filter, map, takeUntil } from 'rxjs';
@@ -97,7 +98,7 @@ import { findingLabel } from '../../../core/clinical/finding-options';
         <div class="header-top">
           <div class="patient-title">
             <h1>{{ patient.firstName }} {{ patient.lastName }}</h1>
-            <span class="status-badge active">{{ 'PATIENTS.DOSSIER.STATUS_' + patient.status | translate }}</span>
+            <span class="pill" [class]="'pill ' + statusPillClass(patient.status)">{{ 'PATIENTS.DOSSIER.STATUS_' + patient.status | translate }}</span>
           </div>
           <div class="header-actions no-print">
             <!-- Recording starts here and nowhere else: a session only means
@@ -885,7 +886,7 @@ import { findingLabel } from '../../../core/clinical/finding-options';
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .patient-title .status-badge { flex: none; }
+    .patient-title .pill { flex: none; }
 
     .header-actions {
       display: flex;
@@ -1923,13 +1924,17 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
    * Declared as a field rather than created in ngOnInit: `effect()` requires
    * an injection context, and a field initializer is one.
    */
-  /** The breadcrumb ends on the patient's name; it is read again when a navigation clears it. */
+  /**
+   * The breadcrumb ends on the patient's name, set once per loaded patient and cleared when the
+   * file closes. It does not read the label back: it used to, and re-set the name while a
+   * navigation away was under way, so the next screen was titled with this patient (P0-5).
+   */
   private readonly pageLabel = inject(PageLabelService);
+  private readonly routeId = toSignal(this.route.paramMap.pipe(map(p => p.get('id'))), { initialValue: null });
   private readonly breadcrumbName = effect(() => {
     const patient = this.patientService.currentPatient();
-    this.pageLabel.label();
-    if (patient && String(patient.id) === this.route.snapshot.paramMap.get('id')) {
-      this.pageLabel.set(`${patient.firstName} ${patient.lastName}`);
+    if (patient && String(patient.id) === this.routeId()) {
+      this.pageLabel.set(`${patient.firstName} ${patient.lastName}`, this);
     }
   });
 
@@ -2218,9 +2223,14 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     });
   }
 
-  removeMedicalHistory(entryId: string): void {
+  async removeMedicalHistory(entryId: string): Promise<void> {
     const patient = this.patientService.currentPatient();
     if (!patient) return;
+    const entry = this.clinicalRecordService.medicalHistory().find(e => e.id === entryId);
+    const confirmed = await this.confirmDialog.confirm(
+      this.translate.instant('PATIENTS.DOSSIER.UI.HISTORY_DELETE_CONFIRM', { label: entry?.label ?? '' }),
+      { danger: true, confirmLabel: this.translate.instant('COMMON.DELETE') });
+    if (!confirmed) return;
     this.clinicalRecordService.deleteMedicalHistory(patient.id, entryId).subscribe({
       next: () => this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.ENTRY_REMOVED')),
       error: (err) => this.toast.error(err.error?.detail || err.error?.message || 'Could not remove the entry.')
@@ -2262,9 +2272,15 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     });
   }
 
-  removeNote(noteId: string): void {
+  async removeNote(noteId: string): Promise<void> {
     const patient = this.patientService.currentPatient();
     if (!patient) return;
+    const note = this.clinicalRecordService.notes().find(n => n.id === noteId);
+    const excerpt = (note?.content ?? '').replace(/\s+/g, ' ').trim();
+    const confirmed = await this.confirmDialog.confirm(
+      this.translate.instant('PATIENTS.DOSSIER.UI.NOTE_DELETE_CONFIRM', { excerpt: excerpt.length > 80 ? excerpt.slice(0, 80) + '…' : excerpt }),
+      { danger: true, confirmLabel: this.translate.instant('COMMON.DELETE') });
+    if (!confirmed) return;
     this.clinicalRecordService.deleteNote(patient.id, noteId).subscribe({
       next: () => this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.NOTE_DELETED')),
       error: (err) => this.toast.error(err.error?.detail || err.error?.message || 'Could not delete the note.')
@@ -2329,6 +2345,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.pageLabel.clear(this);
     this.destroy$.next();
     this.destroy$.complete();
     this.tabs.forEach(tab => this.commandRegistry.unregister(`dossier.tab.${tab.id}`));
@@ -2515,6 +2532,16 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
       case 'COMPLETED': return 'status-badge paid';
       case 'CANCELLED': return 'status-badge cancelled';
       default: return 'status-badge';
+    }
+  }
+
+  /** The badge says what the status is: petrol in treatment, amber on hold, green completed (P1-4). */
+  statusPillClass(status: string | null | undefined): string {
+    switch (status) {
+      case 'ACTIVE': return 'pill-active';
+      case 'ON_HOLD': return 'pill-attention';
+      case 'COMPLETED': return 'pill-done';
+      default: return 'pill-idle';
     }
   }
 

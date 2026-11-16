@@ -299,7 +299,9 @@
           "TREATMENT_PLAN": "Treatment plan"
         },
         "TEETH": "Teeth: {{teeth}}",
-        "PROGRESS": "Progress ({{value}}%)"
+        "PROGRESS": "Progress ({{value}}%)",
+        "HISTORY_DELETE_CONFIRM": "Delete “{{label}}” from the medical history? This cannot be undone.",
+        "NOTE_DELETE_CONFIRM": "Delete this note? “{{excerpt}}” This cannot be undone."
       },
       "REPORT": {
         "TITLE": "Medical report",
@@ -3846,7 +3848,8 @@
     "MEASURE_MM_PLACEHOLDER": "e.g. 3",
     "MEASURE_GRADE": "Grade",
     "MEASURE_NONE": "Not stated",
-    "GRADE": "Grade"
+    "GRADE": "Grade",
+    "REMOVE_CONFIRM": "Remove “{{what}}” from tooth {{fdi}}? It leaves the chart."
   },
   "GUMS": {
     "TAB": "Gums",

@@ -84,6 +84,19 @@
 
   p { margin: 0; }
 
+  /* Every native field takes the theme's colours, whatever class it carries. Element specificity
+     only, so any class rule in a component still wins; what a bare field no longer does is fall
+     back to the system's field colour, dark in dark appearance under the app's dark text (P0-1). */
+  input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='submit'], [type='button'], [type='reset'], [type='image'])),
+  select,
+  textarea {
+    background-color: var(--surface);
+    color: var(--text);
+  }
+  :where(input[type='checkbox'], input[type='radio'], input[type='range'], progress) {
+    accent-color: var(--action);
+  }
+
   /* A grid item will not shrink below what is inside it unless told it may: without this, one wide
      table pushes the whole page past the edge of a phone, its own scrollbar never coming into play. */
   :where(.grid) > * { min-width: 0; }

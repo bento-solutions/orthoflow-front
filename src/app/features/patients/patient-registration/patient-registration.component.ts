@@ -314,6 +314,8 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
     .form-group select, 
     .form-group textarea {
       padding: 0.75rem;
+      background: var(--surface);
+      color: var(--text);
       border: 1px solid rgb(var(--ink-300));
       border-radius: 8px;
       font-size: 0.95rem;

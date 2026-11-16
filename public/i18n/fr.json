@@ -299,7 +299,9 @@
           "TREATMENT_PLAN": "Plan de traitement"
         },
         "TEETH": "Dents : {{teeth}}",
-        "PROGRESS": "Avancement ({{value}} %)"
+        "PROGRESS": "Avancement ({{value}} %)",
+        "HISTORY_DELETE_CONFIRM": "Supprimer « {{label}} » des antécédents médicaux ? Cette action est définitive.",
+        "NOTE_DELETE_CONFIRM": "Supprimer cette note ? « {{excerpt}} » Cette action est définitive."
       },
       "REPORT": {
         "TITLE": "Compte rendu médical",
@@ -3846,7 +3848,8 @@
     "MEASURE_MM_PLACEHOLDER": "ex. 3",
     "MEASURE_GRADE": "Grade",
     "MEASURE_NONE": "Non précisé",
-    "GRADE": "Grade"
+    "GRADE": "Grade",
+    "REMOVE_CONFIRM": "Retirer « {{what}} » de la dent {{fdi}} ? Il quittera le schéma."
   },
   "GUMS": {
     "TAB": "Gencives",

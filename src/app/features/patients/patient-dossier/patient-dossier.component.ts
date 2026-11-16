@@ -35,6 +35,9 @@ import { ConsultationCockpitComponent } from '../../../shared/components/consult
 import { ConsultationService } from '../../../core/consultation/consultation.service';
 import { ConsultationApiService } from '../../../core/consultation/consultation-api.service';
 import { ConsultationLogComponent } from '../../../shared/components/consultation/consultation-log.component';
+import { ConsultationMenuComponent } from './consultation-menu.component';
+import { ConsultationReportComponent } from './consultation-report.component';
+import { PatientGalleryComponent } from './patient-gallery.component';
 import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clinical-record.model';
 import { PermissionService } from '../../../core/services/permission.service';
 import { PatientAccountComponent } from '../account/patient-account.component';
@@ -49,7 +52,7 @@ import { findingLabel } from '../../../core/clinical/finding-options';
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [DialogDirective, CommonModule, RouterModule, Dental3dChartComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, ConsultationCockpitComponent, ConsultationLogComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent, PatientFilesComponent, PatientImagingPaneComponent, PatientPhotosComponent, GumStatusComponent, TreatmentLogComponent, TreatmentSummaryComponent],
+  imports: [DialogDirective, CommonModule, RouterModule, Dental3dChartComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, ConsultationCockpitComponent, ConsultationLogComponent, ConsultationMenuComponent, ConsultationReportComponent, PatientGalleryComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent, PatientFilesComponent, PatientImagingPaneComponent, PatientPhotosComponent, GumStatusComponent, TreatmentLogComponent, TreatmentSummaryComponent],
   template: `
     <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive() && !cockpit()"
          [class.has-consultation]="consultation.visible() && !cockpit()" [class.is-cockpit]="cockpit()">
@@ -97,8 +100,9 @@ import { findingLabel } from '../../../core/clinical/finding-options';
             <span class="status-badge active">{{ 'PATIENTS.DOSSIER.STATUS_' + patient.status | translate }}</span>
           </div>
           <div class="header-actions no-print">
-            <!-- Dictation starts here and nowhere else: a session only means
-                 something in the context of one patient's dossier. -->
+            <!-- Recording starts here and nowhere else: a session only means
+                 something in the context of one patient's dossier. While one runs,
+                 its state takes the place of the menu. -->
             @if (voiceSession.isActive()) {
               <button type="button" class="btn btn-recording" (click)="endSession()"
                       [disabled]="voiceSession.busy()">
@@ -110,29 +114,21 @@ import { findingLabel } from '../../../core/clinical/finding-options';
                 <span class="material-icons" aria-hidden="true">fact_check</span>
                 {{ 'VOICE.REVIEWING' | translate }}
               </button>
-            } @else {
-              <button type="button" class="btn btn-record" (click)="startSession()"
-                      [disabled]="voiceStarting()">
-                <span class="material-icons" aria-hidden="true">mic</span>
-                {{ (voiceStarting() ? 'VOICE.STARTING' : 'VOICE.START') | translate }}
+            } @else if (consultation.isOpen() || consultation.intro()) {
+              <button type="button" class="btn btn-record btn-consult live" (click)="activeTab.set('voice')">
+                <span class="material-icons" aria-hidden="true">forum</span>
+                {{ 'CONSULTATION.IN_PROGRESS' | translate }}
               </button>
-            }
-            <!-- Next to the voice session: the same microphone, but it keeps the whole
-                 conversation and proposes what it finds for the doctor to validate. -->
-            @if (consultation.available()) {
-              @if (consultation.isOpen() || consultation.intro()) {
-                <button type="button" class="btn btn-record btn-consult live" (click)="activeTab.set('voice')">
-                  <span class="material-icons" aria-hidden="true">forum</span>
-                  {{ 'CONSULTATION.IN_PROGRESS' | translate }}
-                </button>
-              } @else {
-                <button type="button" class="btn btn-record btn-consult" (click)="startConsultation()"
-                        [disabled]="voiceSession.isActive() || voiceSession.reviewing()"
-                        [title]="'CONSULTATION.BUTTON_HINT' | translate">
-                  <span class="material-icons" aria-hidden="true">forum</span>
-                  {{ 'CONSULTATION.BUTTON' | translate }}
-                </button>
-              }
+            } @else {
+              <!-- One button, two ways to record: dictate findings, or keep the whole conversation. -->
+              <app-consultation-menu
+                [consultationAvailable]="consultation.available()"
+                [introHidden]="consultation.introHidden()"
+                [starting]="voiceStarting() || consultation.starting()"
+                (voice)="startSession()"
+                (consultation)="startConsultation()"
+                (showIntro)="consultation.setIntroHidden(false)"
+              />
             }
             <app-registration-invite [patientId]="patient.id" [name]="patient.firstName + ' ' + patient.lastName" />
             <button type="button" class="btn btn-secondary btn-compact" (click)="onPrint()"
@@ -259,6 +255,9 @@ import { findingLabel } from '../../../core/clinical/finding-options';
                 <app-patient-imaging-pane class="one-view-image" [patientId]="patient.id" (openDocuments)="activeTab.set('documents')" />
               </div>
 
+              <!-- Whatever else the doctor pins under the scans: pictures or 3D files. -->
+              <app-patient-gallery [patientId]="patient.id" />
+
               <div class="overview-grid">
                 <div class="summary-card">
                   <h2>{{ 'PATIENTS.DOSSIER.ACTIVE_TREATMENTS' | translate }}</h2>
@@ -300,6 +299,9 @@ import { findingLabel } from '../../../core/clinical/finding-options';
                   </div>
                 </div>
               </div>
+
+              <!-- The last consultation's medical report, in full; earlier ones a pick away. -->
+              <app-consultation-report [notes]="clinicalRecordService.notes()" (openLog)="openConsultationLog($event)" />
             </div>
           }
           @case ('clinical') {
@@ -835,6 +837,10 @@ import { findingLabel } from '../../../core/clinical/finding-options';
 
     /* Not sticky: the banner scrolls away so the chart below gets the window. */
     .dossier-top { background: var(--surface); border-bottom: 1px solid rgb(var(--ink-200)); }
+    /* As wide as the one-view row below it: into the page's own padding, leaving half a rem. */
+    .dossier-container:not(.is-cockpit) > .dossier-top { margin-inline: -.5rem; }
+    @media (min-width: 768px) { .dossier-container:not(.is-cockpit) > .dossier-top { margin-inline: -1rem; } }
+    @media (min-width: 1024px) { .dossier-container:not(.is-cockpit) > .dossier-top { margin-inline: -1.5rem; } }
     .dossier-header {
       padding: .75rem 1.25rem .75rem;
     }
@@ -904,6 +910,9 @@ import { findingLabel } from '../../../core/clinical/finding-options';
       .header-actions .btn-compact .btn-label { display: none; }
       .header-actions .btn-compact { padding-inline: .5rem; }
     }
+    /* Beside the consultation panel the banner is narrower: icons only there too. */
+    .dossier-container.has-consultation .header-actions .btn-compact .btn-label { display: none; }
+    .dossier-container.has-consultation .header-actions .btn-compact { padding-inline: .5rem; }
 
     .patient-quick-info {
       display: flex;
@@ -1055,7 +1064,26 @@ import { findingLabel } from '../../../core/clinical/finding-options';
     .one-view-chart { min-width: 0; min-height: 0; height: 100%; }
     .one-view-chart .chart-placeholder { height: 100%; }
     .one-view-image { height: 100%; }
-    .dossier-content.is-one-view .overview-grid { margin-top: 1rem; }
+    .dossier-content.is-one-view .overview-grid { margin-top: 1rem; gap: .75rem; }
+    /* Everything under the 3D row lines up with it, edge to edge. */
+    .dossier-content.is-one-view app-patient-gallery,
+    .dossier-content.is-one-view .overview-grid,
+    .dossier-content.is-one-view app-consultation-report { display: block; margin-inline: -.5rem; }
+    .dossier-content.is-one-view .overview-grid { display: grid; }
+    @media (min-width: 768px) {
+      .dossier-content.is-one-view app-patient-gallery,
+      .dossier-content.is-one-view .overview-grid,
+      .dossier-content.is-one-view app-consultation-report { margin-inline: -1rem; }
+    }
+    @media (min-width: 1024px) {
+      .dossier-content.is-one-view app-patient-gallery,
+      .dossier-content.is-one-view .overview-grid,
+      .dossier-content.is-one-view app-consultation-report { margin-inline: -1.5rem; }
+    }
+    /* A short note stays short on the card; the whole of it is in Clinical. */
+    .dossier-content.is-one-view .summary-card .card-content .desc {
+      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line;
+    }
     @media (max-width: 1099px) {
       .one-view-row { grid-template-columns: minmax(0, 1fr); height: auto; }
       .one-view-chart { height: 62vh; }
@@ -2106,8 +2134,10 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   );
 
   // ── Clinical record (findings / notes / allergies / medical history) ──
+  /** The last note, leaving out what a consultation save filed: its report has its own section below. */
   latestNote = computed(() => {
-    const notes = this.clinicalRecordService.notes();
+    const filedBySave = new Set(['CONSULTATION_REPORT', 'CONSULTATION_TRANSCRIPT', 'CHIEF_COMPLAINT', 'TREATMENT_PLAN']);
+    const notes = this.clinicalRecordService.notes().filter(n => !(n.sessionId && filedBySave.has(n.category)));
     if (!notes.length) return null;
     return [...notes].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
   });
@@ -2525,9 +2555,17 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** The header's Consultation button: shows the attestation card, then the tap there starts recording. */
+  /**
+   * The menu's New consultation: shows the attestation card, then the tap there starts
+   * recording. A doctor who asked not to see the card again starts at once, from this tap.
+   */
   startConsultation(): void {
     this.activeTab.set('voice');
+    if (this.consultation.introHidden()) {
+      if (this.voice.needsConsent()) this.voice.grantMicrophoneConsent();
+      void this.consultation.startWithoutIntro();
+      return;
+    }
     this.consultation.openIntro();
   }
 

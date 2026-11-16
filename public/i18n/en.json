@@ -300,6 +300,15 @@
         },
         "TEETH": "Teeth: {{teeth}}",
         "PROGRESS": "Progress ({{value}}%)"
+      },
+      "REPORT": {
+        "TITLE": "Medical report",
+        "PICK": "Consultation of",
+        "LATEST": "latest",
+        "COMPLAINT": "Reason for the visit",
+        "REPORT": "Report",
+        "PLAN": "Treatment plan",
+        "EMPTY": "No medical report yet. It appears here once a consultation or voice session is saved."
       }
     },
     "ADD": "New patient",
@@ -1361,7 +1370,8 @@
       "TOOTH": "tooth {{fdi}}",
       "CONFIRMING": "Confirming…",
       "CONFIRM": "Confirm findings"
-    }
+    },
+    "CONSENT_ONCE": "Shown once on this computer: after this, the microphone starts straight away."
   },
   "CONSULTATION": {
     "TITLE": "Consultation",
@@ -1638,7 +1648,12 @@
     "DOCS_LOAD_FAILED": "The audio could not be loaded.",
     "LOG_AUDIO": "Audio recording",
     "LOG_PLAY_FROM": "Listen from {{time}}",
-    "STATUS_DICTATED_TO_VALIDATE": "Dictated · to validate"
+    "STATUS_DICTATED_TO_VALIDATE": "Dictated · to validate",
+    "MENU_NEW": "New consultation",
+    "MENU_VOICE_HINT": "Dictate findings tooth by tooth; nothing is saved until you review it",
+    "MENU_OFF": "Not turned on for this clinic",
+    "HIDE_INTRO": "Don't show this again: I tell every patient before I start recording",
+    "SHOW_INTRO_AGAIN": "Show the consent card again before each consultation"
   },
   "SET": {
     "TABS": {
@@ -4493,10 +4508,16 @@
     "EXPAND": "Full screen",
     "SHRINK": "Exit full screen",
     "MODEL_HINT": "Drag to turn, scroll to zoom, right-drag to move",
-    "MODEL_FORMATS": "3D Intraoral accepts pictures or 3D files: STL, PLY, OBJ, 3MF, glTF or GLB, up to 100 MB.",
+    "MODEL_FORMATS": "3D Intraoral and Image also take 3D files: STL, PLY, OBJ, 3MF, glTF or GLB, up to 100 MB.",
     "OPEN_MODEL": "Open the 3D scan",
     "WRONG_TYPE_3D": "Only JPEG, PNG, WebP pictures or STL, PLY, OBJ, 3MF, glTF, GLB 3D files can be uploaded.",
-    "MODEL_NEEDS_3D": "3D files (STL, PLY, OBJ, 3MF, glTF) are uploaded with the type 3D Intraoral.",
+    "MODEL_NEEDS_3D": "An X-ray is a picture. Upload 3D files (STL, PLY, OBJ, 3MF, glTF) as 3D Intraoral or Image.",
+    "GALLERY_TITLE": "Images & 3D files",
+    "ADD_ELEMENT": "Add element",
+    "ADD_HINT": "Picture or 3D file",
+    "GALLERY_EMPTY": "Add photos, a wax-up or an appliance here, as pictures or 3D files. They are also listed in Documents as Image.",
+    "GALLERY_EMPTY_READ": "No other images for this patient.",
+    "OPEN_IMAGE": "Open {{name}}",
     "CAT": {
       "XRAY": "X-Ray",
       "INTRAORAL_3D": "3D Intraoral",

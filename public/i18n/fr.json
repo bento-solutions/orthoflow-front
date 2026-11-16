@@ -300,6 +300,15 @@
         },
         "TEETH": "Dents : {{teeth}}",
         "PROGRESS": "Avancement ({{value}} %)"
+      },
+      "REPORT": {
+        "TITLE": "Compte rendu médical",
+        "PICK": "Consultation du",
+        "LATEST": "la plus récente",
+        "COMPLAINT": "Motif de consultation",
+        "REPORT": "Compte rendu",
+        "PLAN": "Plan de traitement",
+        "EMPTY": "Aucun compte rendu pour l'instant. Il s'affiche ici dès qu'une consultation ou une session vocale est enregistrée."
       }
     },
     "ADD": "Nouveau patient",
@@ -1361,7 +1370,8 @@
       "TOOTH": "dent {{fdi}}",
       "CONFIRMING": "Confirmation…",
       "CONFIRM": "Confirmer les constats"
-    }
+    },
+    "CONSENT_ONCE": "Affiché une seule fois sur cet ordinateur : ensuite, le micro démarre directement."
   },
   "CONSULTATION": {
     "TITLE": "Consultation",
@@ -1638,7 +1648,12 @@
     "DOCS_LOAD_FAILED": "L’audio n’a pas pu être chargé.",
     "LOG_AUDIO": "Enregistrement audio",
     "LOG_PLAY_FROM": "Écouter à partir de {{time}}",
-    "STATUS_DICTATED_TO_VALIDATE": "Dicté · à valider"
+    "STATUS_DICTATED_TO_VALIDATE": "Dicté · à valider",
+    "MENU_NEW": "Nouvelle consultation",
+    "MENU_VOICE_HINT": "Dictez les constats dent par dent ; rien n'est enregistré avant votre relecture",
+    "MENU_OFF": "Non activée pour ce cabinet",
+    "HIDE_INTRO": "Ne plus afficher : j'informe chaque patient avant de lancer l'enregistrement",
+    "SHOW_INTRO_AGAIN": "Réafficher la carte de consentement avant chaque consultation"
   },
   "SET": {
     "TABS": {
@@ -4493,10 +4508,16 @@
     "EXPAND": "Plein écran",
     "SHRINK": "Quitter le plein écran",
     "MODEL_HINT": "Glisser pour tourner, molette pour zoomer, clic droit pour déplacer",
-    "MODEL_FORMATS": "Intra-orale 3D accepte des photos ou des fichiers 3D : STL, PLY, OBJ, 3MF, glTF ou GLB, jusqu'à 100 Mo.",
+    "MODEL_FORMATS": "Intra-orale 3D et Image acceptent aussi les fichiers 3D : STL, PLY, OBJ, 3MF, glTF ou GLB, jusqu'à 100 Mo.",
     "OPEN_MODEL": "Ouvrir le scan 3D",
     "WRONG_TYPE_3D": "Seules les photos JPEG, PNG, WebP ou les fichiers 3D STL, PLY, OBJ, 3MF, glTF, GLB peuvent être importés.",
-    "MODEL_NEEDS_3D": "Les fichiers 3D (STL, PLY, OBJ, 3MF, glTF) s'importent avec le type Intra-orale 3D.",
+    "MODEL_NEEDS_3D": "Une radio est une image. Importez les fichiers 3D (STL, PLY, OBJ, 3MF, glTF) en Intra-orale 3D ou en Image.",
+    "GALLERY_TITLE": "Images et fichiers 3D",
+    "ADD_ELEMENT": "Ajouter un élément",
+    "ADD_HINT": "Photo ou fichier 3D",
+    "GALLERY_EMPTY": "Ajoutez ici des photos, un wax-up ou un appareil, en image ou en fichier 3D. Ils figurent aussi dans Documents comme Image.",
+    "GALLERY_EMPTY_READ": "Aucune autre image pour ce patient.",
+    "OPEN_IMAGE": "Ouvrir {{name}}",
     "CAT": {
       "XRAY": "Radio",
       "INTRAORAL_3D": "Intra-orale 3D",

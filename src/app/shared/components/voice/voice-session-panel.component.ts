@@ -122,6 +122,7 @@ interface ToothGroup {
               <span class="material-icons" aria-hidden="true">mic</span>
               {{ (starting() ? 'VOICE.STARTING' : 'VOICE.CONSENT_ACCEPT') | translate }}
             </button>
+            <p class="vs-note">{{ 'VOICE.CONSENT_ONCE' | translate }}</p>
           </div>
         }
 

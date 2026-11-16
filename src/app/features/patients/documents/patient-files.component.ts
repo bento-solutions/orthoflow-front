@@ -15,7 +15,8 @@ import { ScanViewerComponent } from '../patient-dossier/scan-viewer.component';
 /**
  * The patient's uploaded pictures, each with a type: X-ray, 3D intraoral scan or other
  * image. The latest X-ray and intraoral scan are what the overview shows beside the 3D chart.
- * A 3D intraoral scan may also be the model itself: STL, PLY, OBJ, 3MF or glTF.
+ * A 3D intraoral scan or an image may also be a 3D file: STL, PLY, OBJ, 3MF or glTF. Images
+ * are what the overview shows in its gallery under the scans.
  */
 @Component({
   selector: 'app-patient-files',
@@ -40,7 +41,7 @@ import { ScanViewerComponent } from '../patient-dossier/scan-viewer.component';
         }
       </header>
 
-      @if (category() === 'INTRAORAL_3D' && canWrite()) {
+      @if (category() !== 'XRAY' && canWrite()) {
         <p class="mb-2 text-xs text-ink-500">{{ 'PFILES.MODEL_FORMATS' | translate }}</p>
       }
       <div class="mb-3 flex flex-wrap gap-1.5" role="group" [attr.aria-label]="'PFILES.FILTER' | translate">
@@ -115,9 +116,9 @@ export class PatientFilesComponent implements OnDestroy {
   private readonly permissions = inject(PermissionService);
 
   readonly categories = DOCUMENT_CATEGORIES;
-  /** Pictures for every type; for a 3D intraoral scan, its model files too. */
+  /** Pictures for every type; 3D files too, except for an X-ray. */
   readonly accept = computed(() =>
-    this.category() === 'INTRAORAL_3D' ? [...PATIENT_FILE_TYPES, ...MODEL_EXTENSIONS].join(',') : PATIENT_FILE_TYPES.join(','),
+    this.category() !== 'XRAY' ? [...PATIENT_FILE_TYPES, ...MODEL_EXTENSIONS].join(',') : PATIENT_FILE_TYPES.join(','),
   );
   readonly viewing = signal<{ name: string; blob: Blob; type: ModelType } | null>(null);
   readonly canWrite = computed(() => this.permissions.can('CLINICAL_WRITE'));
@@ -172,7 +173,7 @@ export class PatientFilesComponent implements OnDestroy {
     input.value = '';
     if (!picked.length) return;
     // A model's type is often blank in the browser; its extension says what it is, and the server checks the bytes.
-    const models = this.category() === 'INTRAORAL_3D';
+    const models = this.category() !== 'XRAY';
     const bad = picked.filter((f) => !(PATIENT_FILE_TYPES as readonly string[]).includes(f.type) && !(models && hasModelExtension(f.name)));
     if (bad.length) {
       const key = models ? 'PFILES.WRONG_TYPE_3D' : bad.some((f) => hasModelExtension(f.name)) ? 'PFILES.MODEL_NEEDS_3D' : 'PFILES.WRONG_TYPE';

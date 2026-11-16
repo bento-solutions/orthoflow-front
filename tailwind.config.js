@@ -98,7 +98,7 @@ module.exports = {
 
       /* 14px UI base — a dense clinical screen, not a marketing page. */
       fontSize: {
-        '2xs': ['0.6875rem', { lineHeight: '1.4' }],
+        '2xs': ['0.75rem', { lineHeight: '1.4' }], // the 12 px floor (UX audit P2-4)
         xs: ['0.75rem', { lineHeight: '1.4' }],
         sm: ['0.8125rem', { lineHeight: '1.5' }],
         base: ['0.875rem', { lineHeight: '1.55' }],

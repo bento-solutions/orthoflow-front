@@ -153,7 +153,7 @@ import { MoneyPipe } from '../../../pipes/money.pipe';
     .hl { outline: 3px solid rgb(var(--positive-500)); outline-offset: 1px; animation: ck-flash 4s ease-out; }
     @keyframes ck-flash { from { background: rgb(var(--positive-100)); } to { background: rgb(var(--ink-50)); } }
     @media (prefers-reduced-motion: reduce) { .hl { animation: none; } }
-    .ck-empty { color: rgb(var(--ink-600)); font-size: .9rem; margin: 0; }
+    .ck-empty { color: rgb(var(--ink-600)); font-size: .875rem; margin: 0; }
     .ck-total { margin: .75rem 0 0; font-size: 1rem; }
     .ck-big { font-size: 1.5rem; font-weight: 800; margin: 0 0 .25rem; }
     .ck-fields { display: grid; grid-template-columns: minmax(8rem, auto) 1fr; gap: .375rem 1rem; margin: 0; }

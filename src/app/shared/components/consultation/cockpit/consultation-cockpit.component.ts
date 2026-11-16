@@ -105,7 +105,7 @@ import { CockpitStageComponent } from './cockpit-stage.component';
     .ck-a-stage { grid-area: stage; min-height: 0; min-width: 0; }
     .ck-analysis { z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .625rem;
       padding: 1.5rem; text-align: center; border-radius: .75rem; background: rgb(var(--ink-50) / .94);
-      color: rgb(var(--ink-900)); font-size: .9375rem; }
+      color: rgb(var(--ink-900)); font-size: .875rem; }
     .ck-analysis strong { font-size: 1.125rem; }
     .ck-analysis small { color: rgb(var(--ink-700)); }
     .ck-analysis progress { width: min(24rem, 100%); height: .5rem; accent-color: rgb(var(--petrol-600)); }
@@ -122,11 +122,11 @@ import { CockpitStageComponent } from './cockpit-stage.component';
         grid-template-areas: "now" "rail" "stage" "controls"; padding: .375rem .375rem calc(.375rem + env(safe-area-inset-bottom, 0px)); gap: .375rem; }
       .ck-a-side { display: none; }
       .ck-a-now { grid-area: now; display: flex; flex-direction: column; gap: .125rem; text-align: start; padding: .5rem .625rem; border-radius: .75rem; background: var(--surface); border: 1px solid rgb(var(--ink-200)); min-width: 0; }
-      .ck-now-line { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: .9rem; color: rgb(var(--ink-900)); }
+      .ck-now-line { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: .875rem; color: rgb(var(--ink-900)); }
       .ck-now-time { font-size: .75rem; color: rgb(var(--ink-600)); font-variant-numeric: tabular-nums; }
       .ck-now-action { display: flex; align-items: center; gap: .25rem; font-weight: 700; color: rgb(var(--positive-800)); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
       .ck-now-action[data-kind='unsure'] { color: rgb(var(--caution-800)); }
-      .ck-now-action app-icon.mi { font-size: 1.1rem; }
+      .ck-now-action app-icon.mi { font-size: 1.125rem; }
     }
     .ck-sheet { position: fixed; inset: 0; z-index: 50; background: rgb(0 0 0 / .4); display: flex; align-items: flex-end; }
     .ck-sheet-body { position: relative; width: 100%; height: 80dvh; display: flex; flex-direction: column; gap: .5rem; padding: 2.75rem .5rem calc(.5rem + env(safe-area-inset-bottom, 0px)); background: var(--app-bg); border-radius: 1rem 1rem 0 0; }

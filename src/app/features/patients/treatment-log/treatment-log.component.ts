@@ -45,13 +45,13 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
             @for (l of languages; track l) { <option [value]="l">{{ 'VOICE.LANG.' + l | translate }}</option> }
           </select>
         </label>
-        <button type="button" class="btn primary" [disabled]="!consent || busy()" (click)="pdf()">
+        <button type="button" class="btn btn-primary btn-sm" [disabled]="!consent || busy()" (click)="pdf()">
           <app-icon class="mi" name="picture_as_pdf" size="1em" />{{ 'TREATMENT_LOG.PDF' | translate }}
         </button>
-        <button type="button" class="btn" [disabled]="!consent || busy()" (click)="chartPdf()">
+        <button type="button" class="btn btn-secondary btn-sm" [disabled]="!consent || busy()" (click)="chartPdf()">
           <app-icon class="mi" name="grid_on" size="1em" />{{ 'TREATMENT_CHART.DOWNLOAD' | translate }}
         </button>
-        <button type="button" class="btn" [disabled]="!consent || busy()" (click)="json()">
+        <button type="button" class="btn btn-secondary btn-sm" [disabled]="!consent || busy()" (click)="json()">
           <app-icon class="mi" name="data_object" size="1em" />{{ 'TREATMENT_LOG.JSON' | translate }}
         </button>
       </div>
@@ -159,18 +159,14 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
     :host { display: block; max-width: 64rem; }
     .head h2 { margin: 0; font-size: 1.125rem; }
     .sub { margin: .25rem 0 1rem; color: var(--text-muted); font-size: .875rem; }
-    h3 { margin: 0 0 .5rem; font-size: .9375rem; }
+    h3 { margin: 0 0 .5rem; font-size: .875rem; }
     .share { padding: 1rem; border: 1px solid var(--action-border); border-radius: .75rem; background: var(--action-tint); margin-bottom: 1.25rem; }
     .consent { display: flex; gap: .5rem; align-items: flex-start; font-size: .875rem; margin-bottom: .75rem; }
     .consent input { margin-top: .2rem; }
     .share-row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-end; }
     .lang { display: flex; flex-direction: column; gap: .25rem; font-size: .75rem; font-weight: 600; }
-    .lang select { padding: .4375rem .5rem; font: inherit; font-weight: 400; border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface, #fff); color: var(--text); }
-    .btn { display: inline-flex; align-items: center; gap: .375rem; padding: .5rem .875rem; font: inherit; font-size: .875rem; font-weight: 600; border: 1px solid var(--action); border-radius: .375rem; background: var(--surface, #fff); color: var(--action-text); cursor: pointer; }
-    .btn.primary { background: var(--action); color: var(--text-inverse); }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-    .btn:focus-visible, .lang select:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-    .btn app-icon.mi { font-size: 1.125rem; }
+    .lang select { padding: .4375rem .5rem; font: inherit; font-weight: 400; border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface, rgb(var(--on-inverse))); color: var(--text); }
+    .lang select:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
     .hint { margin: .625rem 0 0; font-size: .75rem; color: var(--text-muted-on-tint); }
     .error { color: var(--status-critical-text); }
     .block { margin-bottom: 1.5rem; }
@@ -183,18 +179,18 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
     .chip[data-state='GINGIVITIS'] { background: var(--status-attention-tint); color: var(--status-attention-text); }
     .chip[data-state='PERIODONTITIS'] { background: var(--status-critical-tint); color: var(--status-critical-text); }
     .timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
-    .entry { display: grid; grid-template-columns: 7.5rem 1fr auto; gap: .75rem; align-items: start; padding: .625rem .75rem; border: 1px solid var(--border); border-inline-start: 4px solid var(--border-strong); border-radius: .5rem; background: var(--surface, #fff); }
+    .entry { display: grid; grid-template-columns: 7.5rem 1fr auto; gap: .75rem; align-items: start; padding: .625rem .75rem; border: 1px solid var(--border); border-inline-start: 4px solid var(--border-strong); border-radius: .5rem; background: var(--surface, rgb(var(--on-inverse))); }
     .entry[data-outcome='IN_PLACE'] { border-inline-start-color: var(--status-active); }
     .entry[data-outcome='TREATED'], .entry[data-outcome='COMPLETED'] { border-inline-start-color: var(--status-done); }
     .entry[data-outcome='REQUIRED'], .entry[data-outcome='PLANNED'], .entry[data-outcome='IN_PROGRESS'] { border-inline-start-color: var(--status-attention); }
     .when { font-size: .8125rem; font-weight: 600; color: var(--text); }
     .what { display: flex; flex-direction: column; gap: .125rem; min-width: 0; }
     .title { font-weight: 600; display: flex; flex-wrap: wrap; gap: .375rem; align-items: center; }
-    .surface-badge { font-size: .6875rem; font-weight: 700; letter-spacing: .06em; padding: .0625rem .375rem; border-radius: .25rem; background: var(--action-tint); color: var(--action-text); }
+    .surface-badge { font-size: .75rem; font-weight: 700; letter-spacing: .06em; padding: .0625rem .375rem; border-radius: .25rem; background: var(--action-tint); color: var(--action-text); }
     .meta { display: flex; flex-wrap: wrap; gap: .625rem; font-size: .75rem; color: var(--text-muted); }
     .origin { font-weight: 600; }
     .note { font-size: .8125rem; white-space: pre-line; }
-    .pill { font-size: .6875rem; font-weight: 700; padding: .125rem .5rem; border-radius: 999px; background: var(--status-idle-tint); color: var(--status-idle-text); white-space: nowrap; }
+    .pill { font-size: .75rem; font-weight: 700; padding: .125rem .5rem; border-radius: 999px; background: var(--status-idle-tint); color: var(--status-idle-text); white-space: nowrap; }
     .pill[data-outcome='IN_PLACE'] { background: var(--status-active-tint); color: var(--status-active-text); }
     .pill[data-outcome='TREATED'], .pill[data-outcome='COMPLETED'] { background: var(--status-done-tint); color: var(--status-done-text); }
     .pill[data-outcome='REQUIRED'], .pill[data-outcome='PLANNED'], .pill[data-outcome='IN_PROGRESS'] { background: var(--status-attention-tint); color: var(--status-attention-text); }

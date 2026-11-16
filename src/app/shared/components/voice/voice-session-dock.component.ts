@@ -60,7 +60,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
       margin-inline: auto; max-width: 44rem;
       display: flex; align-items: center; gap: .5rem;
       padding: .5rem; border-radius: 18px;
-      background: rgb(var(--ink-900)); color: #fff;
+      background: rgb(var(--ink-900)); color: rgb(var(--on-inverse));
       box-shadow: 0 16px 40px -12px rgba(15, 23, 42, .5);
     }
 
@@ -68,7 +68,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
       --level: 0;
       width: 3.25rem; height: 3.25rem; border-radius: 50%; border: none; flex-shrink: 0; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      background: rgb(var(--critical-600)); color: #fff;
+      background: rgb(var(--critical-600)); color: rgb(var(--on-inverse));
       box-shadow: 0 0 0 calc(var(--level) * 12px) rgba(248, 113, 113, .45);
       transition: box-shadow 80ms linear, background .15s;
     }
@@ -89,7 +89,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
     .dock-count {
       min-width: 1.75rem; height: 1.75rem; border-radius: 999px; padding: 0 .375rem; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
-      background: #d97706; color: #fff; font-weight: 800; font-size: .8125rem; font-variant-numeric: tabular-nums;
+      background: var(--voice-staged); color: rgb(var(--on-inverse)); font-weight: 800; font-size: .8125rem; font-variant-numeric: tabular-nums;
     }
 
     .dock-end {
@@ -100,7 +100,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
     .dock-end:disabled { opacity: .7; cursor: default; }
     .dock-end app-icon.mi { font-size: 1.125rem; color: rgb(var(--critical-700)); }
 
-    .dock button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    .dock button:focus-visible { outline: 2px solid rgb(var(--on-inverse)); outline-offset: 2px; }
 
     @media (max-width: 380px) { .dock-end-label { display: none; } }
     @media (prefers-reduced-motion: reduce) { .dock-mic { transition: none; } }

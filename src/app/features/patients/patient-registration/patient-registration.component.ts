@@ -256,7 +256,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
     }
 
     .section-title {
-      font-size: 1.1rem;
+      font-size: 1.125rem;
       font-weight: 600;
       color: rgb(var(--ink-700));
       margin-bottom: 1.5rem;
@@ -284,7 +284,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
 
     .field-error {
       margin: 0;
-      font-size: 0.8rem;
+      font-size: 0.8125rem;
       color: rgb(var(--critical-700));
     }
 
@@ -292,7 +292,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
       display: flex;
       align-items: flex-start;
       gap: 0.6rem;
-      font-size: 0.9rem;
+      font-size: 0.875rem;
       color: rgb(var(--ink-700));
       cursor: pointer;
     }
@@ -301,7 +301,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
     }
     .consent-hint {
       margin: 0.5rem 0 0 1.7rem;
-      font-size: 0.8rem;
+      font-size: 0.8125rem;
       color: rgb(var(--ink-500));
     }
 
@@ -319,7 +319,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
       color: var(--text);
       border: 1px solid rgb(var(--ink-300));
       border-radius: 8px;
-      font-size: 0.95rem;
+      font-size: 0.875rem;
       transition: all 0.2s ease;
       outline: none;
     }

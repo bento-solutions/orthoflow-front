@@ -1,3 +1,4 @@
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -54,14 +55,14 @@ const blankTask = (assignee = ''): TaskForm => ({ title: '', description: '', as
 @Component({
   selector: 'app-tasks',
   standalone: true,
-  imports: [AppDatePipe, NgTemplateOutlet, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent, PatientPickerComponent, CanDirective],
+  imports: [PageHeaderComponent, AppDatePipe, NgTemplateOutlet, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent, PatientPickerComponent, CanDirective],
   template: `
     <div class="anim-rise">
-      <header class="page-head">
-        <div class="page-actions">
+      <app-page-header>
+        <div page-actions class="contents">
           <button type="button" class="btn btn-primary" (click)="openNew()"><app-icon name="plus" [size]="16" /> {{ 'TASK.NEW' | translate }}</button>
         </div>
-      </header>
+      </app-page-header>
 
       <div *appCan="'TASKS_ADMIN'" class="seg mb-4" role="group" [attr.aria-label]="'TASK.TITLE' | translate">
         <button type="button" class="seg-item" [class.is-active]="view() === 'mine'" [attr.aria-pressed]="view() === 'mine'" (click)="view.set('mine')">{{ 'TASK.MINE' | translate }}</button>

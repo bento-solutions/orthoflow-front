@@ -1,7 +1,5 @@
-import { IconComponent } from '../../../shared/ui/icon.component';
 import { formatDate } from '../../../core/utils/format';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PassportChartEntry, PassportChartUse, TreatmentPassport } from '../../../core/api/contract';
@@ -10,9 +8,6 @@ import { surfaceShorthand } from '../../../core/clinical/tooth-surfaces';
 import { FAMILY_PAINT, ToothStatusFamily, TREATMENT_PLAN_INK, PLANNED_PAINT, odontogramPatternDefs } from '../../../core/clinical/tooth-status';
 import { FindingKind, ToothFinding } from '../../../core/models/clinical-record.model';
 import { DentalChartType, ToothState, ToothStatus } from '../../../core/models/patient.model';
-import { LanguageService } from '../../../core/services/language.service';
-import { PassportLanguage, TreatmentPassportService } from '../../../core/services/treatment-passport.service';
-import { ToastService } from '../../../core/services/toast.service';
 import { DentalChartComponent } from '../../dental-chart/dental-chart.component';
 
 /** How a legend symbol paints: which fill, and which ink around it. */
@@ -115,9 +110,9 @@ const GROUP_ORDER = ['DONE', 'CONDITION', 'PLANNED', 'WATCH', 'ABSENT'];
       .drawing { position: sticky; top: 15rem; }
     }
     .drawing { min-width: 0; }
-    .sides { display: flex; justify-content: space-between; font-size: .6875rem; font-weight: 600; color: var(--text-muted); direction: ltr; }
+    .sides { display: flex; justify-content: space-between; font-size: .75rem; font-weight: 600; color: var(--text-muted); direction: ltr; }
     .defs { position: absolute; }
-    h3 { margin: 0 0 .5rem; font-size: .9375rem; }
+    h3 { margin: 0 0 .5rem; font-size: .875rem; }
     h4 { margin: 0 0 .25rem; font-size: .75rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--text-muted); }
     h4[data-group='DONE'] { color: rgb(var(--petrol-700)); }
     h4[data-group='CONDITION'] { color: rgb(var(--critical-700)); }
@@ -232,97 +227,5 @@ export class TreatmentChartComponent {
     if (use.origin === 'EXTERNAL') details.push(this.translate.instant('TOOTH_DETAIL.ELSEWHERE'));
     if (use.provider) details.push(use.provider);
     return { teeth: shorthand ? `${where} (${shorthand})` : where, detail: details.join(', ') };
-  }
-}
-
-const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
-
-/**
- * The chart with what it needs around it, for the places that do not already hold the
- * passport: it fetches it and offers the page as a file.
- */
-@Component({
-  selector: 'app-treatment-summary',
-  standalone: true,
-  imports: [IconComponent, TranslateModule, TreatmentChartComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <header class="head">
-      <div>
-        <h2>{{ 'TREATMENT_CHART.TITLE' | translate }}</h2>
-        <p>{{ 'TREATMENT_CHART.SUBTITLE' | translate }}</p>
-      </div>
-      <div class="actions">
-        <label class="lang">
-          <span class="sr-only">{{ 'TREATMENT_LOG.LANGUAGE' | translate }}</span>
-          <select [value]="language()" (change)="language.set($any($event.target).value)" [attr.aria-label]="'TREATMENT_LOG.LANGUAGE' | translate">
-            @for (l of languages; track l) { <option [value]="l" [selected]="l === language()">{{ 'VOICE.LANG.' + l | translate }}</option> }
-          </select>
-        </label>
-        <button type="button" class="btn" [disabled]="busy()" (click)="download()">
-          <app-icon class="mi" name="picture_as_pdf" size="1em" />{{ 'TREATMENT_CHART.DOWNLOAD' | translate }}
-        </button>
-      </div>
-    </header>
-    @if (service.failed()) {
-      <p class="error" role="alert">{{ 'TREATMENT_LOG.LOAD_FAILED' | translate }}</p>
-    }
-    @if (service.passport(); as p) {
-      <app-treatment-chart [passport]="p" />
-    } @else if (service.loading()) {
-      <p class="muted">{{ 'COMMON.LOADING' | translate }}</p>
-    }
-  `,
-  styles: [`
-    :host { display: block; }
-    .head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .75rem; margin-bottom: .875rem; }
-    h2 { margin: 0; font-size: 1.0625rem; }
-    p { margin: .125rem 0 0; font-size: .8125rem; color: var(--text-muted); max-width: 46rem; }
-    .actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
-    select { padding: .4375rem .5rem; font: inherit; font-size: .8125rem; border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface, #fff); color: var(--text); }
-    .btn { display: inline-flex; align-items: center; gap: .375rem; padding: .4375rem .75rem; font: inherit; font-size: .8125rem; font-weight: 600; border: 1px solid var(--action); border-radius: .375rem; background: var(--surface, #fff); color: var(--action-text); cursor: pointer; }
-    .btn:hover:not(:disabled) { background: var(--action-tint); }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-    .btn:focus-visible, select:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-    .btn app-icon.mi { font-size: 1.125rem; }
-    .error { color: var(--status-critical-text); }
-    .muted { color: var(--text-muted); font-size: .875rem; margin: 0; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  `],
-})
-export class TreatmentSummaryComponent {
-  readonly patientId = input.required<string>();
-  /** Anything that means the summary is out of date, such as the patient's list of treatments. */
-  readonly version = input<unknown>(null);
-
-  protected readonly service = inject(TreatmentPassportService);
-  private readonly translate = inject(TranslateService);
-  private readonly toast = inject(ToastService);
-  private readonly appLanguage = inject(LanguageService);
-
-  protected readonly languages = LANGUAGES;
-  protected readonly language = signal<PassportLanguage>(
-    LANGUAGES.includes(this.appLanguage.currentLang() as PassportLanguage) ? (this.appLanguage.currentLang() as PassportLanguage) : 'fr');
-  protected readonly busy = signal(false);
-
-  constructor() {
-    effect(() => {
-      const id = this.patientId();
-      this.version();
-      if (id) untracked(() => this.service.load(id));
-    });
-  }
-
-  protected async download(): Promise<void> {
-    if (this.busy()) return;
-    this.busy.set(true);
-    try {
-      await this.service.downloadChartPdf(this.patientId(), this.language());
-    } catch (err) {
-      console.error('Chart download failed', err);
-      this.toast.error(this.translate.instant('TREATMENT_LOG.DOWNLOAD_FAILED'));
-    } finally {
-      this.busy.set(false);
-    }
   }
 }

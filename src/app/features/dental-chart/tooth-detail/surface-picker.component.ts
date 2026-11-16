@@ -49,7 +49,7 @@ import {
     .picker { display: flex; align-items: center; gap: .75rem; }
     .glyph { width: 5.5rem; height: 5.5rem; flex: none; }
     .zone {
-      fill: var(--surface, #fff); stroke: var(--border-strong); stroke-width: .8; stroke-linejoin: round;
+      fill: var(--surface, rgb(var(--on-inverse))); stroke: var(--border-strong); stroke-width: .8; stroke-linejoin: round;
       cursor: pointer; transition: fill .12s;
     }
     .zone:hover { fill: var(--action-tint); }

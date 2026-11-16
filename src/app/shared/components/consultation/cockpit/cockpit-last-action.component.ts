@@ -45,7 +45,7 @@ import { VoiceOrchestratorService } from '../../../../core/voice/voice-orchestra
     .ck-last[data-kind='view'], .ck-last[data-kind='control'] { border-inline-start-color: rgb(var(--petrol-500)); }
     .ck-last[data-kind='none'] { border-inline-start-color: rgb(var(--ink-300)); }
     .ck-last-head { margin: 0 0 .25rem; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: rgb(var(--ink-600)); }
-    .ck-last-title { display: flex; align-items: flex-start; gap: .375rem; margin: 0; font-size: 1.0625rem; font-weight: 700; color: rgb(var(--ink-900)); overflow-wrap: anywhere; }
+    .ck-last-title { display: flex; align-items: flex-start; gap: .375rem; margin: 0; font-size: 1rem; font-weight: 700; color: rgb(var(--ink-900)); overflow-wrap: anywhere; }
     .ck-last-title app-icon.mi { font-size: 1.25rem; color: rgb(var(--positive-700)); }
     .ck-last[data-kind='unsure'] .ck-last-title app-icon.mi { color: rgb(var(--caution-700)); }
     .ck-last-detail { margin: .125rem 0 0; color: rgb(var(--ink-700)); }

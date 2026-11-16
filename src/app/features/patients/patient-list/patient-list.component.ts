@@ -1,3 +1,4 @@
+import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -30,11 +31,11 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
 @Component({
   selector: 'app-patient-list',
   standalone: true,
-  imports: [AppDatePipe, RouterModule, FormsModule, TranslateModule, IconComponent, StatusPillComponent, MoneyPipe, NumPipe],
+  imports: [PageHeaderComponent, AppDatePipe, RouterModule, FormsModule, TranslateModule, IconComponent, StatusPillComponent, MoneyPipe, NumPipe],
   template: `
     <div class="anim-rise">
-      <header class="page-head">
-        <div class="page-actions">
+      <app-page-header>
+        <div page-actions class="contents">
           @if (canMerge()) {
             <a class="btn btn-secondary" routerLink="duplicates" data-tour="patients-duplicates">
               {{ 'PAT.DUPLICATES' | translate }}
@@ -50,7 +51,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
             {{ 'PATIENTS.ADD' | translate }}
           </a>
         </div>
-      </header>
+      </app-page-header>
 
       <!-- Someone is in the chair and nothing is known but their name. The rest
            is learned in the consultation, or filled in later. -->

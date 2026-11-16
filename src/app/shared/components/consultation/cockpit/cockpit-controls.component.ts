@@ -115,7 +115,7 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
     @media (prefers-reduced-motion: reduce) { .ck-rec.live .ck-dot { animation: none; } }
     .ck-name { font-weight: 700; color: rgb(var(--ink-900)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .ck-allergies { display: inline-flex; align-items: center; gap: .25rem; color: rgb(var(--critical-700)); min-width: 0; overflow: hidden; }
-    .ck-allergies app-icon.mi { font-size: 1.1rem; }
+    .ck-allergies app-icon.mi { font-size: 1.125rem; }
     .ck-allergy { font-size: .8125rem; font-weight: 600; padding: .05rem .4rem; border-radius: 999px; background: rgb(var(--critical-50)); white-space: nowrap; }
     .ck-allergy.new { outline: 1px dashed rgb(var(--critical-400)); }
     .ck-conditions { color: rgb(var(--caution-700)); }
@@ -127,9 +127,9 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
     .ck-meter { width: .375rem; height: 1.5rem; border-radius: 999px; background: rgb(var(--ink-100)); overflow: hidden; display: flex; align-items: flex-end; }
     .ck-meter span { display: block; width: 100%; height: 100%; background: rgb(var(--positive-500)); transform-origin: bottom; transition: transform .1s linear; }
     .ck-chip { display: inline-flex; align-items: center; gap: .25rem; min-height: 2.5rem; padding: 0 .625rem; border-radius: .5rem; border: 1px solid rgb(var(--ink-200)); font-weight: 600; font-size: .8125rem; color: rgb(var(--ink-800)); flex: none; }
-    .ck-chip app-icon.mi { font-size: 1.1rem; }
+    .ck-chip app-icon.mi { font-size: 1.125rem; }
     .ck-mode { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-800)); border-color: rgb(var(--petrol-200)); }
-    .ck-end { display: inline-flex; align-items: center; gap: .375rem; min-height: 2.5rem; padding: 0 .875rem; border-radius: .5rem; background: rgb(var(--critical-600)); color: #fff; font-weight: 700; flex: none; }
+    .ck-end { display: inline-flex; align-items: center; gap: .375rem; min-height: 2.5rem; padding: 0 .875rem; border-radius: .5rem; background: rgb(var(--critical-600)); color: rgb(var(--on-inverse)); font-weight: 700; flex: none; }
     .ck-end:disabled { opacity: .6; }
     .ck-alert { display: flex; align-items: center; gap: .5rem; margin-top: .375rem; padding: .5rem .75rem; border-radius: .5rem; background: rgb(var(--ink-100)); color: rgb(var(--ink-800)); font-size: .875rem; width: 100%; text-align: start; }
     .ck-alert.caution { background: rgb(var(--caution-50)); color: rgb(var(--caution-800)); }

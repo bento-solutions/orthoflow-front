@@ -1,3 +1,4 @@
+import { PageHeaderComponent } from '../../../../shared/ui/page-header.component';
 import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -28,18 +29,18 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 @Component({
   selector: 'app-invoice-list',
   standalone: true,
-  imports: [AppDatePipe, CommonModule, RouterModule, FormsModule, TranslateModule, IconComponent, StatusPillComponent],
+  imports: [PageHeaderComponent, AppDatePipe, CommonModule, RouterModule, FormsModule, TranslateModule, IconComponent, StatusPillComponent],
   template: `
     <div class="anim-rise">
-      <header class="page-head">
-        <div class="page-actions">
+      <app-page-header>
+        <div page-actions class="contents">
           <!-- No link to quotes: that page is a mock-up with no backend behind it (see billing.routes.ts). -->
           <a class="btn btn-primary" routerLink="create">
             <app-icon name="plus" [size]="16" />
             {{ 'BILLING.NEW_INVOICE' | translate }}
           </a>
         </div>
-      </header>
+      </app-page-header>
 
       <!-- Money summary -->
       @if (invoiceService.summary(); as summary) {

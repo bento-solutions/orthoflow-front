@@ -49,11 +49,11 @@ import { AuthService } from '../../../core/services/auth.service';
       box-shadow: 0 10px 30px rgb(0 0 0 / 0.18);
     }
     .text { flex: 1 1 18rem; min-width: 0; }
-    .title { margin: 0 0 0.125rem; font-size: 0.95rem; font-weight: 700; }
-    .text p { margin: 0; font-size: 0.9rem; }
+    .title { margin: 0 0 0.125rem; font-size: 0.875rem; font-weight: 700; }
+    .text p { margin: 0; font-size: 0.875rem; }
     .form { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
     .form .input { min-width: 12rem; }
-    .error { flex-basis: 100%; margin: 0; font-size: 0.85rem; color: rgb(var(--critical-700, 185 28 28)); }
+    .error { flex-basis: 100%; margin: 0; font-size: 0.8125rem; color: rgb(var(--critical-700, 185 28 28)); }
   `],
 })
 export class SessionExpiryBannerComponent {

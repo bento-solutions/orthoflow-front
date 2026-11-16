@@ -829,7 +829,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
       padding: 1rem 1rem .75rem; background: var(--surface); border-bottom: 1px solid rgb(var(--ink-200));
     }
     .cp-title { display: flex; align-items: center; gap: .5rem; min-width: 0; flex-wrap: wrap; }
-    .cp-title h2 { margin: 0; font-size: 1.0625rem; font-weight: 700; color: rgb(var(--ink-900)); }
+    .cp-title h2 { margin: 0; font-size: 1rem; font-weight: 700; color: rgb(var(--ink-900)); }
     .cp-dot { width: .625rem; height: .625rem; border-radius: 50%; background: rgb(var(--ink-300)); flex-shrink: 0; }
     .cp-dot.live { background: rgb(var(--critical-600)); animation: cp-pulse 1.6s ease-in-out infinite; }
     @keyframes cp-pulse { 50% { box-shadow: 0 0 0 .4rem rgb(var(--critical-600) / .15); } }
@@ -848,16 +848,16 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-card h3, .cp-card p { margin: 0; }
     .cp-hero { font-size: 2rem; color: rgb(var(--petrol-700)); }
     .cp-hero.ok { color: rgb(var(--positive-700)); font-size: 2.5rem; }
-    .cp-forms { list-style: none; margin: .75rem 0 0; padding: 0; display: grid; gap: .35rem; text-align: start; font-size: .85rem; color: rgb(var(--ink-700)); }
+    .cp-forms { list-style: none; margin: .75rem 0 0; padding: 0; display: grid; gap: .35rem; text-align: start; font-size: .8125rem; color: rgb(var(--ink-700)); }
     .cp-forms li { display: flex; gap: .4rem; align-items: flex-start; }
     .cp-forms app-icon.mi { font-size: 1rem; color: rgb(var(--brand-600, 37 99 235)); }
     .cp-done {
       display: inline-flex; align-items: center; gap: .2rem; padding: .05rem .4rem; border-radius: 999px;
       border: 1px solid rgb(var(--ink-200)); background: var(--surface); color: rgb(var(--ink-600)); font-size: .75rem; cursor: pointer;
     }
-    .cp-done app-icon.mi { font-size: .95rem; }
+    .cp-done app-icon.mi { font-size: .875rem; }
     .cp-done.on { border-color: rgb(var(--ok-300, 134 239 172)); background: rgb(var(--ok-50, 240 253 244)); color: rgb(var(--ok-800, 22 101 52)); font-weight: 600; }
-    .cp-check { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: rgb(var(--ink-700)); }
+    .cp-check { display: flex; align-items: center; gap: .4rem; font-size: .8125rem; color: rgb(var(--ink-700)); }
     .cp-steps { margin: 0; padding-inline-start: 1.1rem; color: rgb(var(--ink-700)); font-size: .875rem; display: grid; gap: .25rem; }
     .cp-notice { display: flex; gap: .5rem; font-size: .8125rem; color: rgb(var(--ink-700)); background: rgb(var(--caution-50)); border-radius: 10px; padding: .625rem .75rem; }
     .cp-notice app-icon.mi { font-size: 1.125rem; color: rgb(var(--caution-700)); flex-shrink: 0; }
@@ -896,10 +896,10 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     }
     .cp-btn:hover:not(:disabled) { background: rgb(var(--ink-100)); }
     .cp-btn:disabled { opacity: .5; cursor: not-allowed; }
-    .cp-btn.primary { background: rgb(var(--petrol-600)); border-color: rgb(var(--petrol-600)); color: #fff; }
+    .cp-btn.primary { background: rgb(var(--petrol-600)); border-color: rgb(var(--petrol-600)); color: rgb(var(--on-inverse)); }
     .cp-btn.primary:hover:not(:disabled) { background: rgb(var(--petrol-700)); }
     .cp-btn.danger { color: rgb(var(--critical-700)); border-color: rgb(var(--critical-300)); }
-    .cp-btn.big { min-height: 3rem; font-size: .9375rem; width: 100%; }
+    .cp-btn.big { min-height: 3rem; font-size: .875rem; width: 100%; }
     .cp-btn.small { min-height: 2rem; padding: .25rem .625rem; font-size: .8125rem; }
     .cp-btn app-icon.mi { font-size: 1.125rem; }
     .cp-btn:focus-visible, .cp-icon:focus-visible, .cp-link:focus-visible, .cp-input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
@@ -914,7 +914,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-icon:hover { background: rgb(var(--ink-100)); }
     .cp-icon.ok { color: rgb(var(--positive-700)); }
     .cp-icon.bad { color: rgb(var(--critical-700)); }
-    .cp-icon.solid { background: rgb(var(--petrol-600)); color: #fff; width: 2.5rem; height: 2.5rem; border-radius: 10px; }
+    .cp-icon.solid { background: rgb(var(--petrol-600)); color: rgb(var(--on-inverse)); width: 2.5rem; height: 2.5rem; border-radius: 10px; }
 
     .cp-alert { display: flex; gap: .5rem; align-items: center; padding: .625rem .75rem; border-radius: 10px; font-size: .8125rem; margin: 0; }
     .cp-alert.caution { background: rgb(var(--caution-50)); color: rgb(var(--caution-800)); }
@@ -934,7 +934,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-lang-options { display: inline-flex; width: fit-content; max-width: 100%; border: 1px solid rgb(var(--ink-300)); border-radius: .5rem; overflow: hidden; }
     .cp-lang-options button { padding: .4375rem .875rem; min-height: 2.25rem; font: inherit; font-size: .875rem; border: 0; background: var(--surface); color: rgb(var(--ink-800)); cursor: pointer; }
     .cp-lang-options button + button { border-inline-start: 1px solid rgb(var(--ink-300)); }
-    .cp-lang-options button.on { background: rgb(var(--petrol-600)); color: #fff; font-weight: 700; }
+    .cp-lang-options button.on { background: rgb(var(--petrol-600)); color: rgb(var(--on-inverse)); font-weight: 700; }
     .cp-lang-options button:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
     .cp-hint.note { display: flex; gap: .375rem; align-items: center; background: rgb(var(--ink-100)); border-radius: 8px; padding: .375rem .625rem; }
     .cp-hint app-icon.mi { font-size: 1rem; }
@@ -976,7 +976,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-value.proposed { color: rgb(var(--petrol-800)); }
     .cp-value.onfile { font-weight: 500; color: rgb(var(--ink-700)); }
     .cp-value.empty { color: rgb(var(--ink-500)); font-weight: 400; }
-    .cp-status { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: .0625rem .375rem; border-radius: 999px; }
+    .cp-status { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: .0625rem .375rem; border-radius: 999px; }
     .cp-status[data-status='proposed'] { background: rgb(var(--caution-100)); color: rgb(var(--caution-800)); }
     .cp-status[data-status='validated'] { background: rgb(var(--positive-100)); color: rgb(var(--positive-700)); }
     .cp-status[data-status='removed'] { background: rgb(var(--ink-200)); color: rgb(var(--ink-700)); }
@@ -991,7 +991,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-input { min-height: 2.25rem; padding: .375rem .625rem; border: 1px solid rgb(var(--ink-300)); border-radius: 8px; font-size: .875rem; background: var(--surface); min-width: 0; flex: 1; }
     .cp-input.narrow { flex: 0 0 5.5rem; }
 
-    .cp-total { display: flex; justify-content: space-between; align-items: center; padding: .5rem .625rem; border-top: 2px solid rgb(var(--ink-300)); font-size: .9375rem; }
+    .cp-total { display: flex; justify-content: space-between; align-items: center; padding: .5rem .625rem; border-top: 2px solid rgb(var(--ink-300)); font-size: .875rem; }
     .cp-suggest { display: flex; flex-direction: column; gap: .25rem; background: rgb(var(--petrol-50)); border-radius: 10px; padding: .5rem .75rem; font-size: .8125rem; align-items: flex-start; }
     .cp-appt { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
     .cp-appt label { display: flex; flex-direction: column; gap: .125rem; font-size: .75rem; color: rgb(var(--ink-600)); }

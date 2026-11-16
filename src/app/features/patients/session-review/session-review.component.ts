@@ -241,11 +241,11 @@ import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
       gap: .75rem 1rem; flex-wrap: wrap; margin-bottom: 1rem;
     }
     .review-header h1 { margin: 0 0 .25rem; font-size: 1.5rem; }
-    .sub { margin: 0; color: rgb(var(--ink-500)); font-size: .9rem; }
+    .sub { margin: 0; color: rgb(var(--ink-500)); font-size: .875rem; }
     .dot { margin: 0 .4rem; opacity: .5; }
     .header-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
 
-    .banner { padding: .875rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: .9rem; }
+    .banner { padding: .875rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: .875rem; }
     .banner-error { background: rgb(var(--critical-50)); border: 1px solid rgb(var(--critical-200)); color: rgb(var(--critical-700)); }
     .banner ul { margin: .5rem 0 0; padding-inline-start: 1.25rem; }
 
@@ -256,8 +256,8 @@ import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
     .panel { background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: 10px; padding: 1rem; }
     .panel h2 { margin: 0 0 .25rem; font-size: 1rem; }
     .panel-head { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
-    .panel-hint { margin: 0 0 .75rem; font-size: .82rem; color: rgb(var(--ink-500)); }
-    .empty { color: rgb(var(--ink-500)); font-size: .9rem; margin: 0; }
+    .panel-hint { margin: 0 0 .75rem; font-size: .8125rem; color: rgb(var(--ink-500)); }
+    .empty { color: rgb(var(--ink-500)); font-size: .875rem; margin: 0; }
 
     .entry-list { list-style: none; margin: 0; padding: 0; }
     .entry {
@@ -270,35 +270,35 @@ import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
     .entry-check input { width: 1.25rem; height: 1.25rem; margin-top: .1rem; }
     .entry-body { flex: 1; min-width: 0; }
     .entry-preview { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
-    .entry-heard { margin: .2rem 0 0; font-size: .8rem; color: rgb(var(--ink-500)); font-style: italic; overflow-wrap: anywhere; }
+    .entry-heard { margin: .2rem 0 0; font-size: .8125rem; color: rgb(var(--ink-500)); font-style: italic; overflow-wrap: anywhere; }
     .entry-correction { margin: .35rem 0 0; display: flex; gap: .35rem; flex-wrap: wrap; }
     .chip {
-      font-size: .72rem; padding: .12rem .45rem; border-radius: 999px;
+      font-size: .75rem; padding: .12rem .45rem; border-radius: 999px;
       background: rgb(var(--caution-50)); color: rgb(var(--caution-700)); border: 1px solid rgb(var(--caution-200));
     }
     .entry-amend { margin: .35rem 0 0; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
     .chip-amended { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-700)); border-color: rgb(var(--petrol-200)); }
-    .link-btn { background: none; border: none; padding: 0; font: inherit; font-size: .82rem; color: rgb(var(--petrol-700)); text-decoration: underline; cursor: pointer; }
+    .link-btn { background: none; border: none; padding: 0; font: inherit; font-size: .8125rem; color: rgb(var(--petrol-700)); text-decoration: underline; cursor: pointer; }
     .link-btn:disabled { opacity: .5; cursor: default; }
     .tooth-edit { margin: .5rem 0 0; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
-    .tooth-edit label { display: flex; gap: .4rem; align-items: center; font-size: .85rem; }
+    .tooth-edit label { display: flex; gap: .4rem; align-items: center; font-size: .8125rem; }
     .tooth-edit input { width: 3.5rem; min-height: 2.25rem; text-align: center; font: inherit; border: 1px solid rgb(var(--ink-300)); border-radius: 8px; }
     .tooth-edit input[aria-invalid="true"] { border-color: rgb(var(--critical-500)); }
-    .tooth-error { font-size: .8rem; color: rgb(var(--critical-700)); flex-basis: 100%; }
+    .tooth-error { font-size: .8125rem; color: rgb(var(--critical-700)); flex-basis: 100%; }
     .entry-time { font-size: .78rem; color: rgb(var(--ink-500)); white-space: nowrap; }
 
     .tooth-list { list-style: none; margin: 0; padding: 0; }
     .tooth-list li { display: flex; gap: .75rem; padding: .5rem 0; align-items: flex-start; }
     .fdi {
       font-weight: 700; min-width: 2.2rem; text-align: center; padding: .15rem .35rem;
-      background: rgb(var(--ink-100)); border-radius: 6px; font-size: .85rem;
+      background: rgb(var(--ink-100)); border-radius: 6px; font-size: .8125rem;
     }
-    .tooth-name { margin: 0; font-size: .85rem; }
+    .tooth-name { margin: 0; font-size: .8125rem; }
     .tooth-findings { margin: .2rem 0 0; display: flex; gap: .3rem; flex-wrap: wrap; }
     .finding { font-size: .75rem; padding: .1rem .4rem; border-radius: 4px; background: rgb(var(--ink-100)); }
 
     .context { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .5rem .875rem; }
-    .context dt { font-size: .82rem; color: rgb(var(--ink-500)); }
+    .context dt { font-size: .8125rem; color: rgb(var(--ink-500)); }
     .context dd { margin: 0; font-size: .88rem; }
     .context dd.alert { color: rgb(var(--critical-700)); font-weight: 600; }
 
@@ -307,10 +307,10 @@ import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
       padding: .75rem; border: 1px solid rgb(var(--ink-300)); border-radius: 8px; resize: vertical;
     }
     .narrative-unavailable {
-      font-size: .85rem; color: rgb(var(--caution-700)); background: rgb(var(--caution-50));
+      font-size: .8125rem; color: rgb(var(--caution-700)); background: rgb(var(--caution-50));
       border: 1px solid rgb(var(--caution-200)); border-radius: 6px; padding: .6rem .75rem; margin: 0 0 .75rem;
     }
-    .btn-sm { font-size: .82rem; padding: .3rem .7rem; }
+    .btn-sm { font-size: .8125rem; padding: .3rem .7rem; }
 
     @media (max-width: 900px) { .review-grid { grid-template-columns: 1fr; } }
     @media (max-width: 640px) {

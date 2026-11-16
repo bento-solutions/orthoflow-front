@@ -153,7 +153,7 @@ interface ToothView {
   styles: [`
     :host { display: block; }
     .row { display: flex; align-items: center; gap: 8px; }
-    .row-label { width: 112px; flex-shrink: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.025em; color: var(--perio-muted-fg); }
+    .row-label { width: 112px; flex-shrink: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.025em; color: var(--perio-muted-fg); }
     .track { position: relative; }
     svg { display: block; vertical-align: middle; }
     .cells-pill-filled { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)); }

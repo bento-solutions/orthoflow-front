@@ -275,7 +275,7 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
     .photos-sub { margin: 0.25rem 0 0; color: var(--text-muted); font-size: 0.875rem; max-width: 60ch; }
     .head-actions { display: flex; gap: 0.5rem; }
     .head-actions .is-on { background: var(--action-tint); border-color: var(--action-border); color: var(--action-text); }
-    .btn app-icon.mi { font-size: 1.1rem; }
+    .btn app-icon.mi { font-size: 1.125rem; }
 
     .series-form { display: grid; grid-template-columns: 1fr 1fr 2fr auto; gap: 0.75rem; align-items: end; }
     .form-actions { display: flex; gap: 0.5rem; }
@@ -297,7 +297,7 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
 
     .series-meta { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
     .meta-progress { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; font-weight: 600; color: var(--text-muted); }
-    .meta-progress app-icon.mi { font-size: 1.1rem; }
+    .meta-progress app-icon.mi { font-size: 1.125rem; }
     .meta-progress.complete { color: var(--status-done-text); }
     .meta-note { color: var(--text-muted); font-size: 0.875rem; font-style: italic; }
     .meta-actions { margin-inline-start: auto; display: flex; gap: 0.25rem; }
@@ -322,13 +322,13 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
     .frame.wide { width: 100%; max-width: 360px; aspect-ratio: 2 / 1; border-radius: 12px; }
     .frame img { width: 100%; height: 100%; display: block; object-fit: cover; }
     .frame .guide { opacity: 0.9; }
-    .frame.wide.filled img { object-fit: contain; background: #111; }
+    .frame.wide.filled img { object-fit: contain; background: rgb(var(--ink-950)); }
     .frame-btn { all: unset; display: block; width: 100%; height: 100%; cursor: zoom-in; }
     .frame-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
     .frame-loading, .frame-busy { position: absolute; inset: 0; display: grid; place-items: center; }
     .frame-loading { background: linear-gradient(90deg, var(--surface-sunken), var(--surface-hover), var(--surface-sunken)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
     .frame-busy { background: rgb(0 0 0 / 0.45); }
-    .spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid rgb(255 255 255 / 0.4); border-top-color: #fff; animation: spin 0.8s linear infinite; }
+    .spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid rgb(255 255 255 / 0.4); border-top-color: rgb(var(--on-inverse)); animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes shimmer { to { background-position: -200% 0; } }
     @media (prefers-reduced-motion: reduce) { .spinner, .frame-loading { animation: none; } }
@@ -356,13 +356,13 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
     .compare-cell { aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: var(--surface-sunken); display: grid; place-items: center; }
     .compare-cell.wide { aspect-ratio: 2 / 1; }
     .compare-img { all: unset; width: 100%; height: 100%; cursor: zoom-in; }
-    .compare-img img { width: 100%; height: 100%; object-fit: contain; display: block; background: #111; }
+    .compare-img img { width: 100%; height: 100%; object-fit: contain; display: block; background: rgb(var(--ink-950)); }
     .compare-missing { font-size: 0.75rem; color: var(--text-muted); }
 
     .lightbox { position: fixed; inset: 0; z-index: 1000; background: rgb(0 0 0 / 0.85); display: grid; place-items: center; padding: 2rem; }
     .lightbox figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; max-width: 100%; max-height: 100%; }
     .lightbox img { max-width: min(92vw, 1400px); max-height: 82vh; object-fit: contain; border-radius: 8px; }
-    .lightbox figcaption { color: #fff; font-size: 0.875rem; }
+    .lightbox figcaption { color: rgb(var(--on-inverse)); font-size: 0.875rem; }
     .lightbox-close { position: absolute; top: 1rem; inset-inline-end: 1rem; }
   `],
 })

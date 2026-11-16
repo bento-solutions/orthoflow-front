@@ -84,30 +84,30 @@ const POPOVER_WIDTH = 224;
             font-variant-numeric: tabular-nums; transition: background-color .15s, color .15s;
             background: rgba(9, 9, 11, 0.15); color: var(--perio-fg); }
     .chip:hover, .chip.open { background: rgba(9, 9, 11, 0.25); }
-    .chip.missing { background: #fecaca; color: #7f1d1d; }
-    .chip.missing:hover, .chip.missing.open { background: #fca5a5; }
-    .chip.pontic { background: #fde68a; color: #78350f; }
-    .chip.pontic:hover, .chip.pontic.open { background: #fcd34d; }
-    .chip.implant { background: #bfdbfe; color: #1e3a8a; }
-    .chip.implant:hover, .chip.implant.open { background: #93c5fd; }
+    .chip.missing { background: rgb(var(--critical-200)); color: rgb(var(--critical-900)); }
+    .chip.missing:hover, .chip.missing.open { background: rgb(var(--critical-300)); }
+    .chip.pontic { background: rgb(var(--caution-200)); color: rgb(var(--caution-900)); }
+    .chip.pontic:hover, .chip.pontic.open { background: rgb(var(--caution-300)); }
+    .chip.implant { background: rgb(var(--petrol-200)); color: rgb(var(--petrol-900)); }
+    .chip.implant:hover, .chip.implant.open { background: rgb(var(--petrol-300)); }
     .chip:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--perio-ring); }
-    .i-missing { color: #b91c1c; } .i-implant { color: #1d4ed8; } .i-pontic { color: #b45309; }
+    .i-missing { color: rgb(var(--critical-700)); } .i-implant { color: rgb(var(--petrol-700)); } .i-pontic { color: rgb(var(--caution-700)); }
     .popover { position: fixed; z-index: 50; width: 224px; padding: 4px; border: 1px solid var(--perio-border); border-radius: 6px;
-               background: #fff; color: var(--perio-fg); font-size: 14px; line-height: 20px;
+               background: rgb(var(--on-inverse)); color: var(--perio-fg); font-size: 14px; line-height: 20px;
                box-shadow: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1); }
     .option { display: flex; width: 100%; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 6px; background: transparent;
               color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background-color .15s; }
     .option:hover, .option:focus-visible { background: var(--perio-muted); outline: none; }
     .option.selected { font-weight: 500; }
     .option.selected.present { background: var(--perio-muted); }
-    .option.selected.missing { background: #fef2f2; color: #b91c1c; }
-    .option.selected.pontic { background: #fffbeb; color: #b45309; }
-    .option.selected.implant { background: #eff6ff; color: #1d4ed8; }
+    .option.selected.missing { background: rgb(var(--critical-50)); color: rgb(var(--critical-700)); }
+    .option.selected.pontic { background: rgb(var(--caution-50)); color: rgb(var(--caution-700)); }
+    .option.selected.implant { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-700)); }
     .glyph { display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; flex-shrink: 0; }
     .dot { width: 8px; height: 8px; border-radius: 9999px; background: rgba(9, 9, 11, 0.4); }
     .name { flex: 1; }
     .tick { color: rgba(9, 9, 11, 0.6); }
-    .warn { margin: 4px 0 0; padding: 6px 8px; border-top: 1px solid var(--perio-border); font-size: 11px; line-height: 16.5px; color: #b45309; }
+    .warn { margin: 4px 0 0; padding: 6px 8px; border-top: 1px solid var(--perio-border); font-size: 12px; line-height: 16.5px; color: rgb(var(--caution-700)); }
   `],
 })
 export class PerioNumbersComponent {

@@ -1292,7 +1292,20 @@
     "ISSUED": "Émis",
     "LATE": "En retard",
     "ARRIVED": "Arrivé",
-    "IN_CHAIR": "Au fauteuil"
+    "IN_CHAIR": "Au fauteuil",
+    "DISPUTED": "Contesté",
+    "DONE": "Terminé",
+    "FITTED": "Posé",
+    "HANDED_OVER": "Remis",
+    "PARTIAL": "Partiel",
+    "PRINTED": "Imprimé",
+    "QUEUED": "En file",
+    "READ": "Lu",
+    "REMAKE": "À refaire",
+    "SENDING": "Envoi en cours",
+    "TO_PRINT": "À imprimer",
+    "UNPAID": "Impayé",
+    "WAITING": "En attente"
   },
   "VOICE": {
     "TAB": "Dictée vocale",

@@ -203,7 +203,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
       border: 1px solid rgb(var(--ink-300));
       border-radius: 10px;
       padding: 0.75rem 1rem;
-      font-size: 0.95rem;
+      font-size: 0.875rem;
       outline: none;
       transition: border-color 0.2s;
     }

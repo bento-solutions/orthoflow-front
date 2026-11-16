@@ -16,7 +16,7 @@ import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
         [attr.aria-label]="('COMMON.NOTIFICATIONS' | translate) + (notifications.unread() ? ' (' + notifications.unread() + ')' : '')">
         <app-icon name="bell" [size]="18" />
         @if (notifications.unread() > 0) {
-          <span class="absolute end-1 top-1 grid min-w-4 place-items-center rounded-full bg-critical-500 px-1 text-[10px] font-bold leading-4 text-white">
+          <span class="absolute end-1 top-1 grid min-w-4 place-items-center rounded-full bg-critical-500 px-1 text-xs font-bold leading-4 text-white">
             {{ notifications.unread() > 9 ? '9+' : notifications.unread() }}
           </span>
         }

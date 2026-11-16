@@ -41,9 +41,9 @@ const PAGE_CSS = `
   .print-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 10px; border-bottom: 1px solid #d4d4d8; }
   .print-head h1 { margin: 0; font-size: 18px; line-height: 1.2; }
   .print-head .clinic { font-size: 14px; font-weight: 600; }
-  .print-head .contact { color: #52525b; font-size: 11px; text-align: end; }
+  .print-head .contact { color: #52525b; font-size: 12px; text-align: end; }
   .print-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 24px; margin: 10px 0 12px; font-size: 12px; }
-  .print-meta dt { color: #71717a; text-transform: uppercase; letter-spacing: .03em; font-size: 10px; }
+  .print-meta dt { color: #71717a; text-transform: uppercase; letter-spacing: .03em; font-size: 12px; }
   .print-meta dd { margin: 0 0 4px; font-weight: 600; }
   .print-meta .wide { grid-column: 1 / -1; }
   .print-notes { white-space: pre-line; font-weight: 400 !important; }
@@ -51,7 +51,7 @@ const PAGE_CSS = `
   .print-zoom { zoom: 0.71; }
   .print-zoom .sheet { overflow: visible !important; }
   .print-summary { break-before: page; }
-  .print-footer { margin-top: 12px; padding-top: 6px; border-top: 1px solid #e4e4e7; color: #71717a; font-size: 10px; }
+  .print-footer { margin-top: 12px; padding-top: 6px; border-top: 1px solid #e4e4e7; color: #71717a; font-size: 12px; }
   .print-logo { max-height: 40px; max-width: 160px; object-fit: contain; }
 `;
 

@@ -201,7 +201,7 @@ const remember = (key: string, value: string): void => {
     </app-modal>
   `,
   styles: [`
-    :host { display: block; --perio-fg: #09090b; --perio-muted: #f4f4f5; --perio-muted-fg: #71717a; --perio-border: #e4e4e7; --perio-accent: #f4f4f5; --perio-ring: #52525c; }
+    :host { display: block; --perio-fg: rgb(var(--ink-950)); --perio-muted: rgb(var(--ink-100)); --perio-muted-fg: var(--text-muted); --perio-border: rgb(var(--ink-100)); --perio-accent: rgb(var(--ink-100)); --perio-ring: var(--text-muted); }
     .perio { display: flex; flex-direction: column; gap: .75rem; max-width: 1000px; }
     h2, h3, p { margin: 0; }
     .head { display: flex; flex-direction: column; gap: .5rem; }
@@ -234,7 +234,7 @@ const remember = (key: string, value: string): void => {
     .pc-empty { display: flex; flex-direction: column; align-items: center; gap: .5rem; padding: 2.5rem 1rem; border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); text-align: center; color: var(--text-muted); }
     .pc-empty h3 { font-size: var(--text-md); color: var(--text); }
     .pc-empty p { max-width: 32rem; font-size: var(--text-sm); }
-    .paper { border-radius: 8px; background: #fff; font-family: 'Inter', var(--font-sans); font-size: 16px; line-height: 1.5; color: #09090b; box-shadow: 0 0 0 1px var(--border); }
+    .paper { border-radius: 8px; background: rgb(var(--on-inverse)); font-family: 'Inter', var(--font-sans); font-size: 16px; line-height: 1.5; color: rgb(var(--ink-950)); box-shadow: 0 0 0 1px var(--border); }
     .visit { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
     .visit summary { padding: .625rem .875rem; font-size: var(--text-sm); font-weight: 600; cursor: pointer; }
     .visit-grid { display: grid; grid-template-columns: 12rem 1fr; gap: .75rem; padding: 0 .875rem .875rem; }

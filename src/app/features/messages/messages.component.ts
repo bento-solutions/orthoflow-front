@@ -1,3 +1,4 @@
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -17,14 +18,14 @@ import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 @Component({
   selector: 'app-messages',
   standalone: true,
-  imports: [AppDatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent],
+  imports: [PageHeaderComponent, AppDatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent],
   template: `
     <div class="anim-rise">
-      <header class="page-head">
-        <div class="page-actions">
+      <app-page-header>
+        <div page-actions class="contents">
           <button type="button" class="btn btn-primary" (click)="openNew()"><app-icon name="plus" [size]="16" /> {{ 'MSG.NEW' | translate }}</button>
         </div>
-      </header>
+      </app-page-header>
 
       <div class="grid gap-4 lg:grid-cols-[20rem_1fr]">
         <ul class="card max-h-[70vh] divide-y divide-ink-100 overflow-y-auto" [attr.aria-busy]="threads.loading()" [attr.aria-label]="'MSG.THREADS' | translate">

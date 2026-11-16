@@ -1,3 +1,4 @@
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -35,14 +36,14 @@ const blankLine = (): LineDraft => ({ drug: '', form: '', dci: '', posology: '' 
 @Component({
   selector: 'app-prescription-templates',
   standalone: true,
-  imports: [AppDatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent],
+  imports: [PageHeaderComponent, AppDatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent],
   template: `
     <div class="anim-rise">
-      <header class="page-head">
-        <div class="page-actions">
+      <app-page-header>
+        <div page-actions class="contents">
           <button type="button" class="btn btn-primary" (click)="openNew()"><app-icon name="plus" [size]="16" /> {{ 'RX.NEW_TEMPLATE' | translate }}</button>
         </div>
-      </header>
+      </app-page-header>
 
       <section class="mb-8">
         <h2 class="section-title">{{ 'RX.CLINIC_TEMPLATES' | translate }}</h2>

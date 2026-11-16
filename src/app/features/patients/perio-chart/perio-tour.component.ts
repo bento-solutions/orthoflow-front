@@ -53,7 +53,7 @@ const STEPS = ['PICK', 'TYPE', 'TEETH', 'SAVE'] as const;
     .keys { margin-top: .75rem; display: flex; align-items: center; gap: .375rem; }
     .status { margin-top: .75rem; display: flex; gap: .5rem; }
     .s { display: inline-flex; align-items: center; gap: .125rem; height: 22px; padding: 0 .375rem; border-radius: 6px; font-size: 14px; font-weight: 500; }
-    .s.missing { background: #fecaca; color: #7f1d1d; } .s.pontic { background: #fde68a; color: #78350f; } .s.implant { background: #bfdbfe; color: #1e3a8a; }
+    .s.missing { background: rgb(var(--critical-200)); color: rgb(var(--critical-900)); } .s.pontic { background: rgb(var(--caution-200)); color: rgb(var(--caution-900)); } .s.implant { background: rgb(var(--petrol-200)); color: rgb(var(--petrol-900)); }
     .dots { margin-top: 1rem; display: flex; gap: .25rem; }
     .dots i { width: .375rem; height: .375rem; border-radius: 9999px; background: var(--border-strong); }
     .dots i.on { width: 1rem; background: var(--text); }

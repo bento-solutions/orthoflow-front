@@ -36,7 +36,7 @@
   gap: 0.375rem;
   padding: 0.25rem 0.6rem;
   border-radius: 6px;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -53,14 +53,14 @@
 }
 
 .chart-type-badge app-icon.mi {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .tooth-info {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
   min-height: 1.5rem;
 }
 
@@ -124,13 +124,13 @@
 }
 
 .btn-icon-sm app-icon.mi {
-  font-size: 1.1rem;
+  font-size: 1.125rem;
 }
 
 /* The drawing is black on white in every theme: its lines and patterns are made for paper,
    and they mean what the printed chart means. */
 .svg-container {
-  background: #ffffff;
+  background: rgb(var(--on-inverse));
   border-radius: 10px;
   width: 100%;
   max-width: 320px;
@@ -186,7 +186,7 @@
 
 .status-group-title {
   margin: 0 0 0.5rem;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -249,7 +249,7 @@
   background: var(--surface);
   color: rgb(var(--ink-500));
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -279,7 +279,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: rgb(var(--ink-500));
   font-weight: 600;
 }
@@ -309,14 +309,14 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: rgb(var(--ink-600));
   margin-bottom: 0.75rem;
 }
 
 .note-label app-icon.mi {
-  font-size: 1.1rem;
+  font-size: 1.125rem;
   color: rgb(var(--petrol-700));
 }
 
@@ -327,7 +327,7 @@
   border: 1px solid rgb(var(--ink-200));
   border-radius: 12px;
   background: rgb(var(--ink-50));
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
   font-family: inherit;
   color: rgb(var(--ink-900));
   resize: vertical;
@@ -386,13 +386,13 @@
 .report-title {
   font-weight: 700;
   color: rgb(var(--ink-900));
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .note-count {
   background: rgb(var(--petrol-600));
   color: white;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 800;
   padding: 0.1rem 0.5rem;
   border-radius: 20px;
@@ -450,13 +450,13 @@
 .tooth-badge {
   font-weight: 800;
   color: rgb(var(--petrol-700));
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
 }
 
 .tooth-name-sm {
   font-weight: 700;
   color: rgb(var(--ink-900));
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
 }
 
 .status-indicator {
@@ -467,7 +467,7 @@
 }
 
 .status-text-sm {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: rgb(var(--ink-500));
   text-transform: uppercase;
@@ -475,7 +475,7 @@
 }
 
 .item-note {
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
   color: rgb(var(--ink-600));
   line-height: 1.5;
   white-space: pre-wrap;
@@ -496,7 +496,7 @@
 }
 
 .no-notes-state p {
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
   font-style: italic;
 }
 

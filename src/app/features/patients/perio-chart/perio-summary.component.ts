@@ -53,20 +53,20 @@ const millimetres = (value: number | null): string => (value === null || Number.
   styles: [`
     :host { display: block; }
     p, h3 { margin: 0; }
-    .sum-card { border: 1px solid var(--perio-border); border-radius: 8px; background: #fff; color: var(--perio-fg);
+    .sum-card { border: 1px solid var(--perio-border); border-radius: 8px; background: rgb(var(--on-inverse)); color: var(--perio-fg);
                 box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.1); }
     header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 24px 24px 16px; }
     .title { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.025em; color: var(--perio-fg); }
     .description { margin-top: 4px; font-size: 14px; line-height: 20px; color: var(--perio-muted-fg); }
     .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: var(--perio-muted-fg); }
-    .pulse { width: 6px; height: 6px; border-radius: 9999px; background: #22c55e; }
+    .pulse { width: 6px; height: 6px; border-radius: 9999px; background: rgb(var(--positive-500)); }
     .content { display: flex; flex-direction: column; gap: 12px; padding: 0 24px 24px; }
     .grid { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
     @media (max-width: 639px) { .grid { grid-template-columns: minmax(0, 1fr); } }
     .figure { border: 1px solid var(--perio-border); border-radius: 8px; background: rgba(244, 244, 245, 0.5); padding: 12px; }
     .fig-label { font-size: 12px; line-height: 16px; color: var(--perio-muted-fg); }
     .value { margin-top: 4px; font-size: 18px; line-height: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
-    .help { margin-top: 2px; font-size: 11px; line-height: 1.25; color: rgba(113, 113, 122, 0.7); }
+    .help { margin-top: 2px; font-size: 12px; line-height: 1.25; color: rgba(113, 113, 122, 0.7); }
   `],
 })
 export class PerioSummaryComponent {

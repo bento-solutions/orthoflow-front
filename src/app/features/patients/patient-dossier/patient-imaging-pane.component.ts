@@ -28,7 +28,7 @@ type PaneKind = Extract<DocumentCategory, 'XRAY' | 'INTRAORAL_3D'>;
       </div>
     } @else {
     <div class="flex flex-wrap items-center justify-between gap-2 pb-2">
-      <div class="inline-flex overflow-hidden rounded-lg border border-ink-200 bg-surface text-[0.8125rem] font-semibold" role="group"
+      <div class="inline-flex overflow-hidden rounded-lg border border-ink-200 bg-surface text-sm font-semibold" role="group"
            [attr.aria-label]="'PFILES.PANE_LABEL' | translate">
         @for (k of kinds; track k) {
           <button type="button" class="min-h-9 px-3 transition-colors" [attr.aria-pressed]="kind() === k"

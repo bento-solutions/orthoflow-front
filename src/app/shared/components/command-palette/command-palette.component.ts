@@ -128,7 +128,7 @@ import { DialogDirective } from '../../ui/dialog.directive';
       background: transparent;
     }
     .palette-esc {
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       color: rgb(var(--ink-500));
       border: 1px solid rgb(var(--ink-200));
       border-radius: 4px;
@@ -145,7 +145,7 @@ import { DialogDirective } from '../../ui/dialog.directive';
       padding: 0.5rem;
     }
     .palette-group-label {
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -178,7 +178,7 @@ import { DialogDirective } from '../../ui/dialog.directive';
       gap: 1rem;
       padding: 0.6rem 1.25rem;
       border-top: 1px solid rgb(var(--ink-200));
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       color: rgb(var(--ink-500));
     }
     .palette-footer kbd {

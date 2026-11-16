@@ -75,7 +75,7 @@ import { TranslateModule } from '@ngx-translate/core';
     .cm-off { color: rgb(var(--caution-700)) !important; }
     .cm-minor { border-top: 1px solid rgb(var(--ink-100)); border-radius: 0 0 .5rem .5rem; margin-top: .25rem; padding-top: .625rem; }
     .cm-minor .cm-text { font-size: .8125rem; color: rgb(var(--ink-600)); }
-    .cm-minor > app-icon.mi { font-size: 1.0625rem; color: rgb(var(--ink-500)); }
+    .cm-minor > app-icon.mi { font-size: 1rem; color: rgb(var(--ink-500)); }
   `],
 })
 export class ConsultationMenuComponent {

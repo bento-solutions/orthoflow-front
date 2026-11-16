@@ -29,7 +29,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
   standalone: true,
   imports: [AppDatePipe, MoneyPipe, RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink],
   template: `
-    <div class="p-6 max-w-7xl mx-auto space-y-6">
+    <div class="space-y-6">
       
       <!-- Top Title Bar -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -92,13 +92,13 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   <td class="p-4 font-mono text-xs font-bold text-ink-900">{{ inv.invoiceNumber || 'DRAFT' }}</td>
                   <td class="p-4">
                     <div class="font-bold text-ink-900">{{ inv.patient?.firstName }} {{ inv.patient?.lastName }}</div>
-                    <div class="text-[10px] text-ink-500">CIN: {{ inv.patient?.cin || '—' }}</div>
+                    <div class="text-xs text-ink-500">CIN: {{ inv.patient?.cin || '—' }}</div>
                   </td>
                   <td class="p-4 font-semibold text-ink-700">{{ inv.treatment?.name }}</td>
                   <td class="p-4 text-ink-500 font-medium">{{ inv.sessionDate | appDate:'datetime' }}</td>
                   <td class="p-4 text-center">
                     <span class="px-2.5 py-1 text-xs font-bold rounded-full border uppercase" [ngClass]="getInvoiceStatusClasses(inv.status!)">
-                      {{ inv.status }}
+                      {{ ('STATUS.' + inv.status) | translate }}
                     </span>
                   </td>
                   <td class="p-4 text-right font-medium text-emerald-700">{{ inv.consumablesCost | money }}</td>
@@ -222,7 +222,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                         @for (c of draftConsumables; track $index; let idx = $index) {
                           <div class="grid grid-cols-12 gap-3 items-end bg-gray-50/50 p-3.5 rounded-2xl border border-gray-100 font-semibold text-xs text-ink-900">
                             <div class="col-span-5">
-                              <label [attr.for]="'treatment-sessions-c-stockItem-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.ITEM_NAME" | translate }}</label>
+                              <label [attr.for]="'treatment-sessions-c-stockItem-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.ITEM_NAME" | translate }}</label>
                               <select [id]="'treatment-sessions-c-stockItem-' + $index" [(ngModel)]="c.stockItem" (change)="onConsumableItemChange(idx)" [disabled]="!!c.id" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none font-semibold text-ink-900">
                                 <option [value]="null">{{ "TREATMENTS.SELECT_ITEM_PLACEHOLDER" | translate }}</option>
                                 @for (item of catalogItems(); track item.id) {
@@ -231,14 +231,14 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                               </select>
                             </div>
                             <div class="col-span-3">
-                              <label [attr.for]="'treatment-sessions-c-actualQuantity-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.QTY_USED" | translate }}</label>
+                              <label [attr.for]="'treatment-sessions-c-actualQuantity-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.QTY_USED" | translate }}</label>
                               <div class="flex items-center gap-1.5">
                                 <input [id]="'treatment-sessions-c-actualQuantity-' + $index" type="number" [(ngModel)]="c.actualQuantity" (change)="recalculateDraftTotals()" min="0.0001" step="any" class="w-full px-2 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none font-mono font-bold" />
-                                <span class="text-[10px] font-bold text-ink-600 font-mono select-none shrink-0">{{ c.stockItem?.unit || 'units' }}</span>
+                                <span class="text-xs font-bold text-ink-600 font-mono select-none shrink-0">{{ c.stockItem?.unit || 'units' }}</span>
                               </div>
                             </div>
                             <div class="col-span-3 text-right">
-                              <span class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.USAGE_COST" | translate }}</span>
+                              <span class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.USAGE_COST" | translate }}</span>
                               <span class="font-bold text-emerald-700 block py-1.5 text-xs">{{ (c.actualQuantity * c.pricePerUnit) | money }}</span>
                             </div>
                             <div class="col-span-1 text-center">
@@ -264,25 +264,25 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                         @for (d of draftDiscounts; track $index; let idx = $index) {
                           <div class="grid grid-cols-12 gap-3 items-end bg-amber-50/20 p-3.5 rounded-2xl border border-amber-100/50 font-semibold text-xs text-ink-900">
                             <div class="col-span-3">
-                              <label [attr.for]="'treatment-sessions-d-target-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.DISCOUNT_TARGET" | translate }}</label>
+                              <label [attr.for]="'treatment-sessions-d-target-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.DISCOUNT_TARGET" | translate }}</label>
                               <select [id]="'treatment-sessions-d-target-' + $index" [(ngModel)]="d.target" (change)="recalculateDraftTotals()" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none">
                                 <option value="INVOICE">{{ "TREATMENTS.DISCOUNT_TARGET_INVOICE" | translate }}</option>
                                 <option value="TREATMENT">{{ "TREATMENTS.TREATMENT_FEE" | translate }}</option>
                               </select>
                             </div>
                             <div class="col-span-3">
-                              <label [attr.for]="'treatment-sessions-d-type-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "COMMON.TYPE" | translate }}</label>
+                              <label [attr.for]="'treatment-sessions-d-type-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "COMMON.TYPE" | translate }}</label>
                               <select [id]="'treatment-sessions-d-type-' + $index" [(ngModel)]="d.type" (change)="recalculateDraftTotals()" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none">
                                 <option value="PERCENTAGE">{{ "TREATMENTS.DISCOUNT_TYPE_PERCENTAGE" | translate }}</option>
                                 <option value="FIXED">{{ "TREATMENTS.DISCOUNT_TYPE_FIXED" | translate }}</option>
                               </select>
                             </div>
                             <div class="col-span-2">
-                              <label [attr.for]="'treatment-sessions-d-value-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.DISCOUNT_VALUE" | translate }}</label>
+                              <label [attr.for]="'treatment-sessions-d-value-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.DISCOUNT_VALUE" | translate }}</label>
                               <input [id]="'treatment-sessions-d-value-' + $index" type="number" [(ngModel)]="d.value" (change)="recalculateDraftTotals()" min="0" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none font-mono" />
                             </div>
                             <div class="col-span-3">
-                              <label [attr.for]="'treatment-sessions-d-reason-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.DISCOUNT_REASON" | translate }}</label>
+                              <label [attr.for]="'treatment-sessions-d-reason-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.DISCOUNT_REASON" | translate }}</label>
                               <input [id]="'treatment-sessions-d-reason-' + $index" type="text" [(ngModel)]="d.reason" [placeholder]="'TREATMENTS.DISCOUNT_REASON_PLACEHOLDER' | translate" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none" />
                             </div>
                             <div class="col-span-1 text-center">

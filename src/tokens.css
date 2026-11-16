@@ -192,6 +192,37 @@
   --danger-hover:     rgb(var(--critical-700));
   --danger-tint:      rgb(var(--critical-50));
 
+  /* Voice and charting states that are not the five statuses: what was dictated and not saved
+     (staged), the tooth the last command was about (focus), a finding only suspected, and a
+     suggestion the system has not recorded. */
+  --voice-staged:     #d97706;
+  --voice-focus:      #0e7490;
+  --suspected:        #6d28d9;
+  --suspected-strong: #5b21b6;
+  --suspected-dot:    #7c3aed;
+  --suspected-tint:   #f5f3ff;
+  --suggestion:       #ffb09c;
+  --suggestion-text:  #5a1a0c;
+
+  /* Anatomy, drawn as it looks in a mouth (gum legend swatches). Not status colours. */
+  --anat-inflamed:       #cc2129;
+  --anat-inflamed-edge:  #8f1319;
+  --anat-perio:          #84194d;
+  --anat-perio-edge:     #5a1136;
+  --anat-recession:      #e6928e;
+  --anat-recession-edge: #b4605c;
+  --anat-enamel:         #f1e6c9;
+  --anat-calculus:       #a98a50;
+  --anat-calculus-dark:  #7d5a28;
+  --anat-calculus-edge:  #6b4a1f;
+  --anat-plaque:         #ede19a;
+  --anat-plaque-edge:    #b5a64f;
+
+  /* The 3D scan viewer's stage, dark in both themes like a radiograph light box. */
+  --scan-bg:   #10181b;
+  --scan-bg-2: #26343a;
+  --scan-fg:   #d6dfe1;
+
   /* Focus — one ring, everywhere, 3:1 against every ground it lands on. */
   --focus-ring:       rgb(var(--petrol-500));
   --focus-ring-inverse: rgb(var(--petrol-300));
@@ -207,7 +238,7 @@
 
   /* Type scale — 14px UI base. Clinical screens are dense; 16px base
      pushes tables past the fold and forces users to scroll to compare. */
-  --text-2xs:  0.6875rem; /* 11px — table meta, kbd            */
+  --text-2xs:  0.75rem;   /* 12px — the floor: nothing smaller (UX audit P2-4) */
   --text-xs:   0.75rem;   /* 12px — labels, captions           */
   --text-sm:   0.8125rem; /* 13px — table cells, secondary     */
   --text-base: 0.875rem;  /* 14px — body / default UI          */

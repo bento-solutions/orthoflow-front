@@ -1,3 +1,5 @@
+import { IconComponent } from '../../../../shared/ui/icon.component';
+import { PageHeaderComponent } from '../../../../shared/ui/page-header.component';
 import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { Component, signal, computed, inject, OnInit, OnDestroy } from '@angular/core';
@@ -18,19 +20,15 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 @Component({
   selector: 'app-stock-dashboard',
   standalone: true,
-  imports: [AppDatePipe, MoneyPipe, RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink],
+  imports: [IconComponent, PageHeaderComponent, AppDatePipe, MoneyPipe, RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink],
   template: `
-    <div class="p-6 max-w-7xl mx-auto space-y-6">
-      
-      <!-- Top Title Bar -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <button type="button" (click)="openAddModal()" class="flex items-center gap-2 px-4 py-2.5 bg-petrol-600 text-white font-medium rounded-xl hover:bg-petrol-700 transition shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            {{ "STOCK.ADD_NEW_ITEM" | translate }}
-          </button>
-        </div>
-      </div>
+    <div class="space-y-6">
+      <!-- The page frame: its title, and the main action top right like every list page (P2-5). -->
+      <app-page-header>
+        <button page-actions type="button" class="btn btn-primary" (click)="openAddModal()">
+          <app-icon name="plus" [size]="16" /> {{ "STOCK.ADD_NEW_ITEM" | translate }}
+        </button>
+      </app-page-header>
 
       <!-- Module Navigation Pills -->
       <div class="flex flex-wrap gap-2 bg-ortho-navy/[0.03] p-1.5 rounded-xl border border-ortho-navy/5 max-w-max font-semibold text-xs">
@@ -192,7 +190,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     </td>
                     <td class="p-4">
                       <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-ortho-navy/5 text-ink-900">
-                        {{ item.category }}
+                        {{ ('STOCK.CATEGORIES.' + item.category) | translate }}
                       </span>
                     </td>
                     <td class="p-4 text-center">
@@ -201,25 +199,25 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                           @if (item.packCount > 0) {
                             <!-- Nobody counts a shelf in millilitres: lead with the bottles. -->
                             <span class="block">{{ item.packCount }} × {{ item.unitLabel }}</span>
-                            <span class="block text-[10px] font-normal text-ink-500">
+                            <span class="block text-xs font-normal text-ink-500">
                               {{ item.currentStock }} {{ item.unitSymbol || item.unit || 'units' }}@if (item.packRemainder > 0) { · {{ 'STOCK.PACK_OPEN' | translate: { qty: item.packRemainder, unit: item.unitSymbol } }} }
                             </span>
                           } @else {
                             {{ item.currentStock }} {{ item.unitSymbol || item.unit || 'units' }}
                           }
                           @if (item.usesPerUnit > 1) {
-                            <span class="ms-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold bg-petrol-50 text-petrol-700"
+                            <span class="ms-1 inline-block rounded px-1.5 py-0.5 text-xs font-bold bg-petrol-50 text-petrol-700"
                                   [title]="'STOCK.UI.USES_IN_SERVICE' | translate">{{ item.usesOnCurrentUnit }}/{{ item.usesPerUnit }}</span>
                           }
                         </span>
                         @if (item.currentStock === 0) {
-                          <span class="px-1.5 py-0.5 text-[9px] font-bold bg-red-50 text-red-700 rounded border border-red-200 uppercase">{{ 'STOCK.UI.EMPTY' | translate }}</span>
+                          <span class="px-1.5 py-0.5 text-xs font-bold bg-red-50 text-red-700 rounded border border-red-200 uppercase">{{ 'STOCK.UI.EMPTY' | translate }}</span>
                         } @else if (item.currentStock <= item.minimumStock) {
-                          <span class="px-1.5 py-0.5 text-[9px] font-bold bg-amber-50 text-amber-700 rounded border border-amber-200 uppercase">{{ 'STOCK.UI.LOW' | translate }}</span>
+                          <span class="px-1.5 py-0.5 text-xs font-bold bg-amber-50 text-amber-700 rounded border border-amber-200 uppercase">{{ 'STOCK.UI.LOW' | translate }}</span>
                         }
                       </div>
                     </td>
-                    <td class="p-4 text-right font-medium text-ink-700">{{ item.purchasePrice | money }} <span class="text-[10px] text-ink-500">/{{ item.unitSize }}</span></td>
+                    <td class="p-4 text-right font-medium text-ink-700">{{ item.purchasePrice | money }} <span class="text-xs text-ink-500">/{{ item.unitSize }}</span></td>
                     <td class="p-4 text-right font-medium text-emerald-700">{{ item.pricePerUse | money }}</td>
                     <td class="p-4 text-ink-500 font-medium">{{ item.supplier?.name || 'N/A' }}</td>
                     <td class="p-4 text-right">
@@ -318,10 +316,10 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     <td class="p-4 text-xs font-mono text-ink-600">{{ mov.createdAt | appDate:'datetime' }}</td>
                     <td class="p-4">
                       <div class="font-bold text-ink-900">{{ mov.stockItem?.name }}</div>
-                      <div class="text-[10px] text-ink-500">{{ 'STOCK.UI.SKU' | translate }} {{ mov.stockItem?.sku }}</div>
+                      <div class="text-xs text-ink-500">{{ 'STOCK.UI.SKU' | translate }} {{ mov.stockItem?.sku }}</div>
                     </td>
                     <td class="p-4">
-                      <span class="px-2.5 py-1 text-[11px] font-semibold rounded-full border" [ngClass]="getMovementTypeClasses(mov.movementType)">
+                      <span class="px-2.5 py-1 text-xs font-semibold rounded-full border" [ngClass]="getMovementTypeClasses(mov.movementType)">
                         {{ mov.movementType }}
                       </span>
                     </td>
@@ -332,7 +330,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     <td class="p-4 text-center text-ink-700 font-bold">{{ mov.quantityAfter }}</td>
                     <td class="p-4">
                       <div class="flex items-center gap-1.5">
-                        <span class="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded text-[11px] font-bold text-ink-500 font-mono">{{ mov.sourceType }}</span>
+                        <span class="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded text-xs font-bold text-ink-500 font-mono">{{ mov.sourceType }}</span>
                         <span class="font-semibold text-xs text-ink-700">{{ mov.sourceReference }}</span>
                       </div>
                     </td>
@@ -417,7 +415,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                 <div>
                   <div class="flex items-center gap-2 mb-1">
                     <span class="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 font-mono text-xs font-bold rounded-lg uppercase">
-                      {{ activeCountSession().status }}
+                      {{ ('STATUS.' + activeCountSession().status) | translate }}
                     </span>
                     <h2 class="text-lg font-bold text-ink-900 leading-none">{{ 'STOCK.UI.COUNT_ACTIVE' | translate }}</h2>
                   </div>
@@ -488,13 +486,13 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                 <span>{{ 'STOCK.UI.VARIANCE_SUMMARY' | translate }}</span>
                 <div class="flex items-center gap-6 font-mono normal-case">
                   <div>
-                    <span class="text-ink-500 uppercase text-[10px] tracking-wide block">{{ 'STOCK.UI.TOTAL_QTY_VARIANCE' | translate }}</span>
+                    <span class="text-ink-500 uppercase text-xs tracking-wide block">{{ 'STOCK.UI.TOTAL_QTY_VARIANCE' | translate }}</span>
                     <span class="text-sm font-extrabold" [ngClass]="getRunningVarianceSum().qty > 0 ? 'text-emerald-700' : getRunningVarianceSum().qty < 0 ? 'text-red-700' : 'text-ink-900'">
                       {{ getRunningVarianceSum().qty > 0 ? '+' : '' }}{{ getRunningVarianceSum().qty }}
                     </span>
                   </div>
                   <div>
-                    <span class="text-ink-500 uppercase text-[10px] tracking-wide block">{{ 'STOCK.UI.COST_IMPACT' | translate }}</span>
+                    <span class="text-ink-500 uppercase text-xs tracking-wide block">{{ 'STOCK.UI.COST_IMPACT' | translate }}</span>
                     <span class="text-sm font-extrabold" [ngClass]="getRunningVarianceSum().cost > 0 ? 'text-emerald-700' : getRunningVarianceSum().cost < 0 ? 'text-red-700' : 'text-ink-900'">
                       {{ getRunningVarianceSum().cost > 0 ? '+' : '' }}{{ getRunningVarianceSum().cost | money }}
                     </span>
@@ -516,7 +514,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                 </div>
 
                 <div class="space-y-2">
-                  <label for="stock-dashboard-reconciliationNotes" class="block text-[10px] font-bold text-ink-500 uppercase">{{ 'STOCK.UI.COUNT_NOTES' | translate }}</label>
+                  <label for="stock-dashboard-reconciliationNotes" class="block text-xs font-bold text-ink-500 uppercase">{{ 'STOCK.UI.COUNT_NOTES' | translate }}</label>
                   <textarea id="stock-dashboard-reconciliationNotes" [(ngModel)]="reconciliationNotes" [placeholder]="'STOCK.UI.COUNT_NOTES_HINT' | translate" rows="3" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs bg-white focus:outline-none focus:border-petrol-600 transition"></textarea>
                 </div>
 
@@ -550,8 +548,8 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                         <tr class="hover:bg-ortho-navy/[0.01] transition text-xs font-semibold">
                           <td class="p-4 font-mono text-ink-900">{{ sess.sessionNumber || sess.id.substring(0,8) }}</td>
                           <td class="p-4">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border" [ngClass]="sess.status === 'VALIDATED' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'">
-                              {{ sess.status }}
+                            <span class="px-2 py-0.5 rounded text-xs font-bold border" [ngClass]="sess.status === 'VALIDATED' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'">
+                              {{ ('STATUS.' + sess.status) | translate }}
                             </span>
                           </td>
                           <td class="p-4 text-ink-500">{{ sess.createdAt | appDate:'datetime' }}</td>
@@ -663,7 +661,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                 <div>
                   <label for="stock-dashboard-itemForm-usesPerUnit" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ 'STOCK.UI.USES_PER_UNIT' | translate }}</label>
                   <input id="stock-dashboard-itemForm-usesPerUnit" type="number" [(ngModel)]="itemForm.usesPerUnit" name="usesPerUnit" min="1" max="1000" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
-                  <p class="mt-1 text-[10px] text-ink-500">
+                  <p class="mt-1 text-xs text-ink-500">
                     {{ 'STOCK.UI.USES_PER_UNIT_HINT' | translate }}
                   </p>
                 </div>

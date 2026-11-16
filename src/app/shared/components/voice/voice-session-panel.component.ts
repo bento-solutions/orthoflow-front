@@ -462,7 +462,7 @@ interface ToothGroup {
       color: rgb(var(--ink-600)); cursor: pointer; flex-shrink: 0;
     }
     .icon-btn:hover, .icon-btn.active { background: rgb(var(--ink-100)); color: rgb(var(--ink-900)); }
-    .icon-btn.solid { background: rgb(var(--petrol-600)); color: #fff; }
+    .icon-btn.solid { background: rgb(var(--petrol-600)); color: rgb(var(--on-inverse)); }
     .icon-btn.solid:hover { background: rgb(var(--petrol-700)); }
     .icon-btn:focus-visible, .btn-big:focus-visible, .vs-option:focus-visible, .vs-fdi:focus-visible {
       outline: 2px solid var(--focus-ring); outline-offset: 2px;
@@ -476,25 +476,25 @@ interface ToothGroup {
 
     .btn-big {
       display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-      min-height: 3rem; padding: .625rem 1.125rem; border-radius: 12px; font-size: .9375rem; font-weight: 600;
+      min-height: 3rem; padding: .625rem 1.125rem; border-radius: 12px; font-size: .875rem; font-weight: 600;
       border: 1px solid rgb(var(--ink-300)); background: var(--surface); color: rgb(var(--ink-800)); cursor: pointer;
     }
     .btn-big:disabled { opacity: .6; cursor: default; }
-    .btn-big.primary { background: rgb(var(--petrol-600)); border-color: transparent; color: #fff; }
+    .btn-big.primary { background: rgb(var(--petrol-600)); border-color: transparent; color: rgb(var(--on-inverse)); }
     .btn-big.primary:hover:not(:disabled) { background: rgb(var(--petrol-700)); }
-    .btn-big.positive { background: rgb(var(--positive-600)); border-color: transparent; color: #fff; }
+    .btn-big.positive { background: rgb(var(--positive-600)); border-color: transparent; color: rgb(var(--on-inverse)); }
     .btn-big app-icon.mi { font-size: 1.25rem; }
 
     .vs-intro { display: flex; flex-direction: column; align-items: flex-start; gap: .625rem; }
     .vs-intro h3 { margin: 0; font-size: 1rem; }
-    .vs-intro p { margin: 0; color: rgb(var(--ink-700)); line-height: 1.5; font-size: .9rem; }
+    .vs-intro p { margin: 0; color: rgb(var(--ink-700)); line-height: 1.5; font-size: .875rem; }
     .vs-intro-icon {
       font-size: 1.75rem; color: rgb(var(--petrol-700)); background: rgb(var(--petrol-50));
       border-radius: 12px; padding: .5rem;
     }
     .vs-intro.warn .vs-intro-icon { color: rgb(var(--caution-700)); background: rgb(var(--caution-50)); }
     .vs-intro.done .vs-intro-icon { color: rgb(var(--positive-700)); background: rgb(var(--positive-50)); }
-    .vs-how { margin: 0; padding-inline-start: 1.125rem; color: rgb(var(--ink-600)); font-size: .85rem; line-height: 1.55; }
+    .vs-how { margin: 0; padding-inline-start: 1.125rem; color: rgb(var(--ink-600)); font-size: .8125rem; line-height: 1.55; }
     .vs-actions { display: flex; flex-wrap: wrap; gap: .5rem; width: 100%; }
     .vs-actions .btn-big { flex: 1 1 12rem; }
 
@@ -506,14 +506,14 @@ interface ToothGroup {
     .vs-alert.caution { background: rgb(var(--caution-50)); border: 1px solid rgb(var(--caution-200)); color: rgb(var(--caution-800)); }
     .vs-alert.critical { background: rgb(var(--critical-50)); border: 1px solid rgb(var(--critical-200)); color: rgb(var(--critical-700)); }
     .vs-alert.action {
-      background: rgb(var(--petrol-600)); color: #fff; border: none; cursor: pointer;
+      background: rgb(var(--petrol-600)); color: rgb(var(--on-inverse)); border: none; cursor: pointer;
       font-weight: 600; min-height: 3rem; align-items: center;
     }
 
     .vs-prompt { display: flex; flex-direction: column; gap: .625rem; }
     .vs-prompt.confirm { border-color: rgb(var(--caution-300)); background: rgb(var(--caution-50)); }
     .vs-prompt.question { border-color: rgb(var(--petrol-300)); background: rgb(var(--petrol-50)); }
-    .vs-prompt-text { margin: 0; font-size: 1.0625rem; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+    .vs-prompt-text { margin: 0; font-size: 1rem; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
     .vs-options { display: flex; flex-wrap: wrap; gap: .5rem; }
     .vs-option {
       min-height: 2.75rem; padding: .5rem .875rem; border-radius: 999px; cursor: pointer;
@@ -531,21 +531,21 @@ interface ToothGroup {
       transform-origin: left center; transition: transform 80ms linear;
     }
     :host-context([dir='rtl']) .vs-meter span { transform-origin: right center; }
-    .vs-status { margin: 0; font-weight: 600; color: rgb(var(--ink-800)); font-size: .9375rem; }
+    .vs-status { margin: 0; font-weight: 600; color: rgb(var(--ink-800)); font-size: .875rem; }
     .vs-line { margin: 0; font-size: .875rem; line-height: 1.45; color: rgb(var(--ink-800)); overflow-wrap: anywhere; }
     .vs-line.outcome { color: rgb(var(--positive-700)); font-weight: 600; }
     .vs-line.outcome.bad { color: rgb(var(--caution-800)); }
     .vs-lang { border: 0; margin: .75rem 0 0; padding: 0; }
     .vs-lang legend { padding: 0; margin-bottom: .375rem; font-size: .8125rem; font-weight: 700; color: var(--text); }
     .vs-lang-options { display: inline-flex; border: 1px solid var(--border-strong); border-radius: .5rem; overflow: hidden; }
-    .vs-lang-options button { padding: .4375rem .875rem; font: inherit; font-size: .875rem; border: 0; background: var(--surface, #fff); color: var(--text); cursor: pointer; }
+    .vs-lang-options button { padding: .4375rem .875rem; font: inherit; font-size: .875rem; border: 0; background: var(--surface, rgb(var(--on-inverse))); color: var(--text); cursor: pointer; }
     .vs-lang-options button + button { border-inline-start: 1px solid var(--border-strong); }
     .vs-lang-options button.on { background: var(--action); color: var(--text-inverse); font-weight: 700; }
     .vs-lang-options button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
     .vs-lang-hint { margin: .375rem 0 0; font-size: .75rem; color: var(--text-muted); }
     .vs-line.ignored { color: rgb(var(--ink-500)); font-size: .8125rem; font-style: italic; }
     .vs-label {
-      display: inline-block; margin-inline-end: .375rem; font-size: .6875rem; font-weight: 700;
+      display: inline-block; margin-inline-end: .375rem; font-size: .75rem; font-weight: 700;
       text-transform: uppercase; letter-spacing: .05em; color: rgb(var(--ink-500));
     }
     .vs-undo {
@@ -561,13 +561,13 @@ interface ToothGroup {
     }
 
     .vs-card-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; margin-bottom: .25rem; }
-    .vs-card-head h3 { margin: 0; font-size: .9375rem; font-weight: 700; }
+    .vs-card-head h3 { margin: 0; font-size: .875rem; font-weight: 700; }
     .vs-count { font-size: .75rem; font-weight: 700; color: rgb(var(--ink-600)); background: rgb(var(--ink-100)); border-radius: 999px; padding: .125rem .5rem; }
     .vs-legend { display: flex; flex-wrap: wrap; gap: .375rem .75rem; font-size: .75rem; color: rgb(var(--ink-600)); }
     .vs-legend span { display: inline-flex; align-items: center; gap: .25rem; }
     .swatch { display: inline-block; width: .75rem; height: .75rem; border-radius: 3px; border: 2px solid; }
-    .swatch.staged { border-color: #d97706; }
-    .swatch.focus { border-color: #0e7490; box-shadow: 0 0 3px rgba(14, 116, 144, .9); }
+    .swatch.staged { border-color: var(--voice-staged); }
+    .swatch.focus { border-color: var(--voice-focus); box-shadow: 0 0 3px rgba(14, 116, 144, .9); }
     .vs-hint { margin: .25rem 0 0; font-size: .8125rem; color: rgb(var(--ink-500)); line-height: 1.4; }
     .vs-chart-placeholder { height: clamp(22rem, 58vh, 40rem); border-radius: .75rem; background: var(--surface-hover); }
     .vs-empty { margin: .5rem 0 0; font-size: .875rem; color: rgb(var(--ink-600)); }
@@ -580,11 +580,11 @@ interface ToothGroup {
     }
     .vs-tooth:last-child { border-bottom: none; }
     .vs-fdi {
-      min-width: 2.75rem; height: 2.75rem; border-radius: 10px; border: 2px solid #d97706;
+      min-width: 2.75rem; height: 2.75rem; border-radius: 10px; border: 2px solid var(--voice-staged);
       background: var(--surface)eb; color: rgb(var(--ink-900)); font-weight: 800; font-size: 1rem; cursor: pointer;
       font-variant-numeric: tabular-nums; flex-shrink: 0;
     }
-    .vs-tooth.focus .vs-fdi { border-color: #0e7490; background: rgb(var(--petrol-50)); box-shadow: 0 0 0 3px rgba(14, 116, 144, .18); }
+    .vs-tooth.focus .vs-fdi { border-color: var(--voice-focus); background: rgb(var(--petrol-50)); box-shadow: 0 0 0 3px rgba(14, 116, 144, .18); }
     .vs-entries { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .25rem; }
     .vs-entry { display: flex; align-items: flex-start; gap: .25rem; }
     .vs-entry-body { flex: 1; min-width: 0; padding-top: .25rem; }

@@ -19,7 +19,7 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
   standalone: true,
   imports: [AppDatePipe, MoneyPipe, RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink, PatientPickerComponent],
   template: `
-    <div class="p-6 max-w-7xl mx-auto space-y-6">
+    <div class="space-y-6">
       
       <!-- Top Title Bar -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -81,18 +81,18 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
                   <td class="p-4 font-mono text-xs font-bold text-ink-900">{{ so.soNumber }}</td>
                   <td class="p-4">
                     <div class="font-bold text-ink-900">{{ so.patient?.firstName }} {{ so.patient?.lastName }}</div>
-                    <div class="text-[10px] text-ink-500">{{ "STOCK.EMAIL_LABEL" | translate }}: {{ so.patient?.email }}</div>
+                    <div class="text-xs text-ink-500">{{ "STOCK.EMAIL_LABEL" | translate }}: {{ so.patient?.email }}</div>
                   </td>
                   <td class="p-4 text-ink-500 font-medium">{{ so.createdAt | appDate:'datetime' }}</td>
                   <td class="p-4 text-center">
                     <span class="px-2.5 py-1 text-xs font-bold rounded-full border uppercase" [ngClass]="getSOStatusClasses(so.status!)">
-                      {{ so.status }}
+                      {{ ('STATUS.' + so.status) | translate }}
                     </span>
                   </td>
                   <td class="p-4">
                     <div class="flex flex-col gap-1">
                       @for (line of so.lines; track line.id) {
-                        <div class="text-[11px] text-ink-600">
+                        <div class="text-xs text-ink-600">
                           • {{ line.stockItem?.name }}: <span class="font-bold text-ink-900">{{ line.quantity }}</span> {{ "STOCK.UNITS" | translate }}
                         </div>
                       }
@@ -158,7 +158,7 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
                     @for (line of lines; track $index; let idx = $index) {
                       <div class="grid grid-cols-12 gap-3 items-end bg-gray-50/50 p-3 rounded-xl border border-gray-100 font-medium">
                         <div class="col-span-5">
-                          <label [attr.for]="'sales-orders-line-stockItem-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.CATALOG_ITEM" | translate }}</label>
+                          <label [attr.for]="'sales-orders-line-stockItem-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.CATALOG_ITEM" | translate }}</label>
                           <select [id]="'sales-orders-line-stockItem-' + $index" [(ngModel)]="line.stockItem" (change)="onItemChange(idx)" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none">
                             <option [value]="null">{{ "STOCK.SELECT_ITEM_PLACEHOLDER" | translate }}</option>
                             @for (item of catalogItems(); track item.id) {
@@ -167,15 +167,15 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
                           </select>
                         </div>
                         <div class="col-span-2">
-                          <label [attr.for]="'sales-orders-line-quantity-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.QUANTITY" | translate }}</label>
+                          <label [attr.for]="'sales-orders-line-quantity-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.QUANTITY" | translate }}</label>
                           <input [id]="'sales-orders-line-quantity-' + $index" type="number" [(ngModel)]="line.quantity" (change)="calculateSOTotal()" min="1" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none" />
                         </div>
                         <div class="col-span-2">
-                          <label [attr.for]="'sales-orders-line-unitPrice-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.UNIT_PRICE" | translate }}</label>
+                          <label [attr.for]="'sales-orders-line-unitPrice-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.UNIT_PRICE" | translate }}</label>
                           <input [id]="'sales-orders-line-unitPrice-' + $index" type="number" [(ngModel)]="line.unitPrice" (change)="calculateSOTotal()" min="0" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-right focus:outline-none" />
                         </div>
                         <div class="col-span-2 text-right">
-                          <span class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.TOTAL" | translate }}</span>
+                          <span class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.TOTAL" | translate }}</span>
                           <span class="font-bold text-xs text-ink-900 block py-1.5">{{ (line.quantity * line.unitPrice) | money }}</span>
                         </div>
                         <div class="col-span-1 text-center">

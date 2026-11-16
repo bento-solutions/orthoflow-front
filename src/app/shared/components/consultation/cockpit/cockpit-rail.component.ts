@@ -45,11 +45,11 @@ const ICONS: Readonly<Record<StageView, string>> = {
     :host { display: block; min-width: 0; }
     .ck-rail { display: flex; gap: .375rem; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; }
     .ck-tab, .ck-pin { position: relative; display: inline-flex; align-items: center; gap: .3rem; min-height: 2.5rem; padding: 0 .75rem; border-radius: 999px; border: 1px solid rgb(var(--ink-200)); background: var(--surface); color: rgb(var(--ink-700)); font-weight: 600; font-size: .875rem; white-space: nowrap; flex: none; }
-    .ck-tab app-icon.mi, .ck-pin app-icon.mi { font-size: 1.1rem; }
-    .ck-tab.on { background: var(--action); border-color: var(--action); color: #fff; }
+    .ck-tab app-icon.mi, .ck-pin app-icon.mi { font-size: 1.125rem; }
+    .ck-tab.on { background: var(--action); border-color: var(--action); color: rgb(var(--on-inverse)); }
     .ck-pin.on { background: rgb(var(--caution-100)); border-color: rgb(var(--caution-400)); color: rgb(var(--caution-800)); }
     .ck-count { font-size: .75rem; font-variant-numeric: tabular-nums; padding: 0 .35rem; border-radius: 999px; background: rgb(var(--ink-100)); color: rgb(var(--ink-800)); }
-    .ck-tab.on .ck-count { background: rgb(255 255 255 / .2); color: #fff; }
+    .ck-tab.on .ck-count { background: rgb(255 255 255 / .2); color: rgb(var(--on-inverse)); }
     .ck-new { position: absolute; top: .2rem; inset-inline-end: .2rem; width: .5rem; height: .5rem; border-radius: 50%; background: rgb(var(--critical-600)); }
   `],
 })

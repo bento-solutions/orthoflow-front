@@ -117,7 +117,7 @@ const ERROR_MS = 4000;
     :host { display: block; container-type: inline-size; }
     /* 16px of paper around the 968px chart; where the screen is a little short of 1000px the margin
        gives way (down to 8px) before the sheet has to scroll. */
-    .sheet { border-radius: 8px; background: #fff; padding: 16px max(8px, min(16px, calc((100cqw - 968px) / 2))); overflow-x: auto; outline: none; }
+    .sheet { border-radius: 8px; background: rgb(var(--on-inverse)); padding: 16px max(8px, min(16px, calc((100cqw - 968px) / 2))); overflow-x: auto; outline: none; }
     .sheet:focus-visible { box-shadow: 0 0 0 2px var(--perio-ring); }
     p { margin: 0; }
     .error-wrap { margin-bottom: 12px; display: flex; justify-content: center; }
@@ -138,11 +138,11 @@ const ERROR_MS = 4000;
                box-shadow: 0 0 0 1px rgba(228, 228, 231, 0.05), 0 8px 16px -4px rgb(0 0 0 / .12), 0 4px 6px -2px rgb(0 0 0 / .08); }
     .line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
     .strong { font-weight: 600; } .muted { color: var(--perio-muted-fg); }
-    .tooth-no { font-size: 10px; line-height: 16px; text-transform: uppercase; letter-spacing: 0.025em; color: var(--perio-muted-fg); }
+    .tooth-no { font-size: 12px; line-height: 16px; text-transform: uppercase; letter-spacing: 0.025em; color: var(--perio-muted-fg); }
     .tt-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 500; }
     .tt-mono.plain { font-weight: 400; }
     .range { margin-top: 4px; padding-top: 6px; border-top: 1px solid rgba(228, 228, 231, 0.6); display: flex; flex-direction: column; gap: 2px; }
-    .tt-hint { font-size: 10px; line-height: 16px; color: var(--perio-muted-fg); }
+    .tt-hint { font-size: 12px; line-height: 16px; color: var(--perio-muted-fg); }
   `],
 })
 export class PerioGridComponent implements OnInit {

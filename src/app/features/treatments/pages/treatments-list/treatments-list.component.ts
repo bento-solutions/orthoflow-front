@@ -1,3 +1,5 @@
+import { IconComponent } from '../../../../shared/ui/icon.component';
+import { PageHeaderComponent } from '../../../../shared/ui/page-header.component';
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -13,19 +15,15 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 @Component({
   selector: 'app-treatments-list',
   standalone: true,
-  imports: [MoneyPipe, DialogDirective, CommonModule, FormsModule, TranslateModule],
+  imports: [IconComponent, PageHeaderComponent, MoneyPipe, DialogDirective, CommonModule, FormsModule, TranslateModule],
   template: `
-    <div class="p-6 max-w-7xl mx-auto space-y-6">
-      
-      <!-- Top Title Bar -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <button type="button" (click)="openAddModal()" class="flex items-center gap-2 px-4 py-2.5 bg-petrol-600 text-white font-medium rounded-xl hover:bg-petrol-700 transition shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            {{ "TREATMENTS.ADD_NEW_TREATMENT" | translate }}
-          </button>
-        </div>
-      </div>
+    <div class="space-y-6">
+      <!-- The page frame: its title, and the main action top right like every list page (P2-5). -->
+      <app-page-header>
+        <button page-actions type="button" class="btn btn-primary" (click)="openAddModal()">
+          <app-icon name="plus" [size]="16" /> {{ "TREATMENTS.ADD_NEW_TREATMENT" | translate }}
+        </button>
+      </app-page-header>
 
       <!-- Treatments Grid / Catalog -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -65,7 +63,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 
             <!-- Consumables list summary -->
             <div class="border-t border-ortho-navy/5 pt-4 space-y-2 flex-1">
-              <span class="text-[10px] font-bold text-ink-500 uppercase tracking-wider block">{{ "TREATMENTS.CONSUMABLES" | translate }} ({{ t.consumables?.length || 0 }})</span>
+              <span class="text-xs font-bold text-ink-500 uppercase tracking-wider block">{{ "TREATMENTS.CONSUMABLES" | translate }} ({{ t.consumables?.length || 0 }})</span>
 
               <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
                 @for (c of t.consumables; track $index) {
@@ -202,7 +200,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
                   @for (c of formConsumables; track $index; let idx = $index) {
                     <div class="grid grid-cols-12 gap-3 items-end bg-gray-50/50 p-3 rounded-xl border border-gray-100 font-semibold text-xs text-ink-900">
                       <div class="col-span-6">
-                        <label [attr.for]="'treatments-list-c-stockItem-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.STOCK_ITEM" | translate }}</label>
+                        <label [attr.for]="'treatments-list-c-stockItem-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.STOCK_ITEM" | translate }}</label>
                         <select [id]="'treatments-list-c-stockItem-' + $index" [(ngModel)]="c.stockItem" (change)="onItemChange(idx)" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none">
                           <option [value]="null">{{ "TREATMENTS.SELECT_ITEM" | translate }}</option>
                           @for (item of catalogItems(); track item.id) {
@@ -211,14 +209,14 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
                         </select>
                       </div>
                       <div class="col-span-2">
-                        <label [attr.for]="'treatments-list-c-quantityUsed-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">
+                        <label [attr.for]="'treatments-list-c-quantityUsed-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">
                           {{ "TREATMENTS.QTY_USED" | translate }}
                           @if (c.stockItem?.unitSymbol) { <span class="text-petrol-700">({{ c.stockItem?.unitSymbol }})</span> }
                         </label>
                         <input [id]="'treatments-list-c-quantityUsed-' + $index" type="number" [(ngModel)]="c.quantityUsed" min="0.0001" step="any" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none font-mono" />
                       </div>
                       <div class="col-span-3 text-right">
-                        <span class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.MATERIALS_COST" | translate }}</span>
+                        <span class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.MATERIALS_COST" | translate }}</span>
                         <span class="font-bold text-emerald-700 block py-1.5 text-xs">{{ (c.quantityUsed * (c.stockItem?.pricePerUse || 0)) | money }}</span>
                       </div>
                       <div class="col-span-1 text-center">

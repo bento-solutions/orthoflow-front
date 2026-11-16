@@ -186,7 +186,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     .summary-body { overflow-y: auto; padding: 1rem 1.5rem; flex: 1; }
     section { margin-bottom: 1.25rem; }
     section h3 {
-      margin: 0 0 0.5rem; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+      margin: 0 0 0.5rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.06em; color: rgb(var(--ink-500));
     }
 
@@ -194,7 +194,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     .tooth-list li { display: flex; gap: 0.75rem; align-items: flex-start; }
     .fdi {
       flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 8px;
-      background: rgb(var(--ink-900)); color: #fff; display: flex; align-items: center; justify-content: center;
+      background: rgb(var(--ink-900)); color: rgb(var(--on-inverse)); display: flex; align-items: center; justify-content: center;
       font-weight: 700; font-size: 0.8125rem;
     }
     .tooth-name { margin: 0; font-size: 0.8125rem; color: rgb(var(--ink-500)); }
@@ -212,7 +212,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     .plain { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.375rem; }
     .plain li { font-size: 0.875rem; line-height: 1.45; }
     .cat {
-      display: inline-block; font-size: 0.625rem; font-weight: 700; text-transform: uppercase;
+      display: inline-block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.04em; background: rgb(var(--ink-100)); color: rgb(var(--ink-600));
       border-radius: 4px; padding: 0.0625rem 0.3125rem; margin-inline-end: 0.375rem;
     }

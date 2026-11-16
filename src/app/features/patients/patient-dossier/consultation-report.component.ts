@@ -119,7 +119,7 @@ export function reportVisits(notes: readonly ClinicalNote[]): ReportVisit[] {
     }
     .cr-block h3 { margin: 0 0 .375rem; font-size: .75rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: rgb(var(--ink-500)); }
     /* A report has line breaks and lists; run together it is unreadable. */
-    .cr-block p { margin: 0; white-space: pre-line; font-size: .9375rem; line-height: 1.6; color: rgb(var(--ink-800)); }
+    .cr-block p { margin: 0; white-space: pre-line; font-size: .875rem; line-height: 1.6; color: rgb(var(--ink-800)); }
     .cr-block:not(.cr-main) { padding: .75rem .875rem; border-radius: .625rem; background: rgb(var(--ink-50)); }
     .cr-block:not(.cr-main) p { font-size: .875rem; }
     .cr-foot { margin-top: .75rem; padding-top: .5rem; border-top: 1px solid rgb(var(--ink-100)); }

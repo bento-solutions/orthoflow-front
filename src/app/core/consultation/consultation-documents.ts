@@ -105,7 +105,7 @@ const STYLE = `
   ul { margin: 0; padding-inline-start: 18px; }
   table { width: 100%; border-collapse: collapse; margin-top: 4px; }
   th, td { padding: 6px 8px; text-align: start; border-bottom: 1px solid #ddd; vertical-align: top; }
-  th { font-size: 11px; text-transform: uppercase; color: #555; }
+  th { font-size: 12px; text-transform: uppercase; color: #555; }
   td.num, th.num { text-align: end; white-space: nowrap; }
   tfoot td { font-weight: 700; border-top: 2px solid #111; border-bottom: 0; }
   .muted { color: #666; }

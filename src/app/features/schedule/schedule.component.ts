@@ -1,3 +1,4 @@
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { formatDate } from '../../core/utils/format';
 import { Component, inject, signal, computed } from '@angular/core';
@@ -25,9 +26,15 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
 @Component({
   selector: 'app-schedule',
   standalone: true,
-  imports: [IconComponent, AppDatePipe, DialogDirective, CommonModule, RouterModule, TranslateModule, ReactiveFormsModule, FormsModule, PatientPickerComponent],
+  imports: [PageHeaderComponent, IconComponent, AppDatePipe, DialogDirective, CommonModule, RouterModule, TranslateModule, ReactiveFormsModule, FormsModule, PatientPickerComponent],
   template: `
     <div class="schedule-container" [class.rtl]="translate.currentLang === 'ar'">
+      <app-page-header>
+        <button page-actions type="button" class="btn btn-primary" (click)="openAddModal()">
+          <app-icon name="plus" [size]="16" />
+          {{ 'SCHEDULE.NEW_APPOINTMENT' | translate }}
+        </button>
+      </app-page-header>
       <header class="schedule-header">
         <div class="header-left">
           <div class="view-switcher" role="group" [attr.aria-label]="'SCHEDULE.TITLE' | translate">
@@ -60,10 +67,6 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
               <app-icon class="mi" name="search" size="1em" />
               <input [attr.aria-label]="'SCHEDULE.FILTER_PLACEHOLDER' | translate" type="text" [placeholder]="'SCHEDULE.FILTER_PLACEHOLDER' | translate" (input)="onPatientFilter($event)" />
             </div>
-            <button type="button" class="btn btn-primary" (click)="openAddModal()">
-              <app-icon class="mi" name="add" size="1em" />
-              {{ 'SCHEDULE.NEW_APPOINTMENT' | translate }}
-            </button>
           </div>
         </div>
       </header>
@@ -387,7 +390,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       background: transparent;
       padding: 0.5rem 1rem;
       border-radius: 8px;
-      font-size: 0.85rem;
+      font-size: 0.8125rem;
       font-weight: 600;
       /* Sits on a tinted track, where --text-muted would be 4.17:1. */
       color: var(--text-muted-on-tint);
@@ -416,7 +419,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
 
     .current-date {
       font-weight: 700;
-      font-size: 1.1rem;
+      font-size: 1.125rem;
       min-width: 150px;
       text-align: center;
     }
@@ -431,7 +434,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 0.5rem 0.75rem;
-      font-size: 0.9rem;
+      font-size: 0.875rem;
       color: var(--text);
       max-width: 12rem;
     }
@@ -451,10 +454,10 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       background: transparent;
       padding: 0.5rem;
       outline: none;
-      font-size: 0.9rem;
+      font-size: 0.875rem;
     }
 
-    .search-box app-icon.mi { font-size: 1.2rem; color: rgb(var(--ink-500)); }
+    .search-box app-icon.mi { font-size: 1.125rem; color: rgb(var(--ink-500)); }
 
     .calendar-body {
       flex: 1;
@@ -526,7 +529,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       padding: 0;
       cursor: pointer;
       font-family: inherit;
-      font-size: 0.85rem;
+      font-size: 0.8125rem;
       font-weight: 600;
       color: rgb(var(--ink-800));
       margin-bottom: 0.5rem;
@@ -546,7 +549,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       font-family: inherit;
       text-align: start;
       width: 100%;
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       padding: 0.25rem 0.5rem;
       border-radius: 6px;
       white-space: nowrap;
@@ -621,13 +624,13 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .day-event-card.emergency { border-inline-start-color: rgb(var(--critical-500)); background: rgb(var(--critical-50)); }
     .day-event-card.dragging { opacity: 0.4; }
 
-    .card-time { font-weight: 700; color: rgb(var(--petrol-800)); font-size: 0.9rem; }
+    .card-time { font-weight: 700; color: rgb(var(--petrol-800)); font-size: 0.875rem; }
     .card-content .patient { display: block; font-weight: 700; color: rgb(var(--ink-900)); }
     .card-content .type { font-size: 0.75rem; color: rgb(var(--ink-500)); }
     .card-content .notes { font-size: 0.75rem; color: rgb(var(--ink-500)); margin: 0.25rem 0 0 0; }
     .chair-tag {
       display: inline-block;
-      font-size: 0.65rem;
+      font-size: 0.75rem;
       font-weight: 600;
       padding: 0.05rem 0.4rem;
       border-radius: 999px;
@@ -661,8 +664,8 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       border-inline-end: 1px solid rgb(var(--ink-100));
     }
     .week-day-header.today { background: rgb(var(--petrol-50)); }
-    .week-day-name { font-size: 0.7rem; font-weight: 600; color: rgb(var(--ink-500)); text-transform: uppercase; }
-    .week-day-number { font-size: 1.1rem; font-weight: 700; color: rgb(var(--ink-900)); }
+    .week-day-name { font-size: 0.75rem; font-weight: 600; color: rgb(var(--ink-500)); text-transform: uppercase; }
+    .week-day-number { font-size: 1.125rem; font-weight: 700; color: rgb(var(--ink-900)); }
     .week-day-header.today .week-day-number { color: rgb(var(--petrol-800)); }
     .week-body {
       display: grid;
@@ -689,7 +692,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       gap: 0.1rem;
       font-size: 0.75rem;
     }
-    .week-day-column .card-time { font-size: 0.7rem; }
+    .week-day-column .card-time { font-size: 0.75rem; }
     .week-day-column .patient { font-weight: 700; color: rgb(var(--ink-900)); font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* Modal */
@@ -723,14 +726,14 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .modal-header h2 { margin: 0; font-size: 1.25rem; }
 
     .form-group { margin-bottom: 1.5rem; }
-    .form-group label, .form-group .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: rgb(var(--ink-500)); }
+    .form-group label, .form-group .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.875rem; color: rgb(var(--ink-500)); }
     .form-group input, .form-group select, .form-group textarea {
       width: 100%;
       padding: 0.75rem;
       border: 1px solid var(--border);
       border-radius: 10px;
       outline: none;
-      font-size: 0.95rem;
+      font-size: 0.875rem;
     }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 
@@ -760,7 +763,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       gap: 2px;
     }
     .mini-day {
-      font-size: 0.6rem;
+      font-size: 0.75rem;
       padding: 2px;
       text-align: center;
       color: rgb(var(--ink-500));
@@ -789,7 +792,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       border: 1px solid var(--border);
       padding: 0.5rem 1rem;
       border-radius: 10px;
-      font-size: 0.85rem;
+      font-size: 0.8125rem;
       font-weight: 600;
       color: rgb(var(--ink-500));
       cursor: pointer;

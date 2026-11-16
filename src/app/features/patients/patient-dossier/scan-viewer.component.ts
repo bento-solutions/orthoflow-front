@@ -36,21 +36,21 @@ type View = 'occlusal' | 'front';
   `,
   styles: [`
     :host { position: relative; display: block; width: 100%; height: 100%; min-height: 14rem; overflow: hidden; border-radius: .75rem;
-      background: radial-gradient(ellipse at center, #26343a 0%, #10181b 100%); }
+      background: radial-gradient(ellipse at center, var(--scan-bg-2) 0%, var(--scan-bg) 100%); }
     :host(.expanded) { position: fixed; inset: 0; z-index: var(--z-modal, 60); border-radius: 0; min-height: 0; }
     .stage { position: absolute; inset: 0; cursor: grab; touch-action: none; }
     .stage:active { cursor: grabbing; }
-    .overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 1rem; text-align: center; color: #d6dfe1; font-size: .875rem; }
+    .overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 1rem; text-align: center; color: var(--scan-fg); font-size: .875rem; }
     .tools { position: absolute; top: .5rem; inset-inline-end: .5rem; display: flex; gap: .25rem; }
     .tools button { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border: 1px solid rgb(255 255 255 / .18);
-      border-radius: .5rem; background: rgb(16 24 27 / .7); color: #e8eef0; cursor: pointer; }
+      border-radius: .5rem; background: rgb(16 24 27 / .7); color: rgb(var(--ink-100)); cursor: pointer; }
     .tools button:hover { background: rgb(16 24 27 / .9); }
     .tools button.view { width: auto; padding: 0 .625rem; font-size: .75rem; font-weight: 600; }
-    .tools button[aria-pressed='true'] { background: rgb(255 255 255 / .92); color: #10181b; border-color: transparent; }
+    .tools button[aria-pressed='true'] { background: rgb(255 255 255 / .92); color: var(--scan-bg); border-color: transparent; }
     .tools button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
     .tools app-icon.mi { font-size: 1.125rem; }
     .hint { position: absolute; bottom: .375rem; inset-inline-start: .5rem; margin: 0; padding: .125rem .375rem; border-radius: .25rem;
-      background: rgb(16 24 27 / .6); color: #c9d4d7; font-size: .6875rem; pointer-events: none; }
+      background: rgb(16 24 27 / .6); color: rgb(var(--ink-300)); font-size: .75rem; pointer-events: none; }
   `],
 })
 export class ScanViewerComponent {

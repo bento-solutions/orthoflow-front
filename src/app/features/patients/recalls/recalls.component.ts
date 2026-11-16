@@ -1,3 +1,4 @@
+import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -31,17 +32,17 @@ export function reminderOutcome(selected: number, queued: number): { queued: num
 @Component({
   selector: 'app-recalls',
   standalone: true,
-  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, IconComponent, ExportMenuComponent, CanDirective],
+  imports: [PageHeaderComponent, AppDatePipe, FormsModule, RouterLink, TranslateModule, IconComponent, ExportMenuComponent, CanDirective],
   template: `
     <div class="anim-rise">
-      <header class="page-head">
-        <div class="page-actions">
+      <app-page-header>
+        <div page-actions class="contents">
           <app-export-menu [path]="'/recalls/' + kind() + '/export'" [query]="filters()" [fallbackName]="'recalls-' + kind()" />
           <button *appCan="'MESSAGING_SEND'" type="button" class="btn btn-primary btn-sm" [disabled]="selected().size === 0 || sending()" (click)="send()" [attr.aria-describedby]="'send-hint'">
             <app-icon name="send" [size]="15" /> {{ 'REC.SEND' | translate }}@if (selected().size > 0) { ({{ selected().size }}) }
           </button>
         </div>
-      </header>
+      </app-page-header>
 
       <div class="seg mb-3 flex-wrap" role="group" [attr.aria-label]="'REC.TITLE' | translate">
         @for (k of kinds; track k) {

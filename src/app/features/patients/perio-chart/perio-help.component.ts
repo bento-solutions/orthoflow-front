@@ -34,7 +34,7 @@ import { PERIO, modeKey } from './perio-palette';
             <li>
               <span class="combo">
                 <kbd class="kbd">B</kbd><kbd class="kbd">P</kbd><kbd class="kbd">S</kbd>
-                <i class="swatch" [style.background]="p.recession"></i><i class="swatch" style="background:#6d28d9"></i><i class="swatch" style="background:#d97706"></i>
+                <i class="swatch" [style.background]="p.recession"></i><i class="swatch" style="background:var(--suspected)"></i><i class="swatch" style="background:var(--voice-staged)"></i>
               </span>
               {{ 'PERIO.HELP.ENTRY_FLAGS' | translate }}
             </li>
@@ -69,9 +69,9 @@ import { PERIO, modeKey } from './perio-palette';
             <li><span class="chip" [style.borderColor]="p.probing" [style.background]="p.probingTint" [style.color]="p.probing">4</span>{{ 'PERIO.HELP.LEGEND_POCKET' | translate }}</li>
             <li><span class="chip" [style.borderColor]="p.recession" [style.background]="p.recessionTint" [style.color]="p.recession">2</span>{{ 'PERIO.HELP.LEGEND_RECESSION' | translate }}</li>
             <li><span class="chip" [style.borderColor]="p.emptyStroke" [style.background]="p.emptyFill" [style.color]="p.emptyText">—</span>{{ 'PERIO.HELP.LEGEND_EMPTY' | translate }}</li>
-            <li><i class="dot" style="background:#dc2626"></i>{{ 'PERIO.HELP.LEGEND_BLEEDING' | translate }}</li>
-            <li><i class="dot" style="background:#6d28d9"></i>{{ 'PERIO.HELP.LEGEND_PLAQUE' | translate }}</li>
-            <li><i class="dot" style="background:#d97706"></i>{{ 'PERIO.HELP.LEGEND_SUPPURATION' | translate }}</li>
+            <li><i class="dot" style="background:rgb(var(--critical-600))"></i>{{ 'PERIO.HELP.LEGEND_BLEEDING' | translate }}</li>
+            <li><i class="dot" style="background:var(--suspected)"></i>{{ 'PERIO.HELP.LEGEND_PLAQUE' | translate }}</li>
+            <li><i class="dot" style="background:var(--voice-staged)"></i>{{ 'PERIO.HELP.LEGEND_SUPPURATION' | translate }}</li>
             <li><i class="dot ring"></i>{{ 'PERIO.HELP.LEGEND_ABSENT' | translate }}</li>
           </ul>
           <p class="note">{{ 'PERIO.HELP.LEGEND_THRESHOLD' | translate }}</p>
@@ -98,7 +98,7 @@ import { PERIO, modeKey } from './perio-palette';
     .chip { display: inline-flex; width: 1.5rem; height: 1.25rem; align-items: center; justify-content: center; border: 1px solid; border-radius: 2px;
             font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; }
     .dot { width: .625rem; height: .625rem; border-radius: 9999px; display: inline-block; }
-    .dot.ring { border: 1.25px solid #fca5a5; }
+    .dot.ring { border: 1.25px solid rgb(var(--critical-300)); }
     .note { margin-top: .5rem; font-size: var(--text-xs); color: var(--text-muted); }
     .saved { margin-top: 1rem; padding: .75rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-sunken);
              font-size: var(--text-xs); color: var(--text-muted); }

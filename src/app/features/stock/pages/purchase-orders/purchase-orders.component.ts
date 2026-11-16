@@ -26,7 +26,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
   standalone: true,
   imports: [AppDatePipe, MoneyPipe, RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink],
   template: `
-    <div class="p-6 max-w-7xl mx-auto space-y-6">
+    <div class="space-y-6">
       
       <!-- Top Title Bar -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -106,7 +106,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     <td class="p-4 text-ink-500 font-medium">{{ po.orderDate | appDate }}</td>
                     <td class="p-4 text-center">
                       <span class="px-2.5 py-1 text-xs font-bold rounded-full border uppercase" [ngClass]="getPOStatusClasses(po.status!)">
-                        {{ po.status }}
+                        {{ ('STATUS.' + po.status) | translate }}
                       </span>
                     </td>
                     <td class="p-4 text-center font-bold text-ink-600">{{ po.lines.length }}</td>
@@ -170,14 +170,14 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     <td class="p-4 text-ink-500 font-medium">{{ dn.receivedDate | appDate }}</td>
                     <td class="p-4 text-center">
                       <span class="px-2.5 py-1 text-xs font-bold rounded-full border uppercase bg-emerald-50 text-emerald-700 border-emerald-200">
-                        {{ dn.status }}
+                        {{ ('STATUS.' + dn.status) | translate }}
                       </span>
                     </td>
                     <td class="p-4 text-ink-500 font-semibold">{{ "STOCK.CLINICIAN_STAFF" | translate }}</td>
                     <td class="p-4">
                       <div class="flex flex-col gap-1">
                         @for (line of dn.lines; track line.id) {
-                          <div class="text-[11px] text-ink-600">
+                          <div class="text-xs text-ink-600">
                             • {{ line.stockItem?.name }}: <span class="font-bold text-emerald-700">{{ line.quantityReceived }}</span> {{ "STOCK.UNITS" | translate }} @if (line.batchNumber) { <span class="text-ink-500">({{ "STOCK.BATCH" | translate }}: {{ line.batchNumber }})</span> }
                           </div>
                         }
@@ -210,7 +210,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
               <!-- Select GRNI -->
               <div class="space-y-1">
-                <label for="purchase-orders-selectedGrniId" class="block text-[10px] font-bold text-ink-500 uppercase">{{ "STOCK.SELECT_OPEN_GRNI" | translate }} <span aria-hidden="true">*</span></label>
+                <label for="purchase-orders-selectedGrniId" class="block text-xs font-bold text-ink-500 uppercase">{{ "STOCK.SELECT_OPEN_GRNI" | translate }} <span aria-hidden="true">*</span></label>
                 <select id="purchase-orders-selectedGrniId" [(ngModel)]="selectedGrniId" (change)="onGrniSelectChange()" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs focus:outline-none focus:border-petrol-600 bg-white">
                   <option [value]="null">{{ "STOCK.SELECT_PENDING_RECEIPT" | translate }}</option>
                   @for (grni of openGrnis(); track grni.id) {
@@ -224,11 +224,11 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
               <!-- Invoice Number & Date -->
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1">
-                  <label for="purchase-orders-vendorInvoiceNumber" class="block text-[10px] font-bold text-ink-500 uppercase">{{ "STOCK.INVOICE_NUMBER" | translate }} <span aria-hidden="true">*</span></label>
+                  <label for="purchase-orders-vendorInvoiceNumber" class="block text-xs font-bold text-ink-500 uppercase">{{ "STOCK.INVOICE_NUMBER" | translate }} <span aria-hidden="true">*</span></label>
                   <input id="purchase-orders-vendorInvoiceNumber" type="text" [(ngModel)]="vendorInvoiceNumber" placeholder="INV-2026-XXXX" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs bg-white focus:outline-none focus:border-petrol-600" />
                 </div>
                 <div class="space-y-1">
-                  <label for="purchase-orders-vendorInvoiceDate" class="block text-[10px] font-bold text-ink-500 uppercase">{{ "STOCK.INVOICE_DATE" | translate }} <span aria-hidden="true">*</span></label>
+                  <label for="purchase-orders-vendorInvoiceDate" class="block text-xs font-bold text-ink-500 uppercase">{{ "STOCK.INVOICE_DATE" | translate }} <span aria-hidden="true">*</span></label>
                   <input id="purchase-orders-vendorInvoiceDate" type="date" [(ngModel)]="vendorInvoiceDate" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs bg-white focus:outline-none focus:border-petrol-600" />
                 </div>
               </div>
@@ -236,11 +236,11 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
               <!-- Invoice Amount & Payment Terms -->
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1">
-                  <label for="purchase-orders-vendorInvoiceAmount" class="block text-[10px] font-bold text-ink-500 uppercase">{{ "STOCK.INVOICE_AMOUNT_FIELD" | translate }} <span aria-hidden="true">*</span></label>
+                  <label for="purchase-orders-vendorInvoiceAmount" class="block text-xs font-bold text-ink-500 uppercase">{{ "STOCK.INVOICE_AMOUNT_FIELD" | translate }} <span aria-hidden="true">*</span></label>
                   <input id="purchase-orders-vendorInvoiceAmount" type="number" [(ngModel)]="vendorInvoiceAmount" min="0.01" step="any" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs bg-white focus:outline-none focus:border-petrol-600 font-mono" />
                 </div>
                 <div class="space-y-1">
-                  <label for="purchase-orders-vendorInvoicePaymentTerms" class="block text-[10px] font-bold text-ink-500 uppercase">{{ "STOCK.PAYMENT_TERMS" | translate }}</label>
+                  <label for="purchase-orders-vendorInvoicePaymentTerms" class="block text-xs font-bold text-ink-500 uppercase">{{ "STOCK.PAYMENT_TERMS" | translate }}</label>
                   <select id="purchase-orders-vendorInvoicePaymentTerms" [(ngModel)]="vendorInvoicePaymentTerms" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs focus:outline-none focus:border-petrol-600 bg-white">
                     <option value="IMMEDIATE">{{ "STOCK.IMMEDIATE_CASH" | translate }}</option>
                     <option value="15_DAYS">{{ "STOCK.DAYS_NET_15" | translate }}</option>
@@ -252,7 +252,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
               <!-- Invoice Memo -->
               <div class="space-y-1">
-                <label for="purchase-orders-vendorInvoiceNotes" class="block text-[10px] font-bold text-ink-500 uppercase">{{ "STOCK.NOTES_REMARKS" | translate }}</label>
+                <label for="purchase-orders-vendorInvoiceNotes" class="block text-xs font-bold text-ink-500 uppercase">{{ "STOCK.NOTES_REMARKS" | translate }}</label>
                 <textarea id="purchase-orders-vendorInvoiceNotes" [(ngModel)]="vendorInvoiceNotes" [placeholder]="'STOCK.NOTES_REMARKS_PLACEHOLDER' | translate" rows="2" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs bg-white focus:outline-none focus:border-petrol-600"></textarea>
               </div>
 
@@ -274,15 +274,15 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   <!-- Vendor / PO Summary -->
                   <div class="grid grid-cols-3 gap-4 bg-gray-50 p-3 rounded-xl border border-ortho-navy/5 text-xs">
                     <div>
-                      <span class="text-ink-500 block font-semibold uppercase text-[10px]">{{ "STOCK.SUPPLIER_VENDOR" | translate }}</span>
+                      <span class="text-ink-500 block font-semibold uppercase text-xs">{{ "STOCK.SUPPLIER_VENDOR" | translate }}</span>
                       <span class="font-bold text-ink-900">{{ selectedGrni.supplier?.name }}</span>
                     </div>
                     <div>
-                      <span class="text-ink-500 block font-semibold uppercase text-[10px]">{{ "STOCK.PO_REFERENCE" | translate }}</span>
+                      <span class="text-ink-500 block font-semibold uppercase text-xs">{{ "STOCK.PO_REFERENCE" | translate }}</span>
                       <span class="font-bold text-ink-900">{{ selectedGrni.purchaseOrder?.poNumber }}</span>
                     </div>
                     <div>
-                      <span class="text-ink-500 block font-semibold uppercase text-[10px]">{{ "STOCK.DATE_GOODS_RECEIVED" | translate }}</span>
+                      <span class="text-ink-500 block font-semibold uppercase text-xs">{{ "STOCK.DATE_GOODS_RECEIVED" | translate }}</span>
                       <span class="font-bold text-ink-900">{{ selectedGrni.receivedDate | appDate }}</span>
                     </div>
                   </div>
@@ -302,7 +302,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       <tbody>
                         @for (line of selectedGrni.lines; track line.id) {
                           <tr class="font-semibold border-b border-ortho-navy/5 text-ink-700">
-                            <td class="p-3 font-mono text-[10px] text-ink-500">{{ line.stockItem?.sku }}</td>
+                            <td class="p-3 font-mono text-xs text-ink-500">{{ line.stockItem?.sku }}</td>
                             <td class="p-3 font-bold">{{ line.stockItem?.name }}</td>
                             <td class="p-3 text-center font-mono">{{ line.quantityReceived }}</td>
                             <td class="p-3 text-right font-mono">{{ (line.poLine?.unitPrice || 0) | money }}</td>
@@ -351,10 +351,10 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       <td class="p-4 font-mono font-bold text-ink-900">{{ inv.invoiceNumber }}</td>
                       <td class="p-4 font-bold">{{ inv.supplierName }}</td>
                       <td class="p-4 text-ink-500">{{ inv.invoiceDate | appDate }}</td>
-                      <td class="p-4"><span class="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded text-[10px]">{{ inv.paymentTerms }}</span></td>
+                      <td class="p-4"><span class="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded text-xs">{{ inv.paymentTerms }}</span></td>
                       <td class="p-4 text-right font-mono text-emerald-700 font-bold">{{ inv.invoiceAmount | money }}</td>
                       <td class="p-4 text-center">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase">
+                        <span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase">
                           {{ "STOCK.POSTED_AND_CLEARED" | translate }}
                         </span>
                       </td>
@@ -411,7 +411,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     @for (line of newPOLines; track $index; let idx = $index) {
                       <div class="grid grid-cols-12 gap-3 items-end bg-gray-50/50 p-3 rounded-xl border border-gray-100">
                         <div class="col-span-5">
-                          <label [attr.for]="'purchase-orders-line-stockItem-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.STOCK_ITEM" | translate }}</label>
+                          <label [attr.for]="'purchase-orders-line-stockItem-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.STOCK_ITEM" | translate }}</label>
                           <select [id]="'purchase-orders-line-stockItem-' + $index" [(ngModel)]="line.stockItem" (change)="onPOItemChange(idx)" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none">
                             <option [value]="null">{{ "STOCK.SELECT_ITEM_PLACEHOLDER" | translate }}</option>
                             @for (item of catalogItems(); track item.id) {
@@ -420,15 +420,15 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                           </select>
                         </div>
                         <div class="col-span-2">
-                          <label [attr.for]="'purchase-orders-line-quantityOrdered-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.QUANTITY" | translate }}</label>
+                          <label [attr.for]="'purchase-orders-line-quantityOrdered-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.QUANTITY" | translate }}</label>
                           <input [id]="'purchase-orders-line-quantityOrdered-' + $index" type="number" [(ngModel)]="line.quantityOrdered" (change)="calculatePOTotal()" min="1" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none" />
                         </div>
                         <div class="col-span-2">
-                          <label [attr.for]="'purchase-orders-line-unitPrice-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.UNIT_COST_DH" | translate }}</label>
+                          <label [attr.for]="'purchase-orders-line-unitPrice-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.UNIT_COST_DH" | translate }}</label>
                           <input [id]="'purchase-orders-line-unitPrice-' + $index" type="number" [(ngModel)]="line.unitPrice" (change)="calculatePOTotal()" min="0" step="0.01" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-right focus:outline-none" />
                         </div>
                         <div class="col-span-2 text-right">
-                          <span class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.TOTAL_DH" | translate }}</span>
+                          <span class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.TOTAL_DH" | translate }}</span>
                           <span class="font-bold text-xs text-ink-900 block py-1.5">{{ (line.quantityOrdered * line.unitPrice) | money }}</span>
                         </div>
                         <div class="col-span-1 text-center">
@@ -497,26 +497,26 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                           <span class="text-xs text-ink-500 block font-mono">{{ "STOCK.SKU" | translate }}: {{ line.stockItem?.sku }}</span>
                         </div>
                         <div class="text-right">
-                          <span class="text-[10px] text-ink-500 font-bold uppercase block">{{ "STOCK.ORDERED_QTY" | translate }}</span>
+                          <span class="text-xs text-ink-500 font-bold uppercase block">{{ "STOCK.ORDERED_QTY" | translate }}</span>
                           <span class="font-bold text-sm text-ink-900">{{ line.poLine.quantityOrdered }} {{ "STOCK.UNITS" | translate }}</span>
                         </div>
                       </div>
 
                       <div class="grid grid-cols-4 gap-3 items-end">
                         <div>
-                          <label class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.PREV_RECEIVED" | translate }}</label>
+                          <label class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.PREV_RECEIVED" | translate }}</label>
                           <span class="font-semibold text-xs text-ink-700 block py-1.5 px-3 bg-gray-100 rounded-lg text-center font-mono">{{ line.poLine.quantityReceived || 0 }}</span>
                         </div>
                         <div>
-                          <label [attr.for]="'purchase-orders-line-quantityReceived-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.RECEIVED_NOW" | translate }} <span aria-hidden="true">*</span></label>
+                          <label [attr.for]="'purchase-orders-line-quantityReceived-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.RECEIVED_NOW" | translate }} <span aria-hidden="true">*</span></label>
                           <input [id]="'purchase-orders-line-quantityReceived-' + $index" type="number" [(ngModel)]="line.quantityReceived" min="0" class="w-full px-3 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center font-bold focus:outline-none" />
                         </div>
                         <div>
-                          <label [attr.for]="'purchase-orders-line-batchNumber-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.BATCH_NUMBER" | translate }}</label>
+                          <label [attr.for]="'purchase-orders-line-batchNumber-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.BATCH_NUMBER" | translate }}</label>
                           <input [id]="'purchase-orders-line-batchNumber-' + $index" type="text" [(ngModel)]="line.batchNumber" [placeholder]="'STOCK.BATCH_NUMBER_PLACEHOLDER' | translate" class="w-full px-3 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none font-mono uppercase" />
                         </div>
                         <div>
-                          <label [attr.for]="'purchase-orders-line-expiryDate-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.EXPIRY_DATE" | translate }}</label>
+                          <label [attr.for]="'purchase-orders-line-expiryDate-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.EXPIRY_DATE" | translate }}</label>
                           <input [id]="'purchase-orders-line-expiryDate-' + $index" type="date" [(ngModel)]="line.expiryDate" class="w-full px-3 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none" />
                         </div>
                       </div>

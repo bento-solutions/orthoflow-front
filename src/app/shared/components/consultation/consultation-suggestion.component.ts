@@ -32,7 +32,7 @@ import { SentenceSuggestion, suggestFromSentence } from '../../../core/consultat
     .cs-text { font-weight: 600; color: rgb(var(--ink-900)); }
     .cs-none { font-weight: 400; font-style: italic; color: rgb(var(--ink-600)); }
     /* The colour asked for: "to be confirmed" never reads as done (green) or as an error (red). */
-    .cs-badge { padding: 0 .45rem; border-radius: 999px; background: #ffb09c; color: #5a1a0c; font-size: .75rem; font-weight: 700; white-space: nowrap; }
+    .cs-badge { padding: 0 .45rem; border-radius: 999px; background: var(--suggestion); color: var(--suggestion-text); font-size: .75rem; font-weight: 700; white-space: nowrap; }
     .cs-question { flex-basis: 100%; font-size: .75rem; color: rgb(var(--ink-600)); }
   `],
 })

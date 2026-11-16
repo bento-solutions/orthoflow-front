@@ -62,7 +62,7 @@ import { ScanViewerComponent } from '../patient-dossier/scan-viewer.component';
           @for (f of shown(); track f.id) {
             <li class="group relative overflow-hidden rounded-lg border border-ink-200 bg-surface">
               @if (modelOf(f); as type) {
-                <button type="button" class="grid aspect-[4/3] w-full place-items-center bg-[#10181b] text-[#d6dfe1]" (click)="openModel(f, type)"
+                <button type="button" class="grid aspect-[4/3] w-full place-items-center bg-[var(--scan-bg)] text-[var(--scan-fg)]" (click)="openModel(f, type)"
                   [attr.aria-label]="('PFILES.OPEN_MODEL' | translate) + ' ' + f.name">
                   <span class="grid justify-items-center gap-1">
                     <app-icon class="mi text-[2.25rem]" name="view_in_ar" size="1em" />

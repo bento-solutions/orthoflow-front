@@ -375,7 +375,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
       display: flex;
       justify-content: space-between;
       width: 250px;
-      font-size: 0.95rem;
+      font-size: 0.875rem;
       color: rgb(var(--ink-600));
     }
 

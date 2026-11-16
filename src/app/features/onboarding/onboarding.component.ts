@@ -251,7 +251,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                           </button>
                         } @else {
-                          <span class="text-[10px] text-slate-500 font-bold truncate px-1">
+                          <span class="text-xs text-slate-500 font-bold truncate px-1">
                             {{ cabinetName() ? cabinetName().charAt(0).toUpperCase() : 'Logo' }}
                           </span>
                         }
@@ -259,9 +259,9 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
 
                       <div class="flex-1 text-left space-y-1">
                         <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ 'ONBOARDING.UI.UPLOAD_LOGO' | translate }}</p>
-                        <p class="text-[10px] text-slate-500">{{ 'ONBOARDING.UI.LOGO_FORMATS' | translate }}</p>
+                        <p class="text-xs text-slate-500">{{ 'ONBOARDING.UI.LOGO_FORMATS' | translate }}</p>
                         <div class="pt-0.5">
-                          <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all">
+                          <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition-all">
                             {{ 'ONBOARDING.UI.BROWSE' | translate }}
                             <input 
                               type="file" 
@@ -306,7 +306,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                 <div>
                   <div class="flex justify-between items-center">
                     <h2 class="text-xl font-bold text-ink-900 dark:text-white tracking-tight">{{ 'ONBOARDING.UI.ENTERPRISE' | translate }}</h2>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'COMMON.OPTIONAL' | translate }}</span>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'COMMON.OPTIONAL' | translate }}</span>
                   </div>
                   <p class="text-xs text-slate-500 mt-0.5">{{ 'ONBOARDING.UI.ENTERPRISE_HINT' | translate }}</p>
                 </div>
@@ -314,7 +314,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                 <div class="grid grid-cols-2 gap-3 py-1">
                   <!-- ICE -->
                   <div class="space-y-1">
-                    <label for="onboarding-ice" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.ICE' | translate }}</label>
+                    <label for="onboarding-ice" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.ICE' | translate }}</label>
                     <input id="onboarding-ice" 
                       type="text" 
                       [(ngModel)]="ice"
@@ -325,7 +325,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
 
                   <!-- VAT -->
                   <div class="space-y-1">
-                    <label for="onboarding-vat" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.VAT' | translate }}</label>
+                    <label for="onboarding-vat" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.VAT' | translate }}</label>
                     <input id="onboarding-vat" 
                       type="text" 
                       [(ngModel)]="vat"
@@ -336,7 +336,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
 
                   <!-- Patente -->
                   <div class="space-y-1">
-                    <label for="onboarding-patente" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.PATENTE' | translate }}</label>
+                    <label for="onboarding-patente" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.PATENTE' | translate }}</label>
                     <input id="onboarding-patente" 
                       type="text" 
                       [(ngModel)]="patente"
@@ -347,7 +347,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
 
                   <!-- Tel -->
                   <div class="space-y-1">
-                    <label for="onboarding-tel" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.PHONE' | translate }}</label>
+                    <label for="onboarding-tel" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.PHONE' | translate }}</label>
                     <input id="onboarding-tel" 
                       type="tel" 
                       [(ngModel)]="tel"
@@ -358,7 +358,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
 
                   <!-- Address -->
                   <div class="col-span-2 space-y-1">
-                    <label for="onboarding-address" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.ADDRESS' | translate }}</label>
+                    <label for="onboarding-address" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.ADDRESS' | translate }}</label>
                     <input id="onboarding-address" 
                       type="text" 
                       [(ngModel)]="address"
@@ -369,7 +369,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
 
                   <!-- RIB -->
                   <div class="col-span-2 space-y-1">
-                    <label for="onboarding-rib" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.RIB' | translate }}</label>
+                    <label for="onboarding-rib" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ 'ONBOARDING.UI.RIB' | translate }}</label>
                     <input id="onboarding-rib" 
                       type="text" 
                       [(ngModel)]="rib"
@@ -440,7 +440,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
 
             <div class="pt-4 flex flex-col items-center gap-3">
               <div class="h-6 w-6 animate-spin rounded-full border-2 border-solid border-petrol-600 dark:border-ortho-sky border-r-transparent" role="status"></div>
-              <span class="text-[10px] text-slate-500 dark:text-slate-500 tracking-wider uppercase">{{ 'ONBOARDING.UI.LOADING' | translate }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-500 tracking-wider uppercase">{{ 'ONBOARDING.UI.LOADING' | translate }}</span>
             </div>
           </div>
         </div>

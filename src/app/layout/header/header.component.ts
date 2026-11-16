@@ -88,7 +88,7 @@ import { NavCounts } from '../../core/services/nav-counts.service';
           [attr.aria-label]="('NAV.TASKS' | translate) + (counts.tasksDue() ? ' (' + counts.tasksDue() + ')' : '')">
           <app-icon name="clipboard" [size]="18" />
           @if (counts.tasksDue() > 0) {
-            <span class="absolute end-1 top-1 grid min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold leading-4 text-white"
+            <span class="absolute end-1 top-1 grid min-w-4 place-items-center rounded-full px-1 text-xs font-bold leading-4 text-white"
               [class.bg-critical-500]="counts.tasks().overdue > 0" [class.bg-petrol-600]="counts.tasks().overdue === 0">{{ counts.tasksDue() > 9 ? '9+' : counts.tasksDue() }}</span>
           }
         </a>

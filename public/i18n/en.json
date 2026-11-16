@@ -1292,7 +1292,20 @@
     "ISSUED": "Issued",
     "LATE": "Late",
     "ARRIVED": "Arrived",
-    "IN_CHAIR": "In the chair"
+    "IN_CHAIR": "In the chair",
+    "DISPUTED": "Disputed",
+    "DONE": "Done",
+    "FITTED": "Fitted",
+    "HANDED_OVER": "Handed over",
+    "PARTIAL": "Partial",
+    "PRINTED": "Printed",
+    "QUEUED": "Queued",
+    "READ": "Read",
+    "REMAKE": "To remake",
+    "SENDING": "Sending",
+    "TO_PRINT": "To print",
+    "UNPAID": "Unpaid",
+    "WAITING": "Waiting"
   },
   "VOICE": {
     "TAB": "Voice session",

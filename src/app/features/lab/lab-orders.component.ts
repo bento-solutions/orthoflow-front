@@ -1,3 +1,4 @@
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -115,14 +116,14 @@ const blankOrder = (): OrderForm => ({ labId: '', practitionerId: '', itemType: 
 @Component({
   selector: 'app-lab-orders',
   standalone: true,
-  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, IconComponent, ModalComponent, PatientPickerComponent, CanDirective],
+  imports: [PageHeaderComponent, AppDatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, IconComponent, ModalComponent, PatientPickerComponent, CanDirective],
   template: `
     <div class="anim-rise">
-      <header class="page-head">
-        <div class="page-actions">
+      <app-page-header>
+        <div page-actions class="contents">
           <button type="button" class="btn btn-primary" (click)="openNew()"><app-icon name="plus" [size]="16" /> {{ 'LAB.NEW' | translate }}</button>
         </div>
-      </header>
+      </app-page-header>
 
       <div class="mb-3 flex flex-wrap items-center gap-2">
         <div class="seg flex-wrap" role="group" [attr.aria-label]="'COMMON.STATUS' | translate">

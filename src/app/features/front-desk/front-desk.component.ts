@@ -1,3 +1,4 @@
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { Component, DestroyRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -33,17 +34,17 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
 @Component({
   selector: 'app-front-desk',
   standalone: true,
-  imports: [AppDatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent, PatientPickerComponent, WaitingListComponent, AbsencesComponent, WaitingRoomDesignerComponent],
+  imports: [PageHeaderComponent, AppDatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent, PatientPickerComponent, WaitingListComponent, AbsencesComponent, WaitingRoomDesignerComponent],
   template: `
-    <div class="page-head">
-      <div class="page-actions">
+    <app-page-header>
+      <div page-actions class="contents">
         @if (!live.connected()) { <span class="pill pill-attention" role="status">{{ 'FD.OFFLINE' | translate }}</span> }
         <button type="button" class="btn btn-secondary btn-sm" (click)="reload()"><app-icon name="refresh" [size]="15" /> {{ 'COMMON.REFRESH' | translate }}</button>
         @if (canManage()) {
           <button type="button" class="btn btn-primary btn-sm" (click)="openWalkIn()"><app-icon name="user-plus" [size]="15" /> {{ 'FD.WALK_IN' | translate }}</button>
         }
       </div>
-    </div>
+    </app-page-header>
 
     <nav class="tabs mb-6" role="tablist" [attr.aria-label]="'FD.TITLE' | translate">
       @for (t of tabs; track t.id) {

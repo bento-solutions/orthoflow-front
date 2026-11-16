@@ -17,11 +17,12 @@ import { HelpPanelComponent } from '../help-panel/help-panel.component';
     <a href="#main-content" class="skip-link" (click)="skipToContent($event)">{{ 'COMMON.SKIP_TO_CONTENT' | translate }}</a>
 
     <div class="relative flex min-h-screen bg-app-bg">
-      <app-sidebar #sidebar class="no-print hidden md:block" [class.mobile-open]="isMobileMenuOpen()" />
+      <!-- Full from 1280 px, an icon rail from 1024 px, a drawer below: a tablet keeps the room for the patient file (P0-6). -->
+      <app-sidebar #sidebar class="no-print hidden lg:block" [class.mobile-open]="isMobileMenuOpen()" [drawer]="isMobileMenuOpen()" />
 
       @if (isMobileMenuOpen()) {
         <div
-          class="animate-fade fixed inset-0 z-30 bg-black/50 backdrop-blur-[2px] md:hidden"
+          class="animate-fade fixed inset-0 z-30 bg-black/50 backdrop-blur-[2px] lg:hidden"
           (click)="closeMobileMenu()"
           aria-hidden="true"
         ></div>

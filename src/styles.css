@@ -97,6 +97,15 @@
   :where(input[type='checkbox'], input[type='radio'], input[type='range'], progress) {
     accent-color: var(--action);
   }
+  /* One checkbox and radio everywhere: an 18 px box in the action colour (UX audit phase 4). */
+  :where(input[type='checkbox'], input[type='radio']) {
+    width: 1.125rem;
+    height: 1.125rem;
+    flex: none;
+    margin: 0;
+    cursor: pointer;
+  }
+
 
   /* A grid item will not shrink below what is inside it unless told it may: without this, one wide
      table pushes the whole page past the edge of a phone, its own scrollbar never coming into play. */
@@ -1030,6 +1039,14 @@
     transition: width var(--dur-4) var(--ease-in-out);
   }
   .sidebar-collapsed { width: 72px; }
+
+  /* A finger needs about 44 px: on a touch screen every control and every checkbox row is that
+     tall, whatever it looks like with a mouse (WCAG 2.5.5, UX audit phase 4). */
+  @media (pointer: coarse) {
+    .btn, .btn-sm, .input, .select, .seg-item, .tab, .nav-link { min-height: 2.75rem; }
+    .btn-icon { width: 2.75rem; height: 2.75rem; }
+    label:has(> input[type='checkbox']), label:has(> input[type='radio']) { min-height: 2.75rem; display: flex; align-items: center; gap: var(--space-2); }
+  }
 
 /* Utilities last: a screen must always be able to override a component
    class with a utility (`.btn-primary w-full`). */

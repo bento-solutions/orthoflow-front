@@ -1,4 +1,4 @@
-import { Component, signal, inject, computed } from '@angular/core';
+import { Component, signal, inject, computed, input, DestroyRef } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { CabinetService } from '../../core/services/cabinet.service';
@@ -102,7 +102,8 @@ interface NavItem {
         }
       </div>
 
-      <!-- Collapse -->
+      <!-- Collapse (not in the drawer, which is always full width) -->
+      @if (!drawer()) {
       <div class="shrink-0 border-t border-white/10 p-2">
         <button
           type="button"
@@ -119,11 +120,26 @@ interface NavItem {
           </span>
         </button>
       </div>
+      }
     </nav>
   `,
 })
 export class SidebarComponent {
-  readonly isCollapsed = signal(false);
+  /** Out as the drawer on a narrow screen: always full width there. */
+  readonly drawer = input(false);
+  /** The person's own choice, which wins over the width until the next reload. */
+  private readonly userCollapsed = signal<boolean | null>(null);
+  /** Under 1280 px the rail shows icons only, unless the person opened it. */
+  private readonly narrow = signal(typeof window !== 'undefined' && window.matchMedia?.('(max-width: 1279.98px)').matches);
+  readonly isCollapsed = computed(() => !this.drawer() && (this.userCollapsed() ?? this.narrow()));
+
+  constructor() {
+    const query = typeof window !== 'undefined' ? window.matchMedia?.('(max-width: 1279.98px)') : undefined;
+    if (!query) return;
+    const listener = (e: MediaQueryListEvent) => { this.narrow.set(e.matches); this.userCollapsed.set(null); };
+    query.addEventListener?.('change', listener);
+    inject(DestroyRef).onDestroy(() => query.removeEventListener?.('change', listener));
+  }
   readonly cabinet = inject(CabinetService);
   private readonly permissions = inject(PermissionService);
   private readonly counts = inject(NavCounts);
@@ -190,6 +206,6 @@ export class SidebarComponent {
   );
 
   toggleCollapse(): void {
-    this.isCollapsed.set(!this.isCollapsed());
+    this.userCollapsed.set(!this.isCollapsed());
   }
 }

@@ -38,7 +38,7 @@ import { NavCounts } from '../../core/services/nav-counts.service';
         <button
           type="button"
           (click)="menuToggle.emit()"
-          class="btn btn-ghost btn-icon shrink-0 md:hidden"
+          class="btn btn-ghost btn-icon shrink-0 lg:hidden"
           data-menu-toggle
           [attr.aria-label]="'NAV.MAIN' | translate"
           [attr.aria-expanded]="menuOpen"

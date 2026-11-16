@@ -307,12 +307,6 @@ export class DashboardComponent implements OnInit {
   private readonly completedPatients = computed(() => this.patientKpis()?.completed ?? 0);
   private readonly onHoldPatients = computed(() => this.patientKpis()?.onHold ?? 0);
   private readonly newThisMonth = computed(() => this.patientKpis()?.newThisMonth ?? 0);
-  private readonly totalPatients = computed(() => this.patientKpis()?.total ?? 0);
-
-  private readonly completionRate = computed(() => {
-    const total = this.totalPatients();
-    return total ? Math.round((this.completedPatients() / total) * 100) : 0;
-  });
 
   readonly todaysAppointments = computed(() => {
     const today = new Date().toDateString();
@@ -322,6 +316,7 @@ export class DashboardComponent implements OnInit {
       .sort((a, b) => +new Date(a.dateTime) - +new Date(b.dateTime));
   });
 
+  /** One figure per tile, each saying only what its title says (UX audit P2-9). */
   readonly kpis = computed(() => {
     const onHold = this.onHoldPatients();
     return [
@@ -332,7 +327,7 @@ export class DashboardComponent implements OnInit {
         link: '/patients',
         tone: 'neutral' as const,
         suffix: '',
-        caption: this.t('DASHBOARD.KPI_IN_TREATMENT_CAPTION', { count: this.totalPatients() }),
+        caption: '',
       },
       {
         key: 'DASHBOARD.TODAYS_VISITS',
@@ -341,7 +336,7 @@ export class DashboardComponent implements OnInit {
         link: '/schedule',
         tone: 'neutral' as const,
         suffix: '',
-        caption: this.t('DASHBOARD.KPI_VISITS_CAPTION', { count: this.upcomingThisWeek() }),
+        caption: '',
       },
       {
         key: 'DASHBOARD.KPI_NEW_THIS_MONTH',
@@ -361,18 +356,9 @@ export class DashboardComponent implements OnInit {
         link: '/patients',
         tone: onHold > 0 ? ('attention' as const) : ('neutral' as const),
         suffix: '',
-        caption: this.t('DASHBOARD.KPI_COMPLETION_CAPTION', { rate: this.completionRate() }),
+        caption: '',
       },
     ];
-  });
-
-  private readonly upcomingThisWeek = computed(() => {
-    const now = Date.now();
-    const week = now + 7 * 86400000;
-    return this.scheduleService.appointments().filter((a) => {
-      const t = +new Date(a.dateTime);
-      return t >= now && t <= week && a.status !== 'CANCELLED';
-    }).length;
   });
 
   /** Only real, actionable conditions — never a placeholder row. */

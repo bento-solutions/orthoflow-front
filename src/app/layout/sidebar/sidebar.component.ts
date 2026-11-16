@@ -1,11 +1,20 @@
 import { Component, signal, inject, computed, input, DestroyRef } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { NgTemplateOutlet } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map } from 'rxjs/operators';
+import { AuthService } from '../../core/services/auth.service';
 import { TranslateModule } from '@ngx-translate/core';
 import { CabinetService } from '../../core/services/cabinet.service';
 import { IconComponent, IconName } from '../../shared/ui/icon.component';
 import { Permission } from '../../core/models/permission';
 import { PermissionService } from '../../core/services/permission.service';
 import { NavCounts } from '../../core/services/nav-counts.service';
+
+const MORE_KEY = 'orthoflow_nav_more';
+function readMoreOpen(): boolean {
+  try { return localStorage.getItem(MORE_KEY) === '1'; } catch { return false; }
+}
 
 interface NavItem {
   key: string;
@@ -35,7 +44,7 @@ interface NavItem {
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, TranslateModule, IconComponent],
+  imports: [NgTemplateOutlet, RouterLink, RouterLinkActive, TranslateModule, IconComponent],
   template: `
     <nav
       class="sidebar on-inverse sticky top-0 z-20 flex h-screen flex-col bg-petrol-900"
@@ -73,33 +82,56 @@ interface NavItem {
         class="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3"
         data-tour="nav"
       >
-        @for (group of visibleGroups(); track group.key) {
-          <p class="nav-section" [id]="'nav-group-' + $index" [class.sr-only]="isCollapsed()">{{ group.key | translate }}</p>
-          <ul class="space-y-0.5" role="list" [attr.aria-labelledby]="'nav-group-' + $index">
-            @for (item of group.items; track item.path) {
-              <li>
-                <a
-                  [routerLink]="item.path"
-                  routerLinkActive="nav-link-active"
-                  ariaCurrentWhenActive="page"
-                  [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
-                  class="nav-link"
-                  [title]="isCollapsed() ? (item.key | translate) : ''"
-                >
-                  <app-icon [name]="item.icon" [size]="18" />
-                  <span
-                    class="truncate transition-[opacity,transform] duration-3 ease-out"
-                    [class.opacity-0]="isCollapsed()"
-                    [class.-translate-x-2]="isCollapsed()"
-                  >{{ item.key | translate }}</span>
-                  @if (count(item.badge); as n) {
-                    <span class="nav-badge">{{ n > 99 ? '99+' : n }}</span>
+        <!-- What this person does every day, in the order they do it (P2-8). -->
+        <p class="nav-section" id="nav-group-daily" [class.sr-only]="isCollapsed()">{{ 'NAV.DAILY' | translate }}</p>
+        <ul class="space-y-0.5" role="list" aria-labelledby="nav-group-daily">
+          @for (item of primaryItems(); track item.path) {
+            <li><ng-container *ngTemplateOutlet="link; context: { $implicit: item }" /></li>
+          }
+        </ul>
+
+        <!-- Everything else, a press away; open by itself when the current screen is in it. -->
+        @if (moreGroups().length) {
+          <button type="button" class="nav-link mt-3 w-full" (click)="toggleMore()" [attr.aria-expanded]="moreShown()" aria-controls="nav-more"
+                  [title]="isCollapsed() ? ('NAV.MORE' | translate) : ''">
+            <app-icon name="more" [size]="18" />
+            <span class="truncate" [class.opacity-0]="isCollapsed()">{{ 'NAV.MORE' | translate }}</span>
+            <app-icon [name]="moreShown() ? 'chevron-up' : 'chevron-down'" [size]="14" class="ms-auto" [class.hidden]="isCollapsed()" />
+          </button>
+          @if (moreShown()) {
+            <div id="nav-more">
+              @for (group of moreGroups(); track group.key) {
+                <p class="nav-section" [id]="'nav-group-' + $index" [class.sr-only]="isCollapsed()">{{ group.key | translate }}</p>
+                <ul class="space-y-0.5" role="list" [attr.aria-labelledby]="'nav-group-' + $index">
+                  @for (item of group.items; track item.path) {
+                    <li><ng-container *ngTemplateOutlet="link; context: { $implicit: item }" /></li>
                   }
-                </a>
-              </li>
-            }
-          </ul>
+                </ul>
+              }
+            </div>
+          }
         }
+
+        <ng-template #link let-item>
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="nav-link-active"
+            ariaCurrentWhenActive="page"
+            [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+            class="nav-link"
+            [title]="isCollapsed() ? (item.key | translate) : ''"
+          >
+            <app-icon [name]="item.icon" [size]="18" />
+            <span
+              class="truncate transition-[opacity,transform] duration-3 ease-out"
+              [class.opacity-0]="isCollapsed()"
+              [class.-translate-x-2]="isCollapsed()"
+            >{{ item.key | translate }}</span>
+            @if (count(item.badge); as n) {
+              <span class="nav-badge">{{ n > 99 ? '99+' : n }}</span>
+            }
+          </a>
+        </ng-template>
       </div>
 
       <!-- Collapse (not in the drawer, which is always full width) -->
@@ -204,6 +236,45 @@ export class SidebarComponent {
       .map(group => ({ ...group, items: group.items.filter(item => this.permissions.can(...(item.permission ?? []))) }))
       .filter(group => group.items.length > 0),
   );
+
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
+  /** The destinations each role uses every day, in that order; the rest go under More (P2-8). */
+  private static readonly DAILY: Readonly<Record<string, readonly string[]>> = {
+    ASSISTANT: ['/', '/schedule', '/front-desk', '/patients', '/billing'],
+    DOCTOR: ['/', '/patients', '/schedule', '/treatments'],
+    ADMIN: ['/', '/patients', '/schedule', '/treatments', '/billing'],
+  };
+
+  readonly primaryItems = computed(() => {
+    const daily = SidebarComponent.DAILY[this.auth.currentUser()?.role ?? 'DOCTOR'] ?? SidebarComponent.DAILY['DOCTOR'];
+    const all = this.visibleGroups().flatMap(g => g.items);
+    return daily.map(path => all.find(item => item.path === path)).filter((item): item is NavItem => !!item);
+  });
+
+  readonly moreGroups = computed(() => {
+    const primary = new Set(this.primaryItems().map(item => item.path));
+    return this.visibleGroups()
+      .map(group => ({ ...group, items: group.items.filter(item => !primary.has(item.path)) }))
+      .filter(group => group.items.length > 0);
+  });
+
+  private readonly url = toSignal(this.router.events.pipe(
+    filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+    map(e => e.urlAfterRedirects),
+  ), { initialValue: this.router.url });
+
+  private readonly moreOpen = signal(readMoreOpen());
+  /** Open when asked, or when the screen on show is one of its entries. */
+  readonly moreShown = computed(() => this.moreOpen() || this.moreGroups().some(g => g.items.some(item =>
+    item.path !== '/' && (this.url() ?? '').split(/[?#]/)[0].startsWith(item.path))));
+
+  toggleMore(): void {
+    const next = !this.moreShown();
+    this.moreOpen.set(next);
+    try { localStorage.setItem(MORE_KEY, next ? '1' : '0'); } catch { /* storage blocked: it stays for this visit */ }
+  }
 
   toggleCollapse(): void {
     this.userCollapsed.set(!this.isCollapsed());

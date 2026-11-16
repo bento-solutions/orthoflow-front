@@ -65,8 +65,9 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
             <div class="border-t border-ortho-navy/5 pt-4 space-y-2 flex-1">
               <span class="text-xs font-bold text-ink-500 uppercase tracking-wider block">{{ "TREATMENTS.CONSUMABLES" | translate }} ({{ t.consumables?.length || 0 }})</span>
 
-              <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                @for (c of t.consumables; track $index) {
+              <!-- The first three, then how many more: no scroll area inside a card (P2-10). -->
+              <div class="space-y-1.5">
+                @for (c of (expanded().has(t.id!) ? t.consumables : t.consumables?.slice(0, 3)); track $index) {
                   <div class="flex items-center justify-between text-xs font-semibold text-ink-700 bg-gray-50 border border-gray-100 rounded-lg p-2">
                     <span class="truncate max-w-[150px]">{{ c.stockItem?.name }}</span>
                     <div class="flex items-center gap-2 shrink-0">
@@ -78,6 +79,11 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
                   </div>
                 } @empty {
                   <span class="text-xs text-ink-500 block py-1">{{ "TREATMENTS.NO_CONSUMABLES_CONFIGURED" | translate }}</span>
+                }
+                @if ((t.consumables?.length ?? 0) > 3) {
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="toggleExpanded(t.id!)" [attr.aria-expanded]="expanded().has(t.id!)">
+                    {{ (expanded().has(t.id!) ? 'TREATMENTS.SHOW_FEWER' : 'TREATMENTS.SHOW_MORE') | translate: { n: t.consumables!.length - 3 } }}
+                  </button>
                 }
               </div>
             </div>
@@ -265,6 +271,13 @@ export class TreatmentsListComponent implements OnInit {
   private ngap = inject(NgapService);
 
   readonly treatments = signal<Treatment[]>([]);
+  /** Cards whose whole consumables list is shown. */
+  readonly expanded = signal<ReadonlySet<string>>(new Set());
+  toggleExpanded(id: string): void {
+    const next = new Set(this.expanded());
+    if (next.has(id)) next.delete(id); else next.add(id);
+    this.expanded.set(next);
+  }
   readonly catalogItems = signal<StockItem[]>([]);
 
   // NGAP picker: the whole nomenclature is small, so it is searched here.

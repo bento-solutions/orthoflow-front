@@ -88,7 +88,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
 
       <!-- Filters -->
       <div class="mb-4 flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
-        <label class="search" data-tour="patients-search">
+        <label class="search patient-search" data-tour="patients-search">
           <span class="sr-only">{{ 'COMMON.SEARCH' | translate }}</span>
           <app-icon name="search" [size]="16" />
           <input class="input" type="search" [placeholder]="'PATIENTS.SEARCH_PLACEHOLDER' | translate" [ngModel]="searchInput()" (ngModelChange)="searchInput.set($event)" />
@@ -100,6 +100,23 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
           }
         </div>
 
+        <!-- The rest of the filters behind one button that says how many are on (P2-7). -->
+        <button type="button" class="btn btn-secondary" (click)="filtersOpen.set(!filtersOpen())" [attr.aria-expanded]="filtersOpen()" aria-controls="patient-filters">
+          <app-icon name="filter" [size]="16" /> {{ 'COMMON.FILTERS' | translate }}
+          @if (activeFilters() > 0) { <span class="pill pill-active pill-nodot">{{ activeFilters() }}</span> }
+        </button>
+        <label class="flex items-center gap-2 text-sm text-ink-600 lg:ms-auto">
+          {{ 'PAT.SORT' | translate }}
+          <select class="select w-auto" [ngModel]="sort()" (ngModelChange)="sort.set($event); page.set(0)">
+            @for (s of sorts; track s) { <option [value]="s">{{ 'PAT.SORTS.' + s | translate }}</option> }
+          </select>
+          <button type="button" class="btn btn-ghost btn-icon" (click)="toggleDir()" [attr.aria-label]="'PAT.DIRECTION' | translate" [title]="'PAT.DIRECTION' | translate">
+            <app-icon [name]="dir() === 'asc' ? 'chevron-up' : 'chevron-down'" [size]="16" />
+          </button>
+        </label>
+      </div>
+      @if (filtersOpen()) {
+      <div id="patient-filters" class="card mb-4 flex flex-wrap items-center gap-3 p-3">
         <select class="select w-auto" [ngModel]="practitionerId()" (ngModelChange)="practitionerId.set($event); page.set(0)" [attr.aria-label]="'COMMON.PRACTITIONER' | translate">
           <option value="">{{ 'COMMON.ALL_PRACTITIONERS' | translate }}</option>
           @for (p of practitioners.active(); track p.id) { <option [value]="p.id">{{ p.displayName }}</option> }
@@ -117,16 +134,11 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
           <label class="flex items-center gap-1.5 text-sm font-semibold text-ink-700"><input type="checkbox" [ngModel]="debtOnly()" (ngModelChange)="debtOnly.set($event); page.set(0)" /> {{ 'PAT.DEBT_ONLY' | translate }}</label>
         }
         <label class="flex items-center gap-1.5 text-sm font-semibold text-ink-700"><input type="checkbox" [ngModel]="landingPageOnly()" (ngModelChange)="landingPageOnly.set($event); page.set(0)" /> {{ 'PAT.LANDING_ONLY' | translate }}</label>
-        <label class="flex items-center gap-2 text-sm text-ink-600 lg:ms-auto">
-          {{ 'PAT.SORT' | translate }}
-          <select class="select w-auto" [ngModel]="sort()" (ngModelChange)="sort.set($event); page.set(0)">
-            @for (s of sorts; track s) { <option [value]="s">{{ 'PAT.SORTS.' + s | translate }}</option> }
-          </select>
-          <button type="button" class="btn btn-ghost btn-icon" (click)="toggleDir()" [attr.aria-label]="'PAT.DIRECTION' | translate" [title]="'PAT.DIRECTION' | translate">
-            <app-icon [name]="dir() === 'asc' ? 'chevron-up' : 'chevron-down'" [size]="16" />
-          </button>
-        </label>
+        @if (activeFilters() > 0) {
+          <button type="button" class="btn btn-ghost btn-sm ms-auto" (click)="clearFilters()">{{ 'COMMON.CLEAR_FILTERS' | translate }}</button>
+        }
       </div>
+      }
 
       <!-- Table -->
       <div class="table-wrap" [attr.aria-busy]="directory.loading()">
@@ -137,7 +149,6 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
                 <th scope="col">{{ 'PATIENTS.NAME' | translate }}</th>
                 <th scope="col">{{ 'COMMON.STATUS' | translate }}</th>
                 <th scope="col">{{ 'PAT.PRACTITIONER' | translate }}</th>
-                <th scope="col">{{ 'PAT.PROGRESS' | translate }}</th>
                 <th scope="col">{{ 'PATIENTS.NEXT_APPOINTMENT' | translate }}</th>
                 <th scope="col">{{ 'PATIENTS.CONTACT' | translate }}</th>
                 @if (canSeeMoney()) { <th scope="col" class="cell-num">{{ 'PAT.BALANCE' | translate }}</th> }
@@ -146,25 +157,20 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
             </thead>
             <tbody>
               @for (patient of rows(); track patient.id) {
-                <!-- The row is a mouse convenience, not a control; the name link is the accessible, keyboard-reachable primary action. -->
-                <tr class="row-clickable" (click)="navigateToPatient(patient.id)">
+                <!-- The whole row opens the file: the name link stretches over it (P2-7). It stays the one
+                     keyboard and screen-reader target; the edit link sits above it. -->
+                <tr class="row-clickable row-link-host" (click)="navigateToPatient(patient.id)">
                   <td>
                     <div class="flex items-center gap-3">
                       <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-petrol-50 text-2xs font-bold text-petrol-700 ring-1 ring-petrol-100" aria-hidden="true">{{ initials(patient) }}</span>
                       <span class="flex min-w-0 flex-col leading-tight">
-                        <a class="truncate font-bold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="[patient.id]" (click)="$event.stopPropagation()">{{ patient.firstName }} {{ patient.lastName }}</a>
+                        <a class="row-link truncate font-bold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="[patient.id]" (click)="$event.stopPropagation()">{{ patient.firstName }} {{ patient.lastName }}</a>
                         <span class="mono text-2xs text-ink-500">{{ patient.patientCode }}@if (patient.age !== null) { · {{ patient.age }} {{ 'PAT.YEARS' | translate }} }</span>
                       </span>
                     </div>
                   </td>
                   <td [attr.data-label]="'COMMON.STATUS' | translate"><app-status-pill [status]="patient.status" /></td>
                   <td [attr.data-label]="'PAT.PRACTITIONER' | translate">{{ patient.primaryPractitionerName || '—' }}</td>
-                  <td [attr.data-label]="'PAT.PROGRESS' | translate">
-                    <span class="flex items-center gap-2" [attr.title]="patient.progress + ' %'">
-                      <span class="h-1.5 w-20 overflow-hidden rounded-full bg-ink-100"><span class="block h-full rounded-full bg-petrol-500" [style.width.%]="patient.progress"></span></span>
-                      <span class="text-2xs tabular-nums text-ink-500">{{ patient.progress }}%</span>
-                    </span>
-                  </td>
                   <td [attr.data-label]="'PATIENTS.NEXT_APPOINTMENT' | translate">
                     @if (patient.nextAppointment) {
                       <span class="font-semibold text-ink-900">{{ patient.nextAppointment | appDate }}</span>
@@ -185,7 +191,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
                   }
                   <td class="cell-actions">
                     <div class="flex justify-end gap-1">
-                      <a class="btn btn-ghost btn-icon" [routerLink]="[patient.id, 'edit']" (click)="$event.stopPropagation()" [title]="'COMMON.EDIT' | translate"
+                      <a class="btn btn-ghost btn-icon row-above" [routerLink]="[patient.id, 'edit']" (click)="$event.stopPropagation()" [title]="'COMMON.EDIT' | translate"
                         [attr.aria-label]="('COMMON.EDIT' | translate) + ' — ' + patient.firstName + ' ' + patient.lastName">
                         <app-icon name="edit" [size]="16" />
                       </a>
@@ -194,7 +200,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="8" class="!p-0">
+                  <td colspan="7" class="!p-0">
                     <div class="empty">
                       <span class="empty-icon"><app-icon name="users" [size]="20" /></span>
                       @if (filtered()) {
@@ -228,6 +234,11 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
     </div>
   `,
   styles: [`
+    /* The search says all of what it searches, with its icon inside the field. */
+    .patient-search { flex: 1 1 24rem; min-width: min(100%, 20rem); }
+    .row-link-host { position: relative; }
+    .row-link::after { content: ''; position: absolute; inset: 0; }
+    .row-above { position: relative; z-index: 1; }
     .kpi-label { font-size: var(--text-2xs); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
     .kpi-value { margin-top: 0.25rem; font-size: var(--text-2xl); font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
     .quick-add {
@@ -314,6 +325,10 @@ export class PatientListComponent {
   protected readonly canMerge = computed(() => this.permissions.can('PATIENT_MERGE'));
   protected readonly canSeeMoney = computed(() => this.permissions.can('BILLING_READ'));
   protected readonly rows = computed<DirectoryRow[]>(() => this.directory.data()?.content ?? []);
+  /** The filters behind the Filters button, and how many of them are on. */
+  protected readonly filtersOpen = signal(false);
+  protected readonly activeFilters = computed(() =>
+    [this.gender(), this.practitionerId(), this.insurerId(), this.debtOnly(), this.landingPageOnly()].filter(Boolean).length);
   protected readonly filtered = computed(() => !!(this.search() || this.status() || this.gender() || this.practitionerId() || this.insurerId() || this.debtOnly() || this.landingPageOnly()));
   protected readonly pageInfo = computed(() => {
     const d = this.directory.data();

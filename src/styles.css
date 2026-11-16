@@ -565,6 +565,7 @@
   }
   .search > .input { padding-inline-start: 2.25rem; }
   .search > svg,
+  .search > app-icon,
   .search > app-icon.mi {
     position: absolute;
     inset-inline-start: 0.6875rem;

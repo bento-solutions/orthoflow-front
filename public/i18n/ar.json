@@ -101,7 +101,10 @@
     "SCROLLABLE": "محتوى قابل للتمرير",
     "CHANGE_PATIENT": "تغيير المريض",
     "RESULTS_COUNT": "{{count}} نتيجة",
-    "SAVE_FAILED": "تعذر الحفظ. حاول مرة أخرى."
+    "SAVE_FAILED": "تعذر الحفظ. حاول مرة أخرى.",
+    "FILTERS": "عوامل التصفية",
+    "SAVE_CHANGES": "حفظ التعديلات",
+    "REQUIRED_FIELDS": "إلزامي"
   },
   "DASHBOARD": {
     "TODAYS_VISITS": "زيارات اليوم",
@@ -132,7 +135,7 @@
     "ATTENTION_ON_HOLD_HINT": "راجع سبب التوقف لكل حالة.",
     "ATTENTION_UNSCHEDULED": "{{count}} مريض نشط بدون موعد قادم",
     "ATTENTION_UNSCHEDULED_HINT": "علاج جارٍ بدون متابعة محجوزة.",
-    "KPI_IN_TREATMENT": "قيد العلاج",
+    "KPI_IN_TREATMENT": "المرضى النشطون",
     "KPI_IN_TREATMENT_CAPTION": "من أصل {{count}} مسجل",
     "KPI_VISITS_CAPTION": "{{count}} محجوز خلال 7 أيام",
     "KPI_NEW_THIS_MONTH": "جدد هذا الشهر",
@@ -430,6 +433,11 @@
       "COMPARE": "مقارنة",
       "COMPARE_WITH": "مقارنة مع",
       "NO_PICTURE": "لا توجد صورة"
+    },
+    "FORM": {
+      "BACK_TO_FILE": "العودة إلى ملف المريض",
+      "BACK_TO_LIST": "العودة إلى المرضى",
+      "CREATE": "إنشاء المريض"
     }
   },
   "BILLING": {
@@ -1154,7 +1162,9 @@
       "SESSION_CANCELLED": "تم إلغاء الجلسة وإعادة المواد.",
       "SESSION_DELETE_CONFIRM": "هل تريد حذف مسودة الجلسة هذه؟",
       "SESSION_DELETED": "تم حذف مسودة الجلسة."
-    }
+    },
+    "SHOW_MORE": "+ {{n}} أخرى",
+    "SHOW_FEWER": "عرض أقل"
   },
   "SETTINGS": {
     "TITLE": "الإعدادات",
@@ -1243,7 +1253,9 @@
     "SURVEYS": "الرضا",
     "ACCOUNT": "حسابي",
     "INSURANCE_FORMS": "أوراق العلاج",
-    "PRESCRIPTION_TEMPLATES": "نماذج الوصفات"
+    "PRESCRIPTION_TEMPLATES": "نماذج الوصفات",
+    "DAILY": "اليومي",
+    "MORE": "المزيد"
   },
   "STATUS": {
     "ACTIVE": "نشط",

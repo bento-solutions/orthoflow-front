@@ -101,7 +101,10 @@
     "SCROLLABLE": "Scrollable content",
     "CHANGE_PATIENT": "Change patient",
     "RESULTS_COUNT": "{{count}} result(s)",
-    "SAVE_FAILED": "Could not save. Try again."
+    "SAVE_FAILED": "Could not save. Try again.",
+    "FILTERS": "Filters",
+    "SAVE_CHANGES": "Save changes",
+    "REQUIRED_FIELDS": "Required"
   },
   "DASHBOARD": {
     "TODAYS_VISITS": "Today's Visits",
@@ -132,7 +135,7 @@
     "ATTENTION_ON_HOLD_HINT": "Review why each is paused.",
     "ATTENTION_UNSCHEDULED": "{{count}} active patient(s) with no next visit",
     "ATTENTION_UNSCHEDULED_HINT": "Active treatment without a booked follow-up.",
-    "KPI_IN_TREATMENT": "In treatment",
+    "KPI_IN_TREATMENT": "Active patients",
     "KPI_IN_TREATMENT_CAPTION": "of {{count}} registered",
     "KPI_VISITS_CAPTION": "{{count}} booked in the next 7 days",
     "KPI_NEW_THIS_MONTH": "New this month",
@@ -430,6 +433,11 @@
       "COMPARE": "Compare",
       "COMPARE_WITH": "Compare with",
       "NO_PICTURE": "No photo"
+    },
+    "FORM": {
+      "BACK_TO_FILE": "Back to the patient file",
+      "BACK_TO_LIST": "Back to patients",
+      "CREATE": "Create the patient"
     }
   },
   "BILLING": {
@@ -1154,7 +1162,9 @@
       "SESSION_CANCELLED": "Treatment session cancelled and materials returned.",
       "SESSION_DELETE_CONFIRM": "Delete this draft treatment session?",
       "SESSION_DELETED": "Draft treatment session deleted."
-    }
+    },
+    "SHOW_MORE": "+ {{n}} more",
+    "SHOW_FEWER": "Show fewer"
   },
   "SETTINGS": {
     "TITLE": "Settings",
@@ -1243,7 +1253,9 @@
     "SURVEYS": "Satisfaction",
     "ACCOUNT": "My account",
     "INSURANCE_FORMS": "Care forms",
-    "PRESCRIPTION_TEMPLATES": "Prescription templates"
+    "PRESCRIPTION_TEMPLATES": "Prescription templates",
+    "DAILY": "Every day",
+    "MORE": "More"
   },
   "STATUS": {
     "ACTIVE": "Active",

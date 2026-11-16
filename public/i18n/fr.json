@@ -101,7 +101,10 @@
     "SCROLLABLE": "Contenu défilant",
     "CHANGE_PATIENT": "Changer de patient",
     "RESULTS_COUNT": "{{count}} résultat(s)",
-    "SAVE_FAILED": "Enregistrement impossible. Réessayez."
+    "SAVE_FAILED": "Enregistrement impossible. Réessayez.",
+    "FILTERS": "Filtres",
+    "SAVE_CHANGES": "Enregistrer les modifications",
+    "REQUIRED_FIELDS": "Obligatoire"
   },
   "DASHBOARD": {
     "TODAYS_VISITS": "Visites du jour",
@@ -132,7 +135,7 @@
     "ATTENTION_ON_HOLD_HINT": "Vérifier la raison de chaque pause.",
     "ATTENTION_UNSCHEDULED": "{{count}} patient(s) actif(s) sans prochain rendez-vous",
     "ATTENTION_UNSCHEDULED_HINT": "Traitement en cours sans suivi programmé.",
-    "KPI_IN_TREATMENT": "En traitement",
+    "KPI_IN_TREATMENT": "Patients actifs",
     "KPI_IN_TREATMENT_CAPTION": "sur {{count}} enregistrés",
     "KPI_VISITS_CAPTION": "{{count}} prévus sous 7 jours",
     "KPI_NEW_THIS_MONTH": "Nouveaux ce mois",
@@ -430,6 +433,11 @@
       "COMPARE": "Comparer",
       "COMPARE_WITH": "Comparer avec",
       "NO_PICTURE": "Pas de photo"
+    },
+    "FORM": {
+      "BACK_TO_FILE": "Retour au dossier patient",
+      "BACK_TO_LIST": "Retour aux patients",
+      "CREATE": "Créer le patient"
     }
   },
   "BILLING": {
@@ -1154,7 +1162,9 @@
       "SESSION_CANCELLED": "Séance annulée, matériel remis en stock.",
       "SESSION_DELETE_CONFIRM": "Supprimer ce brouillon de séance ?",
       "SESSION_DELETED": "Brouillon de séance supprimé."
-    }
+    },
+    "SHOW_MORE": "+ {{n}} de plus",
+    "SHOW_FEWER": "Afficher moins"
   },
   "SETTINGS": {
     "TITLE": "Paramètres",
@@ -1243,7 +1253,9 @@
     "SURVEYS": "Satisfaction",
     "ACCOUNT": "Mon compte",
     "INSURANCE_FORMS": "Feuilles de soins",
-    "PRESCRIPTION_TEMPLATES": "Ordonnances types"
+    "PRESCRIPTION_TEMPLATES": "Ordonnances types",
+    "DAILY": "Au quotidien",
+    "MORE": "Plus"
   },
   "STATUS": {
     "ACTIVE": "Actif",

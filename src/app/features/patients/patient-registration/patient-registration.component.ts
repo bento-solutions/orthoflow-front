@@ -26,9 +26,11 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
   template: `
     <div class="registration-container">
       <header class="page-header">
-        <button type="button" class="back-btn" [attr.aria-label]="'COMMON.BACK' | translate" [routerLink]="editMode ? ['/patients', patientId] : ['/patients']">
-          <app-icon class="mi" name="arrow_back" size="1em" />
-        </button>
+        <!-- Where Back leads, said in words (P1-12). -->
+        <a class="back-link" [routerLink]="editMode ? ['/patients', patientId] : ['/patients']">
+          <app-icon name="arrow-left" [size]="16" class="rtl:rotate-180" />
+          {{ (editMode ? 'PATIENTS.FORM.BACK_TO_FILE' : 'PATIENTS.FORM.BACK_TO_LIST') | translate }}
+        </a>
       </header>
 
       @if (loading()) {
@@ -44,24 +46,24 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
               <h2 class="section-title">{{ 'PATIENTS.DOSSIER.IDENTITY' | translate }}</h2>
               <div class="inputs-grid">
                 <div class="form-group">
-                  <label for="firstName">{{ 'PATIENTS.DOSSIER.FIRST_NAME' | translate }}</label>
-                  <input id="firstName" formControlName="firstName" type="text" [placeholder]="'PATIENTS.DOSSIER.FIRST_NAME' | translate"
+                  <label for="firstName" class="label-required">{{ 'PATIENTS.DOSSIER.FIRST_NAME' | translate }}</label>
+                  <input id="firstName" formControlName="firstName" autocomplete="given-name" type="text" [placeholder]="'PATIENTS.DOSSIER.FIRST_NAME' | translate"
                     [attr.aria-invalid]="isInvalid('firstName')" [attr.aria-describedby]="isInvalid('firstName') ? 'firstName-error' : null" required />
                   @if (isInvalid('firstName')) {
                     <p class="field-error" id="firstName-error" role="alert">{{ 'PATIENTS.DOSSIER.UI.FIELD_REQUIRED' | translate: { field: ('PATIENTS.DOSSIER.FIRST_NAME' | translate) } }}</p>
                   }
                 </div>
                 <div class="form-group">
-                  <label for="lastName">{{ 'PATIENTS.DOSSIER.LAST_NAME' | translate }}</label>
-                  <input id="lastName" formControlName="lastName" type="text" [placeholder]="'PATIENTS.DOSSIER.LAST_NAME' | translate"
+                  <label for="lastName" class="label-required">{{ 'PATIENTS.DOSSIER.LAST_NAME' | translate }}</label>
+                  <input id="lastName" formControlName="lastName" autocomplete="family-name" type="text" [placeholder]="'PATIENTS.DOSSIER.LAST_NAME' | translate"
                     [attr.aria-invalid]="isInvalid('lastName')" [attr.aria-describedby]="isInvalid('lastName') ? 'lastName-error' : null" required />
                   @if (isInvalid('lastName')) {
                     <p class="field-error" id="lastName-error" role="alert">{{ 'PATIENTS.DOSSIER.UI.FIELD_REQUIRED' | translate: { field: ('PATIENTS.DOSSIER.LAST_NAME' | translate) } }}</p>
                   }
                 </div>
                 <div class="form-group">
-                  <label for="dateOfBirth">{{ 'PATIENTS.DOSSIER.DOB' | translate }}</label>
-                  <input id="dateOfBirth" formControlName="dateOfBirth" type="date" [attr.aria-invalid]="isInvalid('dateOfBirth')" [attr.aria-describedby]="isInvalid('dateOfBirth') ? 'dateOfBirth-error' : null" required />
+                  <label for="dateOfBirth" class="label-required">{{ 'PATIENTS.DOSSIER.DOB' | translate }}</label>
+                  <input id="dateOfBirth" formControlName="dateOfBirth" autocomplete="bday" type="date" [attr.aria-invalid]="isInvalid('dateOfBirth')" [attr.aria-describedby]="isInvalid('dateOfBirth') ? 'dateOfBirth-error' : null" required />
                   @if (patientForm.controls.dateOfBirth.hasError('futureDate') && patientForm.controls.dateOfBirth.touched) {
                     <p class="field-error" id="dateOfBirth-error" role="alert">{{ 'PATIENTS.DOSSIER.UI.DOB_FUTURE' | translate }}</p>
                   } @else if (isInvalid('dateOfBirth')) {
@@ -69,7 +71,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
                   }
                 </div>
                 <div class="form-group">
-                  <label for="gender">{{ 'PATIENTS.DOSSIER.GENDER' | translate }}</label>
+                  <label for="gender" class="label-required">{{ 'PATIENTS.DOSSIER.GENDER' | translate }}</label>
                   <select id="gender" formControlName="gender">
                     <option value="M">{{ 'PATIENTS.DOSSIER.GENDER_M' | translate }}</option>
                     <option value="F">{{ 'PATIENTS.DOSSIER.GENDER_F' | translate }}</option>
@@ -78,15 +80,15 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
                 </div>
                 <div class="form-group">
                   <label for="cin">{{ 'PATIENTS.DOSSIER.CIN' | translate }} ({{ 'COMMON.RECOMMENDED' | translate }})</label>
-                  <input id="cin" formControlName="cin" type="text" [placeholder]="'PATIENTS.DOSSIER.CIN_PLACEHOLDER' | translate" />
+                  <input id="cin" formControlName="cin" autocomplete="off" type="text" [placeholder]="'PATIENTS.DOSSIER.CIN_PLACEHOLDER' | translate" />
                 </div>
                 <div class="form-group">
                   <label for="guardianName">{{ 'PATIENTS.DOSSIER.UI.GUARDIAN_NAME' | translate }}</label>
-                  <input id="guardianName" formControlName="guardianName" type="text" [placeholder]="'PATIENTS.DOSSIER.UI.FOR_MINORS' | translate" />
+                  <input id="guardianName" formControlName="guardianName" autocomplete="name" type="text" [placeholder]="'PATIENTS.DOSSIER.UI.FOR_MINORS' | translate" />
                 </div>
                 <div class="form-group">
                   <label for="guardianPhone">{{ 'PATIENTS.DOSSIER.UI.GUARDIAN_PHONE' | translate }}</label>
-                  <input id="guardianPhone" formControlName="guardianPhone" type="tel" [placeholder]="'PATIENTS.DOSSIER.UI.FOR_MINORS' | translate" />
+                  <input id="guardianPhone" formControlName="guardianPhone" autocomplete="tel" type="tel" [placeholder]="'PATIENTS.DOSSIER.UI.FOR_MINORS' | translate" />
                 </div>
                 @if (editMode) {
                   <div class="form-group">
@@ -107,7 +109,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
               <div class="inputs-grid">
                 <div class="form-group">
                   <label for="email">{{ 'PATIENTS.DOSSIER.EMAIL' | translate }} ({{ 'COMMON.OPTIONAL' | translate }})</label>
-                  <input id="email" formControlName="email" type="email" [placeholder]="'PATIENTS.DOSSIER.EMAIL_PLACEHOLDER' | translate"
+                  <input id="email" formControlName="email" autocomplete="email" type="email" [placeholder]="'PATIENTS.DOSSIER.EMAIL_PLACEHOLDER' | translate"
                     [attr.aria-invalid]="patientForm.controls.email.hasError('email') && patientForm.controls.email.touched"
                     [attr.aria-describedby]="patientForm.controls.email.hasError('email') && patientForm.controls.email.touched ? 'email-error' : null" />
                   @if (patientForm.controls.email.hasError('email') && patientForm.controls.email.touched) {
@@ -115,8 +117,8 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
                   }
                 </div>
                 <div class="form-group">
-                  <label for="phone">{{ 'PATIENTS.DOSSIER.PHONE' | translate }}</label>
-                  <input id="phone" formControlName="phone" type="tel" [placeholder]="'PATIENTS.DOSSIER.PHONE_PLACEHOLDER' | translate"
+                  <label for="phone" class="label-required">{{ 'PATIENTS.DOSSIER.PHONE' | translate }}</label>
+                  <input id="phone" formControlName="phone" autocomplete="tel" type="tel" [placeholder]="'PATIENTS.DOSSIER.PHONE_PLACEHOLDER' | translate"
                     [attr.aria-invalid]="isInvalid('phone')" [attr.aria-describedby]="isInvalid('phone') ? 'phone-error' : null" required />
                   @if (isInvalid('phone')) {
                     <p class="field-error" id="phone-error" role="alert">{{ 'PATIENTS.DOSSIER.UI.PHONE_REQUIRED' | translate }}</p>
@@ -124,7 +126,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
                 </div>
                 <div class="form-group full-width">
                   <label for="address">{{ 'PATIENTS.DOSSIER.ADDRESS' | translate }} ({{ 'COMMON.OPTIONAL' | translate }})</label>
-                  <textarea id="address" formControlName="address" rows="2" [placeholder]="'PATIENTS.DOSSIER.ADDRESS_PLACEHOLDER' | translate"></textarea>
+                  <textarea id="address" formControlName="address" autocomplete="street-address" rows="2" [placeholder]="'PATIENTS.DOSSIER.ADDRESS_PLACEHOLDER' | translate"></textarea>
                 </div>
               </div>
             </div>
@@ -142,11 +144,11 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
                 </div>
                 <div class="form-group">
                   <label for="insuranceNumber">{{ 'PATIENTS.DOSSIER.POLICY_NUMBER' | translate }}</label>
-                  <input id="insuranceNumber" formControlName="insuranceNumber" type="text" maxlength="100" />
+                  <input id="insuranceNumber" formControlName="insuranceNumber" autocomplete="off" type="text" maxlength="100" />
                 </div>
                 <div class="form-group">
                   <label for="insuranceAffiliationNumber">{{ 'PATIENTS.DOSSIER.AFFILIATION_NUMBER' | translate }} ({{ 'COMMON.OPTIONAL' | translate }})</label>
-                  <input id="insuranceAffiliationNumber" formControlName="insuranceAffiliationNumber" type="text" maxlength="50" />
+                  <input id="insuranceAffiliationNumber" formControlName="insuranceAffiliationNumber" autocomplete="off" type="text" maxlength="50" />
                 </div>
                 <div class="form-group">
                   <label for="insuredRelation">{{ 'PATIENTS.DOSSIER.INSURED_RELATION' | translate }}</label>
@@ -159,11 +161,11 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
                 @if (patientForm.controls.insuredRelation.value !== 'SELF') {
                   <div class="form-group">
                     <label for="insuredName">{{ 'PATIENTS.DOSSIER.INSURED_NAME' | translate }}</label>
-                    <input id="insuredName" formControlName="insuredName" type="text" maxlength="255" />
+                    <input id="insuredName" formControlName="insuredName" autocomplete="off" type="text" maxlength="255" />
                   </div>
                   <div class="form-group">
                     <label for="insuredCin">{{ 'PATIENTS.DOSSIER.INSURED_CIN' | translate }}</label>
-                    <input id="insuredCin" formControlName="insuredCin" type="text" maxlength="50" />
+                    <input id="insuredCin" formControlName="insuredCin" autocomplete="off" type="text" maxlength="50" />
                   </div>
                 }
               </div>
@@ -182,9 +184,10 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
           </div>
 
           <div class="form-actions">
-            <button type="button" class="btn-form-cancel" [routerLink]="editMode ? ['/patients', patientId] : ['/patients']">{{ 'COMMON.CANCEL' | translate }}</button>
+            <p class="required-note"><span aria-hidden="true">*</span> {{ 'COMMON.REQUIRED_FIELDS' | translate }}</p>
+            <a class="btn btn-secondary" [routerLink]="editMode ? ['/patients', patientId] : ['/patients']">{{ 'COMMON.CANCEL' | translate }}</a>
             <button type="submit" class="btn btn-primary" [disabled]="patientForm.invalid">
-              {{ (editMode ? 'COMMON.EDIT' : 'COMMON.ADD') | translate }} {{ 'PATIENTS.NAME' | translate }}
+              {{ (editMode ? 'COMMON.SAVE_CHANGES' : 'PATIENTS.FORM.CREATE') | translate }}
             </button>
           </div>
         </form>
@@ -205,6 +208,12 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
       margin-bottom: 2.5rem;
     }
 
+    .back-link { display: inline-flex; align-items: center; gap: .375rem; font-weight: 600; color: var(--action-text); text-decoration: none; }
+    .back-link:hover { text-decoration: underline; }
+    /* Required fields carry a star on their label; the line by the buttons says what it means. */
+    .form-group label.label-required::after { content: ' *'; color: rgb(var(--critical-700)); }
+    .required-note { margin-inline-end: auto; font-size: var(--text-sm); color: var(--text-muted); }
+    .required-note span { color: rgb(var(--critical-700)); }
     .back-btn {
       background: var(--surface);
       border: 1px solid rgb(var(--ink-200));
@@ -333,8 +342,10 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
 
     .form-actions {
       display: flex;
+      flex-wrap: wrap;
+      align-items: center;
       justify-content: flex-end;
-      gap: 1rem;
+      gap: .75rem;
       margin-top: 1rem;
     }
 

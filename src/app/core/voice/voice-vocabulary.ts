@@ -58,7 +58,7 @@ const BASE_TERMS: Readonly<Record<string, { fr: string[]; en: string[] }>> = {
   deep_caries: { fr: ['carie profonde'], en: ['deep caries'] },
   caries: { fr: ['carie'], en: ['caries', 'decay'] },
   cavity: { fr: ['cavité'], en: ['cavity'] },
-  fracture: { fr: ['fracture', 'dent fêlée'], en: ['fracture', 'broken tooth'] },
+  fracture: { fr: ['fracture', 'dent cassée'], en: ['fracture', 'broken tooth'] },
   crown_defective: { fr: ['couronne défectueuse', 'couronne descellée'], en: ['defective crown', 'loose crown'] },
   retained_root: { fr: ['racine résiduelle'], en: ['retained root'] },
   avulsion: { fr: ['avulsion'], en: ['avulsion'] },

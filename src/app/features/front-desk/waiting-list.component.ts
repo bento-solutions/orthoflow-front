@@ -58,7 +58,7 @@ export function formatWeekdays(days: Iterable<number>): string | undefined {
             @for (e of entries.data(); track e.id) {
               <tr>
                 <td><span class="pill" [class]="'pill ' + pill(e.urgency)">{{ 'FD.LIST.URGENCIES.' + e.urgency | translate }}</span></td>
-                <td class="font-semibold">{{ e.patientName }}<span class="block text-xs font-normal text-ink-500">{{ e.patientPhone }}</span></td>
+                <td class="font-semibold">{{ e.patientName }}<span class="block text-xs font-normal text-ink-500"><span class="ltr-data">{{ e.patientPhone }}</span></span></td>
                 <td><span class="me-1 inline-block h-2.5 w-2.5 rounded-full" [style.background]="e.typeColor || '#64748b'" aria-hidden="true"></span>{{ e.typeName || '—' }} · {{ e.durationMinutes }} min</td>
                 <td>{{ e.practitionerName || '—' }}</td>
                 <td class="text-sm">{{ preferences(e) }}@if (e.notes) { <span class="block text-xs text-ink-500">{{ e.notes }}</span> }</td>

@@ -165,7 +165,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
                       <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-petrol-50 text-2xs font-bold text-petrol-700 ring-1 ring-petrol-100" aria-hidden="true">{{ initials(patient) }}</span>
                       <span class="flex min-w-0 flex-col leading-tight">
                         <a class="row-link truncate font-bold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="[patient.id]" (click)="$event.stopPropagation()">{{ patient.firstName }} {{ patient.lastName }}</a>
-                        <span class="mono text-2xs text-ink-500">{{ patient.patientCode }}@if (patient.age !== null) { · {{ patient.age }} {{ 'PAT.YEARS' | translate }} }</span>
+                        <span class="mono text-2xs text-ink-500"><span class="ltr-data">{{ patient.patientCode }}</span>@if (patient.age !== null) { · {{ patient.age }} {{ 'PAT.YEARS' | translate }} }</span>
                       </span>
                     </div>
                   </td>
@@ -178,8 +178,8 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
                   </td>
                   <td [attr.data-label]="'PATIENTS.CONTACT' | translate">
                     <span class="flex flex-col leading-tight">
-                      <span class="text-ink-900">{{ patient.phone || '—' }}</span>
-                      <span class="truncate text-2xs text-ink-500">{{ patient.email }}</span>
+                      <span class="text-ink-900"><span class="ltr-data">{{ patient.phone || '—' }}</span></span>
+                      <span class="truncate text-2xs text-ink-500"><span class="ltr-data">{{ patient.email }}</span></span>
                     </span>
                   </td>
                   @if (canSeeMoney()) {

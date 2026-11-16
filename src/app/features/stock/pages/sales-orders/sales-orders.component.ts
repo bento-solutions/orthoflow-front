@@ -81,7 +81,7 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
                   <td class="p-4 font-mono text-xs font-bold text-ink-900">{{ so.soNumber }}</td>
                   <td class="p-4">
                     <div class="font-bold text-ink-900">{{ so.patient?.firstName }} {{ so.patient?.lastName }}</div>
-                    <div class="text-xs text-ink-500">{{ "STOCK.EMAIL_LABEL" | translate }}: {{ so.patient?.email }}</div>
+                    <div class="text-xs text-ink-500">{{ "STOCK.EMAIL_LABEL" | translate }}: <span class="ltr-data">{{ so.patient?.email }}</span></div>
                   </td>
                   <td class="p-4 text-ink-500 font-medium">{{ so.createdAt | appDate:'datetime' }}</td>
                   <td class="p-4 text-center">

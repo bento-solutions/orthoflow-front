@@ -28,7 +28,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
               <app-icon class="mi" name="arrow_back" size="1em" />
             </button>
             <div class="title-with-status">
-              <p class="print-name">{{ 'BILLING.INVOICE_NUMBER' | translate }} {{ inv.invoiceNumber }}</p>
+              <p class="print-name">{{ 'BILLING.INVOICE_NUMBER' | translate }} <span class="ltr-data">{{ inv.invoiceNumber }}</span></p>
               <span class="status-badge" [class]="inv.status.toLowerCase().replace('_', '-')">
                 {{ 'BILLING.STATUS.' + inv.status | translate }}
               </span>
@@ -429,8 +429,9 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 
     .balance-card {
       padding: 1.5rem;
-      background: rgb(var(--ink-900));
-      color: white;
+      /* Dark in both themes: --ink-900 turns near-white in the dark theme, under white text. */
+      background: var(--surface-inverse);
+      color: var(--text-inverse);
       border: none;
     }
 

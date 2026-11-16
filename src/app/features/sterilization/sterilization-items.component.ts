@@ -135,7 +135,7 @@ const blankItem = (): ItemForm => ({ code: '', name: '', kind: 'INSTRUMENT', ser
           @for (e of events(); track e.eventId) {
             <li class="rounded-md border border-ink-100 p-3 text-sm">
               <p class="font-semibold text-ink-900">{{ 'STER.ACTION_NAMES.' + e.action | translate }} <span class="font-normal text-ink-500">· {{ e.at | appDate:'datetime' }}@if (e.performedBy) { · {{ e.performedBy }} }</span></p>
-              @if (e.patientName) { <p class="text-ink-700">{{ 'STER.TRACE.ON_PATIENT' | translate }} {{ e.patientName }} <span class="mono text-xs text-ink-500">{{ e.patientCode }}</span></p> }
+              @if (e.patientName) { <p class="text-ink-700">{{ 'STER.TRACE.ON_PATIENT' | translate }} {{ e.patientName }} <span class="mono text-xs text-ink-500"><span class="ltr-data">{{ e.patientCode }}</span></span></p> }
               @if (e.cycleNumber) { <p class="text-ink-700">{{ 'STER.TRACE.CYCLE' | translate }} #{{ e.cycleNumber }} · {{ e.autoclaveName }}@if (e.controlResult) { · {{ 'STER.RESULTS.' + e.controlResult | translate }} }</p> }
               @if (e.note) { <p class="text-ink-600">{{ e.note }}</p> }
             </li>

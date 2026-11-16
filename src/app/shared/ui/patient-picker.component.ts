@@ -32,7 +32,7 @@ let nextId = 1;
     <div class="relative">
       @if (value(); as picked) {
         <div class="input flex items-center justify-between gap-2">
-          <span class="truncate font-semibold">{{ picked.name }}@if (picked.phone) { <span class="ms-2 font-normal text-ink-500">{{ picked.phone }}</span> }</span>
+          <span class="truncate font-semibold">{{ picked.name }}@if (picked.phone) { <span class="ms-2 font-normal text-ink-500"><span class="ltr-data">{{ picked.phone }}</span></span> }</span>
           <button #clearButton type="button" class="btn btn-ghost btn-sm" (click)="clear()" [attr.aria-label]="'COMMON.CHANGE_PATIENT' | translate">×</button>
         </div>
       } @else {
@@ -49,7 +49,7 @@ let nextId = 1;
               <li role="option" [id]="listId + '-' + i" [attr.aria-selected]="active() === i" [class.bg-ink-50]="active() === i"
                 class="cursor-pointer px-3 py-2 text-start text-sm" (click)="choose(r)" (mouseenter)="active.set(i)">
                 <span class="font-semibold text-ink-900">{{ r.lastName }} {{ r.firstName }}</span>
-                <span class="ms-2 text-ink-500">{{ r.phone }} · {{ r.patientCode }}</span>
+                <span class="ms-2 text-ink-500"><span class="ltr-data">{{ r.phone }}</span> · <span class="ltr-data">{{ r.patientCode }}</span></span>
               </li>
             } @empty {
               <li role="option" aria-disabled="true" aria-selected="false" class="px-3 py-2 text-sm text-ink-500">{{ 'COMMON.NOTHING_FOUND' | translate }}</li>

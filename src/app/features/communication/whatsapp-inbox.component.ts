@@ -31,7 +31,7 @@ import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
           <div class="min-w-0 flex-1">
             <p class="text-sm font-semibold text-ink-900">
               @if (m.patientId) { <a class="no-underline hover:text-petrol-700" [routerLink]="['/patients', m.patientId]">{{ m.patientName }}</a> } @else { {{ 'COM.INBOX.UNKNOWN' | translate }} }
-              <span class="ms-2 text-xs font-normal text-ink-500">{{ m.fromPhone }}</span>
+              <span class="ms-2 text-xs font-normal text-ink-500"><span class="ltr-data">{{ m.fromPhone }}</span></span>
               @if (m.fromLandingPage) { <span class="pill pill-active pill-nodot ms-2">{{ 'COM.INBOX.LANDING_BADGE' | translate }}</span> }
             </p>
             <p class="whitespace-pre-line text-sm text-ink-700">{{ m.body }}</p>

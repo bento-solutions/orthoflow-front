@@ -233,7 +233,7 @@ import { SurfacePickerComponent } from './surface-picker.component';
     .block-title { margin: 0 0 .5rem; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
     .summary { cursor: pointer; margin: 0; }
     .findings { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
-    .finding { display: flex; align-items: flex-start; gap: .625rem; padding: .5rem .625rem; border: 1px solid var(--border); border-radius: .5rem; background: var(--surface, rgb(var(--on-inverse))); }
+    .finding { display: flex; align-items: flex-start; gap: .625rem; padding: .5rem .625rem; border: 1px solid var(--border); border-radius: .5rem; background: var(--surface); }
     .finding.past { background: var(--status-idle-tint); border-color: transparent; }
     .dot { flex: none; width: .625rem; height: .625rem; margin-top: .3rem; border-radius: 999px; background: var(--status-idle); }
     .dot[data-kind='CONDITION'] { background: var(--status-critical); }
@@ -249,7 +249,7 @@ import { SurfacePickerComponent } from './surface-picker.component';
     .finding.past .finding-meta { color: var(--text-muted-on-tint); }
     .finding-note { font-size: .8125rem; color: var(--text); white-space: pre-line; }
     .finding-actions { display: flex; flex-direction: column; gap: .25rem; flex: none; }
-    .act { display: inline-flex; align-items: center; gap: .25rem; font-size: .75rem; padding: .25rem .5rem; border: 1px solid var(--border); border-radius: .375rem; background: var(--surface, rgb(var(--on-inverse))); color: var(--action-text); cursor: pointer; }
+    .act { display: inline-flex; align-items: center; gap: .25rem; font-size: .75rem; padding: .25rem .5rem; border: 1px solid var(--border); border-radius: .375rem; background: var(--surface); color: var(--action-text); cursor: pointer; }
     .act app-icon.mi { font-size: 1rem; }
     .act:hover { background: var(--action-tint); }
     .act.danger { color: var(--status-critical-text); }
@@ -259,10 +259,10 @@ import { SurfacePickerComponent } from './surface-picker.component';
     .field { display: flex; flex-direction: column; gap: .25rem; margin-bottom: .625rem; }
     .field-label { font-size: .75rem; font-weight: 600; color: var(--text); }
     .field-hint { font-size: .75rem; color: var(--text-muted); }
-    .select, .input { width: 100%; padding: .4375rem .5rem; font: inherit; font-size: .875rem; border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface, rgb(var(--on-inverse))); color: var(--text); }
+    .select, .input { width: 100%; padding: .4375rem .5rem; font: inherit; font-size: .875rem; border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface); color: var(--text); }
     .select:focus-visible, .input:focus-visible, .seg button:focus-visible, .act:focus-visible, .btn-add:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
     .seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: .375rem; overflow: hidden; align-self: flex-start; }
-    .seg button { padding: .375rem .75rem; font: inherit; font-size: .8125rem; border: 0; background: var(--surface, rgb(var(--on-inverse))); color: var(--text); cursor: pointer; }
+    .seg button { padding: .375rem .75rem; font: inherit; font-size: .8125rem; border: 0; background: var(--surface); color: var(--text); cursor: pointer; }
     .seg button + button { border-inline-start: 1px solid var(--border-strong); }
     .seg button.on { background: var(--action); color: var(--text-inverse); }
     .btn-add { display: inline-flex; align-items: center; gap: .25rem; padding: .5rem .875rem; font: inherit; font-size: .875rem; font-weight: 600; border: 0; border-radius: .375rem; background: var(--action); color: var(--text-inverse); cursor: pointer; }

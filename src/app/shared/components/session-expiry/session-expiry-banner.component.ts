@@ -41,19 +41,19 @@ import { AuthService } from '../../../core/services/auth.service';
   `,
   styles: [`
     .banner {
-      position: fixed; inset-inline: var(--space-4, 1rem); top: var(--space-4, 1rem); z-index: 60;
+      position: fixed; inset-inline: var(--space-4); top: var(--space-4); z-index: var(--z-toast);
       display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem;
       padding: 0.875rem 1rem; border-radius: 0.75rem;
-      background: rgb(var(--surface, 255 255 255)); color: rgb(var(--ink-900, 17 24 39));
-      border: 1px solid rgb(var(--caution-700, 180 83 9)); border-inline-start-width: 6px;
-      box-shadow: 0 10px 30px rgb(0 0 0 / 0.18);
+      background: var(--surface); color: var(--text);
+      border: 1px solid rgb(var(--caution-700)); border-inline-start-width: 6px;
+      box-shadow: var(--shadow-lg);
     }
     .text { flex: 1 1 18rem; min-width: 0; }
     .title { margin: 0 0 0.125rem; font-size: 0.875rem; font-weight: 700; }
     .text p { margin: 0; font-size: 0.875rem; }
     .form { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
     .form .input { min-width: 12rem; }
-    .error { flex-basis: 100%; margin: 0; font-size: 0.8125rem; color: rgb(var(--critical-700, 185 28 28)); }
+    .error { flex-basis: 100%; margin: 0; font-size: 0.8125rem; color: rgb(var(--critical-700)); }
   `],
 })
 export class SessionExpiryBannerComponent {

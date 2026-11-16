@@ -59,7 +59,7 @@ import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
                 @for (row of r.rows; track row.receiptId) {
                   <tr>
                     <td>{{ row.date | appDate }}</td>
-                    <td><a class="font-semibold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/patients', row.patientId]">{{ row.patientName }}</a><span class="block text-xs text-ink-500 mono">{{ row.patientCode }}</span></td>
+                    <td><a class="font-semibold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/patients', row.patientId]">{{ row.patientName }}</a><span class="block text-xs text-ink-500 mono"><span class="ltr-data">{{ row.patientCode }}</span></span></td>
                     <td>{{ 'BILLING.METHODS.' + row.method | translate }}@if (row.reference) { <span class="block text-xs text-ink-500">{{ row.reference }}</span> }</td>
                     <td>{{ row.practitionerName || '—' }}</td>
                     <td class="cell-num font-semibold">{{ row.amount | money }}</td>

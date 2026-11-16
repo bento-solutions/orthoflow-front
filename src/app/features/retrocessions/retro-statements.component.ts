@@ -114,7 +114,7 @@ export function remaining(s: Pick<Statement, 'net' | 'paid' | 'status'>): number
             <table class="data-table">
               <tbody>
                 @for (l of d.lines; track $index) {
-                  <tr><td>{{ l.date | appDate }}</td><td>{{ l.invoiceNumber }}<span class="block text-xs text-ink-500 mono">{{ l.patientCode }}</span></td><td>{{ l.label }}</td>
+                  <tr><td>{{ l.date | appDate }}</td><td><span class="ltr-data">{{ l.invoiceNumber }}</span><span class="block text-xs text-ink-500 mono"><span class="ltr-data">{{ l.patientCode }}</span></span></td><td>{{ l.label }}</td>
                     <td class="cell-num">{{ l.base | money }}</td><td class="cell-num">{{ l.ratePercent ?? '—' }}</td><td class="cell-num font-semibold">{{ l.amount | money }}</td></tr>
                 }
               </tbody>

@@ -538,7 +538,7 @@ interface ToothGroup {
     .vs-lang { border: 0; margin: .75rem 0 0; padding: 0; }
     .vs-lang legend { padding: 0; margin-bottom: .375rem; font-size: .8125rem; font-weight: 700; color: var(--text); }
     .vs-lang-options { display: inline-flex; border: 1px solid var(--border-strong); border-radius: .5rem; overflow: hidden; }
-    .vs-lang-options button { padding: .4375rem .875rem; font: inherit; font-size: .875rem; border: 0; background: var(--surface, rgb(var(--on-inverse))); color: var(--text); cursor: pointer; }
+    .vs-lang-options button { padding: .4375rem .875rem; font: inherit; font-size: .875rem; border: 0; background: var(--surface); color: var(--text); cursor: pointer; }
     .vs-lang-options button + button { border-inline-start: 1px solid var(--border-strong); }
     .vs-lang-options button.on { background: var(--action); color: var(--text-inverse); font-weight: 700; }
     .vs-lang-options button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }

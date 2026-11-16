@@ -148,7 +148,7 @@ interface NavItem {
             class="inline-flex transition-transform duration-4 ease-in-out"
             [class.rotate-180]="isCollapsed()"
           >
-            <app-icon name="chevrons-left" [size]="18" />
+            <app-icon name="chevrons-left" [size]="18" class="rtl:rotate-180" />
           </span>
         </button>
       </div>

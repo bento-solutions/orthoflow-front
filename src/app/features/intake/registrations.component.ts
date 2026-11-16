@@ -41,7 +41,7 @@ import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
                 @for (c of p.possibleDuplicates; track c.id) {
                   <li class="flex flex-wrap items-center justify-between gap-2 text-sm">
                     <span><a class="font-semibold text-ink-900 no-underline hover:underline" [routerLink]="['/patients', c.id]">{{ c.fullName }}</a>
-                      <span class="text-xs text-ink-600"> {{ c.patientCode }}@if (c.phone) { · {{ c.phone }} } — {{ 'PAT.DUP.REASONS.' + c.reason | translate }}</span></span>
+                      <span class="text-xs text-ink-600"> <span class="ltr-data">{{ c.patientCode }}</span>@if (c.phone) { · <span class="ltr-data">{{ c.phone }}</span> } — {{ 'PAT.DUP.REASONS.' + c.reason | translate }}</span></span>
                     <button type="button" class="btn btn-secondary btn-sm" [disabled]="busy()" (click)="approve(p, c.id)">{{ 'INT.REG.MERGE_INTO' | translate }}</button>
                   </li>
                 }

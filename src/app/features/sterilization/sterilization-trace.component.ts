@@ -54,7 +54,7 @@ export function byDay(entries: readonly TraceEntry[]): { day: string; entries: T
                 <li class="px-4 py-2.5 text-sm">
                   <p class="font-semibold text-ink-900">{{ e.at | appDate:'time' }} · {{ 'STER.ACTION_NAMES.' + e.action | translate }} — <span class="mono">{{ e.itemCode }}</span> {{ e.itemName }}</p>
                   <p class="text-ink-600">
-                    @if (mode() === 'item' && e.patientName) { <a class="text-ink-900 no-underline hover:underline" [routerLink]="['/patients', e.patientId]">{{ e.patientName }}</a> <span class="mono text-xs text-ink-500">{{ e.patientCode }}</span> · }
+                    @if (mode() === 'item' && e.patientName) { <a class="text-ink-900 no-underline hover:underline" [routerLink]="['/patients', e.patientId]">{{ e.patientName }}</a> <span class="mono text-xs text-ink-500"><span class="ltr-data">{{ e.patientCode }}</span></span> · }
                     @if (e.cycleNumber) { {{ 'STER.TRACE.CYCLE' | translate }} #{{ e.cycleNumber }} · {{ e.autoclaveName }}@if (e.controlResult) { · <span [class.text-critical-700]="e.controlResult === 'FAILED'" [class.font-semibold]="e.controlResult === 'FAILED'">{{ 'STER.RESULTS.' + e.controlResult | translate }}</span> } · }
                     @if (e.performedBy) { {{ e.performedBy }} }
                     @if (e.note) { · {{ e.note }} }

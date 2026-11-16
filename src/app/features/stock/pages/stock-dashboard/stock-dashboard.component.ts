@@ -378,8 +378,8 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   <tr class="hover:bg-ortho-navy/[0.01] transition">
                     <td class="p-4 font-bold text-ink-900">{{ sup.name }}</td>
                     <td class="p-4 text-ink-700 font-medium">{{ sup.contactName || '-' }}</td>
-                    <td class="p-4 text-ink-500 font-medium">{{ sup.email || '-' }}</td>
-                    <td class="p-4 text-ink-500 font-medium">{{ sup.phone || '-' }}</td>
+                    <td class="p-4 text-ink-500 font-medium"><span class="ltr-data">{{ sup.email || '-' }}</span></td>
+                    <td class="p-4 text-ink-500 font-medium"><span class="ltr-data">{{ sup.phone || '-' }}</span></td>
                     <td class="p-4 text-ink-500 max-w-xs truncate" [title]="sup.address">{{ sup.address || '-' }}</td>
                     <td class="p-4 text-right">
                       <div class="flex items-center justify-end gap-2">

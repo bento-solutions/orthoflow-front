@@ -89,10 +89,10 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
             <tbody class="divide-y divide-ortho-navy/5">
               @for (inv of invoices(); track inv.id) {
                 <tr class="hover:bg-ortho-navy/[0.01] transition">
-                  <td class="p-4 font-mono text-xs font-bold text-ink-900">{{ inv.invoiceNumber || 'DRAFT' }}</td>
+                  <td class="p-4 font-mono text-xs font-bold text-ink-900"><span class="ltr-data">{{ inv.invoiceNumber || 'DRAFT' }}</span></td>
                   <td class="p-4">
                     <div class="font-bold text-ink-900">{{ inv.patient?.firstName }} {{ inv.patient?.lastName }}</div>
-                    <div class="text-xs text-ink-500">CIN: {{ inv.patient?.cin || '—' }}</div>
+                    <div class="text-xs text-ink-500">CIN: <span class="ltr-data">{{ inv.patient?.cin || '—' }}</span></div>
                   </td>
                   <td class="p-4 font-semibold text-ink-700">{{ inv.treatment?.name }}</td>
                   <td class="p-4 text-ink-500 font-medium">{{ inv.sessionDate | appDate:'datetime' }}</td>

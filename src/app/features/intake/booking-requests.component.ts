@@ -59,8 +59,8 @@ export function matchTerm(request: Pick<BookingRequest, 'phone' | 'lastName'>): 
                 @if (r.source === 'LANDING_PAGE') { <span class="pill pill-active pill-nodot ms-2 align-middle">{{ 'INT.BOOK.FROM_LANDING' | translate }}</span> }
               </p>
               <p class="text-sm text-ink-600">
-                @if (r.phone) { <a class="no-underline hover:text-petrol-700" [href]="'tel:' + r.phone">{{ r.phone }}</a> }
-                @if (r.email) { · {{ r.email }} }
+                @if (r.phone) { <a class="no-underline hover:text-petrol-700" [href]="'tel:' + r.phone"><span class="ltr-data">{{ r.phone }}</span></a> }
+                @if (r.email) { · <span class="ltr-data">{{ r.email }}</span> }
                 @if (r.dateOfBirth) { · {{ r.dateOfBirth | appDate }} }
               </p>
               @if (r.note) { <p class="mt-1 text-sm text-ink-700">« {{ r.note }} »</p> }
@@ -99,7 +99,7 @@ export function matchTerm(request: Pick<BookingRequest, 'phone' | 'lastName'>): 
             <label class="flex items-center gap-2 text-sm"><input type="radio" name="who" [checked]="patientChoice() === ''" (change)="patientChoice.set('')" /> {{ 'INT.BOOK.NEW_PATIENT' | translate }}</label>
             @for (m of matches(); track m.id) {
               <label class="flex items-center gap-2 text-sm"><input type="radio" name="who" [checked]="patientChoice() === m.id" (change)="patientChoice.set(m.id)" />
-                <span>{{ m.firstName }} {{ m.lastName }} <span class="text-xs text-ink-500">{{ m.patientCode }} · {{ m.phone }}</span></span></label>
+                <span>{{ m.firstName }} {{ m.lastName }} <span class="text-xs text-ink-500"><span class="ltr-data">{{ m.patientCode }}</span> · <span class="ltr-data">{{ m.phone }}</span></span></span></label>
             }
           </fieldset>
           <div class="grid gap-4 sm:grid-cols-2">

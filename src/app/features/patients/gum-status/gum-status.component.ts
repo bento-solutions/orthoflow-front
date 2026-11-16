@@ -145,7 +145,7 @@ const MOUTH_ROWS: readonly (readonly PerioRegion[])[] = [
     /* The mouth is laid out as the dentist faces the patient, in every language: the patient's right on the left, like the chart. */
     .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; direction: ltr; }
     :host-context([dir='rtl']) .tile { direction: rtl; }
-    .tile { display: flex; flex-direction: column; gap: .125rem; align-items: flex-start; text-align: start; padding: .625rem .75rem; border: 1px solid var(--border); border-inline-start-width: 4px; border-radius: .5rem; background: var(--surface, rgb(var(--on-inverse))); color: var(--text); cursor: pointer; font: inherit; }
+    .tile { display: flex; flex-direction: column; gap: .125rem; align-items: flex-start; text-align: start; padding: .625rem .75rem; border: 1px solid var(--border); border-inline-start-width: 4px; border-radius: .5rem; background: var(--surface); color: var(--text); cursor: pointer; font: inherit; }
     .tile.whole { width: 100%; }
     .tile.sel { box-shadow: 0 0 0 2px var(--focus-ring); }
     .tile:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
@@ -160,14 +160,14 @@ const MOUTH_ROWS: readonly (readonly PerioRegion[])[] = [
     .tile[data-state='PERIODONTITIS'] .tile-state { color: var(--status-critical-text); }
     .tile-date { font-size: .75rem; color: var(--text-muted); }
     .muted { color: var(--text-muted); font-weight: 400; }
-    .form { display: grid; gap: .75rem; padding: 1rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--surface, rgb(var(--on-inverse))); }
+    .form { display: grid; gap: .75rem; padding: 1rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--surface); }
     .form h3, .history h3 { margin: 0; font-size: .875rem; }
     .field { display: flex; flex-direction: column; gap: .25rem; font-size: .8125rem; font-weight: 600; border: 0; padding: 0; margin: 0; }
     .field legend { padding: 0; margin-bottom: .25rem; }
-    .control { padding: .4375rem .5rem; font: inherit; font-weight: 400; border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface, rgb(var(--on-inverse))); color: var(--text); }
+    .control { padding: .4375rem .5rem; font: inherit; font-weight: 400; border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface); color: var(--text); }
     .control:focus-visible, .seg button:focus-visible, .save:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
     .seg { display: flex; flex-wrap: wrap; border: 1px solid var(--border-strong); border-radius: .375rem; overflow: hidden; align-self: flex-start; }
-    .seg button { padding: .4375rem .875rem; font: inherit; font-size: .8125rem; font-weight: 500; border: 0; background: var(--surface, rgb(var(--on-inverse))); color: var(--text); cursor: pointer; }
+    .seg button { padding: .4375rem .875rem; font: inherit; font-size: .8125rem; font-weight: 500; border: 0; background: var(--surface); color: var(--text); cursor: pointer; }
     .seg button + button { border-inline-start: 1px solid var(--border-strong); }
     .seg button.on[data-state='HEALTHY'] { background: var(--status-done-tint); color: var(--status-done-text); font-weight: 700; }
     .seg button.on[data-state='GINGIVITIS'] { background: var(--status-attention-tint); color: var(--status-attention-text); font-weight: 700; }

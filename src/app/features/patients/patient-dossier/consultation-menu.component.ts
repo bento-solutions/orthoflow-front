@@ -1,3 +1,4 @@
+import { PermissionService } from '../../../core/services/permission.service';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { Component, ElementRef, HostListener, effect, inject, input, output, signal, viewChild } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
@@ -35,7 +36,8 @@ import { TranslateModule } from '@ngx-translate/core';
             @if (consultationAvailable()) {
               <small>{{ 'CONSULTATION.BUTTON_HINT' | translate }}</small>
             } @else {
-              <small id="consultation-menu-off" class="cm-off">{{ 'CONSULTATION.MENU_OFF' | translate }}</small>
+              <!-- Says who can turn it on, so the doctor is not left at a closed door (UI V2 audit M8). -->
+              <small id="consultation-menu-off" class="cm-off">{{ (isAdmin() ? 'CONSULTATION.MENU_OFF_ADMIN' : 'CONSULTATION.MENU_OFF') | translate }}</small>
             }
           </span>
         </button>
@@ -56,9 +58,16 @@ import { TranslateModule } from '@ngx-translate/core';
     .cm-caret { margin-inline-start: -.125rem; transition: transform .15s; }
     .cm-trigger[aria-expanded='true'] .cm-caret { transform: rotate(180deg); }
     .cm-menu {
-      position: absolute; top: calc(100% + .375rem); inset-inline-start: 0; z-index: 40; min-width: 18rem; max-width: 22rem;
-      display: flex; flex-direction: column; padding: .375rem; border-radius: .75rem;
-      background: var(--surface); border: 1px solid rgb(var(--ink-200)); box-shadow: 0 12px 32px rgb(0 0 0 / .14);
+      position: absolute; top: calc(100% + .375rem); inset-inline-start: 0; z-index: var(--z-overlay);
+      /* Never wider than the screen (UI V2 audit H1). */
+      min-width: min(18rem, calc(100vw - 2rem)); max-width: min(22rem, calc(100vw - 2rem));
+      display: flex; flex-direction: column; padding: .375rem; border-radius: var(--radius-lg);
+      background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-lg);
+    }
+    /* On a phone the menu is a sheet along the bottom, in the thumb's reach and never clipped. */
+    @media (max-width: 480px) {
+      .cm-menu { position: fixed; inset: auto .5rem calc(.5rem + env(safe-area-inset-bottom, 0px)) .5rem; min-width: 0; max-width: none; }
+      .cm-item { min-height: 3rem; }
     }
     .cm-item {
       display: flex; align-items: flex-start; gap: .625rem; width: 100%; padding: .5rem .625rem; border: 0; border-radius: .5rem;
@@ -83,6 +92,7 @@ export class ConsultationMenuComponent {
   /** The doctor asked not to see the consultation's consent card again. */
   readonly introHidden = input(false);
   readonly starting = input(false);
+  protected readonly isAdmin = inject(PermissionService).isAdmin;
 
   readonly voice = output<void>();
   readonly consultation = output<void>();

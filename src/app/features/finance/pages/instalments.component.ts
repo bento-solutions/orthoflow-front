@@ -39,7 +39,7 @@ import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
           @for (d of due.data(); track d.instalmentId) {
             <tr>
               <td><a class="font-bold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/patients', d.patientId]">{{ d.patientName }}</a>
-                @if (d.patientPhone) { <a class="block text-xs text-ink-500" [href]="'tel:' + d.patientPhone">{{ d.patientPhone }}</a> }</td>
+                @if (d.patientPhone) { <a class="block text-xs text-ink-500" [href]="'tel:' + d.patientPhone"><span class="ltr-data">{{ d.patientPhone }}</span></a> }</td>
               <td>{{ d.seq === 0 ? ('ACC.PLAN.DOWN' | translate) : d.seq }}</td>
               <td>{{ d.dueDate | appDate }}
                 @if (d.daysOverdue > 0) { <span class="pill pill-critical pill-nodot ms-2">{{ 'FIN.INST.LATE' | translate: { days: d.daysOverdue } }}</span> }</td>

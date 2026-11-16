@@ -147,7 +147,7 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
                 @for (a of expected(); track a.id) {
                   <tr>
                     <td class="tabular-nums font-semibold">{{ a.dateTime | appDate:'time' }}</td>
-                    <td class="font-semibold">{{ a.patientName }}<span class="block text-xs font-normal text-ink-500">{{ a.patientPhone }}</span></td>
+                    <td class="font-semibold">{{ a.patientName }}<span class="block text-xs font-normal text-ink-500"><span class="ltr-data">{{ a.patientPhone }}</span></span></td>
                     <td>{{ a.type }}</td>
                     <td>{{ a.practitionerName || '—' }}</td>
                     <td><span class="pill pill-idle">{{ 'SCHEDULE.STATUS.' + a.status | translate }}</span></td>

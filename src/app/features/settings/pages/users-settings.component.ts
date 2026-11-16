@@ -62,7 +62,7 @@ const GROUPS: ReadonlyArray<{ key: string; permissions: string[] }> = [
             @for (u of users.data(); track u.id) {
               <tr>
                 <td class="font-semibold">{{ u.firstName }} {{ u.lastName }}</td>
-                <td>{{ u.email }}</td>
+                <td><span class="ltr-data">{{ u.email }}</span></td>
                 <td>{{ 'SET.USERS.ROLES.' + u.role | translate }}</td>
                 <td>{{ u.lastLoginAt ? (u.lastLoginAt | appDate:'datetime') : '—' }}</td>
                 <td>

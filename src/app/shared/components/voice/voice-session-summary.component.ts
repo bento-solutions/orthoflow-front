@@ -194,7 +194,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     .tooth-list li { display: flex; gap: 0.75rem; align-items: flex-start; }
     .fdi {
       flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 8px;
-      background: rgb(var(--ink-900)); color: rgb(var(--on-inverse)); display: flex; align-items: center; justify-content: center;
+      background: var(--surface-inverse); color: var(--text-inverse); display: flex; align-items: center; justify-content: center;
       font-weight: 700; font-size: 0.8125rem;
     }
     .tooth-name { margin: 0; font-size: 0.8125rem; color: rgb(var(--ink-500)); }

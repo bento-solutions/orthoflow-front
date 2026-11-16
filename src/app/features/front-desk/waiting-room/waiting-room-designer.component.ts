@@ -336,8 +336,8 @@ type Mode = 'live' | 'edit';
         stroke-dasharray: 4 3;
       }
       .module.is-colliding .hit {
-        fill: rgb(var(--critical-500, 220 38 38) / 0.1);
-        stroke: rgb(var(--critical-500, 220 38 38));
+        fill: rgb(var(--critical-500) / 0.1);
+        stroke: rgb(var(--critical-500));
         stroke-width: 1.5;
       }
       .seat-free {

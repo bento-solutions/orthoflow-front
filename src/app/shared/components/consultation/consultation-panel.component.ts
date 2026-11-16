@@ -850,13 +850,13 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-hero.ok { color: rgb(var(--positive-700)); font-size: 2.5rem; }
     .cp-forms { list-style: none; margin: .75rem 0 0; padding: 0; display: grid; gap: .35rem; text-align: start; font-size: .8125rem; color: rgb(var(--ink-700)); }
     .cp-forms li { display: flex; gap: .4rem; align-items: flex-start; }
-    .cp-forms app-icon.mi { font-size: 1rem; color: rgb(var(--brand-600, 37 99 235)); }
+    .cp-forms app-icon.mi { font-size: 1rem; color: var(--action); }
     .cp-done {
       display: inline-flex; align-items: center; gap: .2rem; padding: .05rem .4rem; border-radius: 999px;
       border: 1px solid rgb(var(--ink-200)); background: var(--surface); color: rgb(var(--ink-600)); font-size: .75rem; cursor: pointer;
     }
     .cp-done app-icon.mi { font-size: .875rem; }
-    .cp-done.on { border-color: rgb(var(--ok-300, 134 239 172)); background: rgb(var(--ok-50, 240 253 244)); color: rgb(var(--ok-800, 22 101 52)); font-weight: 600; }
+    .cp-done.on { border-color: rgb(var(--positive-300)); background: var(--status-done-tint); color: var(--status-done-text); font-weight: 600; }
     .cp-check { display: flex; align-items: center; gap: .4rem; font-size: .8125rem; color: rgb(var(--ink-700)); }
     .cp-steps { margin: 0; padding-inline-start: 1.1rem; color: rgb(var(--ink-700)); font-size: .875rem; display: grid; gap: .25rem; }
     .cp-notice { display: flex; gap: .5rem; font-size: .8125rem; color: rgb(var(--ink-700)); background: rgb(var(--caution-50)); border-radius: 10px; padding: .625rem .75rem; }

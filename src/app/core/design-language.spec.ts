@@ -51,6 +51,16 @@ describe('one design language', () => {
     expect(offending(small, path => /svg-data|generated/.test(path))).toEqual([]);
   });
 
+  it('only reads custom properties that are defined (UI V2 audit H2)', () => {
+    // An undefined variable falls back silently, to an off-palette colour or to nothing at all.
+    const all = [...files, { path: '../tokens.css', text: readFileSync(join(root, '..', 'tokens.css'), 'utf-8') },
+      { path: '../styles.css', text: readFileSync(join(root, '..', 'styles.css'), 'utf-8') }];
+    const defined = new Set(all.flatMap(f => [...f.text.matchAll(/(--[a-zA-Z0-9-]+)\s*:/g)].map(m => m[1])));
+    const used = files.flatMap(f => [...f.text.matchAll(/var\((--[a-zA-Z0-9-]+)/g)]
+      .filter(m => !defined.has(m[1])).map(m => `${f.path}: ${m[1]}`));
+    expect(used).toEqual([]);
+  });
+
   it('takes colours from the tokens, not hex, wherever a colour is style', () => {
     // A declaration (`color: #fff`) or a Tailwind value (`bg-[#fff]`); SVG attributes and JS strings are data.
     const hexInStyle = /(?:^|[;{\s])[a-z-]+\s*:\s*[^;'"`]*#[0-9a-fA-F]{3,6}\b|-\[#[0-9a-fA-F]{3,6}\]/;

@@ -204,6 +204,13 @@
   }
   .skip-link:focus { inset-inline-start: 0; }
 
+  /* Data read left to right in every language: phone numbers, patient codes, CIN, insurance and
+     invoice numbers, e-mail addresses. Isolated, so an Arabic line around it does not reverse
+     "+212 661-123456" (UI V2 audit H3). */
+  .ltr-data { direction: ltr; unicode-bidi: isolate; }
+  input[type='tel'], input[type='email'] { direction: ltr; }
+  [dir='rtl'] input[type='tel'], [dir='rtl'] input[type='email'] { text-align: right; }
+
   /* Numeric columns: money, quantities, counts. */
   .tnum { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
 

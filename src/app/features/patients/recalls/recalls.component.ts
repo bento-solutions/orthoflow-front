@@ -100,8 +100,8 @@ export function reminderOutcome(selected: number, queued: number): { queued: num
                   <td>
                     <a class="font-bold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/patients', r.patientId]">{{ fullName(r) }}</a>
                     <span class="block text-xs text-ink-500">
-                      <span class="mono">{{ r.patientCode }}</span>
-                      @if (r.phone) { · <a class="text-ink-600" [href]="'tel:' + r.phone" [attr.aria-label]="'REC.CALL' | translate: { name: fullName(r) }">{{ r.phone }}</a> }
+                      <span class="mono"><span class="ltr-data">{{ r.patientCode }}</span></span>
+                      @if (r.phone) { · <a class="text-ink-600" [href]="'tel:' + r.phone" [attr.aria-label]="'REC.CALL' | translate: { name: fullName(r) }"><span class="ltr-data">{{ r.phone }}</span></a> }
                     </span>
                   </td>
                   <td>{{ r.primaryPractitionerName || '—' }}</td>

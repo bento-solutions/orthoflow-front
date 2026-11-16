@@ -28,7 +28,7 @@ export type SeatGender = string | null | undefined;
   styles: [
     `
       .halo {
-        fill: rgb(var(--ink-0, 255 255 255) / 0.92);
+        fill: rgb(var(--white) / 0.92);
         stroke: none;
       }
       .head,

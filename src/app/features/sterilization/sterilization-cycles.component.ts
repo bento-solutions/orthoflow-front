@@ -130,7 +130,7 @@ export function eligible(items: readonly SterilItem[]): SterilItem[] {
             @if (exposure(); as e) {
               <ul class="space-y-1 text-sm">
                 @for (u of e.uses; track u.eventId) {
-                  <li class="rounded bg-surface px-2 py-1.5"><a class="font-semibold text-ink-900 no-underline hover:underline" [routerLink]="['/patients', u.patientId]">{{ u.patientName }}</a> <span class="mono text-xs text-ink-500">{{ u.patientCode }}</span>
+                  <li class="rounded bg-surface px-2 py-1.5"><a class="font-semibold text-ink-900 no-underline hover:underline" [routerLink]="['/patients', u.patientId]">{{ u.patientName }}</a> <span class="mono text-xs text-ink-500"><span class="ltr-data">{{ u.patientCode }}</span></span>
                     — {{ u.itemCode }} {{ u.itemName }} · {{ u.at | appDate:'datetime' }}</li>
                 } @empty { <li class="text-critical-800">{{ 'STER.CYCLES.NOBODY_EXPOSED' | translate }}</li> }
               </ul>

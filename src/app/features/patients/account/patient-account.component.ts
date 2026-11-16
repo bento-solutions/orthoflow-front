@@ -71,7 +71,7 @@ const emptyPlan = () => ({ total: 0, down: 0, count: 6, frequency: 'MONTHLY' as 
               <tbody>
                 @for (i of a.invoices; track i.id) {
                   <tr>
-                    <td><a class="font-bold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/billing/invoices', i.id]">{{ i.invoiceNumber }}</a></td>
+                    <td><a class="font-bold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/billing/invoices', i.id]"><span class="ltr-data">{{ i.invoiceNumber }}</span></a></td>
                     <td>{{ i.issueDate | appDate }}</td>
                     <td><app-status-pill [status]="i.status" /></td>
                     <td class="cell-num">{{ i.total | money }}</td>
@@ -224,7 +224,7 @@ const emptyPlan = () => ({ total: 0, down: 0, count: 6, frequency: 'MONTHLY' as 
               <tbody>
                 @for (i of open(); track i.id) {
                   <tr>
-                    <td class="font-semibold">{{ i.invoiceNumber }}</td>
+                    <td class="font-semibold"><span class="ltr-data">{{ i.invoiceNumber }}</span></td>
                     <td class="cell-num">{{ i.balance | money }}</td>
                     <td class="w-40"><input class="input" type="number" min="0" [max]="i.balance" step="0.01" [name]="'alloc-' + i.id" [attr.aria-label]="i.invoiceNumber"
                       [ngModel]="chosen()[i.id] || null" (ngModelChange)="choose(i.id, +$event || 0)" /></td>

@@ -62,8 +62,8 @@ import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
           <tbody>
             @for (r of s.rows; track r.patientId) {
               <tr>
-                <td><a class="font-bold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/patients', r.patientId]">{{ r.firstName }} {{ r.lastName }}</a><span class="block text-xs text-ink-500 mono">{{ r.patientCode }}</span></td>
-                <td>@if (r.phone) { <a class="text-ink-700" [href]="'tel:' + r.phone">{{ r.phone }}</a> } @else { — }</td>
+                <td><a class="font-bold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/patients', r.patientId]">{{ r.firstName }} {{ r.lastName }}</a><span class="block text-xs text-ink-500 mono"><span class="ltr-data">{{ r.patientCode }}</span></span></td>
+                <td>@if (r.phone) { <a class="text-ink-700" [href]="'tel:' + r.phone"><span class="ltr-data">{{ r.phone }}</span></a> } @else { — }</td>
                 <td class="cell-num">{{ r.fees | money }}</td>
                 <td class="cell-num">{{ r.paid | money }}</td>
                 <td class="cell-num" [class.font-bold]="r.balance > 0" [class.text-critical-700]="r.balance > 0">{{ r.balance > 0 ? (r.balance | money) : '—' }}</td>

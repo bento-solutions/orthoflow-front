@@ -1743,9 +1743,10 @@
     "ERROR_CONTINUE": "The consultation could not be continued. Try again.",
     "MENU_NEW": "New consultation",
     "MENU_VOICE_HINT": "Dictate findings tooth by tooth; nothing is saved until you review it",
-    "MENU_OFF": "Not turned on for this clinic",
+    "MENU_OFF": "Not turned on for this clinic. Ask your clinic's administrator.",
     "HIDE_INTRO": "Don't show this again: I tell every patient before I start recording",
-    "SHOW_INTRO_AGAIN": "Show the consent card again before each consultation"
+    "SHOW_INTRO_AGAIN": "Show the consent card again before each consultation",
+    "MENU_OFF_ADMIN": "Not turned on for this clinic. Ask OrthoFlow support to turn it on: it is set on the server."
   },
   "SET": {
     "TABS": {

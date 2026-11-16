@@ -68,7 +68,7 @@ export function toggled<T>(selected: readonly T[], value: T, all: readonly T[]):
         <section class="mb-5 rounded-lg border border-caution-200 bg-caution-50 p-4" role="note">
           <p class="font-semibold text-caution-800">{{ 'RETRO.SIM.UNATTRIBUTED' | translate: { count: s.unattributed.invoiceCount, amount: money(s.unattributed.amount) } }}</p>
           <p class="text-sm text-caution-800">{{ 'RETRO.SIM.UNATTRIBUTED_HINT' | translate }}</p>
-          <ul class="mt-2 flex flex-wrap gap-2 text-sm">@for (i of s.unattributed.invoices; track i.invoiceId) { <li><a class="rounded border border-caution-300 bg-surface px-2 py-0.5 text-ink-800 no-underline hover:bg-caution-100" [routerLink]="['/billing/invoices', i.invoiceId]">{{ i.invoiceNumber }} · {{ i.amount | money }}</a></li> }</ul>
+          <ul class="mt-2 flex flex-wrap gap-2 text-sm">@for (i of s.unattributed.invoices; track i.invoiceId) { <li><a class="rounded border border-caution-300 bg-surface px-2 py-0.5 text-ink-800 no-underline hover:bg-caution-100" [routerLink]="['/billing/invoices', i.invoiceId]"><span class="ltr-data">{{ i.invoiceNumber }}</span> · {{ i.amount | money }}</a></li> }</ul>
         </section>
       }
 
@@ -98,7 +98,7 @@ export function toggled<T>(selected: readonly T[], value: T, all: readonly T[]):
                   @for (l of f.lines; track $index) {
                     <tr>
                       <td>{{ l.date | appDate }}</td>
-                      <td>@if (l.invoiceId) { <a class="no-underline hover:text-petrol-700" [routerLink]="['/billing/invoices', l.invoiceId]">{{ l.invoiceNumber }}</a> }<span class="block text-xs text-ink-500 mono">{{ l.patientCode }}</span></td>
+                      <td>@if (l.invoiceId) { <a class="no-underline hover:text-petrol-700" [routerLink]="['/billing/invoices', l.invoiceId]"><span class="ltr-data">{{ l.invoiceNumber }}</span></a> }<span class="block text-xs text-ink-500 mono"><span class="ltr-data">{{ l.patientCode }}</span></span></td>
                       <td>{{ l.label }}@if (l.category) { <span class="block text-xs text-ink-500">{{ l.category }}</span> }<span class="block text-2xs uppercase tracking-wider text-ink-500">{{ 'RETRO.LINE.KINDS.' + l.kind | translate }}</span></td>
                       <td class="cell-num">{{ l.base | money }}</td>
                       <td class="cell-num">{{ l.ratePercent ?? '—' }}</td>

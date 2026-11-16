@@ -126,8 +126,8 @@ export interface PatientState {
             <dd>@if (age() !== null) { {{ age() }} {{ 'PATIENTS.DOSSIER.YEARS' | translate }} } @else { — }</dd></div>
           <div><dt>{{ 'PATIENTS.DOSSIER.GENDER' | translate }}</dt>
             <dd>@if (patient().gender) { {{ 'PATIENTS.DOSSIER.GENDER_' + patient().gender | translate }} } @else { — }</dd></div>
-          <div><dt>{{ 'PATIENTS.DOSSIER.PHONE' | translate }}</dt><dd>{{ patient().phone || '—' }}</dd></div>
-          <div><dt>{{ 'PATIENTS.DOSSIER.CIN' | translate }}</dt><dd>{{ patient().cin || '—' }}</dd></div>
+          <div><dt>{{ 'PATIENTS.DOSSIER.PHONE' | translate }}</dt><dd><span class="ltr-data">{{ patient().phone || '—' }}</span></dd></div>
+          <div><dt>{{ 'PATIENTS.DOSSIER.CIN' | translate }}</dt><dd><span class="ltr-data">{{ patient().cin || '—' }}</span></dd></div>
           <div><dt>{{ 'PATIENTS.DOSSIER.INSURANCE' | translate }}</dt><dd>{{ patient().insuranceProvider || ('PATIENTS.DOSSIER.PRIVATE' | translate) }}</dd></div>
           <div><dt>{{ 'PATIENTS.NEXT_APPOINTMENT' | translate }}</dt>
             <dd>

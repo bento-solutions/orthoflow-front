@@ -65,7 +65,7 @@ import { NavCounts } from '../../core/services/nav-counts.service';
         >
           <app-icon name="search" [size]="15" />
           <span class="pe-6">{{ 'COMMON.SEARCH' | translate }}</span>
-          <kbd class="kbd" aria-hidden="true">⌘K</kbd>
+          <kbd class="kbd" aria-hidden="true">{{ shortcut }}</kbd>
         </button>
 
         <button
@@ -139,6 +139,8 @@ export class HeaderComponent {
   readonly theme = inject(ThemeService);
   readonly help = inject(HelpPanelService);
   readonly counts = inject(NavCounts);
+  /** ⌘K on a Mac, iPhone or iPad; Ctrl K everywhere else (UI V2 audit L3). */
+  readonly shortcut = /Mac|iPhone|iPad|iPod/i.test((typeof navigator !== 'undefined' && (navigator.platform || navigator.userAgent)) || '') ? '⌘K' : 'Ctrl K';
 
   readonly displayName = computed(() => {
     const user = this.auth.currentUser();

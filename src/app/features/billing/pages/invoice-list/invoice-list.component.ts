@@ -133,7 +133,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
                       class="mono font-semibold text-ink-900 no-underline hover:text-petrol-700"
                       [routerLink]="[row.invoice.id]"
                       (click)="$event.stopPropagation()"
-                    >{{ row.invoice.invoiceNumber }}</a>
+                    ><span class="ltr-data">{{ row.invoice.invoiceNumber }}</span></a>
                   </td>
                   <td>
                     <span class="flex min-w-0 flex-col leading-tight">

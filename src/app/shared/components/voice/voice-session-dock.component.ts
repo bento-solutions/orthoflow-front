@@ -60,7 +60,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
       margin-inline: auto; max-width: 44rem;
       display: flex; align-items: center; gap: .5rem;
       padding: .5rem; border-radius: 18px;
-      background: rgb(var(--ink-900)); color: rgb(var(--on-inverse));
+      background: var(--surface-inverse); color: var(--text-inverse);
       box-shadow: 0 16px 40px -12px rgba(15, 23, 42, .5);
     }
 

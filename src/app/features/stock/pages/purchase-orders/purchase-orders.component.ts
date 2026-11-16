@@ -348,7 +348,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                 <tbody class="divide-y divide-ortho-navy/5">
                   @for (inv of vendorInvoices(); track inv.id) {
                     <tr class="hover:bg-ortho-navy/[0.01] transition font-semibold text-xs text-ink-700">
-                      <td class="p-4 font-mono font-bold text-ink-900">{{ inv.invoiceNumber }}</td>
+                      <td class="p-4 font-mono font-bold text-ink-900"><span class="ltr-data">{{ inv.invoiceNumber }}</span></td>
                       <td class="p-4 font-bold">{{ inv.supplierName }}</td>
                       <td class="p-4 text-ink-500">{{ inv.invoiceDate | appDate }}</td>
                       <td class="p-4"><span class="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded text-xs">{{ inv.paymentTerms }}</span></td>

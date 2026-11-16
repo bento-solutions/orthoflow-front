@@ -1743,9 +1743,10 @@
     "ERROR_CONTINUE": "La consultation n’a pas pu reprendre. Réessayez.",
     "MENU_NEW": "Nouvelle consultation",
     "MENU_VOICE_HINT": "Dictez les constats dent par dent ; rien n'est enregistré avant votre relecture",
-    "MENU_OFF": "Non activée pour ce cabinet",
+    "MENU_OFF": "Pas activée pour ce cabinet. Demandez à l'administrateur du cabinet.",
     "HIDE_INTRO": "Ne plus afficher : j'informe chaque patient avant de lancer l'enregistrement",
-    "SHOW_INTRO_AGAIN": "Réafficher la carte de consentement avant chaque consultation"
+    "SHOW_INTRO_AGAIN": "Réafficher la carte de consentement avant chaque consultation",
+    "MENU_OFF_ADMIN": "Pas activée pour ce cabinet. Demandez au support OrthoFlow de l'activer : elle se règle sur le serveur."
   },
   "SET": {
     "TABS": {

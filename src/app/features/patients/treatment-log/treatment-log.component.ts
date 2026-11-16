@@ -165,7 +165,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
     .consent input { margin-top: .2rem; }
     .share-row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-end; }
     .lang { display: flex; flex-direction: column; gap: .25rem; font-size: .75rem; font-weight: 600; }
-    .lang select { padding: .4375rem .5rem; font: inherit; font-weight: 400; border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface, rgb(var(--on-inverse))); color: var(--text); }
+    .lang select { padding: .4375rem .5rem; font: inherit; font-weight: 400; border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface); color: var(--text); }
     .lang select:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
     .hint { margin: .625rem 0 0; font-size: .75rem; color: var(--text-muted-on-tint); }
     .error { color: var(--status-critical-text); }
@@ -179,7 +179,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
     .chip[data-state='GINGIVITIS'] { background: var(--status-attention-tint); color: var(--status-attention-text); }
     .chip[data-state='PERIODONTITIS'] { background: var(--status-critical-tint); color: var(--status-critical-text); }
     .timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
-    .entry { display: grid; grid-template-columns: 7.5rem 1fr auto; gap: .75rem; align-items: start; padding: .625rem .75rem; border: 1px solid var(--border); border-inline-start: 4px solid var(--border-strong); border-radius: .5rem; background: var(--surface, rgb(var(--on-inverse))); }
+    .entry { display: grid; grid-template-columns: 7.5rem 1fr auto; gap: .75rem; align-items: start; padding: .625rem .75rem; border: 1px solid var(--border); border-inline-start: 4px solid var(--border-strong); border-radius: .5rem; background: var(--surface); }
     .entry[data-outcome='IN_PLACE'] { border-inline-start-color: var(--status-active); }
     .entry[data-outcome='TREATED'], .entry[data-outcome='COMPLETED'] { border-inline-start-color: var(--status-done); }
     .entry[data-outcome='REQUIRED'], .entry[data-outcome='PLANNED'], .entry[data-outcome='IN_PROGRESS'] { border-inline-start-color: var(--status-attention); }

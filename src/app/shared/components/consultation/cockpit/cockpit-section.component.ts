@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { CockpitLine, CockpitModelService } from '../../../../core/consultation/cockpit-model.service';
 import { ConsultationFocusService, StageView } from '../../../../core/consultation/consultation-focus.service';
+import { MoneyPipe } from '../../../pipes/money.pipe';
 
 /**
  * One section on the stage, read-only: what is **on record** for the patient,
@@ -13,7 +14,7 @@ import { ConsultationFocusService, StageView } from '../../../../core/consultati
 @Component({
   selector: 'app-cockpit-section',
   standalone: true,
-  imports: [TranslateModule, DecimalPipe, NgTemplateOutlet],
+  imports: [MoneyPipe, TranslateModule, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="ck-sec" [attr.data-section]="view()">
@@ -38,7 +39,7 @@ import { ConsultationFocusService, StageView } from '../../../../core/consultati
               <li class="ck-row" [class.hl]="isHighlighted(line.key)" [attr.data-key]="line.key">
                 <span class="ck-row-main">{{ line.label }}@if (line.teeth) { <span class="ck-muted"> · {{ line.teeth }}</span> }</span>
                 <span class="ck-row-side">
-                  @if (line.price !== null) { {{ line.price * (line.quantity || 1) | number: '1.0-0' }} DH }
+                  @if (line.price !== null) { {{ line.price * (line.quantity || 1) | money }} }
                 </span>
                 <span class="ck-chip-status" [attr.data-status]="line.status">{{ 'COCKPIT.LINE.' + statusKey(line.status) | translate }}</span>
                 @if (line.quote) { <span class="ck-quote">« {{ line.quote }} »</span> }
@@ -46,7 +47,7 @@ import { ConsultationFocusService, StageView } from '../../../../core/consultati
             }
           </ul>
           @if (model.planNow().length) {
-            <p class="ck-total">{{ 'COCKPIT.TOTAL' | translate }} : <strong>{{ model.planSummary().total | number: '1.0-0' }} DH</strong>
+            <p class="ck-total">{{ 'COCKPIT.TOTAL' | translate }} : <strong>{{ model.planSummary().total | money }}</strong>
               @if (!model.planSummary().complete) { <span class="ck-muted"> · {{ 'COCKPIT.UNPRICED' | translate }}</span> }
             </p>
           }

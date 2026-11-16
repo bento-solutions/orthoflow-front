@@ -1,3 +1,5 @@
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
+import { NumPipe } from '../../shared/pipes/money.pipe';
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -56,7 +58,8 @@ export type ChartOptions = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [
+  imports: [AppDatePipe, 
+    NumPipe,
     CommonModule, RouterLink, TranslateModule, NgApexchartsModule,
     IconComponent, StatusPillComponent,
   ],
@@ -89,7 +92,7 @@ export type ChartOptions = {
 
             <div class="flex items-baseline gap-2">
               <strong class="text-3xl font-extrabold leading-none tracking-tight text-ink-900 tabular-nums">
-                {{ kpi.value | number }}
+                {{ kpi.value | num }}
               </strong>
               @if (kpi.suffix) {
                 <span class="text-sm font-semibold text-ink-500">{{ kpi.suffix }}</span>
@@ -127,7 +130,7 @@ export type ChartOptions = {
                   <!-- Time is the scan column: fixed width and tabular so
                        the whole day reads as one vertical ruler. -->
                   <span class="w-14 shrink-0 text-sm font-bold tabular-nums text-ink-900">
-                    {{ appt.dateTime | date: 'HH:mm' }}
+                    {{ appt.dateTime | appDate:'time' }}
                   </span>
                   <span class="h-8 w-px shrink-0 bg-ink-200" aria-hidden="true"></span>
                   <span class="flex min-w-0 flex-1 flex-col leading-tight">

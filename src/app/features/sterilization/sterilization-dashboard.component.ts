@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { refreshOnLive } from '../../core/services/live-refresh';
@@ -8,6 +7,7 @@ import { loadable } from '../../core/utils/loadable';
 import { NumPipe } from '../../shared/pipes/money.pipe';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { stateTone } from './item-actions.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /** Whether anything on the dashboard needs a person: a failed control is the one thing that must never wait. */
 export function needsAttention(d: Pick<SterilDashboard, 'lubricationDue' | 'shelfLifeExceeded' | 'pendingControls' | 'endoAlerts'>): boolean {
@@ -22,7 +22,7 @@ export function needsAttention(d: Pick<SterilDashboard, 'lubricationDue' | 'shel
 @Component({
   selector: 'app-sterilization-dashboard',
   standalone: true,
-  imports: [DatePipe, RouterLink, TranslateModule, NumPipe, IconComponent],
+  imports: [AppDatePipe, RouterLink, TranslateModule, NumPipe, IconComponent],
   template: `
     @if (data.data(); as d) {
       <section class="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4" [attr.aria-busy]="data.loading()" [attr.aria-label]="'STER.DASH.COUNTS' | translate">
@@ -40,18 +40,18 @@ export function needsAttention(d: Pick<SterilDashboard, 'lubricationDue' | 'shel
         @if (d.pendingControls.length) {
           <section class="card"><div class="card-head"><h2 class="card-title">{{ 'STER.DASH.PENDING_CONTROLS' | translate }}</h2></div>
             <ul class="divide-y divide-ink-100">@for (c of d.pendingControls; track c.id) {
-              <li class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"><span><strong>{{ c.autoclaveName }} · #{{ c.number }}</strong> <span class="text-ink-500">{{ c.startedAt | date: 'short' }} · {{ 'STER.CONTROL_TYPES.' + c.controlType | translate }} · {{ c.itemCount }}</span></span>
+              <li class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"><span><strong>{{ c.autoclaveName }} · #{{ c.number }}</strong> <span class="text-ink-500">{{ c.startedAt | appDate:'datetime' }} · {{ 'STER.CONTROL_TYPES.' + c.controlType | translate }} · {{ c.itemCount }}</span></span>
                 <a class="btn btn-secondary btn-sm" routerLink="../cycles" [queryParams]="{ open: c.id }">{{ 'STER.DASH.RECORD_CONTROL' | translate }}</a></li> }</ul></section>
         }
         @if (d.shelfLifeExceeded.length) {
           <section class="card"><div class="card-head"><h2 class="card-title">{{ 'STER.DASH.SHELF_LIFE' | translate: { days: d.shelfLifeDays } }}</h2></div>
             <ul class="divide-y divide-ink-100">@for (i of d.shelfLifeExceeded; track i.id) {
-              <li class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"><span><strong class="mono">{{ i.code }}</strong> {{ i.name }}</span><span class="text-ink-500">{{ i.stateChangedAt | date: 'mediumDate' }}</span></li> }</ul></section>
+              <li class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"><span><strong class="mono">{{ i.code }}</strong> {{ i.name }}</span><span class="text-ink-500">{{ i.stateChangedAt | appDate }}</span></li> }</ul></section>
         }
         @if (d.lubricationDue.length) {
           <section class="card"><div class="card-head"><h2 class="card-title">{{ 'STER.DASH.LUBRICATION' | translate }}</h2></div>
             <ul class="divide-y divide-ink-100">@for (i of d.lubricationDue; track i.id) {
-              <li class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"><span><strong class="mono">{{ i.code }}</strong> {{ i.name }}</span><span class="text-ink-500">{{ i.lastLubricatedAt ? (i.lastLubricatedAt | date: 'mediumDate') : ('STER.DASH.NEVER' | translate) }}</span></li> }</ul></section>
+              <li class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"><span><strong class="mono">{{ i.code }}</strong> {{ i.name }}</span><span class="text-ink-500">{{ i.lastLubricatedAt ? (i.lastLubricatedAt | appDate) : ('STER.DASH.NEVER' | translate) }}</span></li> }</ul></section>
         }
         @if (d.endoAlerts.length) {
           <section class="card"><div class="card-head"><h2 class="card-title">{{ 'STER.DASH.ENDO' | translate }}</h2><a class="btn btn-ghost btn-sm" routerLink="../endo">{{ 'STER.TABS.ENDO' | translate }}</a></div>

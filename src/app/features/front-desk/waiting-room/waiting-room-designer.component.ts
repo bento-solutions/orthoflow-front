@@ -1,5 +1,5 @@
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, Output, ViewChild, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../../core/services/api-error.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
@@ -64,7 +64,7 @@ type Mode = 'live' | 'edit';
   selector: 'app-waiting-room-designer',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, TranslateModule, IconComponent, WaitingRoomFurnitureComponent, SeatMarkerComponent],
+  imports: [AppDatePipe, TranslateModule, IconComponent, WaitingRoomFurnitureComponent, SeatMarkerComponent],
   template: `
     <section class="card">
       <div class="card-head flex-wrap gap-3">
@@ -294,8 +294,8 @@ type Mode = 'live' | 'edit';
               @if (h.occupant; as o) {
                 <div class="pointer-events-none absolute left-3 top-3 z-10 max-w-xs rounded-lg bg-ink-900/95 px-3 py-2 text-xs text-white shadow-lg" role="tooltip">
                   <p class="font-bold">{{ o.patientName || '—' }}</p>
-                  <p class="mt-1 text-ink-200">{{ 'FD.WR.TIP_APPOINTMENT' | translate }}: {{ o.scheduledFor | date: 'shortTime' }}</p>
-                  <p class="text-ink-200">{{ 'FD.WR.TIP_ARRIVED' | translate }}: {{ o.arrivedAt | date: 'shortTime' }}</p>
+                  <p class="mt-1 text-ink-200">{{ 'FD.WR.TIP_APPOINTMENT' | translate }}: {{ o.scheduledFor | appDate:'time' }}</p>
+                  <p class="text-ink-200">{{ 'FD.WR.TIP_ARRIVED' | translate }}: {{ o.arrivedAt | appDate:'time' }}</p>
                   <p class="text-ink-200">{{ 'FD.WR.TIP_WAITING' | translate }}: {{ o.waitMinutes }} min</p>
                   <p class="text-ink-200">{{ 'FD.WR.TIP_TREATMENT' | translate }}: {{ o.typeName || '—' }}</p>
                 </div>

@@ -94,6 +94,10 @@
     background-color: var(--surface);
     color: var(--text);
   }
+  /* The icons that replaced the Material font: 24 px like the font, unless the screen says otherwise
+     (they are drawn at 1em, so a font-size on them or around them sizes them). */
+  app-icon.mi { font-size: 1.5rem; vertical-align: middle; }
+
   :where(input[type='checkbox'], input[type='radio'], input[type='range'], progress) {
     accent-color: var(--action);
   }
@@ -257,8 +261,8 @@
   }
 
   .btn > svg,
-  .btn > .material-icons { flex-shrink: 0; }
-  .btn > .material-icons { font-size: 18px; }
+  .btn > app-icon.mi { flex-shrink: 0; }
+  .btn > app-icon.mi { font-size: 18px; }
 
   .btn-primary {
     background: var(--action);
@@ -561,7 +565,7 @@
   }
   .search > .input { padding-inline-start: 2.25rem; }
   .search > svg,
-  .search > .material-icons {
+  .search > app-icon.mi {
     position: absolute;
     inset-inline-start: 0.6875rem;
     color: var(--text-subtle);
@@ -1029,7 +1033,7 @@
   }
   .icon-btn:hover { background: var(--surface-hover); color: var(--text); }
   .icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .icon-btn .material-icons { font-size: 18px; }
+  .icon-btn app-icon.mi { font-size: 18px; }
 
   /* Sidebar geometry. The width transition is the reason the collapse
      toggle previously animated a chevron while the rail never moved:

@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -8,6 +7,7 @@ import { refreshOnLive } from '../../core/services/live-refresh';
 import { MESSAGE_CHANNELS, MESSAGE_STATUSES, MessageLog, MessageLogPage, MessagingApi } from '../../core/services/messaging-api.service';
 import { loadable } from '../../core/utils/loadable';
 import { CanDirective } from '../../shared/directives/can.directive';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 const PAGE_SIZE = 25;
 
@@ -41,7 +41,7 @@ export function statusTone(status: MessageLog['status']): string {
 @Component({
   selector: 'app-message-logs',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, CanDirective],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, CanDirective],
   template: `
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <label class="field w-auto"><span class="label">{{ 'COM.LOGS.CHANNEL' | translate }}</span>
@@ -66,7 +66,7 @@ export function statusTone(status: MessageLog['status']): string {
         <tbody>
           @for (m of rows(); track m.id) {
             <tr>
-              <td class="whitespace-nowrap">{{ m.createdAt | date: 'short' }}</td>
+              <td class="whitespace-nowrap">{{ m.createdAt | appDate:'datetime' }}</td>
               <td>{{ 'COM.CHANNELS.' + m.channel | translate }}</td>
               <td>{{ 'COM.PURPOSES.' + m.purpose | translate }}
                 @if (m.bodyPurged) { <span class="block text-xs text-ink-500">{{ 'COM.LOGS.PURGED' | translate }}</span> }
@@ -76,7 +76,7 @@ export function statusTone(status: MessageLog['status']): string {
                 <span class="pill" [class]="'pill ' + tone(m.status)">{{ 'COM.STATUSES.' + m.status | translate }}</span>
                 @if (m.status === 'FAILED' && m.lastError) { <span class="block max-w-xs truncate text-xs text-critical-700" [title]="m.lastError">{{ m.lastError }}</span> }
                 @if (m.attempts > 1) { <span class="block text-xs text-ink-500">{{ 'COM.LOGS.ATTEMPTS' | translate: { count: m.attempts } }}</span> }
-                @if (m.status === 'QUEUED' && m.scheduledFor) { <span class="block text-xs text-ink-500">{{ m.scheduledFor | date: 'short' }}</span> }
+                @if (m.status === 'QUEUED' && m.scheduledFor) { <span class="block text-xs text-ink-500">{{ m.scheduledFor | appDate:'datetime' }}</span> }
               </td>
               <td class="cell-actions">
                 <span *appCan="'MESSAGING_SEND'" class="inline-flex gap-1">

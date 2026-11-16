@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../../core/services/api-error.service';
@@ -12,6 +11,7 @@ import { loadable } from '../../../core/utils/loadable';
 import { CanDirective } from '../../../shared/directives/can.directive';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 import { IconComponent } from '../../../shared/ui/icon.component';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 /** The difference between what was counted and what the receipts say, in whole cents. */
 export function difference(counted: number | null | undefined, expected: number): number {
@@ -34,7 +34,7 @@ export function shiftDay(date: string, days: number): string {
 @Component({
   selector: 'app-cash-closing',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, MoneyPipe, IconComponent, CanDirective],
+  imports: [AppDatePipe, FormsModule, TranslateModule, MoneyPipe, IconComponent, CanDirective],
   template: `
     <div class="mb-5 flex flex-wrap items-center gap-2">
       <button type="button" class="btn btn-secondary btn-icon" (click)="go(-1)" [attr.aria-label]="'FIN.CASH.PREVIOUS_DAY' | translate"><app-icon name="chevron-left" [size]="16" /></button>
@@ -47,8 +47,8 @@ export function shiftDay(date: string, days: number): string {
       <section class="card max-w-3xl" [attr.aria-busy]="closing.loading()">
         <div class="card-head">
           <div>
-            <h2 class="text-lg font-bold text-ink-900">{{ c.date | date: 'fullDate' }}</h2>
-            <p class="text-sm text-ink-500">{{ (c.closed ? 'FIN.CASH.CLOSED_AT' : 'FIN.CASH.OPEN_HINT') | translate: { at: (c.closedAt | date: 'short') } }}</p>
+            <h2 class="text-lg font-bold text-ink-900">{{ c.date | appDate:'long' }}</h2>
+            <p class="text-sm text-ink-500">{{ (c.closed ? 'FIN.CASH.CLOSED_AT' : 'FIN.CASH.OPEN_HINT') | translate: { at: (c.closedAt | appDate:'datetime') } }}</p>
           </div>
           <span class="pill" [class.pill-done]="c.closed" [class.pill-attention]="!c.closed">{{ (c.closed ? 'FIN.CASH.CLOSED' : 'FIN.CASH.OPEN') | translate }}</span>
         </div>

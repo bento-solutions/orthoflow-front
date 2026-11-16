@@ -1,3 +1,5 @@
+import { IconComponent } from '../../shared/ui/icon.component';
+import { formatDate } from '../../core/utils/format';
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -15,6 +17,7 @@ import { AgendaConfigService, APPOINTMENT_STATUSES, AppointmentType } from '../.
 import { LiveEventsService } from '../../core/services/live-events.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DialogDirective } from '../../shared/ui/dialog.directive';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 import { PatientPickerComponent, PickedPatient } from '../../shared/ui/patient-picker.component';
 
 type CalendarView = 'day' | 'week' | 'month' | 'year';
@@ -22,7 +25,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
 @Component({
   selector: 'app-schedule',
   standalone: true,
-  imports: [DialogDirective, CommonModule, RouterModule, TranslateModule, ReactiveFormsModule, FormsModule, PatientPickerComponent],
+  imports: [IconComponent, AppDatePipe, DialogDirective, CommonModule, RouterModule, TranslateModule, ReactiveFormsModule, FormsModule, PatientPickerComponent],
   template: `
     <div class="schedule-container" [class.rtl]="translate.currentLang === 'ar'">
       <header class="schedule-header">
@@ -38,11 +41,11 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
         <div class="header-right">
           <div class="date-nav">
             <button type="button" class="icon-btn" [attr.aria-label]="'SCHEDULE.PREVIOUS' | translate" (click)="navigate(-1)">
-              <span class="material-icons" aria-hidden="true">chevron_left</span>
+              <app-icon class="mi" name="chevron_left" size="1em" />
             </button>
             <span class="current-date">{{ formattedCurrentDate() }}</span>
             <button type="button" class="icon-btn" [attr.aria-label]="'SCHEDULE.NEXT' | translate" (click)="navigate(1)">
-              <span class="material-icons" aria-hidden="true">chevron_right</span>
+              <app-icon class="mi" name="chevron_right" size="1em" />
             </button>
             <button type="button" class="btn-schedule-ghost" (click)="goToToday()">{{ 'SCHEDULE.TODAY' | translate }}</button>
           </div>
@@ -54,11 +57,11 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
               }
             </select>
             <div class="search-box">
-              <span aria-hidden="true" class="material-icons">search</span>
+              <app-icon class="mi" name="search" size="1em" />
               <input [attr.aria-label]="'SCHEDULE.FILTER_PLACEHOLDER' | translate" type="text" [placeholder]="'SCHEDULE.FILTER_PLACEHOLDER' | translate" (input)="onPatientFilter($event)" />
             </div>
             <button type="button" class="btn btn-primary" (click)="openAddModal()">
-              <span aria-hidden="true" class="material-icons">add</span>
+              <app-icon class="mi" name="add" size="1em" />
               {{ 'SCHEDULE.NEW_APPOINTMENT' | translate }}
             </button>
           </div>
@@ -92,7 +95,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                     <button
                       type="button"
                       class="day-number"
-                      [attr.aria-label]="('SCHEDULE.ADD_APPOINTMENT_ON' | translate: { date: day.date | date: 'fullDate' : undefined : translate.currentLang })"
+                      [attr.aria-label]="('SCHEDULE.ADD_APPOINTMENT_ON' | translate: { date: day.date | appDate:'long' })"
                       (click)="openAddModal(day.date); $event.stopPropagation()"
                     >{{ day.date.getDate() }}</button>
                     <div class="day-events">
@@ -249,7 +252,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
             <header class="modal-header">
               <h2 id="appointment-title">{{ (editingAppointment() ? 'SCHEDULE.FORM.TITLE_EDIT' : 'SCHEDULE.FORM.TITLE_ADD') | translate }}</h2>
               <button type="button" class="icon-btn" [attr.aria-label]="'SCHEDULE.CLOSE' | translate" (click)="closeModal()">
-                <span class="material-icons" aria-hidden="true">close</span>
+                <app-icon class="mi" name="close" size="1em" />
               </button>
             </header>
             
@@ -326,7 +329,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
               <footer class="modal-footer">
                 @if (editingAppointment()) {
                   <button type="button" class="btn btn-danger" (click)="deleteAppointment()">
-                    <span aria-hidden="true" class="material-icons">delete</span>
+                    <app-icon class="mi" name="delete" size="1em" />
                     {{ 'COMMON.DELETE' | translate }}
                   </button>
                 }
@@ -451,7 +454,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       font-size: 0.9rem;
     }
 
-    .search-box .material-icons { font-size: 1.2rem; color: rgb(var(--ink-500)); }
+    .search-box app-icon.mi { font-size: 1.2rem; color: rgb(var(--ink-500)); }
 
     .calendar-body {
       flex: 1;
@@ -1053,7 +1056,7 @@ export class ScheduleComponent {
 
   formatTime(iso: string) {
     const locale = this.translate.currentLang || 'en';
-    return new Date(iso).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit', hour12: true });
+    return formatDate(iso, 'time', locale);
   }
 
   getEventTop(event: Appointment) {

@@ -1,3 +1,4 @@
+import { IconComponent } from '../../ui/icon.component';
 import { Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { VoiceOrchestratorService } from '../../../core/voice/voice-orchestrator.service';
@@ -19,7 +20,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
 @Component({
   selector: 'app-voice-session-dock',
   standalone: true,
-  imports: [TranslateModule],
+  imports: [IconComponent, TranslateModule],
   template: `
     @if (session.isActive()) {
       <div class="dock no-print" role="region" [attr.aria-label]="'VOICE.PANEL_TITLE' | translate">
@@ -28,7 +29,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
                 [style.--level]="live() ? voice.inputLevel() : 0"
                 (click)="toggle()"
                 [attr.aria-label]="micLabel() | translate">
-          <span class="material-icons" aria-hidden="true">{{ micIcon() }}</span>
+          <app-icon class="mi" [name]="micIcon()" size="1em" />
         </button>
 
         <button type="button" class="dock-status" (click)="openPanel.emit()"
@@ -46,7 +47,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
         }
 
         <button type="button" class="dock-end" (click)="end()" [disabled]="session.busy()">
-          <span class="material-icons" aria-hidden="true">stop</span>
+          <app-icon class="mi" name="stop" size="1em" />
           <span class="dock-end-label">{{ (session.busy() ? 'VOICE.ENDING' : 'VOICE.END') | translate }}</span>
         </button>
       </div>
@@ -72,7 +73,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
       transition: box-shadow 80ms linear, background .15s;
     }
     .dock-mic.off { background: rgb(var(--ink-600)); box-shadow: none; }
-    .dock-mic .material-icons { font-size: 1.5rem; }
+    .dock-mic app-icon.mi { font-size: 1.5rem; }
 
     .dock-status {
       flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: .0625rem;
@@ -97,7 +98,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
       background: var(--surface); color: rgb(var(--ink-900)); font-weight: 700; font-size: .875rem;
     }
     .dock-end:disabled { opacity: .7; cursor: default; }
-    .dock-end .material-icons { font-size: 1.125rem; color: rgb(var(--critical-700)); }
+    .dock-end app-icon.mi { font-size: 1.125rem; color: rgb(var(--critical-700)); }
 
     .dock button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 

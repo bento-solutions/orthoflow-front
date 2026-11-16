@@ -1,3 +1,5 @@
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { Component, signal, computed, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,7 +18,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 @Component({
   selector: 'app-stock-dashboard',
   standalone: true,
-  imports: [RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink],
+  imports: [AppDatePipe, MoneyPipe, RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       
@@ -95,7 +97,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
           </div>
           <div>
             <div class="text-xs text-ink-500 font-semibold uppercase tracking-wider">{{ "STOCK.VALUATION" | translate }}</div>
-            <div class="text-2xl font-bold text-emerald-700">{{ kpiValuation() | number:'1.2-2' }} DH</div>
+            <div class="text-2xl font-bold text-emerald-700">{{ kpiValuation() | money }}</div>
           </div>
         </div>
 
@@ -217,8 +219,8 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                         }
                       </div>
                     </td>
-                    <td class="p-4 text-right font-medium text-ink-700">{{ item.purchasePrice | number:'1.2-2' }} DH <span class="text-[10px] text-ink-500">/{{ item.unitSize }}</span></td>
-                    <td class="p-4 text-right font-medium text-emerald-700">{{ item.pricePerUse | number:'1.4-4' }} DH</td>
+                    <td class="p-4 text-right font-medium text-ink-700">{{ item.purchasePrice | money }} <span class="text-[10px] text-ink-500">/{{ item.unitSize }}</span></td>
+                    <td class="p-4 text-right font-medium text-emerald-700">{{ item.pricePerUse | money }}</td>
                     <td class="p-4 text-ink-500 font-medium">{{ item.supplier?.name || 'N/A' }}</td>
                     <td class="p-4 text-right">
                       <div class="flex items-center justify-end gap-2">
@@ -313,7 +315,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
               <tbody class="divide-y divide-ortho-navy/5">
                 @for (mov of movements(); track mov.id) {
                   <tr class="hover:bg-ortho-navy/[0.01] transition">
-                    <td class="p-4 text-xs font-mono text-ink-600">{{ mov.createdAt | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                    <td class="p-4 text-xs font-mono text-ink-600">{{ mov.createdAt | appDate:'datetime' }}</td>
                     <td class="p-4">
                       <div class="font-bold text-ink-900">{{ mov.stockItem?.name }}</div>
                       <div class="text-[10px] text-ink-500">{{ 'STOCK.UI.SKU' | translate }} {{ mov.stockItem?.sku }}</div>
@@ -419,7 +421,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     </span>
                     <h2 class="text-lg font-bold text-ink-900 leading-none">{{ 'STOCK.UI.COUNT_ACTIVE' | translate }}</h2>
                   </div>
-                  <p class="text-xs text-ink-500 font-semibold">{{ 'STOCK.UI.FROZEN_ON' | translate }} <span class="font-bold text-ink-500">{{ activeCountSession().createdAt | date:'yyyy-MM-dd HH:mm' }}</span></p>
+                  <p class="text-xs text-ink-500 font-semibold">{{ 'STOCK.UI.FROZEN_ON' | translate }} <span class="font-bold text-ink-500">{{ activeCountSession().createdAt | appDate:'datetime' }}</span></p>
                 </div>
                 
                 <div class="flex items-center gap-2">
@@ -465,11 +467,11 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                             {{ qVar > 0 ? '+' : '' }}{{ qVar }}
                           </span>
                         </td>
-                        <td class="p-4 text-right text-ink-500">{{ line.stockItem.purchasePrice | number:'1.2-2' }} DH</td>
+                        <td class="p-4 text-right text-ink-500">{{ line.stockItem.purchasePrice | money }}</td>
                         <td class="p-4 text-right font-bold font-mono">
                           @let cVar = calculateLineCostVariance(line.theoreticalQuantity, line.stockItem.purchasePrice, line.stockItem.id);
                           <span [ngClass]="cVar > 0 ? 'text-emerald-700' : cVar < 0 ? 'text-red-700' : 'text-ink-500'">
-                            {{ cVar > 0 ? '+' : '' }}{{ cVar | number:'1.2-2' }} DH
+                            {{ cVar > 0 ? '+' : '' }}{{ cVar | money }}
                           </span>
                         </td>
                         <td class="p-4">
@@ -494,7 +496,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   <div>
                     <span class="text-ink-500 uppercase text-[10px] tracking-wide block">{{ 'STOCK.UI.COST_IMPACT' | translate }}</span>
                     <span class="text-sm font-extrabold" [ngClass]="getRunningVarianceSum().cost > 0 ? 'text-emerald-700' : getRunningVarianceSum().cost < 0 ? 'text-red-700' : 'text-ink-900'">
-                      {{ getRunningVarianceSum().cost > 0 ? '+' : '' }}{{ getRunningVarianceSum().cost | number:'1.2-2' }} DH
+                      {{ getRunningVarianceSum().cost > 0 ? '+' : '' }}{{ getRunningVarianceSum().cost | money }}
                     </span>
                   </div>
                 </div>
@@ -552,12 +554,12 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                               {{ sess.status }}
                             </span>
                           </td>
-                          <td class="p-4 text-ink-500">{{ sess.createdAt | date:'yyyy-MM-dd HH:mm' }}</td>
+                          <td class="p-4 text-ink-500">{{ sess.createdAt | appDate:'datetime' }}</td>
                           <td class="p-4 text-center font-mono" [ngClass]="sess.totalQuantityVariance > 0 ? 'text-emerald-700' : sess.totalQuantityVariance < 0 ? 'text-red-700' : 'text-ink-500'">
                             {{ sess.totalQuantityVariance > 0 ? '+' : '' }}{{ sess.totalQuantityVariance || 0 }}
                           </td>
                           <td class="p-4 text-right font-bold font-mono" [ngClass]="sess.totalCostVariance > 0 ? 'text-emerald-700' : sess.totalCostVariance < 0 ? 'text-red-700' : 'text-ink-500'">
-                            {{ sess.totalCostVariance > 0 ? '+' : '' }}{{ (sess.totalCostVariance || 0) | number:'1.2-2' }} DH
+                            {{ sess.totalCostVariance > 0 ? '+' : '' }}{{ (sess.totalCostVariance || 0) | money }}
                           </td>
                           <td class="p-4 text-ink-500">{{ sess.validatedBy || '-' }}</td>
                         </tr>

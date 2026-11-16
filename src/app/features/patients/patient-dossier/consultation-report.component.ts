@@ -1,7 +1,8 @@
+import { IconComponent } from '../../../shared/ui/icon.component';
 import { Component, computed, input, output, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { ClinicalNote } from '../../../core/models/clinical-record.model';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 /** One saved consultation or dictated examination, as the patient file keeps it. */
 export interface ReportVisit {
@@ -50,21 +51,21 @@ export function reportVisits(notes: readonly ClinicalNote[]): ReportVisit[] {
 @Component({
   selector: 'app-consultation-report',
   standalone: true,
-  imports: [DatePipe, TranslateModule],
+  imports: [IconComponent, AppDatePipe, TranslateModule],
   template: `
     <section class="cr" aria-labelledby="cr-title">
       <header class="cr-head">
         <div class="cr-title">
-          <span class="material-icons" aria-hidden="true">description</span>
+          <app-icon class="mi" name="description" size="1em" />
           <h2 id="cr-title">{{ 'PATIENTS.DOSSIER.REPORT.TITLE' | translate }}</h2>
-          @if (visit(); as v) { <span class="cr-date">{{ v.date | date:'fullDate' }} · {{ v.date | date:'shortTime' }}</span> }
+          @if (visit(); as v) { <span class="cr-date">{{ v.date | appDate:'long' }} · {{ v.date | appDate:'time' }}</span> }
         </div>
         @if (visits().length > 1) {
           <label class="cr-pick">
             <span>{{ 'PATIENTS.DOSSIER.REPORT.PICK' | translate }}</span>
             <select class="select !w-auto" [value]="visit()?.sessionId ?? ''" (change)="picked.set($any($event.target).value)">
               @for (v of visits(); track v.sessionId; let first = $first) {
-                <option [value]="v.sessionId">{{ v.date | date:'mediumDate' }}@if (first) { · {{ 'PATIENTS.DOSSIER.REPORT.LATEST' | translate }} }</option>
+                <option [value]="v.sessionId">{{ v.date | appDate }}@if (first) { · {{ 'PATIENTS.DOSSIER.REPORT.LATEST' | translate }} }</option>
               }
             </select>
           </label>
@@ -93,7 +94,7 @@ export function reportVisits(notes: readonly ClinicalNote[]): ReportVisit[] {
         @if (v.transcript) {
           <footer class="cr-foot">
             <button type="button" class="btn btn-ghost btn-sm" (click)="openLog.emit(v.sessionId)">
-              <span aria-hidden="true" class="material-icons text-sm">history</span> {{ 'CONSULTATION.OPEN_LOG' | translate }}
+              <app-icon class="mi text-sm" name="history" size="1em" /> {{ 'CONSULTATION.OPEN_LOG' | translate }}
             </button>
           </footer>
         }
@@ -106,7 +107,7 @@ export function reportVisits(notes: readonly ClinicalNote[]): ReportVisit[] {
     .cr { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: .75rem; border: 1px solid rgb(var(--ink-200)); background: var(--surface); }
     .cr-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; margin-bottom: .75rem; }
     .cr-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .625rem; min-width: 0; }
-    .cr-title .material-icons { align-self: center; font-size: 1.25rem; color: rgb(var(--petrol-700)); }
+    .cr-title app-icon.mi { align-self: center; font-size: 1.25rem; color: rgb(var(--petrol-700)); }
     .cr-title h2 { margin: 0; font-size: 1rem; font-weight: 700; color: rgb(var(--ink-900)); }
     .cr-date { font-size: .8125rem; color: rgb(var(--ink-500)); }
     .cr-pick { display: inline-flex; align-items: center; gap: .5rem; font-size: .8125rem; color: rgb(var(--ink-600)); }

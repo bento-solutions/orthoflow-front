@@ -1,3 +1,4 @@
+import { IconComponent } from '../../ui/icon.component';
 import { Component, inject, signal, computed, effect, untracked, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -12,7 +13,7 @@ import { DialogDirective } from '../../ui/dialog.directive';
 @Component({
   selector: 'app-command-palette',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, DialogDirective],
+  imports: [IconComponent, CommonModule, FormsModule, TranslateModule, DialogDirective],
   template: `
     @if (registry.isOpen()) {
       <div class="palette-backdrop" (click)="close()">
@@ -24,7 +25,7 @@ import { DialogDirective } from '../../ui/dialog.directive';
           (click)="$event.stopPropagation()"
         >
           <div class="palette-input-row">
-            <span class="material-icons search-icon" aria-hidden="true">search</span>
+            <app-icon class="mi search-icon" name="search" size="1em" />
             <input
               #inputEl
               type="text"
@@ -63,7 +64,7 @@ import { DialogDirective } from '../../ui/dialog.directive';
                     (mouseenter)="activeIndex.set(flatIndex(cmd))"
                     (click)="run(cmd)"
                   >
-                    <span class="material-icons item-icon" aria-hidden="true">{{ cmd.icon }}</span>
+                    <app-icon class="mi item-icon" [name]="cmd.icon" size="1em" />
                     <span class="item-text">
                       <span class="item-label">{{ labelOf(cmd) }}</span>
                       @if (cmd.description) {

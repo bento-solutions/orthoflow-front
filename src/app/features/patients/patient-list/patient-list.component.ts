@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -14,6 +13,7 @@ import { MoneyPipe, NumPipe } from '../../../shared/pipes/money.pipe';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { StatusPillComponent } from '../../../shared/ui/status-pill.component';
 import { DirectoryKpis, DirectoryPage, DirectoryQuery, DirectoryRow, Insurer, PatientDirectoryApi } from '../patient-directory-api.service';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 const PAGE_SIZE = 25;
 const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 'last'] as const;
@@ -30,7 +30,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
 @Component({
   selector: 'app-patient-list',
   standalone: true,
-  imports: [DatePipe, RouterModule, FormsModule, TranslateModule, IconComponent, StatusPillComponent, MoneyPipe, NumPipe],
+  imports: [AppDatePipe, RouterModule, FormsModule, TranslateModule, IconComponent, StatusPillComponent, MoneyPipe, NumPipe],
   template: `
     <div class="anim-rise">
       <header class="page-head">
@@ -166,7 +166,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
                   </td>
                   <td [attr.data-label]="'PATIENTS.NEXT_APPOINTMENT' | translate">
                     @if (patient.nextAppointment) {
-                      <span class="font-semibold text-ink-900">{{ patient.nextAppointment | date: 'mediumDate' }}</span>
+                      <span class="font-semibold text-ink-900">{{ patient.nextAppointment | appDate }}</span>
                     } @else { <span class="text-ink-500">—</span> }
                   </td>
                   <td [attr.data-label]="'PATIENTS.CONTACT' | translate">

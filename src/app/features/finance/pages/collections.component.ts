@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -11,6 +10,7 @@ import { loadable } from '../../../core/utils/loadable';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 import { BreakdownComponent } from '../../../shared/ui/breakdown.component';
 import { PeriodPickerComponent } from '../../../shared/ui/period-picker.component';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 /**
  * Money received in a period: how much, by which method, from whom, and how much of it is still
@@ -19,7 +19,7 @@ import { PeriodPickerComponent } from '../../../shared/ui/period-picker.componen
 @Component({
   selector: 'app-collections',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, BreakdownComponent, PeriodPickerComponent],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, BreakdownComponent, PeriodPickerComponent],
   template: `
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <app-period-picker [value]="period()" (valueChange)="period.set($event)" [presets]="presets" />
@@ -58,7 +58,7 @@ import { PeriodPickerComponent } from '../../../shared/ui/period-picker.componen
               <tbody>
                 @for (row of r.rows; track row.receiptId) {
                   <tr>
-                    <td>{{ row.date | date: 'mediumDate' }}</td>
+                    <td>{{ row.date | appDate }}</td>
                     <td><a class="font-semibold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/patients', row.patientId]">{{ row.patientName }}</a><span class="block text-xs text-ink-500 mono">{{ row.patientCode }}</span></td>
                     <td>{{ 'BILLING.METHODS.' + row.method | translate }}@if (row.reference) { <span class="block text-xs text-ink-500">{{ row.reference }}</span> }</td>
                     <td>{{ row.practitionerName || '—' }}</td>

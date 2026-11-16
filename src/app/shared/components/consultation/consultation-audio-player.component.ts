@@ -1,3 +1,4 @@
+import { IconComponent } from '../../ui/icon.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, input, signal, viewChild } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
@@ -23,7 +24,7 @@ export function audioOffsetSeconds(at: number, startedAt: number, leadMs = SEEK_
 @Component({
   selector: 'app-consultation-audio-player',
   standalone: true,
-  imports: [TranslateModule],
+  imports: [IconComponent, TranslateModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (url(); as src) {
@@ -31,7 +32,7 @@ export function audioOffsetSeconds(at: number, startedAt: number, leadMs = SEEK_
              [attr.aria-label]="'CONSULTATION.LOG_AUDIO' | translate"></audio>
     } @else {
       <button type="button" class="btn btn-secondary btn-sm" (click)="load()" [disabled]="loading()" data-audio-listen>
-        <span class="material-icons text-base" aria-hidden="true">play_arrow</span>
+        <app-icon class="mi text-base" name="play_arrow" size="1em" />
         {{ (loading() ? 'COMMON.LOADING' : 'CONSULTATION.DOCS_LISTEN') | translate }}
       </button>
     }

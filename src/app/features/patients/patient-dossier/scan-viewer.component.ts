@@ -1,3 +1,4 @@
+import { IconComponent } from '../../../shared/ui/icon.component';
 import { Component, DestroyRef, ElementRef, NgZone, effect, inject, input, signal, untracked, viewChild } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import type { Object3D, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
@@ -14,7 +15,7 @@ type View = 'occlusal' | 'front';
 @Component({
   selector: 'app-scan-viewer',
   standalone: true,
-  imports: [TranslateModule],
+  imports: [IconComponent, TranslateModule],
   host: { class: 'scan-viewer', '[class.expanded]': 'expanded()' },
   template: `
     <div #host class="stage" [attr.aria-label]="'PFILES.VIEWER_LABEL' | translate: { format: label() }" role="img"></div>
@@ -28,7 +29,7 @@ type View = 'occlusal' | 'front';
       <button type="button" class="view" [attr.aria-pressed]="view() === 'front'" (click)="setView('front')">{{ 'PFILES.VIEW_FRONT' | translate }}</button>
       <button type="button" (click)="expanded.set(!expanded())"
         [title]="(expanded() ? 'PFILES.SHRINK' : 'PFILES.EXPAND') | translate" [attr.aria-label]="(expanded() ? 'PFILES.SHRINK' : 'PFILES.EXPAND') | translate">
-        <span class="material-icons" aria-hidden="true">{{ expanded() ? 'close_fullscreen' : 'open_in_full' }}</span>
+        <app-icon class="mi" [name]="expanded() ? 'close_fullscreen' : 'open_in_full'" size="1em" />
       </button>
     </div>
     <p class="hint">{{ label() }} · {{ 'PFILES.MODEL_HINT' | translate }}</p>
@@ -47,7 +48,7 @@ type View = 'occlusal' | 'front';
     .tools button.view { width: auto; padding: 0 .625rem; font-size: .75rem; font-weight: 600; }
     .tools button[aria-pressed='true'] { background: rgb(255 255 255 / .92); color: #10181b; border-color: transparent; }
     .tools button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
-    .tools .material-icons { font-size: 1.125rem; }
+    .tools app-icon.mi { font-size: 1.125rem; }
     .hint { position: absolute; bottom: .375rem; inset-inline-start: .5rem; margin: 0; padding: .125rem .375rem; border-radius: .25rem;
       background: rgb(16 24 27 / .6); color: #c9d4d7; font-size: .6875rem; pointer-events: none; }
   `],

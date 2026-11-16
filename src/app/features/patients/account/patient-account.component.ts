@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -18,6 +17,7 @@ import { IconComponent } from '../../../shared/ui/icon.component';
 import { ModalComponent } from '../../../shared/ui/modal.component';
 import { StatusPillComponent } from '../../../shared/ui/status-pill.component';
 import { ReceiptForm, SettleMode, openInvoices, planRequest, planSchedule, receiptRequest, settle } from './account-logic';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 const emptyReceipt = (): ReceiptForm => ({
   amount: 0, method: 'CASH', date: isoDate(new Date()), practitionerId: '', reference: '', notes: '', mode: 'AUTO',
@@ -37,7 +37,7 @@ const emptyPlan = () => ({ total: 0, down: 0, count: 6, frequency: 'MONTHLY' as 
 @Component({
   selector: 'app-patient-account',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, IconComponent, ModalComponent, StatusPillComponent, CanDirective],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, IconComponent, ModalComponent, StatusPillComponent, CanDirective],
   template: `
     <div class="space-y-6" [attr.aria-busy]="account.loading()">
       <div class="flex flex-wrap items-center justify-between gap-2">
@@ -72,7 +72,7 @@ const emptyPlan = () => ({ total: 0, down: 0, count: 6, frequency: 'MONTHLY' as 
                 @for (i of a.invoices; track i.id) {
                   <tr>
                     <td><a class="font-bold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/billing/invoices', i.id]">{{ i.invoiceNumber }}</a></td>
-                    <td>{{ i.issueDate | date: 'mediumDate' }}</td>
+                    <td>{{ i.issueDate | appDate }}</td>
                     <td><app-status-pill [status]="i.status" /></td>
                     <td class="cell-num">{{ i.total | money }}</td>
                     <td class="cell-num">{{ i.paid | money }}</td>
@@ -103,7 +103,7 @@ const emptyPlan = () => ({ total: 0, down: 0, count: 6, frequency: 'MONTHLY' as 
               <tbody>
                 @for (r of a.receipts; track r.id) {
                   <tr [class.opacity-60]="r.voided">
-                    <td>{{ r.receiptDate | date: 'mediumDate' }}</td>
+                    <td>{{ r.receiptDate | appDate }}</td>
                     <td>{{ 'BILLING.METHODS.' + r.method | translate }}</td>
                     <td>
                       {{ r.reference || '—' }}
@@ -158,7 +158,7 @@ const emptyPlan = () => ({ total: 0, down: 0, count: 6, frequency: 'MONTHLY' as 
                   @for (i of p.instalments; track i.id) {
                     <tr>
                       <td>{{ i.seq === 0 ? ('ACC.PLAN.DOWN' | translate) : i.seq }}</td>
-                      <td>{{ i.dueDate | date: 'mediumDate' }}@if (i.overdue) { <span class="pill pill-critical pill-nodot ms-2">{{ 'ACC.PLAN.OVERDUE' | translate }}</span> }</td>
+                      <td>{{ i.dueDate | appDate }}@if (i.overdue) { <span class="pill pill-critical pill-nodot ms-2">{{ 'ACC.PLAN.OVERDUE' | translate }}</span> }</td>
                       <td class="cell-num">{{ i.amount | money }}</td>
                       <td class="cell-num">{{ i.paidAmount | money }}</td>
                       <td><app-status-pill [status]="i.status" /></td>

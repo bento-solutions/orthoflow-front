@@ -1,3 +1,4 @@
+import { IconComponent } from '../../../../shared/ui/icon.component';
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
@@ -11,17 +12,18 @@ import { OnInit } from '@angular/core';
 import { finalize } from 'rxjs';
 import { ToastService } from '../../../../core/services/toast.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 
 @Component({
   selector: 'app-invoice-create',
   standalone: true,
-  imports: [TranslateModule, CommonModule, RouterModule, FormsModule, PatientPickerComponent],
+  imports: [IconComponent, MoneyPipe, TranslateModule, CommonModule, RouterModule, FormsModule, PatientPickerComponent],
   template: `
     <div class="create-invoice-container">
       <header class="page-header">
         <div class="header-content">
           <button type="button" class="back-btn" [attr.aria-label]="'COMMON.BACK' | translate" routerLink="..">
-            <span class="material-icons" aria-hidden="true">arrow_back</span>
+            <app-icon class="mi" name="arrow_back" size="1em" />
           </button>
         </div>
       </header>
@@ -42,7 +44,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
             <div class="section-header">
               <h2>{{ 'BILLING.FORM.LINES' | translate }}</h2>
               <button type="button" class="btn-text" (click)="addLine()">
-                <span aria-hidden="true" class="material-icons">add</span> {{ 'BILLING.FORM.ADD_LINE' | translate }}
+                <app-icon class="mi" name="add" size="1em" /> {{ 'BILLING.FORM.ADD_LINE' | translate }}
               </button>
             </div>
             
@@ -64,9 +66,9 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
                   <input type="number" [attr.aria-label]="'BILLING.FORM.QTY' | translate" [(ngModel)]="line.quantity" (ngModelChange)="calculateTotal()" class="form-control col-qty">
                   <input type="number" [attr.aria-label]="'BILLING.FORM.UNIT_PRICE' | translate" [(ngModel)]="line.unitPrice" (ngModelChange)="calculateTotal()" class="form-control col-price">
                   <input type="number" [attr.aria-label]="'BILLING.FORM.DISCOUNT_PCT' | translate" [(ngModel)]="line.discountPct" (ngModelChange)="calculateTotal()" class="form-control col-discount">
-                  <span class="col-total">{{ line.lineTotal | number:'1.2-2' }}</span>
+                  <span class="col-total">{{ line.lineTotal | money }}</span>
                   <button type="button" class="icon-btn-danger col-action" [attr.aria-label]="'BILLING.FORM.REMOVE_LINE' | translate" (click)="removeLine($index)">
-                    <span class="material-icons" aria-hidden="true">delete</span>
+                    <app-icon class="mi" name="delete" size="1em" />
                   </button>
                 </div>
               }
@@ -84,25 +86,25 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
             <h2>{{ 'BILLING.FORM.SUMMARY' | translate }}</h2>
             <div class="summary-row">
               <span>{{ 'BILLING.FORM.SUBTOTAL' | translate }}</span>
-              <span>{{ subtotal() | number:'1.2-2' }} MAD</span>
+              <span>{{ subtotal() | money }}</span>
             </div>
             <div class="summary-row">
               <span>{{ 'BILLING.FORM.DISCOUNT' | translate }}</span>
-              <span class="discount-text">-{{ discountAmount() | number:'1.2-2' }} MAD</span>
+              <span class="discount-text">-{{ discountAmount() | money }}</span>
             </div>
             <div class="summary-row">
               <span>{{ 'BILLING.FORM.TAX_ZERO' | translate }}</span>
-              <span>0.00 MAD</span>
+              <span>{{ 0 | money }}</span>
             </div>
             <hr>
             <div class="summary-row total">
               <span>{{ 'COMMON.TOTAL' | translate }}</span>
-              <span>{{ total() | number:'1.2-2' }} MAD</span>
+              <span>{{ total() | money }}</span>
             </div>
 
             <div class="sidebar-actions">
               <button type="button" class="btn btn-primary full-width" (click)="saveInvoice()">
-                <span aria-hidden="true" class="material-icons">save</span>
+                <app-icon class="mi" name="save" size="1em" />
                 {{ 'BILLING.FORM.CREATE' | translate }}
               </button>
             </div>

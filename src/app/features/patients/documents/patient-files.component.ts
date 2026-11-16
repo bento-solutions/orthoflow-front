@@ -1,5 +1,5 @@
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 import { Component, OnDestroy, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
@@ -21,7 +21,7 @@ import { ScanViewerComponent } from '../patient-dossier/scan-viewer.component';
 @Component({
   selector: 'app-patient-files',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, IconComponent, ScanViewerComponent],
+  imports: [AppDatePipe, FormsModule, TranslateModule, IconComponent, ScanViewerComponent],
   template: `
     <section class="card p-4" aria-labelledby="pf-title">
       <header class="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -65,7 +65,7 @@ import { ScanViewerComponent } from '../patient-dossier/scan-viewer.component';
                 <button type="button" class="grid aspect-[4/3] w-full place-items-center bg-[#10181b] text-[#d6dfe1]" (click)="openModel(f, type)"
                   [attr.aria-label]="('PFILES.OPEN_MODEL' | translate) + ' ' + f.name">
                   <span class="grid justify-items-center gap-1">
-                    <span class="material-icons text-[2.25rem]" aria-hidden="true">view_in_ar</span>
+                    <app-icon class="mi text-[2.25rem]" name="view_in_ar" size="1em" />
                     <span class="text-xs font-bold tracking-wide">{{ label(type) }}</span>
                   </span>
                 </button>
@@ -83,7 +83,7 @@ import { ScanViewerComponent } from '../patient-dossier/scan-viewer.component';
                     {{ 'PFILES.CAT.' + (f.category ?? 'IMAGE') | translate }}
                   </span>
                   <p class="mt-1 truncate text-xs text-ink-600" [title]="f.name">{{ f.name }}</p>
-                  <p class="text-2xs text-ink-500">{{ f.createdAt | date:'mediumDate' }}</p>
+                  <p class="text-2xs text-ink-500">{{ f.createdAt | appDate }}</p>
                 </div>
                 @if (canWrite()) {
                   <button type="button" class="btn btn-ghost btn-icon btn-sm shrink-0 text-critical-700" (click)="remove(f)"

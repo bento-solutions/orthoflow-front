@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../core/services/api-error.service';
@@ -9,6 +8,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { formState } from '../../core/utils/form-state';
 import { loadable } from '../../core/utils/loadable';
 import { CanDirective } from '../../shared/directives/can.directive';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /** How healthy the WhatsApp link looks from the state the bridge reports. */
 export function whatsappTone(status: Pick<WhatsAppStatus, 'enabled' | 'sessionState'>): 'off' | 'good' | 'bad' | 'wait' {
@@ -36,7 +36,7 @@ export const SEND_HOURS = Array.from({ length: 24 }, (_, h) => h);
 @Component({
   selector: 'app-messaging-settings',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, CanDirective],
+  imports: [AppDatePipe, FormsModule, TranslateModule, CanDirective],
   template: `
     <div class="grid gap-5 xl:grid-cols-2">
       <section class="card">
@@ -49,7 +49,7 @@ export const SEND_HOURS = Array.from({ length: 24 }, (_, h) => h);
             </p>
             @if (!w.enabled) { <p class="text-ink-600">{{ 'COM.SET.OFF_HELP' | translate }}</p> }
             @else if (tone() === 'bad') { <p class="text-critical-700">{{ 'COM.SET.BAD_HELP' | translate }}</p> }
-            @if (w.lastReportedAt) { <p class="text-xs text-ink-500">{{ 'COM.SET.LAST_REPORT' | translate: { state: w.lastReportedState, at: (w.lastReportedAt | date: 'medium') } }}</p> }
+            @if (w.lastReportedAt) { <p class="text-xs text-ink-500">{{ 'COM.SET.LAST_REPORT' | translate: { state: w.lastReportedState, at: (w.lastReportedAt | appDate:'datetime') } }}</p> }
             <p class="text-ink-600">{{ 'COM.SET.UNHANDLED' | translate: { count: w.unhandledReplies } }}</p>
           }
         </div>

@@ -1,3 +1,4 @@
+import { IconComponent } from '../../shared/ui/icon.component';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, NgZone, afterNextRender, computed, effect, inject, input, model, output, signal, untracked, viewChild, viewChildren,
 } from '@angular/core';
@@ -55,7 +56,7 @@ interface SummaryGroup {
   selector: 'app-dental-3d-chart',
   standalone: true,
   host: { '[class.d3-compact]': 'compact()', '[class.d3-overlay]': 'overlayPanel()' },
-  imports: [FormsModule, NgClass, TranslateModule, ChartKeysComponent, DentalChartComponent, ToothDetailComponent],
+  imports: [IconComponent, FormsModule, NgClass, TranslateModule, ChartKeysComponent, DentalChartComponent, ToothDetailComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (fallback()) {
@@ -92,7 +93,7 @@ interface SummaryGroup {
                 <button type="button" class="d3-tool" [class.on]="view.gums()" [attr.aria-pressed]="view.gums()"
                   [title]="(view.gums() ? 'DENTAL_3D.GUMS_HIDE' : 'DENTAL_3D.GUMS_SHOW') | translate"
                   [attr.aria-label]="'DENTAL_3D.GUMS' | translate" (click)="view.showGums()">
-                  <span class="material-icons" aria-hidden="true">{{ view.gums() ? 'visibility' : 'visibility_off' }}</span>
+                  <app-icon class="mi" [name]="view.gums() ? 'visibility' : 'visibility_off'" size="1em" />
                 </button>
               }
               <!-- Always there, so picking a tooth never rewraps the toolbar under the doctor's eyes (P1-6). -->
@@ -101,30 +102,30 @@ interface SummaryGroup {
                   [title]="selected() ? ('DENTAL_3D.ZOOM_TOOTH' | translate: { fdi: selected() }) : ('DENTAL_3D.ZOOM_PICK_FIRST' | translate)"
                   [attr.aria-label]="selected() ? ('DENTAL_3D.ZOOM_TOOTH' | translate: { fdi: selected() }) : ('DENTAL_3D.ZOOM_PICK_FIRST' | translate)"
                   (click)="selected() && enterCloseUp(selected()!)">
-                  <span class="material-icons" aria-hidden="true">center_focus_strong</span>
+                  <app-icon class="mi" name="center_focus_strong" size="1em" />
                 </button>
               }
               <!-- Everything dragging does, without dragging. -->
               <button type="button" class="d3-tool" [title]="'DENTAL_3D.TURN_LEFT' | translate" [attr.aria-label]="'DENTAL_3D.TURN_LEFT' | translate" (click)="turn(-1, 0)">
-                <span class="material-icons" aria-hidden="true">rotate_left</span>
+                <app-icon class="mi" name="rotate_left" size="1em" />
               </button>
               <button type="button" class="d3-tool" [title]="'DENTAL_3D.TURN_RIGHT' | translate" [attr.aria-label]="'DENTAL_3D.TURN_RIGHT' | translate" (click)="turn(1, 0)">
-                <span class="material-icons" aria-hidden="true">rotate_right</span>
+                <app-icon class="mi" name="rotate_right" size="1em" />
               </button>
               <button type="button" class="d3-tool" [title]="'DENTAL_3D.TURN_UP' | translate" [attr.aria-label]="'DENTAL_3D.TURN_UP' | translate" (click)="turn(0, -1)">
-                <span class="material-icons" aria-hidden="true">keyboard_arrow_up</span>
+                <app-icon class="mi" name="keyboard_arrow_up" size="1em" />
               </button>
               <button type="button" class="d3-tool" [title]="'DENTAL_3D.TURN_DOWN' | translate" [attr.aria-label]="'DENTAL_3D.TURN_DOWN' | translate" (click)="turn(0, 1)">
-                <span class="material-icons" aria-hidden="true">keyboard_arrow_down</span>
+                <app-icon class="mi" name="keyboard_arrow_down" size="1em" />
               </button>
               <button type="button" class="d3-tool" [title]="'DENTAL_3D.ZOOM_IN' | translate" [attr.aria-label]="'DENTAL_3D.ZOOM_IN' | translate" (click)="engine()?.zoomBy(0.8)">
-                <span class="material-icons" aria-hidden="true">add</span>
+                <app-icon class="mi" name="add" size="1em" />
               </button>
               <button type="button" class="d3-tool" [title]="'DENTAL_3D.ZOOM_OUT' | translate" [attr.aria-label]="'DENTAL_3D.ZOOM_OUT' | translate" (click)="engine()?.zoomBy(1.25)">
-                <span class="material-icons" aria-hidden="true">remove</span>
+                <app-icon class="mi" name="remove" size="1em" />
               </button>
               <button type="button" class="d3-tool" [disabled]="!moved()" [title]="'DENTAL_3D.RESET' | translate" [attr.aria-label]="'DENTAL_3D.RESET' | translate" (click)="reset()">
-                <span class="material-icons" aria-hidden="true">restart_alt</span>
+                <app-icon class="mi" name="restart_alt" size="1em" />
               </button>
               @if (!compact()) {
                 <!-- The keyboard keys and the model's licence, a press away rather than always on screen (P1-8). -->
@@ -150,7 +151,7 @@ interface SummaryGroup {
             @if (view.zoomedFdi()) {
               <!-- On the stage, where the corner is free: in the toolbar it would wrap it, and the stage would jump. -->
               <button type="button" class="d3-back" dir="auto" (click)="leaveCloseUp()">
-                <span class="material-icons" aria-hidden="true">arrow_back</span>{{ 'DENTAL_3D.WHOLE_MOUTH' | translate }}
+                <app-icon class="mi" name="arrow_back" size="1em" />{{ 'DENTAL_3D.WHOLE_MOUTH' | translate }}
               </button>
             } @else {
               <div class="d3-sides" aria-hidden="true">
@@ -267,7 +268,7 @@ interface SummaryGroup {
                   <p>{{ statusLabel(fdi) | translate }}</p>
                 </div>
                 <button type="button" class="d3-tool" [attr.aria-label]="'COMMON.CLOSE' | translate" (click)="closePanel(fdi)">
-                  <span class="material-icons" aria-hidden="true">close</span>
+                  <app-icon class="mi" name="close" size="1em" />
                 </button>
               </header>
               <app-tooth-detail [patientId]="chart().patientId" [fdi]="fdi" [findings]="findings()" [(surface)]="pickedSurface" />
@@ -293,7 +294,7 @@ interface SummaryGroup {
               </section>
 
               <button type="button" class="d3-assign" (click)="assignTreatment.emit(fdi)">
-                <span class="material-icons" aria-hidden="true">add</span>{{ 'DENTAL_3D.ASSIGN' | translate: { fdi: fdi } }}
+                <app-icon class="mi" name="add" size="1em" />{{ 'DENTAL_3D.ASSIGN' | translate: { fdi: fdi } }}
               </button>
             } @else {
               <h3 class="d3-panel-idle">{{ 'DENTAL_3D.SUMMARY' | translate }}</h3>

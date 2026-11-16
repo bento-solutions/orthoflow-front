@@ -10,6 +10,7 @@ import { ModalComponent } from '../../ui/modal.component';
 import { ConsultationAudioPlayerComponent } from './consultation-audio-player.component';
 import { ConsultationSuggestionComponent } from './consultation-suggestion.component';
 import { environment } from '../../../../environments/environment';
+import { AppDatePipe } from '../../pipes/app-date.pipe';
 
 /**
  * The consultation log: what was said and when, the commands the examination
@@ -23,7 +24,7 @@ import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'app-consultation-log',
   standalone: true,
-  imports: [DatePipe, TranslateModule, ModalComponent, ConsultationAudioPlayerComponent, ConsultationSuggestionComponent],
+  imports: [AppDatePipe, DatePipe, TranslateModule, ModalComponent, ConsultationAudioPlayerComponent, ConsultationSuggestionComponent],
   template: `
     <app-modal [open]="!!consultationId()" [title]="'CONSULTATION.LOG.TITLE' | translate" size="lg" (closed)="closed.emit()">
       @if (loading()) {
@@ -32,7 +33,7 @@ import { environment } from '../../../../environments/environment';
         <p class="text-sm text-red-700" role="alert">{{ 'CONSULTATION.LOG.ERROR' | translate }}</p>
       } @else if (log(); as l) {
         <p class="mb-3 text-sm text-ink-500">
-          {{ l.startedAt | date: 'dd/MM/yyyy HH:mm' }}
+          {{ l.startedAt | appDate:'datetime' }}
           · {{ 'CONSULTATION.LOG.INFORMED_AT' | translate }} {{ l.patientInformedAt | date: 'HH:mm:ss' }}
           @if (l.mode) { · {{ (l.mode === 'DEFERRED' ? 'CONSULTATION.MODE_LABEL_DEFERRED' : 'CONSULTATION.MODE_LABEL_LIVE') | translate }} }
         </p>
@@ -132,7 +133,7 @@ import { environment } from '../../../../environments/environment';
                 <div><dt class="inline font-medium">{{ 'CONSULTATION.LOG.V_PLAN' | translate }} : </dt><dd class="inline">{{ names(l.reviewed.treatmentPlan, 'label') }}</dd></div>
               }
               @if (l.reviewed.nextAppointment) {
-                <div><dt class="inline font-medium">{{ 'CONSULTATION.LOG.V_APPOINTMENT' | translate }} : </dt><dd class="inline">{{ l.reviewed.nextAppointment.dateTime | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+                <div><dt class="inline font-medium">{{ 'CONSULTATION.LOG.V_APPOINTMENT' | translate }} : </dt><dd class="inline">{{ l.reviewed.nextAppointment.dateTime | appDate:'datetime' }}</dd></div>
               }
               @if (l.report) {
                 <div><dt class="font-medium">{{ 'CONSULTATION.LOG.V_REPORT' | translate }}</dt><dd class="mt-1 whitespace-pre-line text-ink-700">{{ l.report }}</dd></div>

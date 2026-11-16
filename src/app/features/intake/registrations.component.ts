@@ -1,5 +1,4 @@
 import { Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../core/services/api-error.service';
@@ -10,6 +9,7 @@ import { NavCounts } from '../../core/services/nav-counts.service';
 import { ToastService } from '../../core/services/toast.service';
 import { loadable } from '../../core/utils/loadable';
 import { IconComponent } from '../../shared/ui/icon.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /**
  * Forms patients filled in themselves, waiting to become patients. Each one shows the records it
@@ -19,7 +19,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
 @Component({
   selector: 'app-registrations',
   standalone: true,
-  imports: [DatePipe, RouterLink, TranslateModule, IconComponent],
+  imports: [AppDatePipe, RouterLink, TranslateModule, IconComponent],
   template: `
     <ul class="space-y-3" [attr.aria-busy]="pending.loading()">
       @for (p of pending.data(); track p.id) {
@@ -28,7 +28,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
             <div class="flex flex-wrap items-start justify-between gap-2">
               <p class="text-base font-bold text-ink-900">{{ p.firstName }} {{ p.lastName }}
                 @if (p.invitedPatientId) { <span class="pill pill-active pill-nodot ms-2">{{ 'INT.REG.INVITED' | translate }}</span> }</p>
-              <p class="text-xs text-ink-500">{{ 'INT.BOOK.RECEIVED' | translate: { at: (p.createdAt | date: 'short') } }}</p>
+              <p class="text-xs text-ink-500">{{ 'INT.BOOK.RECEIVED' | translate: { at: (p.createdAt | appDate:'datetime') } }}</p>
             </div>
             <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5 text-sm sm:grid-cols-[auto_1fr_auto_1fr]">
               @for (row of details(p); track row[0]) { <dt class="text-ink-500">{{ row[0] | translate }}</dt><dd class="text-ink-900">{{ row[1] }}</dd> }

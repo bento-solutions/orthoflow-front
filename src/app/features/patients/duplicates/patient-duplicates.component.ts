@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -11,6 +10,7 @@ import { loadable } from '../../../core/utils/loadable';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { ModalComponent } from '../../../shared/ui/modal.component';
 import { DuplicatePair, Insurer, MergePreview, PatientDirectoryApi } from '../patient-directory-api.service';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 type Side = 'TARGET' | 'SOURCE';
 type Person = DuplicatePair['first'];
@@ -49,7 +49,7 @@ export function preferSourceFields(choices: Record<string, Side>, differences: R
 @Component({
   selector: 'app-patient-duplicates',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent],
   template: `
     <div class="anim-rise">
       <div class="space-y-4" [attr.aria-busy]="pairs.loading()">
@@ -71,11 +71,11 @@ export function preferSourceFields(choices: Record<string, Side>, differences: R
                   </h2>
                   <p class="mono text-2xs text-ink-500">{{ person.patientCode }}</p>
                   <dl class="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                    <dt class="text-ink-500">{{ 'PAT.DUP.BORN' | translate }}</dt><dd>{{ person.dateOfBirth ? (person.dateOfBirth | date: 'mediumDate') : '—' }}</dd>
+                    <dt class="text-ink-500">{{ 'PAT.DUP.BORN' | translate }}</dt><dd>{{ person.dateOfBirth ? (person.dateOfBirth | appDate) : '—' }}</dd>
                     <dt class="text-ink-500">{{ 'PAT.DUP.PHONE' | translate }}</dt><dd>{{ person.phone || '—' }}</dd>
                     <dt class="text-ink-500">{{ 'PAT.DUP.CIN' | translate }}</dt><dd>{{ person.cin || '—' }}</dd>
                     <dt class="text-ink-500">{{ 'COMMON.EMAIL' | translate }}</dt><dd class="truncate">{{ person.email || '—' }}</dd>
-                    <dt class="text-ink-500">{{ 'PAT.DUP.CREATED' | translate }}</dt><dd>{{ person.createdAt | date: 'mediumDate' }}</dd>
+                    <dt class="text-ink-500">{{ 'PAT.DUP.CREATED' | translate }}</dt><dd>{{ person.createdAt | appDate }}</dd>
                   </dl>
                   <button type="button" class="btn btn-secondary btn-sm mt-4" (click)="start(person, other(pair, person))"
                     [attr.aria-label]="'PAT.DUP.KEEP_THIS_FOR' | translate: { name: name(person) }">

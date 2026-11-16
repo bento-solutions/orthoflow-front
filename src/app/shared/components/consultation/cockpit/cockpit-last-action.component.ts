@@ -1,3 +1,4 @@
+import { IconComponent } from '../../../ui/icon.component';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { ConsultationFocusService } from '../../../../core/consultation/consultation-focus.service';
@@ -12,14 +13,14 @@ import { VoiceOrchestratorService } from '../../../../core/voice/voice-orchestra
 @Component({
   selector: 'app-cockpit-last-action',
   standalone: true,
-  imports: [TranslateModule],
+  imports: [IconComponent, TranslateModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="ck-last" [attr.data-kind]="focus.lastAction()?.kind ?? 'none'" role="status" aria-live="polite" aria-atomic="true">
       <h3 class="ck-last-head">{{ 'COCKPIT.LAST_ACTION' | translate }}</h3>
       @if (focus.lastAction(); as last) {
         <p class="ck-last-title">
-          <span class="material-icons" aria-hidden="true">{{ icon(last.kind, last.status) }}</span>
+          <app-icon class="mi" [name]="icon(last.kind, last.status)" size="1em" />
           <span>{{ last.title }}</span>
         </p>
         @if (last.detail) { <p class="ck-last-detail">{{ last.detail }}</p> }
@@ -45,8 +46,8 @@ import { VoiceOrchestratorService } from '../../../../core/voice/voice-orchestra
     .ck-last[data-kind='none'] { border-inline-start-color: rgb(var(--ink-300)); }
     .ck-last-head { margin: 0 0 .25rem; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: rgb(var(--ink-600)); }
     .ck-last-title { display: flex; align-items: flex-start; gap: .375rem; margin: 0; font-size: 1.0625rem; font-weight: 700; color: rgb(var(--ink-900)); overflow-wrap: anywhere; }
-    .ck-last-title .material-icons { font-size: 1.25rem; color: rgb(var(--positive-700)); }
-    .ck-last[data-kind='unsure'] .ck-last-title .material-icons { color: rgb(var(--caution-700)); }
+    .ck-last-title app-icon.mi { font-size: 1.25rem; color: rgb(var(--positive-700)); }
+    .ck-last[data-kind='unsure'] .ck-last-title app-icon.mi { color: rgb(var(--caution-700)); }
     .ck-last-detail { margin: .125rem 0 0; color: rgb(var(--ink-700)); }
     .ck-last-heard { margin: .25rem 0 0; font-size: .8125rem; color: rgb(var(--ink-600)); font-style: italic; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .ck-last-undo { margin: .375rem 0 0; font-size: .8125rem; color: rgb(var(--ink-700)); }

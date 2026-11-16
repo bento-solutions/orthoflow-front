@@ -12,6 +12,7 @@ import { LanguageService } from '../../../../core/services/language.service';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { StatusPillComponent } from '../../../../shared/ui/status-pill.component';
 import { PatientService } from '../../../../core/services/patient.service';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 
 /**
  * Invoice register.
@@ -27,7 +28,7 @@ import { PatientService } from '../../../../core/services/patient.service';
 @Component({
   selector: 'app-invoice-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, TranslateModule, IconComponent, StatusPillComponent],
+  imports: [AppDatePipe, CommonModule, RouterModule, FormsModule, TranslateModule, IconComponent, StatusPillComponent],
   template: `
     <div class="anim-rise">
       <header class="page-head">
@@ -144,12 +145,12 @@ import { PatientService } from '../../../../core/services/patient.service';
                   <td><app-status-pill [status]="row.displayStatus" /></td>
                   <td>
                     <span class="flex flex-col leading-tight">
-                      <span class="text-ink-900">{{ row.invoice.issueDate | date: 'mediumDate' }}</span>
+                      <span class="text-ink-900">{{ row.invoice.issueDate | appDate }}</span>
                       <span
                         class="text-2xs"
                         [class]="row.isOverdue ? 'font-bold text-critical-700' : 'text-ink-500'"
                       >
-                        {{ 'BILLING.DUE' | translate }}: {{ row.invoice.dueDate | date: 'mediumDate' }}
+                        {{ 'BILLING.DUE' | translate }}: {{ row.invoice.dueDate | appDate }}
                       </span>
                     </span>
                   </td>

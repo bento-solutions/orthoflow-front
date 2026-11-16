@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -21,6 +20,7 @@ import { ModalComponent } from '../../../shared/ui/modal.component';
 import { PatientPickerComponent, PickedPatient } from '../../../shared/ui/patient-picker.component';
 import { PeriodPickerComponent } from '../../../shared/ui/period-picker.component';
 import { StatusPillComponent } from '../../../shared/ui/status-pill.component';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 const KINDS = ['FEE_NOTE', 'CARE_FORM'] as const;
 const STATUSES = ['ISSUED', 'DELIVERED', 'VOID'] as const;
@@ -35,7 +35,7 @@ const LANGS = ['fr', 'en', 'ar'] as const;
 @Component({
   selector: 'app-tax-documents',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, ExportMenuComponent, IconComponent, ModalComponent, PatientPickerComponent, PeriodPickerComponent, StatusPillComponent, CanDirective],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, ExportMenuComponent, IconComponent, ModalComponent, PatientPickerComponent, PeriodPickerComponent, StatusPillComponent, CanDirective],
   template: `
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <app-period-picker [value]="period()" (valueChange)="period.set($event)" [presets]="presets" />
@@ -70,8 +70,8 @@ const LANGS = ['fr', 'en', 'ar'] as const;
               <td>{{ 'FIN.TAX.KINDS.' + d.kind | translate }}</td>
               <td><a class="text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/patients', d.patientId]">{{ d.patientName }}</a></td>
               <td class="cell-num">{{ d.amount | money }}</td>
-              <td>{{ d.issuedAt | date: 'mediumDate' }}</td>
-              <td>{{ d.deliveredAt ? (d.deliveredAt | date: 'mediumDate') : '—' }}</td>
+              <td>{{ d.issuedAt | appDate }}</td>
+              <td>{{ d.deliveredAt ? (d.deliveredAt | appDate) : '—' }}</td>
               <td><app-status-pill [status]="d.status" /></td>
               <td class="cell-actions">
                 <span class="inline-flex flex-wrap justify-end gap-1">

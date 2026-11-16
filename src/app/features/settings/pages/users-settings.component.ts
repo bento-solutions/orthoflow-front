@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../../core/services/api-error.service';
@@ -11,6 +10,7 @@ import { formState } from '../../../core/utils/form-state';
 import { loadable } from '../../../core/utils/loadable';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { ModalComponent } from '../../../shared/ui/modal.component';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 interface Form {
   email: string;
@@ -42,7 +42,7 @@ const GROUPS: ReadonlyArray<{ key: string; permissions: string[] }> = [
 @Component({
   selector: 'app-users-settings',
   standalone: true,
-  imports: [FormsModule, TranslateModule, DatePipe, ModalComponent, IconComponent],
+  imports: [AppDatePipe, FormsModule, TranslateModule, ModalComponent, IconComponent],
   template: `
     <section class="card">
       <div class="card-head">
@@ -64,7 +64,7 @@ const GROUPS: ReadonlyArray<{ key: string; permissions: string[] }> = [
                 <td class="font-semibold">{{ u.firstName }} {{ u.lastName }}</td>
                 <td>{{ u.email }}</td>
                 <td>{{ 'SET.USERS.ROLES.' + u.role | translate }}</td>
-                <td>{{ u.lastLoginAt ? (u.lastLoginAt | date: 'short') : '—' }}</td>
+                <td>{{ u.lastLoginAt ? (u.lastLoginAt | appDate:'datetime') : '—' }}</td>
                 <td>
                   <span class="pill" [class.pill-done]="u.active" [class.pill-idle]="!u.active">{{ (u.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}</span>
                   @if (u.mustChangePassword) { <span class="pill pill-attention ms-1">{{ 'SET.USERS.MUST_CHANGE' | translate }}</span> }

@@ -1,5 +1,5 @@
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 import { Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../core/services/api-error.service';
@@ -35,7 +35,7 @@ const blankLine = (): LineDraft => ({ drug: '', form: '', dci: '', posology: '' 
 @Component({
   selector: 'app-prescription-templates',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent],
+  imports: [AppDatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent],
   template: `
     <div class="anim-rise">
       <header class="page-head">
@@ -61,7 +61,7 @@ const blankLine = (): LineDraft => ({ drug: '', form: '', dci: '', posology: '' 
                   </p>
                   <p class="truncate text-sm text-ink-600">{{ drugs(t.lines) }}</p>
                   @if (t.reviewed && t.reviewedByName) {
-                    <p class="text-xs text-ink-500">{{ 'RX.REVIEWED_BY' | translate: { name: t.reviewedByName, date: (t.reviewedAt | date: 'dd/MM/yyyy') } }}</p>
+                    <p class="text-xs text-ink-500">{{ 'RX.REVIEWED_BY' | translate: { name: t.reviewedByName, date: (t.reviewedAt | appDate) } }}</p>
                   }
                 </div>
                 <div class="flex flex-wrap gap-1">

@@ -1673,7 +1673,7 @@
     "PAYMENT_NO_METHOD": "mode à préciser",
     "PAYMENTS_HINT": "Chaque paiement validé devient un reçu dans le compte du patient, réparti sur ses factures ouvertes.",
     "INVOICE_TITLE": "Facturer les actes réalisés",
-    "INVOICE_BODY": "{{count}} acte(s) réalisé(s) aujourd’hui : {{total}} MAD.",
+    "INVOICE_BODY": "{{count}} acte(s) réalisé(s) aujourd’hui : {{total}}.",
     "INVOICE_CREATE": "Créer une facture brouillon",
     "INVOICE_SKIP": "Ne pas facturer",
     "INVOICE_CREATE_CHOSEN": "Une facture brouillon sera créée pour l’accueil.",

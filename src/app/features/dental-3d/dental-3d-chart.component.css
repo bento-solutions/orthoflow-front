@@ -26,14 +26,14 @@
 .d3-tool:hover:not(:disabled) { background: var(--surface-hover); }
 .d3-tool:disabled { opacity: .4; cursor: default; }
 .d3-tool.on { background: var(--action-tint); color: var(--action-text); }
-.d3-tool .material-icons { font-size: 1.125rem; }
+.d3-tool app-icon.mi { font-size: 1.125rem; }
 .d3-tool:focus-visible, .d3-back:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 .d3-back {
   position: absolute; inset: .5rem auto auto .5rem; z-index: 3;
   display: inline-flex; align-items: center; gap: .25rem; height: 2.25rem; padding: 0 .75rem; font: inherit; font-size: .8125rem; font-weight: 600;
   border: 1px solid var(--action); border-radius: .5rem; background: var(--surface); color: var(--action-text); cursor: pointer;
 }
-.d3-back .material-icons { font-size: 1.125rem; }
+.d3-back app-icon.mi { font-size: 1.125rem; }
 
 /* As tall as the rows need at this width, and never taller than the window can show. */
 .d3-stage {
@@ -189,7 +189,7 @@
   border: 1px solid var(--action); border-radius: .375rem; background: var(--surface); color: var(--action-text); cursor: pointer;
 }
 .d3-assign:hover { background: var(--action-tint); }
-.d3-assign .material-icons { font-size: 1.125rem; }
+.d3-assign app-icon.mi { font-size: 1.125rem; }
 
 @media print {
   .d3-toolbar, .d3-tools, .d3-credit { display: none; }

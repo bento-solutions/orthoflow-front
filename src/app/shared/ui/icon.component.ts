@@ -21,7 +21,37 @@ export type IconName =
   | 'undo' | 'mic-off' | 'history' | 'wave' | 'cloud-off' | 'clipboard-check' | 'volume-x' | 'eye-off' | 'text'
   | 'stop-circle' | 'rotate-ccw' | 'rotate-cw' | 'pin' | 'play' | 'pause-circle' | 'mail' | 'pill' | 'calendar-x'
   | 'calendar-plus' | 'code' | 'columns' | 'focus' | 'zap' | 'plus-circle' | 'bank' | 'pointer' | 'hourglass'
-  | 'image' | 'archive' | 'heart';
+  | 'image' | 'archive' | 'heart' | 'volume' | 'check-square' | 'square' | 'minimize' | 'maximize';
+
+/**
+ * The names the retired Material icon font used, and the icon that now stands for each, so a
+ * name computed at run time (a voice state, a command) still finds its drawing.
+ */
+const MATERIAL_ALIAS: Readonly<Record<string, IconName>> = {
+  close: 'close', add: 'plus', delete: 'trash', check_circle: 'check-circle', arrow_back: 'arrow-left',
+  warning: 'alert-triangle', error: 'alert-circle', touch_app: 'pointer', hourglass_top: 'hourglass', mic_off: 'mic-off',
+  graphic_eq: 'wave', cloud_off: 'cloud-off', view_in_ar: 'box', task_alt: 'check-circle', picture_as_pdf: 'file-text',
+  payments: 'wallet', help_outline: 'help-circle', help: 'help-circle', forum: 'message', fact_check: 'clipboard-check',
+  description: 'file-text', chevron_right: 'chevron-right', chevron_left: 'chevron-left', autorenew: 'refresh',
+  assignment: 'clipboard', add_a_photo: 'camera', volume_off: 'volume-x', volume_up: 'volume', visibility: 'eye',
+  visibility_off: 'eye-off', verified: 'check-circle', subject: 'text', stop: 'stop-circle', stop_circle: 'stop-circle',
+  rotate_right: 'rotate-cw', rotate_left: 'rotate-ccw', restart_alt: 'rotate-ccw', remove: 'minus', remove_circle: 'x-circle',
+  record_voice_over: 'mic', short_text: 'text', music_note: 'wave', receipt_long: 'receipt', push_pin: 'pin',
+  play_arrow: 'play', photo_camera: 'camera', pause_circle: 'pause-circle', outgoing_mail: 'mail', email: 'mail',
+  notes: 'text', medication: 'pill', medical_services: 'stethoscope', keyboard_arrow_up: 'chevron-up',
+  keyboard_arrow_down: 'chevron-down', expand_more: 'chevron-down', expand_less: 'chevron-up', history_edu: 'file-text',
+  health_and_safety: 'shield', healing: 'activity', grid_on: 'grid', grid_view: 'grid', dashboard: 'grid', event: 'calendar',
+  event_busy: 'calendar-x', edit_note: 'edit', data_object: 'code', credit_card: 'credit-card', content_copy: 'copy',
+  compare: 'columns', cloud_upload: 'upload', sync: 'refresh', schedule: 'clock', center_focus_strong: 'focus', bolt: 'zap',
+  biotech: 'flask', add_circle: 'plus-circle', account_balance: 'bank', check_box: 'check-square',
+  check_box_outline_blank: 'square', close_fullscreen: 'minimize', open_in_full: 'maximize', photo_library: 'image',
+  person: 'user', child_care: 'user', badge: 'user', tune: 'settings', dark_mode: 'moon',
+};
+
+/** The drawing for a name: one of ours, or a Material name mapped onto one. */
+export function iconFor(name: string): IconName {
+  return (MATERIAL_ALIAS[name] ?? name) as IconName;
+}
 
 /* One icon set, one stroke weight, one optical size.
  *
@@ -59,7 +89,7 @@ export type IconName =
       [attr.aria-label]="label || null"
       class="shrink-0"
     >
-      @switch (name) {
+      @switch (icon) {
         @case ('grid') {
           <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
           <rect x="14" y="14" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" />
@@ -193,14 +223,25 @@ export type IconName =
         @case ('hourglass') { <path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2" /> }
         @case ('image') { <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21" /> }
         @case ('archive') { <rect x="2" y="3" width="20" height="5" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4" /> }
+        @case ('volume') { <path d="M11 5 6 9H2v6h4l5 4z" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" /> }
+        @case ('check-square') { <rect x="3" y="3" width="18" height="18" rx="2" /><path d="m8.5 12 2.5 2.5 4.5-5" /> }
+        @case ('square') { <rect x="3" y="3" width="18" height="18" rx="2" /> }
+        @case ('minimize') { <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" /> }
+        @case ('maximize') { <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /> }
         @case ('heart') { <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" /> }
       }
     </svg>
   `,
-  styles: [':host { display: inline-flex; }'],
+  /* `size="1em"` follows the font size around it, which is how the icons that replaced the
+     Material font keep the sizes their screens give them. */
+  styles: [':host { display: inline-flex; line-height: 1; }'],
 })
 export class IconComponent {
-  @Input({ required: true }) name!: IconName;
+  protected icon: IconName = 'info';
+  /** One of ours, or a retired Material name, which is mapped (see MATERIAL_ALIAS). */
+  @Input({ required: true }) set name(value: IconName | string) {
+    this.icon = iconFor(value);
+  }
   @Input() size: number | string = 18;
   @Input() strokeWidth: number | string = 1.75;
   /** Set only when the icon carries meaning no adjacent text provides. */

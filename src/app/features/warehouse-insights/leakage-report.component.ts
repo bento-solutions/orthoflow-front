@@ -1,3 +1,4 @@
+import { formatMoney } from '../../core/utils/format';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { Period, periodFor } from '../../core/utils/format';
@@ -195,5 +196,6 @@ export class LeakageReportComponent {
 
 /** Whole dirhams: a leakage figure to the centime invites an argument about the centime. */
 function money(v: number | null | undefined): string {
-  return `${Math.round(v ?? 0).toLocaleString('fr-MA')} DH`;
+  const lang = (typeof document !== 'undefined' && document.documentElement.lang) || 'fr';
+  return formatMoney(Math.round(v ?? 0), 'MAD', lang).replace(/[.,]00(?=\u00a0)/, '');
 }

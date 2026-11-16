@@ -1,7 +1,7 @@
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 import {
   ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, computed, effect, inject, input, signal, untracked, viewChild,
 } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
@@ -55,8 +55,8 @@ const remember = (key: string, value: string): void => {
 @Component({
   selector: 'app-perio-chart',
   standalone: true,
-  imports: [
-    DatePipe, FormsModule, TranslateModule, ModalComponent, PerioGridComponent, PerioSummaryComponent, PerioHelpComponent,
+  imports: [AppDatePipe, 
+    FormsModule, TranslateModule, ModalComponent, PerioGridComponent, PerioSummaryComponent, PerioHelpComponent,
     PerioTourComponent, PerioIconComponent, PerioProgressionComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -91,7 +91,7 @@ const remember = (key: string, value: string): void => {
             <label class="sr-only" for="perio-chart-select">{{ 'PERIO.TOOLBAR.CHART' | translate }}</label>
             <select id="perio-chart-select" class="pc-select" [ngModel]="open()!.id" (ngModelChange)="select($event)">
               @for (c of charts(); track c.id) {
-                <option [value]="c.id">{{ 'PERIO.TOOLBAR.CHART_OF' | translate: { date: (c.chartDate | date: 'mediumDate') } }}</option>
+                <option [value]="c.id">{{ 'PERIO.TOOLBAR.CHART_OF' | translate: { date: (c.chartDate | appDate) } }}</option>
               }
             </select>
             <button type="button" class="btn btn-secondary btn-sm" (click)="create()">
@@ -193,7 +193,7 @@ const remember = (key: string, value: string): void => {
       <ul class="deleted">
         @for (c of deleted(); track c.id) {
           <li>
-            <span>{{ 'PERIO.TOOLBAR.CHART_OF' | translate: { date: (c.chartDate | date: 'mediumDate') } }}</span>
+            <span>{{ 'PERIO.TOOLBAR.CHART_OF' | translate: { date: (c.chartDate | appDate) } }}</span>
             <button type="button" class="btn btn-secondary btn-sm" (click)="restore(c)">{{ 'PERIO.TOOLBAR.RESTORE' | translate }}</button>
           </li>
         }

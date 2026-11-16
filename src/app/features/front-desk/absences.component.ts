@@ -1,5 +1,4 @@
 import { Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../core/services/api-error.service';
@@ -10,6 +9,7 @@ import { loadable } from '../../core/utils/loadable';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { ModalComponent } from '../../shared/ui/modal.component';
 import { ABSENCE_REASONS, Absence, ClinicEvent, FrontDeskApi } from './front-desk-api.service';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /** The next three months from the start of last month, which is the window both lists show. */
 export function absenceWindow(today: Date = new Date()): { from: Date; to: Date } {
@@ -24,7 +24,7 @@ export function absenceWindow(today: Date = new Date()): { from: Date; to: Date 
 @Component({
   selector: 'app-absences',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent],
+  imports: [AppDatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent],
   template: `
     <section class="card">
       <div class="card-head">
@@ -37,7 +37,7 @@ export function absenceWindow(today: Date = new Date()): { from: Date; to: Date 
           <tbody>
             @for (a of absences.data(); track a.id) {
               <tr>
-                <td class="font-semibold">{{ a.practitionerName }}</td><td>{{ a.startsAt | date: 'short' }}</td><td>{{ a.endsAt | date: 'short' }}</td>
+                <td class="font-semibold">{{ a.practitionerName }}</td><td>{{ a.startsAt | appDate:'datetime' }}</td><td>{{ a.endsAt | appDate:'datetime' }}</td>
                 <td>{{ 'FD.ABS.REASONS.' + a.reason | translate }}@if (a.notes) { <span class="block text-xs text-ink-500">{{ a.notes }}</span> }</td>
                 <td class="cell-actions"><button type="button" class="btn btn-ghost btn-icon" (click)="removeAbsence(a)" [attr.aria-label]="('COMMON.DELETE' | translate) + ' ' + a.practitionerName"><app-icon name="trash" [size]="16" /></button></td>
               </tr>
@@ -59,7 +59,7 @@ export function absenceWindow(today: Date = new Date()): { from: Date; to: Date 
             @for (e of events.data(); track e.id) {
               <tr>
                 <td class="font-semibold"><span class="me-2 inline-block h-2.5 w-2.5 rounded-full" [style.background]="e.color || '#64748b'" aria-hidden="true"></span>{{ e.title }}</td>
-                <td>{{ e.startsAt | date: 'short' }}</td><td>{{ e.endsAt | date: 'short' }}</td>
+                <td>{{ e.startsAt | appDate:'datetime' }}</td><td>{{ e.endsAt | appDate:'datetime' }}</td>
                 <td class="cell-actions"><button type="button" class="btn btn-ghost btn-icon" (click)="removeEvent(e)" [attr.aria-label]="('COMMON.DELETE' | translate) + ' ' + e.title"><app-icon name="trash" [size]="16" /></button></td>
               </tr>
             } @empty { <tr><td colspan="4" class="py-6 text-center text-ink-500">{{ 'FD.EVENTS.EMPTY' | translate }}</td></tr> }

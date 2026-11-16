@@ -1,5 +1,5 @@
+import { IconComponent } from '../../../shared/ui/icon.component';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PassportWork } from '../../../core/api/contract';
@@ -9,6 +9,7 @@ import { TreatmentChartComponent } from './treatment-chart.component';
 import { LanguageService } from '../../../core/services/language.service';
 import { PassportLanguage, TreatmentPassportService } from '../../../core/services/treatment-passport.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
 
@@ -23,7 +24,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
 @Component({
   selector: 'app-treatment-log',
   standalone: true,
-  imports: [FormsModule, DatePipe, TranslateModule, TreatmentChartComponent],
+  imports: [IconComponent, AppDatePipe, FormsModule, TranslateModule, TreatmentChartComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="head">
@@ -45,13 +46,13 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
           </select>
         </label>
         <button type="button" class="btn primary" [disabled]="!consent || busy()" (click)="pdf()">
-          <span class="material-icons" aria-hidden="true">picture_as_pdf</span>{{ 'TREATMENT_LOG.PDF' | translate }}
+          <app-icon class="mi" name="picture_as_pdf" size="1em" />{{ 'TREATMENT_LOG.PDF' | translate }}
         </button>
         <button type="button" class="btn" [disabled]="!consent || busy()" (click)="chartPdf()">
-          <span class="material-icons" aria-hidden="true">grid_on</span>{{ 'TREATMENT_CHART.DOWNLOAD' | translate }}
+          <app-icon class="mi" name="grid_on" size="1em" />{{ 'TREATMENT_CHART.DOWNLOAD' | translate }}
         </button>
         <button type="button" class="btn" [disabled]="!consent || busy()" (click)="json()">
-          <span class="material-icons" aria-hidden="true">data_object</span>{{ 'TREATMENT_LOG.JSON' | translate }}
+          <app-icon class="mi" name="data_object" size="1em" />{{ 'TREATMENT_LOG.JSON' | translate }}
         </button>
       </div>
       <p class="hint">{{ 'TREATMENT_LOG.RECORDED' | translate }}</p>
@@ -72,7 +73,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
         @if (p.allergies?.length || p.medicalHistory?.length) {
           <ul class="chips">
             @for (a of p.allergies ?? []; track $index) {
-              <li class="chip alert"><span class="material-icons" aria-hidden="true">warning</span>{{ a.substance }}@if (a.reaction) { — {{ a.reaction }} }</li>
+              <li class="chip alert"><app-icon class="mi" name="warning" size="1em" />{{ a.substance }}@if (a.reaction) { — {{ a.reaction }} }</li>
             }
             @for (h of p.medicalHistory ?? []; track $index) {
               <li class="chip">{{ h.label }}@if (h.detail) { — {{ h.detail }} }</li>
@@ -90,7 +91,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
             @for (w of p.log; track $index) {
               <li class="entry" [attr.data-outcome]="w.outcome">
                 <div class="when">
-                  @if (w.date) { {{ w.date | date: 'mediumDate' }} } @else { <span class="muted">{{ 'TOOTH_DETAIL.DATE_UNKNOWN' | translate }}</span> }
+                  @if (w.date) { {{ w.date | appDate }} } @else { <span class="muted">{{ 'TOOTH_DETAIL.DATE_UNKNOWN' | translate }}</span> }
                 </div>
                 <div class="what">
                   <span class="title">
@@ -169,7 +170,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
     .btn.primary { background: var(--action); color: var(--text-inverse); }
     .btn:disabled { opacity: .5; cursor: not-allowed; }
     .btn:focus-visible, .lang select:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-    .btn .material-icons { font-size: 1.125rem; }
+    .btn app-icon.mi { font-size: 1.125rem; }
     .hint { margin: .625rem 0 0; font-size: .75rem; color: var(--text-muted-on-tint); }
     .error { color: var(--status-critical-text); }
     .block { margin-bottom: 1.5rem; }
@@ -177,7 +178,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
     .chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem; }
     .chip { display: inline-flex; align-items: center; gap: .25rem; padding: .25rem .625rem; border-radius: 999px; background: var(--status-idle-tint); color: var(--status-idle-text); font-size: .8125rem; }
     .chip.alert { background: var(--status-critical-tint); color: var(--status-critical-text); font-weight: 600; }
-    .chip.alert .material-icons { font-size: 1rem; }
+    .chip.alert app-icon.mi { font-size: 1rem; }
     .chip[data-state='HEALTHY'] { background: var(--status-done-tint); color: var(--status-done-text); }
     .chip[data-state='GINGIVITIS'] { background: var(--status-attention-tint); color: var(--status-attention-text); }
     .chip[data-state='PERIODONTITIS'] { background: var(--status-critical-tint); color: var(--status-critical-text); }

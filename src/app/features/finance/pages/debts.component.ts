@@ -1,5 +1,4 @@
 import { Component, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -11,6 +10,7 @@ import { MoneyPipe, NumPipe } from '../../../shared/pipes/money.pipe';
 import { ExportMenuComponent } from '../../../shared/ui/export-menu.component';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { PeriodPickerComponent } from '../../../shared/ui/period-picker.component';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 /**
  * What each patient was charged, has paid and still owes. The period narrows the invoices
@@ -20,7 +20,7 @@ import { PeriodPickerComponent } from '../../../shared/ui/period-picker.componen
 @Component({
   selector: 'app-debts',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, NumPipe, ExportMenuComponent, IconComponent, PeriodPickerComponent],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, NumPipe, ExportMenuComponent, IconComponent, PeriodPickerComponent],
   template: `
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <label class="search">
@@ -36,7 +36,7 @@ import { PeriodPickerComponent } from '../../../shared/ui/period-picker.componen
       <app-export-menu class="ms-auto" path="/finance/debts/export" [query]="exportQuery()" fallbackName="patient-balances" />
     </div>
     <details class="mb-4 text-sm" [open]="!!period()">
-      <summary class="cursor-pointer text-ink-600">{{ 'FIN.DEBT.PERIOD' | translate }}@if (period()) { : {{ period()!.from | date: 'mediumDate' }} → {{ period()!.to | date: 'mediumDate' }} }</summary>
+      <summary class="cursor-pointer text-ink-600">{{ 'FIN.DEBT.PERIOD' | translate }}@if (period()) { : {{ period()!.from | appDate }} → {{ period()!.to | appDate }} }</summary>
       <div class="mt-2 flex flex-wrap items-end gap-3">
         <app-period-picker [value]="period() ?? defaultPeriod" (valueChange)="period.set($event)" [presets]="presets" />
         @if (period()) { <button type="button" class="btn btn-ghost btn-sm" (click)="period.set(null)">{{ 'COMMON.CLEAR_FILTERS' | translate }}</button> }
@@ -68,8 +68,8 @@ import { PeriodPickerComponent } from '../../../shared/ui/period-picker.componen
                 <td class="cell-num">{{ r.paid | money }}</td>
                 <td class="cell-num" [class.font-bold]="r.balance > 0" [class.text-critical-700]="r.balance > 0">{{ r.balance > 0 ? (r.balance | money) : '—' }}</td>
                 <td class="cell-num text-positive-700">{{ r.credit > 0 ? (r.credit | money) : '—' }}</td>
-                <td>{{ r.lastInvoice ? (r.lastInvoice | date: 'mediumDate') : '—' }}</td>
-                <td>{{ r.lastPayment ? (r.lastPayment | date: 'mediumDate') : '—' }}</td>
+                <td>{{ r.lastInvoice ? (r.lastInvoice | appDate) : '—' }}</td>
+                <td>{{ r.lastPayment ? (r.lastPayment | appDate) : '—' }}</td>
               </tr>
             } @empty {
               <tr><td colspan="8" class="py-8 text-center text-ink-500">{{ 'FIN.DEBT.EMPTY' | translate }}</td></tr>

@@ -1,3 +1,5 @@
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -25,7 +27,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 @Component({
   selector: 'app-treatment-sessions',
   standalone: true,
-  imports: [RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink],
+  imports: [AppDatePipe, MoneyPipe, RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       
@@ -93,14 +95,14 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     <div class="text-[10px] text-ink-500">CIN: {{ inv.patient?.cin || '—' }}</div>
                   </td>
                   <td class="p-4 font-semibold text-ink-700">{{ inv.treatment?.name }}</td>
-                  <td class="p-4 text-ink-500 font-medium">{{ inv.sessionDate | date:'yyyy-MM-dd HH:mm' }}</td>
+                  <td class="p-4 text-ink-500 font-medium">{{ inv.sessionDate | appDate:'datetime' }}</td>
                   <td class="p-4 text-center">
                     <span class="px-2.5 py-1 text-xs font-bold rounded-full border uppercase" [ngClass]="getInvoiceStatusClasses(inv.status!)">
                       {{ inv.status }}
                     </span>
                   </td>
-                  <td class="p-4 text-right font-medium text-emerald-700">{{ inv.consumablesCost | number:'1.2-2' }} DH</td>
-                  <td class="p-4 text-right font-bold text-ink-900">{{ inv.total | number:'1.2-2' }} DH</td>
+                  <td class="p-4 text-right font-medium text-emerald-700">{{ inv.consumablesCost | money }}</td>
+                  <td class="p-4 text-right font-bold text-ink-900">{{ inv.total | money }}</td>
                   <td class="p-4 text-right">
                     <div class="flex items-center justify-end gap-2">
                       @if (inv.status === 'DRAFT') {
@@ -165,7 +167,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     <select id="treatment-sessions-logTreatmentId" [(ngModel)]="logTreatmentId" (ngModelChange)="refreshQuote()" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white font-medium">
                       <option [value]="null">{{ "TREATMENTS.SELECT_TREATMENT_PLACEHOLDER" | translate }}</option>
                       @for (t of treatments(); track t.id) {
-                        <option [value]="t.id">{{ t.name }} ({{ t.basePrice }} DH)</option>
+                        <option [value]="t.id">{{ t.name }} ({{ t.basePrice | money }})</option>
                       }
                     </select>
                   </div>
@@ -237,7 +239,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                             </div>
                             <div class="col-span-3 text-right">
                               <span class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.USAGE_COST" | translate }}</span>
-                              <span class="font-bold text-emerald-700 block py-1.5 text-xs">{{ (c.actualQuantity * c.pricePerUnit) | number:'1.2-2' }} DH</span>
+                              <span class="font-bold text-emerald-700 block py-1.5 text-xs">{{ (c.actualQuantity * c.pricePerUnit) | money }}</span>
                             </div>
                             <div class="col-span-1 text-center">
                               <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="removeDraftConsumable(idx)" class="p-1.5 hover:bg-red-50 text-red-700 rounded-lg transition mb-1">
@@ -313,26 +315,26 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
                       <div class="flex justify-between">
                         <span>{{ "TREATMENTS.TREATMENT_FEE" | translate }}:</span>
-                        <span class="font-bold text-ink-900">{{ activeDraft()?.treatmentPrice | number:'1.2-2' }} DH</span>
+                        <span class="font-bold text-ink-900">{{ activeDraft()?.treatmentPrice | money }}</span>
                       </div>
                       <div class="flex justify-between">
                         <span>{{ "TREATMENTS.MATERIALS_COST" | translate }}:</span>
-                        <span class="font-bold text-emerald-700">+{{ activeDraft()?.consumablesCost | number:'1.2-2' }} DH</span>
+                        <span class="font-bold text-emerald-700">+{{ activeDraft()?.consumablesCost | money }}</span>
                       </div>
                       <div class="flex justify-between">
                         <span>{{ "TREATMENTS.SUBTOTAL" | translate }}:</span>
-                        <span class="font-bold text-ink-900">{{ activeDraft()?.subtotal | number:'1.2-2' }} DH</span>
+                        <span class="font-bold text-ink-900">{{ activeDraft()?.subtotal | money }}</span>
                       </div>
                       <div class="flex justify-between text-emerald-700">
                         <span>{{ "TREATMENTS.DISCOUNT_LABEL" | translate }}:</span>
-                        <span>-{{ activeDraft()?.discountAmount | number:'1.2-2' }} DH</span>
+                        <span>-{{ activeDraft()?.discountAmount | money }}</span>
                       </div>
 
                       <hr class="border-ortho-navy/5">
 
                       <div class="flex justify-between items-baseline text-sm font-bold text-ink-900 pt-2">
                         <span>{{ "TREATMENTS.GRAND_TOTAL" | translate }}:</span>
-                        <span class="text-lg font-extrabold text-ink-900">{{ activeDraft()?.total | number:'1.2-2' }} DH</span>
+                        <span class="text-lg font-extrabold text-ink-900">{{ activeDraft()?.total | money }}</span>
                       </div>
                     </div>
 

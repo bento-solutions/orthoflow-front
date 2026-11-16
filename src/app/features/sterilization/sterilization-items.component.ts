@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../core/services/api-error.service';
@@ -15,6 +14,7 @@ import { ModalComponent } from '../../shared/ui/modal.component';
 import { ItemActionsComponent, stateTone } from './item-actions.component';
 import { SterilizationHandoff } from './sterilization-handoff.service';
 import { Router } from '@angular/router';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /** Which of the chosen ids still exist in the list (an item can be retired or filtered away between selecting and printing). */
 export function stillListed(selected: ReadonlySet<string>, items: readonly Pick<SterilItem, 'id'>[]): string[] {
@@ -42,7 +42,7 @@ const blankItem = (): ItemForm => ({ code: '', name: '', kind: 'INSTRUMENT', ser
 @Component({
   selector: 'app-sterilization-items',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent, ItemActionsComponent],
+  imports: [AppDatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent, ItemActionsComponent],
   template: `
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <label class="search"><span class="sr-only">{{ 'COMMON.SEARCH' | translate }}</span><app-icon name="search" [size]="16" />
@@ -79,8 +79,8 @@ const blankItem = (): ItemForm => ({ code: '', name: '', kind: 'INSTRUMENT', ser
               <td><span class="pill" [class]="'pill ' + tone(i.state)">{{ 'STER.STATES.' + i.state | translate }}</span>
                 @if (!i.active) { <span class="ms-1 pill pill-idle pill-nodot">{{ 'STER.ITEMS.RETIRED' | translate }}</span> }
                 @if (i.lubricationDue) { <span class="ms-1 pill pill-attention pill-nodot">{{ 'STER.ITEMS.LUBRICATE' | translate }}</span> }
-                <span class="block text-xs text-ink-500">{{ i.stateChangedAt | date: 'short' }}</span></td>
-              <td>{{ i.lastUsedAt ? (i.lastUsedAt | date: 'short') : '—' }}</td>
+                <span class="block text-xs text-ink-500">{{ i.stateChangedAt | appDate:'datetime' }}</span></td>
+              <td>{{ i.lastUsedAt ? (i.lastUsedAt | appDate:'datetime') : '—' }}</td>
               <td class="cell-actions">
                 <span class="inline-flex flex-wrap items-center justify-end gap-1">
                   <button type="button" class="btn btn-ghost btn-sm" (click)="openHistory(i)">{{ 'STER.ITEMS.HISTORY' | translate }}</button>
@@ -134,7 +134,7 @@ const blankItem = (): ItemForm => ({ code: '', name: '', kind: 'INSTRUMENT', ser
         <ol class="space-y-2">
           @for (e of events(); track e.eventId) {
             <li class="rounded-md border border-ink-100 p-3 text-sm">
-              <p class="font-semibold text-ink-900">{{ 'STER.ACTION_NAMES.' + e.action | translate }} <span class="font-normal text-ink-500">· {{ e.at | date: 'medium' }}@if (e.performedBy) { · {{ e.performedBy }} }</span></p>
+              <p class="font-semibold text-ink-900">{{ 'STER.ACTION_NAMES.' + e.action | translate }} <span class="font-normal text-ink-500">· {{ e.at | appDate:'datetime' }}@if (e.performedBy) { · {{ e.performedBy }} }</span></p>
               @if (e.patientName) { <p class="text-ink-700">{{ 'STER.TRACE.ON_PATIENT' | translate }} {{ e.patientName }} <span class="mono text-xs text-ink-500">{{ e.patientCode }}</span></p> }
               @if (e.cycleNumber) { <p class="text-ink-700">{{ 'STER.TRACE.CYCLE' | translate }} #{{ e.cycleNumber }} · {{ e.autoclaveName }}@if (e.controlResult) { · {{ 'STER.RESULTS.' + e.controlResult | translate }} }</p> }
               @if (e.note) { <p class="text-ink-600">{{ e.note }}</p> }

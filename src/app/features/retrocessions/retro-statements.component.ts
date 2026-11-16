@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AnalyticsApi, Statement, StatementSummary } from '../../core/services/analytics-api.service';
@@ -16,6 +15,7 @@ import { CanDirective } from '../../shared/directives/can.directive';
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { ModalComponent } from '../../shared/ui/modal.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 export function statementTone(status: Statement['status']): string {
   return { UNPAID: 'pill-attention', PARTIAL: 'pill-active', PAID: 'pill-done', VOID: 'pill-idle' }[status];
@@ -34,7 +34,7 @@ export function remaining(s: Pick<Statement, 'net' | 'paid' | 'status'>): number
 @Component({
   selector: 'app-retro-statements',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, MoneyPipe, IconComponent, ModalComponent, CanDirective],
+  imports: [AppDatePipe, FormsModule, TranslateModule, MoneyPipe, IconComponent, ModalComponent, CanDirective],
   template: `
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <label class="field w-auto"><span class="label">{{ 'COMMON.PRACTITIONER' | translate }}</span>
@@ -56,7 +56,7 @@ export function remaining(s: Pick<Statement, 'net' | 'paid' | 'status'>): number
             <tr class="row-clickable" [class.opacity-60]="s.status === 'VOID'" (click)="open(s.id)">
               <td><button type="button" class="font-bold text-ink-900 hover:text-petrol-700" (click)="open(s.id); $event.stopPropagation()">{{ s.number }}</button></td>
               <td>{{ s.practitionerName }}</td>
-              <td class="whitespace-nowrap">{{ s.from | date: 'shortDate' }} → {{ s.to | date: 'shortDate' }}</td>
+              <td class="whitespace-nowrap">{{ s.from | appDate }} → {{ s.to | appDate }}</td>
               <td class="cell-num">{{ s.gross | money }}</td>
               <td class="cell-num">{{ s.advancesDeducted | money }}</td>
               <td class="cell-num font-semibold">{{ s.net | money }}</td>
@@ -73,7 +73,7 @@ export function remaining(s: Pick<Statement, 'net' | 'paid' | 'status'>): number
     <app-modal [open]="detail() !== null" [title]="detail()?.number ?? ''" size="xl" (closed)="detail.set(null)">
       @if (detail(); as d) {
         <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <p class="text-sm text-ink-700"><strong>{{ d.practitionerName }}</strong> · {{ d.from | date: 'mediumDate' }} → {{ d.to | date: 'mediumDate' }}
+          <p class="text-sm text-ink-700"><strong>{{ d.practitionerName }}</strong> · {{ d.from | appDate }} → {{ d.to | appDate }}
             <span class="ms-2 pill" [class]="'pill ' + tone(d.status)">{{ 'RETRO.ST.STATUSES.' + d.status | translate }}</span></p>
           <button type="button" class="btn btn-secondary btn-sm" (click)="pdf(d)"><app-icon name="file-text" [size]="15" /> PDF</button>
         </div>
@@ -87,12 +87,12 @@ export function remaining(s: Pick<Statement, 'net' | 'paid' | 'status'>): number
           <div><dt class="text-ink-500">{{ 'RETRO.ADVANCES_APPLIED' | translate }}</dt><dd class="font-semibold tabular-nums">−{{ d.advancesDeducted | money }}</dd></div>
           <div><dt class="text-ink-500">{{ 'RETRO.NET' | translate }}</dt><dd class="text-base font-extrabold tabular-nums text-petrol-700">{{ d.net | money }}</dd></div>
         </dl>
-        @if (d.status === 'VOID') { <p class="mb-4 rounded-md bg-critical-50 p-3 text-sm text-critical-700" role="note">{{ 'RETRO.ST.VOIDED' | translate: { at: (d.voidedAt | date: 'medium') } }} @if (d.voidReason) { — {{ d.voidReason }} }</p> }
+        @if (d.status === 'VOID') { <p class="mb-4 rounded-md bg-critical-50 p-3 text-sm text-critical-700" role="note">{{ 'RETRO.ST.VOIDED' | translate: { at: (d.voidedAt | appDate:'datetime') } }} @if (d.voidReason) { — {{ d.voidReason }} }</p> }
 
         <h3 class="section-title">{{ 'RETRO.ST.PAYOUTS' | translate }}</h3>
         <table class="data-table mb-4">
           <tbody>
-            @for (p of d.payouts; track p.id) { <tr><td>{{ p.paidDate | date: 'mediumDate' }}</td><td>{{ p.method }}@if (p.reference) { · {{ p.reference }} }</td><td class="cell-num font-semibold">{{ p.amount | money }}</td></tr> }
+            @for (p of d.payouts; track p.id) { <tr><td>{{ p.paidDate | appDate }}</td><td>{{ p.method }}@if (p.reference) { · {{ p.reference }} }</td><td class="cell-num font-semibold">{{ p.amount | money }}</td></tr> }
             @empty { <tr><td class="py-3 text-ink-500">{{ 'RETRO.ST.NO_PAYOUTS' | translate }}</td></tr> }
           </tbody>
           @if (d.payouts.length) { <tfoot><tr class="font-bold"><td colspan="2" class="text-start">{{ 'RETRO.ST.REMAINING' | translate }}</td><td class="cell-num">{{ left(d) | money }}</td></tr></tfoot> }
@@ -114,7 +114,7 @@ export function remaining(s: Pick<Statement, 'net' | 'paid' | 'status'>): number
             <table class="data-table">
               <tbody>
                 @for (l of d.lines; track $index) {
-                  <tr><td>{{ l.date | date: 'shortDate' }}</td><td>{{ l.invoiceNumber }}<span class="block text-xs text-ink-500 mono">{{ l.patientCode }}</span></td><td>{{ l.label }}</td>
+                  <tr><td>{{ l.date | appDate }}</td><td>{{ l.invoiceNumber }}<span class="block text-xs text-ink-500 mono">{{ l.patientCode }}</span></td><td>{{ l.label }}</td>
                     <td class="cell-num">{{ l.base | money }}</td><td class="cell-num">{{ l.ratePercent ?? '—' }}</td><td class="cell-num font-semibold">{{ l.amount | money }}</td></tr>
                 }
               </tbody>

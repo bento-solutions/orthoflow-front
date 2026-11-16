@@ -1,15 +1,15 @@
 import { Component, ElementRef, HostListener, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { DatePipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { Notification, NotificationService, notificationLink } from '../../core/services/notification.service';
 import { IconComponent } from '../../shared/ui/icon.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /** The bell in the header: a count, and a list of what the system has told this person. */
 @Component({
   selector: 'app-notification-bell',
   standalone: true,
-  imports: [TranslateModule, IconComponent, DatePipe],
+  imports: [AppDatePipe, TranslateModule, IconComponent],
   template: `
     <div class="relative">
       <button type="button" class="btn btn-ghost btn-icon relative" (click)="toggle()" aria-haspopup="dialog" [attr.aria-expanded]="open()"
@@ -41,7 +41,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
                     <span class="min-w-0">
                       <span class="block truncate text-sm" [class.font-bold]="!n.read" [class.text-ink-900]="!n.read" [class.text-ink-600]="n.read">{{ n.subject }}</span>
                       <span class="line-clamp-2 block text-xs text-ink-500">{{ n.body }}</span>
-                      <span class="mt-0.5 block text-2xs text-ink-500">{{ n.createdAt | date: 'short' }}</span>
+                      <span class="mt-0.5 block text-2xs text-ink-500">{{ n.createdAt | appDate:'datetime' }}</span>
                     </span>
                   </span>
                 </button>

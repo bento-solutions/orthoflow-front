@@ -1,5 +1,6 @@
+import { IconComponent } from '../../../shared/ui/icon.component';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 import { ChangeDetectionStrategy, Component, OnDestroy, computed, effect, inject, input, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
@@ -65,7 +66,7 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
 @Component({
   selector: 'app-patient-photos',
   standalone: true,
-  imports: [DialogDirective, DatePipe, FormsModule, TranslateModule],
+  imports: [IconComponent, AppDatePipe, DialogDirective, FormsModule, TranslateModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown.escape)': 'lightbox.set(null)' },
   template: `
@@ -80,13 +81,13 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
             @if (series().length > 1) {
               <button type="button" class="btn btn-secondary btn-sm" [class.is-on]="comparing()"
                       [attr.aria-pressed]="comparing()" (click)="toggleCompare()">
-                <span class="material-icons" aria-hidden="true">compare</span>
+                <app-icon class="mi" name="compare" size="1em" />
                 {{ 'PATIENTS.PHOTOS.COMPARE' | translate }}
               </button>
             }
             @if (canWrite()) {
               <button type="button" class="btn btn-primary btn-sm" (click)="openForm(null)">
-                <span class="material-icons" aria-hidden="true">add_a_photo</span>
+                <app-icon class="mi" name="add_a_photo" size="1em" />
                 {{ 'PATIENTS.PHOTOS.NEW_SERIES' | translate }}
               </button>
             }
@@ -124,12 +125,12 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
         <p class="photos-sub">{{ 'COMMON.LOADING' | translate }}</p>
       } @else if (!series().length) {
         <div class="empty">
-          <span class="material-icons empty-icon" aria-hidden="true">photo_camera</span>
+          <app-icon class="mi empty-icon" name="photo_camera" size="1em" />
           <p class="empty-title">{{ 'PATIENTS.PHOTOS.EMPTY_TITLE' | translate }}</p>
           <p class="empty-text">{{ 'PATIENTS.PHOTOS.EMPTY_TEXT' | translate }}</p>
           @if (canWrite()) {
             <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="startInitial()">
-              <span class="material-icons" aria-hidden="true">add_a_photo</span>
+              <app-icon class="mi" name="add_a_photo" size="1em" />
               {{ 'PATIENTS.PHOTOS.START_INITIAL' | translate }}
             </button>
           }
@@ -141,7 +142,7 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
             <button type="button" role="tab" class="series-chip" [class.active]="s.id === selectedId()"
                     [attr.aria-selected]="s.id === selectedId()" (click)="select(s.id)">
               <span class="chip-stage">{{ 'PATIENTS.PHOTOS.STAGES.' + s.stage | translate }}</span>
-              <span class="chip-date">{{ s.takenOn | date:'mediumDate' }}</span>
+              <span class="chip-date">{{ s.takenOn | appDate }}</span>
               <span class="chip-count">{{ s.photos.length }}/{{ totalViews }}</span>
             </button>
           }
@@ -154,14 +155,14 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
               <select class="select" [ngModel]="compareId()" (ngModelChange)="setCompare($event)" name="compareWith"
                       [attr.aria-label]="'PATIENTS.PHOTOS.COMPARE_WITH' | translate">
                 @for (s of otherSeries(); track s.id) {
-                  <option [value]="s.id">{{ 'PATIENTS.PHOTOS.STAGES.' + s.stage | translate }} · {{ s.takenOn | date:'mediumDate' }}</option>
+                  <option [value]="s.id">{{ 'PATIENTS.PHOTOS.STAGES.' + s.stage | translate }} · {{ s.takenOn | appDate }}</option>
                 }
               </select>
             </div>
             @if (compared(); as other) {
               <div class="compare-grid">
-                <div class="compare-head">{{ 'PATIENTS.PHOTOS.STAGES.' + other.stage | translate }} · {{ other.takenOn | date:'mediumDate' }}</div>
-                <div class="compare-head">{{ 'PATIENTS.PHOTOS.STAGES.' + current.stage | translate }} · {{ current.takenOn | date:'mediumDate' }}</div>
+                <div class="compare-head">{{ 'PATIENTS.PHOTOS.STAGES.' + other.stage | translate }} · {{ other.takenOn | appDate }}</div>
+                <div class="compare-head">{{ 'PATIENTS.PHOTOS.STAGES.' + current.stage | translate }} · {{ current.takenOn | appDate }}</div>
                 @for (slot of comparedSlots(); track slot.view) {
                   <div class="compare-label">{{ 'PATIENTS.PHOTOS.VIEWS.' + slot.view | translate }}</div>
                   @for (s of [other, current]; track s.id) {
@@ -181,17 +182,17 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
           } @else {
             <div class="series-meta">
               <span class="meta-progress" [class.complete]="current.photos.length === totalViews">
-                <span class="material-icons" aria-hidden="true">{{ current.photos.length === totalViews ? 'task_alt' : 'photo_library' }}</span>
+                <app-icon class="mi" [name]="current.photos.length === totalViews ? 'task_alt' : 'photo_library'" size="1em" />
                 {{ 'PATIENTS.PHOTOS.PROGRESS' | translate: { done: current.photos.length, total: totalViews } }}
               </span>
               @if (current.note) { <span class="meta-note">{{ current.note }}</span> }
               @if (canWrite()) {
                 <span class="meta-actions">
                   <button type="button" class="btn btn-ghost btn-sm" (click)="openForm(current)">
-                    <span class="material-icons" aria-hidden="true">edit</span>{{ 'PATIENTS.PHOTOS.EDIT_SERIES' | translate }}
+                    <app-icon class="mi" name="edit" size="1em" />{{ 'PATIENTS.PHOTOS.EDIT_SERIES' | translate }}
                   </button>
                   <button type="button" class="btn btn-danger-ghost btn-sm" (click)="deleteSeries(current)">
-                    <span class="material-icons" aria-hidden="true">delete</span>{{ 'PATIENTS.PHOTOS.DELETE_SERIES' | translate }}
+                    <app-icon class="mi" name="delete" size="1em" />{{ 'PATIENTS.PHOTOS.DELETE_SERIES' | translate }}
                   </button>
                 </span>
               }
@@ -227,7 +228,7 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
                     @if (canWrite()) {
                       <div class="slot-actions">
                         <label class="btn btn-secondary btn-sm file-btn" [class.disabled]="busy().has(slot.view)">
-                          <span class="material-icons" aria-hidden="true">{{ hasPhoto(current, slot.view) ? 'sync' : 'upload' }}</span>
+                          <app-icon class="mi" [name]="hasPhoto(current, slot.view) ? 'sync' : 'upload'" size="1em" />
                           {{ (hasPhoto(current, slot.view) ? 'PATIENTS.PHOTOS.REPLACE' : 'PATIENTS.PHOTOS.CHOOSE_FILE') | translate }}
                           <input type="file" class="sr-only" [accept]="accept" [disabled]="busy().has(slot.view)"
                                  (change)="onPick($event, slot.view)" />
@@ -236,7 +237,7 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
                           <button type="button" class="btn btn-ghost btn-sm btn-icon" (click)="removePhoto(current, slot.view)"
                                   [attr.aria-label]="('PATIENTS.PHOTOS.REMOVE' | translate) + ' ' + ('PATIENTS.PHOTOS.VIEWS.' + slot.view | translate)"
                                   [title]="'PATIENTS.PHOTOS.REMOVE' | translate">
-                            <span class="material-icons" aria-hidden="true">delete</span>
+                            <app-icon class="mi" name="delete" size="1em" />
                           </button>
                         }
                       </div>
@@ -261,7 +262,7 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
         </figure>
         <button type="button" class="lightbox-close btn btn-secondary btn-icon" (click)="lightbox.set(null)"
                 [attr.aria-label]="'COMMON.CLOSE' | translate">
-          <span class="material-icons" aria-hidden="true">close</span>
+          <app-icon class="mi" name="close" size="1em" />
         </button>
       </div>
     }
@@ -274,7 +275,7 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
     .photos-sub { margin: 0.25rem 0 0; color: var(--text-muted); font-size: 0.875rem; max-width: 60ch; }
     .head-actions { display: flex; gap: 0.5rem; }
     .head-actions .is-on { background: var(--action-tint); border-color: var(--action-border); color: var(--action-text); }
-    .btn .material-icons { font-size: 1.1rem; }
+    .btn app-icon.mi { font-size: 1.1rem; }
 
     .series-form { display: grid; grid-template-columns: 1fr 1fr 2fr auto; gap: 0.75rem; align-items: end; }
     .form-actions { display: flex; gap: 0.5rem; }
@@ -296,7 +297,7 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
 
     .series-meta { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
     .meta-progress { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; font-weight: 600; color: var(--text-muted); }
-    .meta-progress .material-icons { font-size: 1.1rem; }
+    .meta-progress app-icon.mi { font-size: 1.1rem; }
     .meta-progress.complete { color: var(--status-done-text); }
     .meta-note { color: var(--text-muted); font-size: 0.875rem; font-style: italic; }
     .meta-actions { margin-inline-start: auto; display: flex; gap: 0.25rem; }

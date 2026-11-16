@@ -1,5 +1,5 @@
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -53,7 +53,7 @@ export function eligible(items: readonly SterilItem[]): SterilItem[] {
 @Component({
   selector: 'app-sterilization-cycles',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent, PeriodPickerComponent],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent, PeriodPickerComponent],
   template: `
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <app-period-picker [value]="period()" (valueChange)="period.set($event)" [presets]="presets" />
@@ -81,7 +81,7 @@ export function eligible(items: readonly SterilItem[]): SterilItem[] {
           @for (c of cycles.data(); track c.id) {
             <tr class="row-clickable" (click)="open(c.id)">
               <td><button type="button" class="font-bold text-ink-900 hover:text-petrol-700" (click)="open(c.id); $event.stopPropagation()">{{ c.number }}</button></td>
-              <td>{{ c.autoclaveName }}</td><td>{{ c.program }}</td><td class="whitespace-nowrap">{{ c.startedAt | date: 'short' }}</td><td>{{ c.operatorName }}</td>
+              <td>{{ c.autoclaveName }}</td><td>{{ c.program }}</td><td class="whitespace-nowrap">{{ c.startedAt | appDate:'datetime' }}</td><td>{{ c.operatorName }}</td>
               <td><span class="pill" [class]="'pill ' + tone(c.controlResult)">{{ 'STER.RESULTS.' + c.controlResult | translate }}</span><span class="block text-xs text-ink-500">{{ 'STER.CONTROL_TYPES.' + c.controlType | translate }}</span></td>
               <td class="cell-num">{{ c.itemCount }}</td>
             </tr>
@@ -93,7 +93,7 @@ export function eligible(items: readonly SterilItem[]): SterilItem[] {
     <!-- A cycle -->
     <app-modal [open]="detail() !== null" [title]="detail() ? ('STER.CYCLES.CYCLE' | translate) + ' #' + detail()!.summary.number : ''" size="lg" (closed)="detail.set(null)">
       @if (detail(); as d) {
-        <p class="mb-3 text-sm text-ink-700"><strong>{{ d.summary.autoclaveName }}</strong> · {{ d.summary.program }} · {{ d.summary.startedAt | date: 'medium' }}@if (d.summary.finishedAt) { → {{ d.summary.finishedAt | date: 'shortTime' }} } · {{ d.summary.operatorName }}
+        <p class="mb-3 text-sm text-ink-700"><strong>{{ d.summary.autoclaveName }}</strong> · {{ d.summary.program }} · {{ d.summary.startedAt | appDate:'datetime' }}@if (d.summary.finishedAt) { → {{ d.summary.finishedAt | appDate:'time' }} } · {{ d.summary.operatorName }}
           <span class="ms-2 pill" [class]="'pill ' + tone(d.summary.controlResult)">{{ 'STER.RESULTS.' + d.summary.controlResult | translate }}</span></p>
         @for (w of d.warnings; track w) { <p class="mb-2 rounded-md bg-caution-50 p-2 text-sm text-caution-800" role="note">{{ warning(w) }}</p> }
         @if (d.notes) { <p class="mb-3 text-sm text-ink-600">{{ d.notes }}</p> }
@@ -131,7 +131,7 @@ export function eligible(items: readonly SterilItem[]): SterilItem[] {
               <ul class="space-y-1 text-sm">
                 @for (u of e.uses; track u.eventId) {
                   <li class="rounded bg-surface px-2 py-1.5"><a class="font-semibold text-ink-900 no-underline hover:underline" [routerLink]="['/patients', u.patientId]">{{ u.patientName }}</a> <span class="mono text-xs text-ink-500">{{ u.patientCode }}</span>
-                    — {{ u.itemCode }} {{ u.itemName }} · {{ u.at | date: 'medium' }}</li>
+                    — {{ u.itemCode }} {{ u.itemName }} · {{ u.at | appDate:'datetime' }}</li>
                 } @empty { <li class="text-critical-800">{{ 'STER.CYCLES.NOBODY_EXPOSED' | translate }}</li> }
               </ul>
             }

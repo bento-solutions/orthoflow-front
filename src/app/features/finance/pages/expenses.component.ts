@@ -1,5 +1,5 @@
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../../core/services/api-error.service';
@@ -57,7 +57,7 @@ const blankCategory = () => ({ code: '', nameFr: '', nameEn: '', nameAr: '', kin
 @Component({
   selector: 'app-expenses',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, MoneyPipe, ExportMenuComponent, IconComponent, ModalComponent, PeriodPickerComponent, StatusPillComponent, CanDirective],
+  imports: [AppDatePipe, FormsModule, TranslateModule, MoneyPipe, ExportMenuComponent, IconComponent, ModalComponent, PeriodPickerComponent, StatusPillComponent, CanDirective],
   template: `
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <app-period-picker [value]="period()" (valueChange)="period.set($event)" [presets]="presets" />
@@ -97,15 +97,15 @@ const blankCategory = () => ({ code: '', nameFr: '', nameEn: '', nameAr: '', kin
         <tbody>
           @for (e of expenses.data(); track e.id) {
             <tr [class.opacity-60]="e.status === 'CANCELLED'">
-              <td>{{ e.expenseDate | date: 'mediumDate' }}</td>
+              <td>{{ e.expenseDate | appDate }}</td>
               <td>{{ e.categoryName }}@if (e.recurrence !== 'NONE') { <span class="block text-xs text-ink-500">{{ 'FIN.EXP.RECURRENCES.' + e.recurrence | translate }}</span> }</td>
               <td>{{ e.payee || '—' }}@if (e.description) { <span class="block text-xs text-ink-500">{{ e.description }}</span> }</td>
               <td class="cell-num font-semibold" [class.line-through]="e.status === 'CANCELLED'">{{ e.amount | money }}</td>
-              <td>{{ e.dueDate ? (e.dueDate | date: 'mediumDate') : '—' }}</td>
+              <td>{{ e.dueDate ? (e.dueDate | appDate) : '—' }}</td>
               <td>
                 <span class="flex flex-wrap items-center gap-1.5">
                   <app-status-pill [status]="e.overdue ? 'OVERDUE' : e.status" />
-                  @if (e.status === 'PAID' && e.method) { <span class="text-xs text-ink-500">{{ 'BILLING.METHODS.' + e.method | translate }}@if (e.paidDate) { · {{ e.paidDate | date: 'shortDate' }} }</span> }
+                  @if (e.status === 'PAID' && e.method) { <span class="text-xs text-ink-500">{{ 'BILLING.METHODS.' + e.method | translate }}@if (e.paidDate) { · {{ e.paidDate | appDate }} }</span> }
                 </span>
               </td>
               <td class="cell-actions">

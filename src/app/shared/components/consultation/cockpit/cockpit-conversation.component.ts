@@ -1,3 +1,4 @@
+import { IconComponent } from '../../../ui/icon.component';
 import {
   ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, computed, inject, input, signal, untracked, viewChild,
 } from '@angular/core';
@@ -20,7 +21,7 @@ import { ConsultationSuggestionComponent } from '../consultation-suggestion.comp
 @Component({
   selector: 'app-cockpit-conversation',
   standalone: true,
-  imports: [FormsModule, TranslateModule, ConsultationSuggestionComponent],
+  imports: [IconComponent, FormsModule, TranslateModule, ConsultationSuggestionComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="ck-conv" [attr.aria-label]="'COCKPIT.CONVERSATION' | translate">
@@ -63,7 +64,7 @@ import { ConsultationSuggestionComponent } from '../consultation-suggestion.comp
           <input type="text" name="typed" [(ngModel)]="typed" autocomplete="off" enterkeyhint="send"
                  [placeholder]="'COCKPIT.TYPE_INSTEAD' | translate" [attr.aria-label]="'COCKPIT.TYPE_INSTEAD' | translate" />
           <button type="submit" class="ck-send" [attr.aria-label]="'VOICE.SEND' | translate">
-            <span class="material-icons" aria-hidden="true">send</span>
+            <app-icon class="mi" name="send" size="1em" />
           </button>
         </form>
       }

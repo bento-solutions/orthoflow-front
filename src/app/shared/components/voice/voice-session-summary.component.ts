@@ -1,3 +1,4 @@
+import { IconComponent } from '../../ui/icon.component';
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -19,7 +20,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 @Component({
   selector: 'app-voice-session-summary',
   standalone: true,
-  imports: [TranslateModule, DialogDirective, CommonModule, FormsModule],
+  imports: [IconComponent, TranslateModule, DialogDirective, CommonModule, FormsModule],
   template: `
     @if (session.summaryOpen() && session.summary(); as summary) {
       <div class="summary-backdrop" (click)="session.closeSummary()">
@@ -33,7 +34,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
               </p>
             </div>
             <button type="button" class="icon-btn" (click)="session.closeSummary()" [attr.aria-label]="'COMMON.CLOSE' | translate">
-              <span aria-hidden="true" class="material-icons">close</span>
+              <app-icon class="mi" name="close" size="1em" />
             </button>
           </header>
 
@@ -86,7 +87,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
                 <ul class="plain">
                   @for (substance of summary.allergies; track substance) {
                     <li class="allergy">
-                      <span aria-hidden="true" class="material-icons">warning</span> {{ substance }}
+                      <app-icon class="mi" name="warning" size="1em" /> {{ substance }}
                     </li>
                   }
                 </ul>
@@ -156,7 +157,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
             <div class="footer-actions">
               <button type="button" class="btn btn-secondary" (click)="session.closeSummary()">{{ 'VOICE.SUMMARY.KEEP_EDITING' | translate }}</button>
               <button type="button" class="btn btn-primary" [disabled]="confirming()" (click)="confirm()">
-                <span aria-hidden="true" class="material-icons">check_circle</span>
+                <app-icon class="mi" name="check_circle" size="1em" />
                 {{ (confirming() ? 'VOICE.SUMMARY.CONFIRMING' : 'VOICE.SUMMARY.CONFIRM') | translate }}
               </button>
             </div>
@@ -217,7 +218,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     }
     .cat.tooth { background: rgb(var(--petrol-100)); color: rgb(var(--petrol-800)); }
     .allergy { display: flex; align-items: center; gap: 0.375rem; color: rgb(var(--critical-700)); font-weight: 600; }
-    .allergy .material-icons { font-size: 1rem; }
+    .allergy app-icon.mi { font-size: 1rem; }
     .empty { color: rgb(var(--ink-500)); font-size: 0.875rem; text-align: center; padding: 1.5rem 0; }
 
     .notes-section { margin-top: 0.25rem; padding-top: 1rem; border-top: 1px solid rgb(var(--ink-200)); }

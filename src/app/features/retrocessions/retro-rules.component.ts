@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AnalyticsApi, RetroRule, RetroRuleInput } from '../../core/services/analytics-api.service';
@@ -14,6 +13,7 @@ import { CanDirective } from '../../shared/directives/can.directive';
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { ModalComponent } from '../../shared/ui/modal.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 export interface RuleForm {
   practitionerId: string;
@@ -69,7 +69,7 @@ export function ruleProblem(f: RuleForm): string | null {
 @Component({
   selector: 'app-retro-rules',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, MoneyPipe, IconComponent, ModalComponent, CanDirective],
+  imports: [AppDatePipe, FormsModule, TranslateModule, MoneyPipe, IconComponent, ModalComponent, CanDirective],
   template: `
     <div class="mb-4 flex justify-end"><button *appCan="'RETROCESSION_MANAGE'" type="button" class="btn btn-primary btn-sm" (click)="openNew()"><app-icon name="plus" [size]="15" /> {{ 'RETRO.RULES.NEW' | translate }}</button></div>
     <div class="table-wrap" [attr.aria-busy]="rules.loading()"><div class="table-scroll">
@@ -87,7 +87,7 @@ export function ruleProblem(f: RuleForm): string | null {
               <td class="cell-num">{{ r.ratePercent }}</td>
               <td class="text-sm">@for (o of overrideList(r); track o[0]) { <span class="me-2 inline-block whitespace-nowrap">{{ o[0] }} {{ o[1] }}%</span> } @empty { — }</td>
               <td class="cell-num">{{ r.fixedMonthlyAmount ? (r.fixedMonthlyAmount | money) : '—' }}</td>
-              <td class="whitespace-nowrap">{{ r.effectiveFrom | date: 'shortDate' }} → {{ r.effectiveTo ? (r.effectiveTo | date: 'shortDate') : ('RETRO.RULES.OPEN_ENDED' | translate) }}</td>
+              <td class="whitespace-nowrap">{{ r.effectiveFrom | appDate }} → {{ r.effectiveTo ? (r.effectiveTo | appDate) : ('RETRO.RULES.OPEN_ENDED' | translate) }}</td>
               <td class="cell-actions">
                 <span *appCan="'RETROCESSION_MANAGE'" class="inline-flex gap-1">
                   <button type="button" class="btn btn-ghost btn-icon" (click)="openEdit(r)" [attr.aria-label]="('COMMON.EDIT' | translate) + ' ' + r.practitionerName"><app-icon name="edit" [size]="16" /></button>

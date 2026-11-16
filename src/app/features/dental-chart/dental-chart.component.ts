@@ -1,3 +1,4 @@
+import { IconComponent } from '../../shared/ui/icon.component';
 import { Component, Input, Output, EventEmitter, AfterViewInit, ElementRef, ViewChild, OnChanges, SimpleChanges, computed, inject, OnDestroy, Renderer2, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -48,13 +49,13 @@ const CLOSE_UP_SHARE = 45;
 @Component({
   selector: 'app-dental-chart',
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, ToothDetailComponent, ModalComponent, ChartKeysComponent],
+  imports: [IconComponent, CommonModule, TranslateModule, FormsModule, ToothDetailComponent, ModalComponent, ChartKeysComponent],
   template: `
     <div class="dental-chart-wrapper" [class.summary]="summary">
       <div class="chart-header">
         <div class="header-left">
           <span class="chart-type-badge" [class.adult]="chartType === 'adult'" [class.child]="chartType === 'child'">
-            <span class="material-icons" aria-hidden="true">{{ chartType === 'adult' ? 'person' : 'child_care' }}</span>
+            <app-icon class="mi" [name]="chartType === 'adult' ? 'person' : 'child_care'" size="1em" />
             {{ (chartType === 'adult' ? 'DENTAL_CHART.ADULT_TITLE' : 'DENTAL_CHART.CHILD_TITLE') | translate }}
           </span>
           <span class="tooth-info">
@@ -69,7 +70,7 @@ const CLOSE_UP_SHARE = 45;
         </div>
         <div class="header-right" *ngIf="interactive && !summary">
           <button type="button" class="btn-icon-sm" (click)="copyStateString($event)" [title]="'DENTAL_CHART.COPY_STATE' | translate" [attr.aria-label]="'DENTAL_CHART.COPY_STATE' | translate">
-            <span class="material-icons" aria-hidden="true">content_copy</span>
+            <app-icon class="mi" name="content_copy" size="1em" />
           </button>
         </div>
       </div>
@@ -128,7 +129,7 @@ const CLOSE_UP_SHARE = 45;
 
             <div class="note-section">
               <label class="note-label" [for]="noteId">
-                <span class="material-icons" aria-hidden="true">edit_note</span>
+                <app-icon class="mi" name="edit_note" size="1em" />
                 {{ 'DENTAL_CHART.NOTE_LABEL' | translate }}
               </label>
               <textarea
@@ -175,12 +176,12 @@ const CLOSE_UP_SHARE = 45;
       <div class="report-container" [class.open]="showReport">
         <button type="button" class="report-toggle" [attr.aria-expanded]="showReport" (click)="showReport = !showReport">
           <div class="toggle-left">
-            <span class="material-icons" aria-hidden="true">{{ showReport ? 'expand_less' : 'description' }}</span>
+            <app-icon class="mi" [name]="showReport ? 'expand_less' : 'description'" size="1em" />
             <span class="report-title">{{ 'DENTAL_CHART.REPORT_TITLE' | translate }}</span>
             <span class="note-count" *ngIf="teethWithNotes.length > 0">{{ teethWithNotes.length }}</span>
           </div>
           <div class="toggle-right">
-            <span class="material-icons toggle-arrow" aria-hidden="true">{{ showReport ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+            <app-icon class="mi toggle-arrow" [name]="showReport ? 'keyboard_arrow_up' : 'keyboard_arrow_down'" size="1em" />
           </div>
         </button>
         
@@ -201,7 +202,7 @@ const CLOSE_UP_SHARE = 45;
             </div>
           } @else {
             <div class="no-notes-state">
-              <span class="material-icons" aria-hidden="true">notes</span>
+              <app-icon class="mi" name="notes" size="1em" />
               <p>{{ 'DENTAL_CHART.NO_NOTES' | translate }}</p>
             </div>
           }

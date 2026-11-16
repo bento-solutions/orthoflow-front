@@ -1,3 +1,4 @@
+import { IconComponent } from '../../../ui/icon.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, output, signal } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { ConsultationService } from '../../../../core/consultation/consultation.service';
@@ -18,12 +19,12 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
 @Component({
   selector: 'app-cockpit-controls',
   standalone: true,
-  imports: [TranslateModule],
+  imports: [IconComponent, TranslateModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="ck-bar" role="toolbar" [attr.aria-label]="'COCKPIT.CONTROLS' | translate">
       <button type="button" class="ck-icon" (click)="leave.emit()" [attr.aria-label]="'COMMON.BACK' | translate" [title]="'COCKPIT.LEAVE' | translate">
-        <span class="material-icons" aria-hidden="true">arrow_back</span>
+        <app-icon class="mi" name="arrow_back" size="1em" />
       </button>
       <span class="ck-rec" [class.live]="c.listening()">
         <span class="ck-dot" aria-hidden="true"></span>
@@ -35,7 +36,7 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
       }
       @if (model.allergyBadges().length) {
         <span class="ck-allergies" role="note" [attr.aria-label]="'COCKPIT.ALLERGIES' | translate">
-          <span class="material-icons" aria-hidden="true">warning</span>
+          <app-icon class="mi" name="warning" size="1em" />
           @for (a of model.allergyBadges(); track a.label) {
             <span class="ck-allergy" [class.new]="!a.fromRecord">{{ a.label }}</span>
           }
@@ -52,14 +53,14 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
 
       @if (c.deferred()) {
         <span class="ck-chip ck-mode" data-cockpit-mode="deferred" [title]="'COCKPIT.DEFERRED_HINT' | translate">
-          <span class="material-icons" aria-hidden="true">schedule</span>
+          <app-icon class="mi" name="schedule" size="1em" />
           <span class="ck-chip-label">{{ 'COCKPIT.DEFERRED' | translate }}</span>
         </span>
       }
 
       <span class="ck-mic" [attr.aria-label]="'COCKPIT.MIC' | translate" role="img">
         <span class="ck-meter" aria-hidden="true"><span [style.transform]="'scaleY(' + (voice.paused() ? 0 : voice.inputLevel()) + ')'"></span></span>
-        <span class="material-icons" aria-hidden="true">{{ voice.paused() ? 'mic_off' : 'mic' }}</span>
+        <app-icon class="mi" [name]="voice.paused() ? 'mic_off' : 'mic'" size="1em" />
       </span>
       <button type="button" class="ck-chip" (click)="cycleLanguage()" [title]="'VOICE.LANG_TITLE' | translate"
               [attr.aria-label]="('VOICE.LANG_TITLE' | translate) + ' : ' + ('VOICE.LANG.' + inputLanguage.language() | translate)">
@@ -67,15 +68,15 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
       </button>
       <button type="button" class="ck-chip" (click)="prefs.cycle()" [title]="'COCKPIT.SETTINGS.FEEDBACK' | translate"
               [attr.aria-label]="('COCKPIT.SETTINGS.FEEDBACK' | translate) + ' : ' + ('COCKPIT.LEVEL.' + prefs.level().toUpperCase() | translate)">
-        <span class="material-icons" aria-hidden="true">{{ levelIcon() }}</span>
+        <app-icon class="mi" [name]="levelIcon()" size="1em" />
         <span class="ck-chip-label">{{ 'COCKPIT.LEVEL.' + prefs.level().toUpperCase() | translate }}</span>
       </button>
       <button type="button" class="ck-icon" (click)="focus.show('help')" [attr.aria-label]="'COCKPIT.HELP' | translate" [title]="'COCKPIT.HELP' | translate">
-        <span class="material-icons" aria-hidden="true">help_outline</span>
+        <app-icon class="mi" name="help_outline" size="1em" />
       </button>
       <button type="button" class="ck-end" data-cockpit-end (click)="c.end()" [disabled]="c.busy()"
               [attr.aria-label]="(c.busy() ? 'VOICE.ENDING' : c.deferred() ? 'CONSULTATION.END_DEFERRED' : 'CONSULTATION.END') | translate">
-        <span class="material-icons" aria-hidden="true">stop_circle</span>
+        <app-icon class="mi" name="stop_circle" size="1em" />
         <span class="ck-end-label">{{ (c.busy() ? 'VOICE.ENDING' : c.deferred() ? 'CONSULTATION.END_DEFERRED' : 'CONSULTATION.END') | translate }}</span>
       </button>
     </div>
@@ -83,24 +84,24 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
     @switch (alert()) {
       @case ('mic-off') {
         <div class="ck-alert caution" role="alert">
-          <span class="material-icons" aria-hidden="true">mic_off</span>
+          <app-icon class="mi" name="mic_off" size="1em" />
           <span>{{ 'CONSULTATION.MIC_OFF' | translate }}</span>
           <button type="button" class="ck-alert-btn" (click)="c.resumeRecording()">{{ 'CONSULTATION.MIC_RESUME' | translate }}</button>
         </div>
       }
       @case ('suspended') {
         <button type="button" class="ck-alert caution action" role="alert" (click)="voice.resumeMicrophone()">
-          <span class="material-icons" aria-hidden="true">touch_app</span>{{ 'VOICE.MIC_SUSPENDED' | translate }}
+          <app-icon class="mi" name="touch_app" size="1em" />{{ 'VOICE.MIC_SUSPENDED' | translate }}
         </button>
       }
       @case ('paused') {
-        <div class="ck-alert" role="status"><span class="material-icons" aria-hidden="true">pause_circle</span>{{ 'COCKPIT.PAUSED' | translate }}</div>
+        <div class="ck-alert" role="status"><app-icon class="mi" name="pause_circle" size="1em" />{{ 'COCKPIT.PAUSED' | translate }}</div>
       }
       @case ('service') {
-        <div class="ck-alert caution" role="status"><span class="material-icons" aria-hidden="true">cloud_off</span>{{ voice.transcriptionIssue() }}</div>
+        <div class="ck-alert caution" role="status"><app-icon class="mi" name="cloud_off" size="1em" />{{ voice.transcriptionIssue() }}</div>
       }
       @case ('error') {
-        <div class="ck-alert critical" role="alert"><span class="material-icons" aria-hidden="true">error</span>{{ voice.error() }}</div>
+        <div class="ck-alert critical" role="alert"><app-icon class="mi" name="error" size="1em" />{{ voice.error() }}</div>
       }
     }
   `,
@@ -114,7 +115,7 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
     @media (prefers-reduced-motion: reduce) { .ck-rec.live .ck-dot { animation: none; } }
     .ck-name { font-weight: 700; color: rgb(var(--ink-900)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .ck-allergies { display: inline-flex; align-items: center; gap: .25rem; color: rgb(var(--critical-700)); min-width: 0; overflow: hidden; }
-    .ck-allergies .material-icons { font-size: 1.1rem; }
+    .ck-allergies app-icon.mi { font-size: 1.1rem; }
     .ck-allergy { font-size: .8125rem; font-weight: 600; padding: .05rem .4rem; border-radius: 999px; background: rgb(var(--critical-50)); white-space: nowrap; }
     .ck-allergy.new { outline: 1px dashed rgb(var(--critical-400)); }
     .ck-conditions { color: rgb(var(--caution-700)); }
@@ -126,7 +127,7 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
     .ck-meter { width: .375rem; height: 1.5rem; border-radius: 999px; background: rgb(var(--ink-100)); overflow: hidden; display: flex; align-items: flex-end; }
     .ck-meter span { display: block; width: 100%; height: 100%; background: rgb(var(--positive-500)); transform-origin: bottom; transition: transform .1s linear; }
     .ck-chip { display: inline-flex; align-items: center; gap: .25rem; min-height: 2.5rem; padding: 0 .625rem; border-radius: .5rem; border: 1px solid rgb(var(--ink-200)); font-weight: 600; font-size: .8125rem; color: rgb(var(--ink-800)); flex: none; }
-    .ck-chip .material-icons { font-size: 1.1rem; }
+    .ck-chip app-icon.mi { font-size: 1.1rem; }
     .ck-mode { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-800)); border-color: rgb(var(--petrol-200)); }
     .ck-end { display: inline-flex; align-items: center; gap: .375rem; min-height: 2.5rem; padding: 0 .875rem; border-radius: .5rem; background: rgb(var(--critical-600)); color: #fff; font-weight: 700; flex: none; }
     .ck-end:disabled { opacity: .6; }

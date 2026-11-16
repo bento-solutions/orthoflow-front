@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiErrors } from '../../core/services/api-error.service';
@@ -9,6 +8,7 @@ import { OperationsApi, StaffPerson, ThreadDetail, ThreadRow } from '../../core/
 import { loadable } from '../../core/utils/loadable';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { ModalComponent } from '../../shared/ui/modal.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /**
  * Staff-to-staff messages: threads between people at the clinic, not with patients. A thread is
@@ -17,7 +17,7 @@ import { ModalComponent } from '../../shared/ui/modal.component';
 @Component({
   selector: 'app-messages',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent],
+  imports: [AppDatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent],
   template: `
     <div class="anim-rise">
       <header class="page-head">
@@ -37,7 +37,7 @@ import { ModalComponent } from '../../shared/ui/modal.component';
                 </span>
                 <span class="block truncate text-xs text-ink-500">{{ t.participants.join(', ') }}</span>
                 <span class="block truncate text-xs text-ink-600"><strong>{{ t.lastSender }}</strong>: {{ t.preview }}</span>
-                <span class="block text-2xs text-ink-500">{{ t.lastMessageAt | date: 'short' }}</span>
+                <span class="block text-2xs text-ink-500">{{ t.lastMessageAt | appDate:'datetime' }}</span>
               </button>
             </li>
           } @empty {
@@ -55,7 +55,7 @@ import { ModalComponent } from '../../shared/ui/modal.component';
               @for (m of d.messages; track m.id) {
                 <li class="flex flex-col" [class.items-end]="m.mine">
                   <span class="max-w-[85%] whitespace-pre-line rounded-lg px-3 py-2 text-sm" [class.bg-petrol-600]="m.mine" [class.text-white]="m.mine" [class.bg-ink-100]="!m.mine" [class.text-ink-900]="!m.mine">{{ m.body }}</span>
-                  <span class="mt-0.5 text-2xs text-ink-500">{{ m.mine ? ('MSG.YOU' | translate) : m.senderName }} · {{ m.createdAt | date: 'short' }}</span>
+                  <span class="mt-0.5 text-2xs text-ink-500">{{ m.mine ? ('MSG.YOU' | translate) : m.senderName }} · {{ m.createdAt | appDate:'datetime' }}</span>
                 </li>
               }
             </ol>

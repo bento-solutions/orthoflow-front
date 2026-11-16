@@ -1,11 +1,11 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiErrors } from '../../core/services/api-error.service';
 import { SterilItem, SterilizationApi, TraceEntry } from '../../core/services/sterilization-api.service';
 import { PatientPickerComponent, PickedPatient } from '../../shared/ui/patient-picker.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /** Entries grouped by calendar day, newest day first, so a long history reads as days rather than a wall of rows. */
 export function byDay(entries: readonly TraceEntry[]): { day: string; entries: TraceEntry[] }[] {
@@ -25,7 +25,7 @@ export function byDay(entries: readonly TraceEntry[]): { day: string; entries: T
 @Component({
   selector: 'app-sterilization-trace',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, PatientPickerComponent],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, PatientPickerComponent],
   template: `
     <div class="mb-5 flex flex-wrap items-end gap-3">
       <div class="seg" role="group" [attr.aria-label]="'STER.TABS.TRACE' | translate">
@@ -48,11 +48,11 @@ export function byDay(entries: readonly TraceEntry[]): { day: string; entries: T
       <div [attr.aria-busy]="loading()">
         @for (group of days(); track group.day) {
           <section class="mb-4">
-            <h3 class="mb-1.5 text-sm font-semibold text-ink-700">{{ group.day + 'T12:00:00' | date: 'fullDate' }}</h3>
+            <h3 class="mb-1.5 text-sm font-semibold text-ink-700">{{ group.day + 'T12:00:00' | appDate:'long' }}</h3>
             <ul class="card divide-y divide-ink-100">
               @for (e of group.entries; track e.eventId) {
                 <li class="px-4 py-2.5 text-sm">
-                  <p class="font-semibold text-ink-900">{{ e.at | date: 'shortTime' }} · {{ 'STER.ACTION_NAMES.' + e.action | translate }} — <span class="mono">{{ e.itemCode }}</span> {{ e.itemName }}</p>
+                  <p class="font-semibold text-ink-900">{{ e.at | appDate:'time' }} · {{ 'STER.ACTION_NAMES.' + e.action | translate }} — <span class="mono">{{ e.itemCode }}</span> {{ e.itemName }}</p>
                   <p class="text-ink-600">
                     @if (mode() === 'item' && e.patientName) { <a class="text-ink-900 no-underline hover:underline" [routerLink]="['/patients', e.patientId]">{{ e.patientName }}</a> <span class="mono text-xs text-ink-500">{{ e.patientCode }}</span> · }
                     @if (e.cycleNumber) { {{ 'STER.TRACE.CYCLE' | translate }} #{{ e.cycleNumber }} · {{ e.autoclaveName }}@if (e.controlResult) { · <span [class.text-critical-700]="e.controlResult === 'FAILED'" [class.font-semibold]="e.controlResult === 'FAILED'">{{ 'STER.RESULTS.' + e.controlResult | translate }}</span> } · }

@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../../core/services/api-error.service';
@@ -12,6 +11,7 @@ import { SessionRow, UserAdminService } from '../../../core/services/user-admin.
 import { formState } from '../../../core/utils/form-state';
 import { loadable } from '../../../core/utils/loadable';
 import { VoiceSettingsCardComponent } from '../components/voice-settings-card.component';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 /** Passwords the server will accept: at least ten characters, and not the one it replaces. */
 export function passwordProblem(current: string, next: string, confirm: string): 'short' | 'same' | 'mismatch' | null {
@@ -40,7 +40,7 @@ export function describeDevice(userAgent: string | null | undefined): string {
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [FormsModule, TranslateModule, DatePipe, VoiceSettingsCardComponent],
+  imports: [AppDatePipe, FormsModule, TranslateModule, VoiceSettingsCardComponent],
   template: `
     <div class="grid gap-6 lg:grid-cols-2">
       <section class="card card-pad space-y-5">
@@ -99,8 +99,8 @@ export function describeDevice(userAgent: string | null | undefined): string {
               <tr>
                 <td class="font-semibold">{{ device(s) }} @if (s.current) { <span class="pill pill-active ms-1">{{ 'SET.ACCOUNT.THIS_DEVICE' | translate }}</span> }</td>
                 <td class="mono">{{ s.ip || '—' }}</td>
-                <td>{{ s.createdAt | date: 'short' }}</td>
-                <td>{{ s.lastSeenAt | date: 'short' }}</td>
+                <td>{{ s.createdAt | appDate:'datetime' }}</td>
+                <td>{{ s.lastSeenAt | appDate:'datetime' }}</td>
                 <td class="cell-actions">
                   @if (!s.current) { <button type="button" class="btn btn-ghost btn-sm" (click)="end(s)">{{ 'SET.ACCOUNT.END' | translate }}</button> }
                 </td>

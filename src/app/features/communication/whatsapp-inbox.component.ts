@@ -1,5 +1,4 @@
 import { Component, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -10,6 +9,7 @@ import { NavCounts } from '../../core/services/nav-counts.service';
 import { loadable } from '../../core/utils/loadable';
 import { CanDirective } from '../../shared/directives/can.directive';
 import { IconComponent } from '../../shared/ui/icon.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /**
  * What patients wrote back on WhatsApp that the system could not act on by itself (a "1" or a "2"
@@ -18,7 +18,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
 @Component({
   selector: 'app-whatsapp-inbox',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, CanDirective, IconComponent],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, CanDirective, IconComponent],
   template: `
     <div class="mb-4 flex items-center gap-4">
       <label class="flex items-center gap-1.5 text-sm font-semibold text-ink-700"><input type="checkbox" [ngModel]="unhandledOnly()" (ngModelChange)="unhandledOnly.set($event)" /> {{ 'COM.INBOX.UNHANDLED_ONLY' | translate }}</label>
@@ -35,7 +35,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
               @if (m.fromLandingPage) { <span class="pill pill-active pill-nodot ms-2">{{ 'COM.INBOX.LANDING_BADGE' | translate }}</span> }
             </p>
             <p class="whitespace-pre-line text-sm text-ink-700">{{ m.body }}</p>
-            <p class="mt-0.5 text-2xs text-ink-500">{{ m.occurredAt | date: 'medium' }}@if (m.handledAt) { · {{ 'COM.INBOX.HANDLED_AT' | translate: { at: (m.handledAt | date: 'short') } }} }</p>
+            <p class="mt-0.5 text-2xs text-ink-500">{{ m.occurredAt | appDate:'datetime' }}@if (m.handledAt) { · {{ 'COM.INBOX.HANDLED_AT' | translate: { at: (m.handledAt | appDate:'datetime') } }} }</p>
           </div>
           @if (!m.handledAt) {
             <button *appCan="'MESSAGING_SEND'" type="button" class="btn btn-secondary btn-sm shrink-0" [disabled]="busy()" (click)="handle(m)">{{ 'COM.INBOX.MARK_HANDLED' | translate }}</button>

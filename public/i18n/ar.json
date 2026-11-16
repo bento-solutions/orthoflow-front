@@ -1673,7 +1673,7 @@
     "PAYMENT_NO_METHOD": "الطريقة غير محددة",
     "PAYMENTS_HINT": "كل دفعة مؤكَّدة تصبح إيصالاً في حساب المريض، موزَّعاً على فواتيره المفتوحة.",
     "INVOICE_TITLE": "فوترة الأعمال المنجزة",
-    "INVOICE_BODY": "{{count}} عمل منجز اليوم: {{total}} درهم.",
+    "INVOICE_BODY": "{{count}} عمل منجز اليوم: {{total}}.",
     "INVOICE_CREATE": "إنشاء مسودة فاتورة",
     "INVOICE_SKIP": "بدون فوترة",
     "INVOICE_CREATE_CHOSEN": "ستُنشأ مسودة فاتورة للاستقبال.",

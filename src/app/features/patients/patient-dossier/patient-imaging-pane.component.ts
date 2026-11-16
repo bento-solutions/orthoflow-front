@@ -1,10 +1,10 @@
 import { Component, OnDestroy, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { DocumentCategory, PatientFile, PatientFilesApi } from '../../../core/services/patient-files-api.service';
 import { ModelType, isModel } from './scan-model';
 import { ScanViewerComponent } from './scan-viewer.component';
 import { IconComponent } from '../../../shared/ui/icon.component';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 type PaneKind = Extract<DocumentCategory, 'XRAY' | 'INTRAORAL_3D'>;
 
@@ -17,7 +17,7 @@ type PaneKind = Extract<DocumentCategory, 'XRAY' | 'INTRAORAL_3D'>;
 @Component({
   selector: 'app-patient-imaging-pane',
   standalone: true,
-  imports: [DatePipe, TranslateModule, ScanViewerComponent, IconComponent],
+  imports: [AppDatePipe, TranslateModule, ScanViewerComponent, IconComponent],
   host: { class: 'flex min-h-0 min-w-0 flex-col' },
   template: `
     @if (nothing()) {
@@ -40,12 +40,12 @@ type PaneKind = Extract<DocumentCategory, 'XRAY' | 'INTRAORAL_3D'>;
         <div class="flex items-center gap-1 text-xs text-ink-500">
           <button type="button" class="btn btn-ghost btn-icon btn-sm" [disabled]="index() >= list().length - 1"
             (click)="index.set(index() + 1)" [attr.aria-label]="'PFILES.OLDER' | translate" [title]="'PFILES.OLDER' | translate">
-            <span class="material-icons text-[18px] rtl:rotate-180" aria-hidden="true">chevron_left</span>
+            <app-icon class="mi text-[18px] rtl:rotate-180" name="chevron_left" size="1em" />
           </button>
           <span>{{ index() + 1 }} / {{ list().length }}</span>
           <button type="button" class="btn btn-ghost btn-icon btn-sm" [disabled]="index() === 0"
             (click)="index.set(index() - 1)" [attr.aria-label]="'PFILES.NEWER' | translate" [title]="'PFILES.NEWER' | translate">
-            <span class="material-icons text-[18px] rtl:rotate-180" aria-hidden="true">chevron_right</span>
+            <app-icon class="mi text-[18px] rtl:rotate-180" name="chevron_right" size="1em" />
           </button>
         </div>
       }
@@ -68,7 +68,7 @@ type PaneKind = Extract<DocumentCategory, 'XRAY' | 'INTRAORAL_3D'>;
         }
         @if (!modelOf(f)) {
           <p class="pointer-events-none absolute bottom-1 start-1 rounded bg-surface/80 px-1.5 py-0.5 text-2xs text-ink-600">
-            {{ f.createdAt | date:'mediumDate' }} · {{ f.name }}
+            {{ f.createdAt | appDate }} · {{ f.name }}
           </p>
         }
       } @else if (!loading()) {

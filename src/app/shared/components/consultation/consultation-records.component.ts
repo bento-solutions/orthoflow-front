@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { IconComponent } from '../../ui/icon.component';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
@@ -9,6 +9,7 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
 import { ToastService } from '../../../core/services/toast.service';
 import { ConsultationAudioPlayerComponent } from './consultation-audio-player.component';
 import { ConsultationLogComponent } from './consultation-log.component';
+import { AppDatePipe } from '../../pipes/app-date.pipe';
 
 /** How long a consultation lasted, in whole minutes, from its recording or else from its start and end. */
 export function consultationMinutes(c: Pick<ConsultationDto, 'audio' | 'startedAt' | 'endedAt'>): number | null {
@@ -27,7 +28,7 @@ export function consultationMinutes(c: Pick<ConsultationDto, 'audio' | 'startedA
 @Component({
   selector: 'app-consultation-records',
   standalone: true,
-  imports: [DatePipe, TranslateModule, ConsultationAudioPlayerComponent, ConsultationLogComponent],
+  imports: [IconComponent, AppDatePipe, TranslateModule, ConsultationAudioPlayerComponent, ConsultationLogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (c.available()) {
@@ -43,7 +44,7 @@ export function consultationMinutes(c: Pick<ConsultationDto, 'audio' | 'startedA
             @for (item of consultations(); track item.id) {
               <li class="flex flex-col gap-2 py-3" [attr.data-consultation]="item.id">
                 <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <p class="font-semibold text-ink-900">{{ item.startedAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+                  <p class="font-semibold text-ink-900">{{ item.startedAt | appDate:'datetime' }}</p>
                   <span class="pill {{ item.status === 'COMPLETED' ? 'pill-ok' : 'pill-attention' }}">{{ statusKey(item) | translate }}</span>
                   @if (item.mode) {
                     <span class="pill pill-idle">{{ (item.mode === 'DEFERRED' ? 'CONSULTATION.MODE_LABEL_DEFERRED' : 'CONSULTATION.MODE_LABEL_LIVE') | translate }}</span>
@@ -51,11 +52,11 @@ export function consultationMinutes(c: Pick<ConsultationDto, 'audio' | 'startedA
                   @if (minutes(item); as m) { <span class="text-sm text-ink-600">{{ m }} min</span> }
                   <span class="ms-auto flex flex-wrap gap-1">
                     <button type="button" class="btn btn-secondary btn-sm" (click)="openLog.set(item.id)" data-open-log>
-                      <span class="material-icons text-base" aria-hidden="true">subject</span>{{ 'CONSULTATION.DOCS_LOG' | translate }}
+                      <app-icon class="mi text-base" name="subject" size="1em" />{{ 'CONSULTATION.DOCS_LOG' | translate }}
                     </button>
                     @if (item.audio) {
                       <button type="button" class="btn btn-ghost btn-sm" (click)="download(item)">
-                        <span class="material-icons text-base" aria-hidden="true">download</span>{{ 'CONSULTATION.DOCS_DOWNLOAD' | translate }}
+                        <app-icon class="mi text-base" name="download" size="1em" />{{ 'CONSULTATION.DOCS_DOWNLOAD' | translate }}
                       </button>
                       <button type="button" class="btn btn-ghost btn-sm text-critical-700" (click)="deleteAudio(item)">
                         {{ 'CONSULTATION.DOCS_DELETE_AUDIO' | translate }}

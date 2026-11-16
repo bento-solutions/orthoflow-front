@@ -1,5 +1,6 @@
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ClinicalRecordService } from '../../../core/services/clinical-record.service';
@@ -26,7 +27,7 @@ const MOUTH_ROWS: readonly (readonly PerioRegion[])[] = [
 @Component({
   selector: 'app-gum-status',
   standalone: true,
-  imports: [FormsModule, DatePipe, NgTemplateOutlet, TranslateModule, PerioChartComponent],
+  imports: [AppDatePipe, FormsModule, NgTemplateOutlet, TranslateModule, PerioChartComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Its own chunk, loaded when the Gums tab is opened, not with every patient file (audit P4). -->
@@ -66,7 +67,7 @@ const MOUTH_ROWS: readonly (readonly PerioRegion[])[] = [
           {{ ('GUMS.CONDITION.' + s.condition) | translate }}
           @if (s.stage) { · {{ 'GUMS.STAGE_N' | translate: { n: s.stage } }} }
         </span>
-        <span class="tile-date">{{ s.assessedOn | date: 'mediumDate' }}</span>
+        <span class="tile-date">{{ s.assessedOn | appDate }}</span>
       } @else {
         <span class="tile-state muted">{{ 'GUMS.NOT_ASSESSED' | translate }}</span>
       }
@@ -119,7 +120,7 @@ const MOUTH_ROWS: readonly (readonly PerioRegion[])[] = [
         <ul>
           @for (a of earlier(); track a.id) {
             <li [attr.data-state]="a.condition">
-              <span class="h-date">{{ a.assessedOn | date: 'mediumDate' }}</span>
+              <span class="h-date">{{ a.assessedOn | appDate }}</span>
               <span class="h-region">{{ ('GUMS.REGION.' + a.region) | translate }}</span>
               <span class="h-state">
                 {{ ('GUMS.CONDITION.' + a.condition) | translate }}

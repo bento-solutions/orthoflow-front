@@ -1,3 +1,4 @@
+import { IconComponent } from '../../../shared/ui/icon.component';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
@@ -21,12 +22,12 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
 @Component({
   selector: 'app-patient-registration',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TranslateModule],
+  imports: [IconComponent, CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TranslateModule],
   template: `
     <div class="registration-container">
       <header class="page-header">
         <button type="button" class="back-btn" [attr.aria-label]="'COMMON.BACK' | translate" [routerLink]="editMode ? ['/patients', patientId] : ['/patients']">
-          <span class="material-icons" aria-hidden="true">arrow_back</span>
+          <app-icon class="mi" name="arrow_back" size="1em" />
         </button>
       </header>
 

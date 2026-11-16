@@ -1,6 +1,9 @@
+import { IconComponent } from '../../../shared/ui/icon.component';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
+import { formatDate } from '../../../core/utils/format';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input, model, output, signal, viewChild } from '@angular/core';
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ClinicalRecordService } from '../../../core/services/clinical-record.service';
@@ -34,7 +37,7 @@ import { SurfacePickerComponent } from './surface-picker.component';
 @Component({
   selector: 'app-tooth-detail',
   standalone: true,
-  imports: [FormsModule, DatePipe, NgTemplateOutlet, TranslateModule, SurfacePickerComponent],
+  imports: [IconComponent, AppDatePipe, FormsModule, NgTemplateOutlet, TranslateModule, SurfacePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ng-template #row let-f let-done="done">
@@ -52,16 +55,16 @@ import { SurfacePickerComponent } from './surface-picker.component';
         <div class="finding-actions">
           @if (f.certainty === 'SUSPECTED') {
             <button type="button" class="act" (click)="confirm(f)" [title]="'TOOTH_DETAIL.CERTAINTY.CONFIRM_HINT' | translate">
-              <span class="material-icons" aria-hidden="true">verified</span>{{ 'TOOTH_DETAIL.CERTAINTY.CONFIRM' | translate }}
+              <app-icon class="mi" name="verified" size="1em" />{{ 'TOOTH_DETAIL.CERTAINTY.CONFIRM' | translate }}
             </button>
           }
           <button type="button" class="act" (click)="setStatus(f, 'RESOLVED')"
             [title]="(done ? 'TOOTH_DETAIL.MARK_DONE_HINT' : 'TOOTH_DETAIL.MARK_TREATED_HINT') | translate">
-            <span class="material-icons" aria-hidden="true">check_circle</span>{{ (done ? 'TOOTH_DETAIL.MARK_DONE' : 'TOOTH_DETAIL.MARK_TREATED') | translate }}
+            <app-icon class="mi" name="check_circle" size="1em" />{{ (done ? 'TOOTH_DETAIL.MARK_DONE' : 'TOOTH_DETAIL.MARK_TREATED') | translate }}
           </button>
           <button type="button" class="act danger" (click)="setStatus(f, 'RETRACTED')"
             [title]="'TOOTH_DETAIL.REMOVE_HINT' | translate">
-            <span class="material-icons" aria-hidden="true">close</span>{{ 'TOOTH_DETAIL.REMOVE' | translate }}
+            <app-icon class="mi" name="close" size="1em" />{{ 'TOOTH_DETAIL.REMOVE' | translate }}
           </button>
         </div>
       </li>
@@ -193,7 +196,7 @@ import { SurfacePickerComponent } from './surface-picker.component';
       </label>
 
       <button type="button" class="btn-add" [disabled]="!code() || saving()" (click)="add()">
-        <span class="material-icons" aria-hidden="true">add</span>{{ 'TOOTH_DETAIL.ADD_BUTTON' | translate }}
+        <app-icon class="mi" name="add" size="1em" />{{ 'TOOTH_DETAIL.ADD_BUTTON' | translate }}
       </button>
     </section>
 
@@ -211,7 +214,7 @@ import { SurfacePickerComponent } from './surface-picker.component';
                     @if (f.surface) { <span class="surface-badge" [title]="f.surface">{{ shorthand(f.surface) }}</span> }
                   </span>
                   <span class="finding-meta">
-                    {{ 'TOOTH_DETAIL.TREATED_ON' | translate }} {{ f.updatedAt | date: 'mediumDate' }}
+                    {{ 'TOOTH_DETAIL.TREATED_ON' | translate }} {{ f.updatedAt | appDate }}
                   </span>
                 </div>
               </li>
@@ -247,7 +250,7 @@ import { SurfacePickerComponent } from './surface-picker.component';
     .finding-note { font-size: .8125rem; color: var(--text); white-space: pre-line; }
     .finding-actions { display: flex; flex-direction: column; gap: .25rem; flex: none; }
     .act { display: inline-flex; align-items: center; gap: .25rem; font-size: .75rem; padding: .25rem .5rem; border: 1px solid var(--border); border-radius: .375rem; background: var(--surface, #fff); color: var(--action-text); cursor: pointer; }
-    .act .material-icons { font-size: 1rem; }
+    .act app-icon.mi { font-size: 1rem; }
     .act:hover { background: var(--action-tint); }
     .act.danger { color: var(--status-critical-text); }
     .act.danger:hover { background: var(--danger-tint); }
@@ -382,8 +385,7 @@ export class ToothDetailComponent {
       if (f.providerName) parts.push(f.providerName);
     }
     if (f.performedOn) {
-      parts.push(new Date(f.performedOn + 'T00:00:00').toLocaleDateString(this.translate.currentLang || undefined,
-        { year: 'numeric', month: 'short', day: 'numeric' }));
+      parts.push(formatDate(f.performedOn, 'date', this.translate.currentLang || 'fr'));
     } else if (f.kind === 'EXISTING') {
       parts.push(this.translate.instant('TOOTH_DETAIL.DATE_UNKNOWN'));
     }

@@ -1,3 +1,5 @@
+import { IconComponent } from '../../ui/icon.component';
+import { MoneyPipe } from '../../pipes/money.pipe';
 import { Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -28,6 +30,9 @@ import { ConsultationPaymentMethod, PatientFieldName } from '../../../core/consu
 import { chartLine } from '../../../core/consultation/consultation-chart';
 import { spokenLanguage } from '../../../core/voice/voice-vocabulary';
 import { InputLanguageService } from '../../../core/voice/input-language.service';
+import { PracticeProfileService } from '../../../core/services/practice-profile.service';
+import { LanguageService } from '../../../core/services/language.service';
+import { formatDate, formatMoney } from '../../../core/utils/format';
 import { INPUT_LANGUAGES } from '../../../core/voice/language-filter';
 import { VoiceContextService } from '../../../core/voice/voice-context.service';
 import { BufferedEntry } from '../../../core/voice/voice-orchestrator.service';
@@ -108,7 +113,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
 @Component({
   selector: 'app-consultation-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, PrescriptionEditorComponent, ConsultationLogComponent, ConsultationSuggestionComponent],
+  imports: [IconComponent, MoneyPipe, CommonModule, FormsModule, TranslateModule, PrescriptionEditorComponent, ConsultationLogComponent, ConsultationSuggestionComponent],
   template: `
     @if (c.visible()) {
       <aside class="cp" [attr.data-mode]="mode()" [attr.aria-label]="'CONSULTATION.TITLE' | translate">
@@ -132,7 +137,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
           @case ('intro') {
             <div class="cp-body">
               <div class="cp-card">
-                <span class="material-icons cp-hero" aria-hidden="true">graphic_eq</span>
+                <app-icon class="mi cp-hero" name="graphic_eq" size="1em" />
                 <p>{{ 'CONSULTATION.INTRO_BODY' | translate }}</p>
                 <!-- When what is said turns into commands: at the end (the default) or as it is said. -->
                 <fieldset class="cp-mode" data-mode-choice>
@@ -155,7 +160,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                   <li>{{ (c.chosenMode() === 'DEFERRED' ? 'CONSULTATION.STEP_2_DEFERRED' : 'CONSULTATION.STEP_2') | translate }}</li>
                   <li>{{ (c.chosenMode() === 'DEFERRED' ? 'CONSULTATION.STEP_3_DEFERRED' : 'CONSULTATION.STEP_3') | translate }}</li>
                 </ul>
-                <p class="cp-notice"><span class="material-icons" aria-hidden="true">info</span>{{ (c.retainTranscript() ? 'CONSULTATION.INTRO_NOTICE' : 'CONSULTATION.INTRO_NOTICE_NOT_KEPT') | translate }}
+                <p class="cp-notice"><app-icon class="mi" name="info" size="1em" />{{ (c.retainTranscript() ? 'CONSULTATION.INTRO_NOTICE' : 'CONSULTATION.INTRO_NOTICE_NOT_KEPT') | translate }}
                   @if (c.keepAudio()) { {{ 'CONSULTATION.INTRO_NOTICE_AUDIO' | translate }} }</p>
                 <label class="cp-ack">
                   <input type="checkbox" [ngModel]="informed()" (ngModelChange)="informed.set($event)" />
@@ -173,7 +178,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                 <div class="cp-actions">
                   <button type="button" class="cp-btn primary big" (click)="startRecording()"
                           [disabled]="!informed() || c.starting()">
-                    <span class="material-icons" aria-hidden="true">mic</span>
+                    <app-icon class="mi" name="mic" size="1em" />
                     {{ (c.starting() ? 'CONSULTATION.STARTING' : voice.needsConsent() ? 'CONSULTATION.START_AND_ALLOW_MIC' : 'CONSULTATION.START') | translate }}
                   </button>
                   <button type="button" class="cp-btn" (click)="c.closeIntro()" [disabled]="c.starting()">
@@ -192,17 +197,17 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
               } @else {
               @if (!c.listening()) {
                 <div class="cp-alert caution" role="status">
-                  <span class="material-icons" aria-hidden="true">mic_off</span>
+                  <app-icon class="mi" name="mic_off" size="1em" />
                   <span>{{ 'CONSULTATION.MIC_OFF' | translate }}</span>
                   <button type="button" class="cp-btn small" (click)="c.resumeRecording()">{{ 'CONSULTATION.MIC_RESUME' | translate }}</button>
                 </div>
               } @else if (voice.microphoneSuspended()) {
                 <button type="button" class="cp-alert caution action" (click)="voice.resumeMicrophone()">
-                  <span class="material-icons" aria-hidden="true">touch_app</span>{{ 'VOICE.MIC_SUSPENDED' | translate }}
+                  <app-icon class="mi" name="touch_app" size="1em" />{{ 'VOICE.MIC_SUSPENDED' | translate }}
                 </button>
               }
               @if (voice.transcriptionIssue(); as issue) {
-                <p class="cp-alert caution" role="status"><span class="material-icons" aria-hidden="true">cloud_off</span>{{ issue }}</p>
+                <p class="cp-alert caution" role="status"><app-icon class="mi" name="cloud_off" size="1em" />{{ issue }}</p>
               }
 
               <div class="cp-live" aria-live="polite">
@@ -212,13 +217,13 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
 
               <div class="cp-controls">
                 <button type="button" class="cp-btn danger" (click)="c.end()" [disabled]="c.busy()">
-                  <span class="material-icons" aria-hidden="true">stop_circle</span>
+                  <app-icon class="mi" name="stop_circle" size="1em" />
                   {{ (c.busy() ? 'VOICE.ENDING' : c.deferred() ? 'CONSULTATION.END_DEFERRED' : 'CONSULTATION.END') | translate }}
                 </button>
               </div>
               <p class="cp-hint">{{ (c.deferred() ? 'CONSULTATION.HINT_RECORDING_DEFERRED' : 'CONSULTATION.HINT_RECORDING') | translate }}</p>
               @if (c.audioState() === 'recording') {
-                <p class="cp-hint cp-audio"><span class="material-icons" aria-hidden="true">graphic_eq</span>{{ 'CONSULTATION.AUDIO_RECORDING' | translate }}</p>
+                <p class="cp-hint cp-audio"><app-icon class="mi" name="graphic_eq" size="1em" />{{ 'CONSULTATION.AUDIO_RECORDING' | translate }}</p>
               }
 
               <ng-container *ngTemplateOutlet="languagePicker" />
@@ -232,7 +237,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                 <button type="button" class="cp-sec-head" (click)="showHeard.set(!showHeard())" [attr.aria-expanded]="showHeard()">
                   <h3>{{ 'CONSULTATION.HEARD_TITLE' | translate }}</h3>
                   <span class="cp-count">{{ c.lines().length }}</span>
-                  <span class="material-icons" aria-hidden="true">{{ showHeard() ? 'expand_less' : 'expand_more' }}</span>
+                  <app-icon class="mi" [name]="showHeard() ? 'expand_less' : 'expand_more'" size="1em" />
                 </button>
                 @if (showHeard()) {
                   @if (c.lines().length === 0) {
@@ -248,7 +253,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                            [placeholder]="'CONSULTATION.TYPE_PLACEHOLDER' | translate"
                            [attr.aria-label]="'COMMON.TYPE' | translate" />
                     <button type="submit" class="cp-icon solid" [attr.aria-label]="'VOICE.SEND' | translate">
-                      <span class="material-icons" aria-hidden="true">send</span>
+                      <app-icon class="mi" name="send" size="1em" />
                     </button>
                   </form>
                 }
@@ -261,7 +266,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                   @if (c.extracting()) { <span class="cp-reading">{{ 'CONSULTATION.READING' | translate }}</span> }
                 </div>
                 @if (noteKey(); as key) {
-                  <p class="cp-hint note"><span class="material-icons" aria-hidden="true">info</span>{{ key | translate }}</p>
+                  <p class="cp-hint note"><app-icon class="mi" name="info" size="1em" />{{ key | translate }}</p>
                 }
                 <ng-container *ngTemplateOutlet="items; context: { editable: false }" />
               }
@@ -277,12 +282,12 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                   <strong>{{ 'CONSULTATION.REVIEW_PENDING' | translate: { count: c.pending() } }}</strong>
                   <button type="button" class="cp-btn small" (click)="c.validateEverything()">{{ 'CONSULTATION.VALIDATE_ALL' | translate }}</button>
                 } @else {
-                  <strong><span class="material-icons" aria-hidden="true">check_circle</span>{{ 'CONSULTATION.REVIEW_DONE' | translate }}</strong>
+                  <strong><app-icon class="mi" name="check_circle" size="1em" />{{ 'CONSULTATION.REVIEW_DONE' | translate }}</strong>
                 }
               </div>
               @if (c.extracting()) { <p class="cp-reading">{{ 'CONSULTATION.READING' | translate }}</p> }
               @if (noteKey(); as key) {
-                <p class="cp-hint note"><span class="material-icons" aria-hidden="true">info</span>{{ key | translate }}</p>
+                <p class="cp-hint note"><app-icon class="mi" name="info" size="1em" />{{ key | translate }}</p>
               }
               <ng-container *ngTemplateOutlet="items; context: { editable: true }" />
 
@@ -326,7 +331,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                           @if (chartable(m.quote)) {
                             <button type="button" class="cp-btn small" data-chart-suggestion (click)="chartSuggestion(m.quote)"
                                     [disabled]="charting() === m.quote">
-                              <span class="material-icons" aria-hidden="true">add_circle</span>{{ 'CONSULTATION.SUGGEST.ADD_TO_CHART' | translate }}
+                              <app-icon class="mi" name="add_circle" size="1em" />{{ 'CONSULTATION.SUGGEST.ADD_TO_CHART' | translate }}
                             </button>
                           }
                         } @else {
@@ -350,7 +355,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                   </ul>
                 }
                 @for (failure of c.failures(); track failure.auditId) {
-                  <p class="cp-alert critical" role="alert"><span class="material-icons" aria-hidden="true">error</span>{{ failure.errorMessage }}</p>
+                  <p class="cp-alert critical" role="alert"><app-icon class="mi" name="error" size="1em" />{{ failure.errorMessage }}</p>
                 }
               </section>
 
@@ -395,7 +400,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                   </div>
                 } @else {
                   <button type="button" class="cp-btn" (click)="newAppointment()">
-                    <span class="material-icons" aria-hidden="true">event</span>{{ 'CONSULTATION.APPT_ADD' | translate }}
+                    <app-icon class="mi" name="event" size="1em" />{{ 'CONSULTATION.APPT_ADD' | translate }}
                   </button>
                   <p class="cp-hint">{{ 'CONSULTATION.APPT_NONE' | translate }}</p>
                 }
@@ -417,7 +422,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
 
               <div class="cp-footer">
                 <button type="button" class="cp-btn primary big" (click)="c.commit()" [disabled]="!c.canSave()">
-                  <span class="material-icons" aria-hidden="true">task_alt</span>
+                  <app-icon class="mi" name="task_alt" size="1em" />
                   {{ (c.saving() ? 'CONSULTATION.SAVING' : 'CONSULTATION.SAVE') | translate }}
                 </button>
                 @if (c.pending() > 0) {
@@ -426,7 +431,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                 <!-- Forgot something, or more to add to the dossier: back to recording, nothing lost. -->
                 <button type="button" class="cp-btn big" data-continue (click)="continueConsultation()"
                         [disabled]="c.busy() || c.saving() || c.analyzing()" [title]="'CONSULTATION.CONTINUE_HINT' | translate">
-                  <span class="material-icons" aria-hidden="true">mic</span>{{ 'CONSULTATION.CONTINUE' | translate }}
+                  <app-icon class="mi" name="mic" size="1em" />{{ 'CONSULTATION.CONTINUE' | translate }}
                 </button>
                 <button type="button" class="cp-link danger" (click)="discard()" [disabled]="c.saving()">{{ 'CONSULTATION.DISCARD' | translate }}</button>
               </div>
@@ -437,41 +442,41 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
           @case ('saved') {
             <div class="cp-body">
               <div class="cp-card center">
-                <span class="material-icons cp-hero ok" aria-hidden="true">check_circle</span>
+                <app-icon class="mi cp-hero ok" name="check_circle" size="1em" />
                 <h3>{{ 'CONSULTATION.SAVED' | translate }}</h3>
                 <p>{{ 'CONSULTATION.SAVED_BODY' | translate }}</p>
                 <div class="cp-actions col">
                   <button type="button" class="cp-btn primary big" (click)="c.printReport()">
-                    <span class="material-icons" aria-hidden="true">description</span>{{ 'CONSULTATION.PRINT_REPORT' | translate }}
+                    <app-icon class="mi" name="description" size="1em" />{{ 'CONSULTATION.PRINT_REPORT' | translate }}
                   </button>
                   <button type="button" class="cp-btn big" (click)="c.printAssistantSheet()">
-                    <span class="material-icons" aria-hidden="true">assignment</span>{{ 'CONSULTATION.PRINT_SHEET' | translate }}
+                    <app-icon class="mi" name="assignment" size="1em" />{{ 'CONSULTATION.PRINT_SHEET' | translate }}
                   </button>
                   @if (canPrescribe()) {
                     <button type="button" class="cp-btn big" (click)="writingRx.set(true)">
-                      <span class="material-icons" aria-hidden="true">medication</span>{{ 'RX.NEW' | translate }}
+                      <app-icon class="mi" name="medication" size="1em" />{{ 'RX.NEW' | translate }}
                     </button>
                   }
                   @if (c.saved(); as saved) {
                     <button type="button" class="cp-btn big" (click)="openLog.set(saved.consultationId)">
-                      <span class="material-icons" aria-hidden="true">history</span>{{ 'CONSULTATION.OPEN_LOG' | translate }}
+                      <app-icon class="mi" name="history" size="1em" />{{ 'CONSULTATION.OPEN_LOG' | translate }}
                     </button>
                   }
                   <button type="button" class="cp-link" (click)="c.dismiss()">{{ 'CONSULTATION.CLOSE' | translate }}</button>
                 </div>
                 @if (c.saved(); as saved) {
                   @if (saved.invoiceNumber) {
-                    <p class="cp-hint" data-saved-invoice><span class="material-icons" aria-hidden="true">receipt_long</span>{{ 'CONSULTATION.SAVED_INVOICE' | translate: { number: saved.invoiceNumber } }}</p>
+                    <p class="cp-hint" data-saved-invoice><app-icon class="mi" name="receipt_long" size="1em" />{{ 'CONSULTATION.SAVED_INVOICE' | translate: { number: saved.invoiceNumber } }}</p>
                   }
                   @if (saved.receipts > 0) {
-                    <p class="cp-hint" data-saved-receipts><span class="material-icons" aria-hidden="true">payments</span>{{ 'CONSULTATION.SAVED_RECEIPTS' | translate: { count: saved.receipts } }}</p>
+                    <p class="cp-hint" data-saved-receipts><app-icon class="mi" name="payments" size="1em" />{{ 'CONSULTATION.SAVED_RECEIPTS' | translate: { count: saved.receipts } }}</p>
                   }
                   <ng-container *ngTemplateOutlet="audioStatus" />
                   @if (saved.insuranceForms.length) {
                     <ul class="cp-forms" [attr.aria-label]="'INSURANCE.TITLE' | translate">
                       @for (f of saved.insuranceForms; track f.id) {
                         <li>
-                          <span class="material-icons" aria-hidden="true">outgoing_mail</span>
+                          <app-icon class="mi" name="outgoing_mail" size="1em" />
                           {{ 'CONSULTATION.FORM_SENT' | translate: { purpose: ('INSURANCE.PURPOSE.' + f.purpose | translate), form: f.formName, number: f.number } }}
                         </li>
                       }
@@ -496,7 +501,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     <!-- ── The end-of-consultation analysis, while it runs ─────────────── -->
     <ng-template #analysisCard let-a="a">
       <div class="cp-card center cp-analysis" role="status" aria-live="polite" data-analysis [attr.data-step]="a.step">
-        <span class="material-icons cp-hero spin" aria-hidden="true">autorenew</span>
+        <app-icon class="mi cp-hero spin" name="autorenew" size="1em" />
         <h3>{{ 'CONSULTATION.ANALYSIS_TITLE' | translate }}</h3>
         <p>
           @switch (a.step) {
@@ -516,10 +521,10 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     <!-- ── What became of the recording ──────────────────────────────── -->
     <ng-template #audioStatus>
       @switch (c.audioState()) {
-        @case ('uploading') { <p class="cp-hint cp-audio" role="status"><span class="material-icons" aria-hidden="true">cloud_upload</span>{{ 'CONSULTATION.AUDIO_UPLOADING' | translate }}</p> }
-        @case ('kept') { <p class="cp-hint cp-audio" data-audio="kept"><span class="material-icons" aria-hidden="true">graphic_eq</span>{{ 'CONSULTATION.AUDIO_KEPT' | translate }}</p> }
+        @case ('uploading') { <p class="cp-hint cp-audio" role="status"><app-icon class="mi" name="cloud_upload" size="1em" />{{ 'CONSULTATION.AUDIO_UPLOADING' | translate }}</p> }
+        @case ('kept') { <p class="cp-hint cp-audio" data-audio="kept"><app-icon class="mi" name="graphic_eq" size="1em" />{{ 'CONSULTATION.AUDIO_KEPT' | translate }}</p> }
         @case ('failed') {
-          <p class="cp-alert caution" role="alert" data-audio="failed"><span class="material-icons" aria-hidden="true">error</span>{{ 'CONSULTATION.AUDIO_FAILED' | translate }}
+          <p class="cp-alert caution" role="alert" data-audio="failed"><app-icon class="mi" name="error" size="1em" />{{ 'CONSULTATION.AUDIO_FAILED' | translate }}
             <button type="button" class="cp-btn small" (click)="c.retryAudio()">{{ 'CONSULTATION.AUDIO_RETRY' | translate }}</button></p>
         }
       }
@@ -575,13 +580,13 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                       @if (editable) {
                         <span class="cp-row-actions">
                           @if (f.status === 'removed') {
-                            <button type="button" class="cp-icon" (click)="restoreField(def.name)" [attr.aria-label]="'CONSULTATION.RESTORE' | translate" [title]="'CONSULTATION.RESTORE' | translate"><span aria-hidden="true" class="material-icons">undo</span></button>
+                            <button type="button" class="cp-icon" (click)="restoreField(def.name)" [attr.aria-label]="'CONSULTATION.RESTORE' | translate" [title]="'CONSULTATION.RESTORE' | translate"><app-icon class="mi" name="undo" size="1em" /></button>
                           } @else {
                             @if (f.status === 'proposed') {
-                              <button type="button" class="cp-icon ok" (click)="validateField(def.name)" [attr.aria-label]="'CONSULTATION.VALIDATE' | translate" [title]="'CONSULTATION.VALIDATE' | translate"><span aria-hidden="true" class="material-icons">check</span></button>
+                              <button type="button" class="cp-icon ok" (click)="validateField(def.name)" [attr.aria-label]="'CONSULTATION.VALIDATE' | translate" [title]="'CONSULTATION.VALIDATE' | translate"><app-icon class="mi" name="check" size="1em" /></button>
                             }
-                            <button type="button" class="cp-icon" (click)="editField(def)" [attr.aria-label]="'CONSULTATION.EDIT' | translate" [title]="'CONSULTATION.EDIT' | translate"><span aria-hidden="true" class="material-icons">edit</span></button>
-                            <button type="button" class="cp-icon bad" (click)="removeField(def.name)" [attr.aria-label]="'CONSULTATION.REMOVE' | translate" [title]="'CONSULTATION.REMOVE' | translate"><span aria-hidden="true" class="material-icons">close</span></button>
+                            <button type="button" class="cp-icon" (click)="editField(def)" [attr.aria-label]="'CONSULTATION.EDIT' | translate" [title]="'CONSULTATION.EDIT' | translate"><app-icon class="mi" name="edit" size="1em" /></button>
+                            <button type="button" class="cp-icon bad" (click)="removeField(def.name)" [attr.aria-label]="'CONSULTATION.REMOVE' | translate" [title]="'CONSULTATION.REMOVE' | translate"><app-icon class="mi" name="close" size="1em" /></button>
                           }
                         </span>
                       }
@@ -592,7 +597,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                         <span class="cp-value empty">—</span>
                       }
                       @if (editable) {
-                        <button type="button" class="cp-icon" (click)="editField(def)" [attr.aria-label]="'CONSULTATION.ADD' | translate" [title]="'CONSULTATION.ADD' | translate"><span aria-hidden="true" class="material-icons">add</span></button>
+                        <button type="button" class="cp-icon" (click)="editField(def)" [attr.aria-label]="'CONSULTATION.ADD' | translate" [title]="'CONSULTATION.ADD' | translate"><app-icon class="mi" name="add" size="1em" /></button>
                       }
                     }
                   }
@@ -612,8 +617,8 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
               @if (editKey() === 'complaint') {
                 <input type="text" class="cp-input" [attr.aria-label]="'CONSULTATION.SEC_COMPLAINT' | translate" [(ngModel)]="edit.text" maxlength="400" (keydown.enter)="saveComplaint()" />
                 <span class="cp-row-actions">
-                  <button type="button" class="cp-icon ok" (click)="saveComplaint()" [attr.aria-label]="'CONSULTATION.SAVE_EDIT' | translate"><span aria-hidden="true" class="material-icons">check</span></button>
-                  <button type="button" class="cp-icon" (click)="editKey.set(null)" [attr.aria-label]="'COMMON.CANCEL' | translate"><span aria-hidden="true" class="material-icons">close</span></button>
+                  <button type="button" class="cp-icon ok" (click)="saveComplaint()" [attr.aria-label]="'CONSULTATION.SAVE_EDIT' | translate"><app-icon class="mi" name="check" size="1em" /></button>
+                  <button type="button" class="cp-icon" (click)="editKey.set(null)" [attr.aria-label]="'COMMON.CANCEL' | translate"><app-icon class="mi" name="close" size="1em" /></button>
                 </span>
               } @else {
                 <span class="cp-value" [class.proposed]="complaint.status === 'proposed'">{{ complaint.value }}</span>
@@ -622,13 +627,13 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                 @if (editable) {
                   <span class="cp-row-actions">
                     @if (complaint.status === 'removed') {
-                      <button type="button" class="cp-icon" (click)="c.changeReview(restoreComplaint)" [attr.aria-label]="'CONSULTATION.RESTORE' | translate"><span aria-hidden="true" class="material-icons">undo</span></button>
+                      <button type="button" class="cp-icon" (click)="c.changeReview(restoreComplaint)" [attr.aria-label]="'CONSULTATION.RESTORE' | translate"><app-icon class="mi" name="undo" size="1em" /></button>
                     } @else {
                       @if (complaint.status === 'proposed') {
-                        <button type="button" class="cp-icon ok" (click)="c.changeReview(validateComplaint)" [attr.aria-label]="'CONSULTATION.VALIDATE' | translate"><span aria-hidden="true" class="material-icons">check</span></button>
+                        <button type="button" class="cp-icon ok" (click)="c.changeReview(validateComplaint)" [attr.aria-label]="'CONSULTATION.VALIDATE' | translate"><app-icon class="mi" name="check" size="1em" /></button>
                       }
-                      <button type="button" class="cp-icon" (click)="editComplaint(complaint.value)" [attr.aria-label]="'CONSULTATION.EDIT' | translate"><span aria-hidden="true" class="material-icons">edit</span></button>
-                      <button type="button" class="cp-icon bad" (click)="c.changeReview(removeComplaint)" [attr.aria-label]="'CONSULTATION.REMOVE' | translate"><span aria-hidden="true" class="material-icons">close</span></button>
+                      <button type="button" class="cp-icon" (click)="editComplaint(complaint.value)" [attr.aria-label]="'CONSULTATION.EDIT' | translate"><app-icon class="mi" name="edit" size="1em" /></button>
+                      <button type="button" class="cp-icon bad" (click)="c.changeReview(removeComplaint)" [attr.aria-label]="'CONSULTATION.REMOVE' | translate"><app-icon class="mi" name="close" size="1em" /></button>
                     }
                   </span>
                 }
@@ -662,7 +667,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                       @if (editable) {
                         <button type="button" class="cp-done" [class.on]="isPerformed(item)" [attr.aria-pressed]="isPerformed(item)"
                           (click)="togglePerformed(item.key)" [title]="'CONSULTATION.PLAN_DONE_HINT' | translate">
-                          <span class="material-icons" aria-hidden="true">{{ isPerformed(item) ? 'check_box' : 'check_box_outline_blank' }}</span>{{ 'CONSULTATION.PLAN_DONE' | translate }}
+                          <app-icon class="mi" [name]="isPerformed(item) ? 'check_box' : 'check_box_outline_blank'" size="1em" />{{ 'CONSULTATION.PLAN_DONE' | translate }}
                         </button>
                       } @else if (isPerformed(item)) {
                         <span class="cp-onfile">{{ 'CONSULTATION.PLAN_DONE' | translate }}</span>
@@ -672,13 +677,13 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                     @if (editable) {
                       <span class="cp-row-actions">
                         @if (item.status === 'removed') {
-                          <button type="button" class="cp-icon" (click)="restoreItem(list.name, item.key)" [attr.aria-label]="'CONSULTATION.RESTORE' | translate"><span aria-hidden="true" class="material-icons">undo</span></button>
+                          <button type="button" class="cp-icon" (click)="restoreItem(list.name, item.key)" [attr.aria-label]="'CONSULTATION.RESTORE' | translate"><app-icon class="mi" name="undo" size="1em" /></button>
                         } @else {
                           @if (item.status === 'proposed') {
-                            <button type="button" class="cp-icon ok" (click)="validateItem(list.name, item.key)" [attr.aria-label]="'CONSULTATION.VALIDATE' | translate"><span aria-hidden="true" class="material-icons">check</span></button>
+                            <button type="button" class="cp-icon ok" (click)="validateItem(list.name, item.key)" [attr.aria-label]="'CONSULTATION.VALIDATE' | translate"><app-icon class="mi" name="check" size="1em" /></button>
                           }
-                          <button type="button" class="cp-icon" (click)="editItem(list.name, item)" [attr.aria-label]="'CONSULTATION.EDIT' | translate"><span aria-hidden="true" class="material-icons">edit</span></button>
-                          <button type="button" class="cp-icon bad" (click)="removeItem(list.name, item.key)" [attr.aria-label]="'CONSULTATION.REMOVE' | translate"><span aria-hidden="true" class="material-icons">close</span></button>
+                          <button type="button" class="cp-icon" (click)="editItem(list.name, item)" [attr.aria-label]="'CONSULTATION.EDIT' | translate"><app-icon class="mi" name="edit" size="1em" /></button>
+                          <button type="button" class="cp-icon bad" (click)="removeItem(list.name, item.key)" [attr.aria-label]="'CONSULTATION.REMOVE' | translate"><app-icon class="mi" name="close" size="1em" /></button>
                         }
                       </span>
                     }
@@ -693,7 +698,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
           @if (list.name === 'plan' && planItems().length) {
             <div class="cp-total">
               <span>{{ (planSummary().complete ? 'CONSULTATION.PLAN_TOTAL' : 'CONSULTATION.PLAN_TOTAL_PARTIAL') | translate }}</span>
-              <strong>{{ planSummary().total | number:'1.0-2' }} MAD</strong>
+              <strong>{{ planSummary().total | money }}</strong>
             </div>
           }
           @if (list.name === 'payments' && editable) {
@@ -703,7 +708,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
           @if (list.name === 'plan' && editable && invoiceable().count > 0) {
             <div class="cp-invoice" data-invoice-decision [attr.data-decision]="c.review().invoiceDecision ?? 'pending'">
               <strong>{{ 'CONSULTATION.INVOICE_TITLE' | translate }}</strong>
-              <span>{{ 'CONSULTATION.INVOICE_BODY' | translate: { count: invoiceable().count, total: (invoiceable().total | number:'1.0-2') } }}</span>
+              <span>{{ 'CONSULTATION.INVOICE_BODY' | translate: { count: invoiceable().count, total: (invoiceable().total | money) } }}</span>
               @switch (c.review().invoiceDecision) {
                 @case ('create') {
                   <span class="cp-onfile">{{ 'CONSULTATION.INVOICE_CREATE_CHOSEN' | translate }}</span>
@@ -724,7 +729,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
           }
           @if (editable && editKey() !== list.name + ':new') {
             <button type="button" class="cp-btn small" (click)="newItem(list.name)">
-              <span class="material-icons" aria-hidden="true">add</span>{{ list.addKey | translate }}
+              <app-icon class="mi" name="add" size="1em" />{{ list.addKey | translate }}
             </button>
           }
         </section>
@@ -750,8 +755,8 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
           @case ('date') { <input type="date" class="cp-input" [attr.aria-label]="def.labelKey | translate" [(ngModel)]="edit.text" [max]="today" (keydown.enter)="saveField(def)" /> }
           @default { <input type="text" class="cp-input" [attr.aria-label]="def.labelKey | translate" [(ngModel)]="edit.text" maxlength="100" (keydown.enter)="saveField(def)" /> }
         }
-        <button type="button" class="cp-icon ok" (click)="saveField(def)" [attr.aria-label]="'CONSULTATION.SAVE_EDIT' | translate"><span aria-hidden="true" class="material-icons">check</span></button>
-        <button type="button" class="cp-icon" (click)="editKey.set(null)" [attr.aria-label]="'COMMON.CANCEL' | translate"><span aria-hidden="true" class="material-icons">close</span></button>
+        <button type="button" class="cp-icon ok" (click)="saveField(def)" [attr.aria-label]="'CONSULTATION.SAVE_EDIT' | translate"><app-icon class="mi" name="check" size="1em" /></button>
+        <button type="button" class="cp-icon" (click)="editKey.set(null)" [attr.aria-label]="'COMMON.CANCEL' | translate"><app-icon class="mi" name="close" size="1em" /></button>
       </span>
     </ng-template>
 
@@ -784,7 +789,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
           @case ('plan') {
             <select class="cp-input" [attr.aria-label]="'CONSULTATION.SEC_PLAN' | translate" [ngModel]="edit.treatmentId" (ngModelChange)="pickCatalog($event)">
               <option value="">{{ 'CONSULTATION.PLAN_NO_CATALOG' | translate }}</option>
-              @for (t of catalog(); track t.id) { <option [value]="t.id">{{ t.name }} — {{ t.basePrice | number:'1.0-2' }} MAD</option> }
+              @for (t of catalog(); track t.id) { <option [value]="t.id">{{ t.name }} — {{ t.basePrice | money }}</option> }
             </select>
             <input [attr.aria-label]="'CONSULTATION.F_LABEL' | translate" type="text" class="cp-input" [(ngModel)]="edit.text" [placeholder]="'CONSULTATION.F_LABEL' | translate" maxlength="200" />
             <span class="cp-editor row">
@@ -845,17 +850,17 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-hero.ok { color: rgb(var(--positive-700)); font-size: 2.5rem; }
     .cp-forms { list-style: none; margin: .75rem 0 0; padding: 0; display: grid; gap: .35rem; text-align: start; font-size: .85rem; color: rgb(var(--ink-700)); }
     .cp-forms li { display: flex; gap: .4rem; align-items: flex-start; }
-    .cp-forms .material-icons { font-size: 1rem; color: rgb(var(--brand-600, 37 99 235)); }
+    .cp-forms app-icon.mi { font-size: 1rem; color: rgb(var(--brand-600, 37 99 235)); }
     .cp-done {
       display: inline-flex; align-items: center; gap: .2rem; padding: .05rem .4rem; border-radius: 999px;
       border: 1px solid rgb(var(--ink-200)); background: var(--surface); color: rgb(var(--ink-600)); font-size: .75rem; cursor: pointer;
     }
-    .cp-done .material-icons { font-size: .95rem; }
+    .cp-done app-icon.mi { font-size: .95rem; }
     .cp-done.on { border-color: rgb(var(--ok-300, 134 239 172)); background: rgb(var(--ok-50, 240 253 244)); color: rgb(var(--ok-800, 22 101 52)); font-weight: 600; }
     .cp-check { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: rgb(var(--ink-700)); }
     .cp-steps { margin: 0; padding-inline-start: 1.1rem; color: rgb(var(--ink-700)); font-size: .875rem; display: grid; gap: .25rem; }
     .cp-notice { display: flex; gap: .5rem; font-size: .8125rem; color: rgb(var(--ink-700)); background: rgb(var(--caution-50)); border-radius: 10px; padding: .625rem .75rem; }
-    .cp-notice .material-icons { font-size: 1.125rem; color: rgb(var(--caution-700)); flex-shrink: 0; }
+    .cp-notice app-icon.mi { font-size: 1.125rem; color: rgb(var(--caution-700)); flex-shrink: 0; }
     .cp-ack { display: flex; gap: .625rem; align-items: flex-start; font-size: .875rem; font-weight: 600; color: rgb(var(--ink-900)); cursor: pointer; }
     .cp-mode { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
     .cp-mode legend { font-size: .8125rem; font-weight: 700; color: rgb(var(--ink-800)); margin-bottom: .25rem; }
@@ -875,7 +880,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-invoice[data-decision='create'], .cp-invoice[data-decision='skip'] { background: rgb(var(--ink-100)); }
     .cp-invoice strong { width: 100%; }
     .cp-audio { display: flex; align-items: center; gap: .375rem; }
-    .cp-audio .material-icons { font-size: 1rem; }
+    .cp-audio app-icon.mi { font-size: 1rem; }
     .cp-ack input { margin-top: .2rem; width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
     .cp-ack-minor { font-weight: 500; font-size: .8125rem; color: rgb(var(--ink-600)); }
     .cp-ack-minor input { width: 1rem; height: 1rem; }
@@ -896,7 +901,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-btn.danger { color: rgb(var(--critical-700)); border-color: rgb(var(--critical-300)); }
     .cp-btn.big { min-height: 3rem; font-size: .9375rem; width: 100%; }
     .cp-btn.small { min-height: 2rem; padding: .25rem .625rem; font-size: .8125rem; }
-    .cp-btn .material-icons { font-size: 1.125rem; }
+    .cp-btn app-icon.mi { font-size: 1.125rem; }
     .cp-btn:focus-visible, .cp-icon:focus-visible, .cp-link:focus-visible, .cp-input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
     .cp-link { background: none; border: none; padding: .5rem 0; cursor: pointer; font-size: .8125rem; text-decoration: underline; color: rgb(var(--ink-600)); align-self: center; }
     .cp-link.danger { color: rgb(var(--critical-700)); }
@@ -905,7 +910,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
       display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 8px;
       border: none; background: transparent; color: rgb(var(--ink-600)); cursor: pointer; flex-shrink: 0;
     }
-    .cp-icon .material-icons { font-size: 1.125rem; }
+    .cp-icon app-icon.mi { font-size: 1.125rem; }
     .cp-icon:hover { background: rgb(var(--ink-100)); }
     .cp-icon.ok { color: rgb(var(--positive-700)); }
     .cp-icon.bad { color: rgb(var(--critical-700)); }
@@ -915,7 +920,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-alert.caution { background: rgb(var(--caution-50)); color: rgb(var(--caution-800)); }
     .cp-alert.critical { background: rgb(var(--critical-50)); color: rgb(var(--critical-800)); }
     .cp-alert.action { border: none; width: 100%; text-align: start; cursor: pointer; }
-    .cp-alert .material-icons { font-size: 1.125rem; flex-shrink: 0; }
+    .cp-alert app-icon.mi { font-size: 1.125rem; flex-shrink: 0; }
 
     .cp-live { display: flex; align-items: center; gap: .625rem; background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: 12px; padding: .625rem .75rem; }
     .cp-meter { flex: 1; height: .375rem; background: rgb(var(--ink-100)); border-radius: 999px; overflow: hidden; }
@@ -932,7 +937,7 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-lang-options button.on { background: rgb(var(--petrol-600)); color: #fff; font-weight: 700; }
     .cp-lang-options button:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
     .cp-hint.note { display: flex; gap: .375rem; align-items: center; background: rgb(var(--ink-100)); border-radius: 8px; padding: .375rem .625rem; }
-    .cp-hint .material-icons { font-size: 1rem; }
+    .cp-hint app-icon.mi { font-size: 1rem; }
     .cp-reading { margin: 0; font-size: .75rem; font-weight: 600; color: rgb(var(--petrol-700)); }
 
     .cp-banner { display: flex; align-items: center; justify-content: space-between; gap: .5rem; background: rgb(var(--caution-50)); color: rgb(var(--caution-800)); border-radius: 12px; padding: .625rem .875rem; }
@@ -1003,6 +1008,8 @@ export class ConsultationPanelComponent {
   c = inject(ConsultationService);
   voice = inject(VoiceOrchestratorService);
   inputLanguage = inject(InputLanguageService);
+  private readonly profile = inject(PracticeProfileService);
+  private readonly appLanguage = inject(LanguageService);
   inputLanguages = INPUT_LANGUAGES;
   private patients = inject(PatientService);
   private stock = inject(StockService);
@@ -1292,14 +1299,14 @@ export class ConsultationPanelComponent {
         const p = item.data as PlanData;
         const where = p.teeth ? ` (${p.teeth})` : '';
         const qty = p.quantity > 1 ? ` ×${p.quantity}` : '';
-        const price = p.price === null ? '' : ` — ${p.price} MAD`;
+        const price = p.price === null ? '' : ` — ${formatMoney(p.price, this.profile.currency(), this.appLanguage.currentLang())}`;
         return `${p.label}${where}${qty}${price}`;
       }
       case 'payments': {
         const pay = item.data as PaymentData;
         const method = pay.method ? this.translate.instant(`CONSULTATION.METHOD_${pay.method}`)
           : this.translate.instant('CONSULTATION.PAYMENT_NO_METHOD');
-        return [`${pay.amount} MAD — ${method}`, pay.reference ? `(${pay.reference})` : null].filter(Boolean).join(' ');
+        return [`${formatMoney(pay.amount, this.profile.currency(), this.appLanguage.currentLang())} — ${method}`, pay.reference ? `(${pay.reference})` : null].filter(Boolean).join(' ');
       }
     }
   }
@@ -1448,7 +1455,7 @@ export class ConsultationPanelComponent {
 
   suggestionText(date: string | null, time: string | null, inDays: number | null): string {
     const parts: string[] = [];
-    if (date) parts.push(new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { dateStyle: 'full' }));
+    if (date) parts.push(formatDate(date, 'long', this.appLanguage.currentLang()));
     if (time) parts.push(time);
     if (!parts.length && inDays !== null) parts.push(`+${inDays} d`);
     return parts.join(' · ');

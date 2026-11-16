@@ -8,11 +8,12 @@ import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.s
 import { ToastService } from '../../../../core/services/toast.service';
 import { NgapAct, NgapService, cotation, plainText } from '../../../../core/services/ngap.service';
 import { DialogDirective } from '../../../../shared/ui/dialog.directive';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 
 @Component({
   selector: 'app-treatments-list',
   standalone: true,
-  imports: [DialogDirective, CommonModule, FormsModule, TranslateModule],
+  imports: [MoneyPipe, DialogDirective, CommonModule, FormsModule, TranslateModule],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       
@@ -51,12 +52,12 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
               }
               <div class="flex items-baseline gap-1.5 pt-1">
                 <span class="text-xs text-ink-500 font-semibold uppercase tracking-wide">{{ "TREATMENTS.BASE_PRICE" | translate }}:</span>
-                <span class="text-lg font-extrabold text-ink-900">{{ t.basePrice | number:'1.2-2' }} DH</span>
+                <span class="text-lg font-extrabold text-ink-900">{{ t.basePrice | money }}</span>
               </div>
               @if (t.surfacePrices?.length) {
                 <p class="text-xs text-ink-500 font-semibold">
                   @for (sp of t.surfacePrices; track sp.surfaceCount; let last = $last) {
-                    {{ "TREATMENTS.FACES_N" | translate: { n: sp.surfaceCount } }} <span class="text-ink-700">{{ sp.price | number:'1.0-2' }} DH</span>@if (!last) { · }
+                    {{ "TREATMENTS.FACES_N" | translate: { n: sp.surfaceCount } }} <span class="text-ink-700">{{ sp.price | money }}</span>@if (!last) { · }
                   }
                 </p>
               }
@@ -74,7 +75,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       <!-- The unit is the whole point: "x8" never said whether that was
                            pieces, grams or millilitres. -->
                       <span class="font-bold text-ink-500">{{ c.quantityUsed }} {{ c.stockItem?.unitSymbol || '' }}</span>
-                      <span class="text-emerald-700 font-extrabold">{{ (c.quantityUsed * c.stockItem.pricePerUse) | number:'1.2-2' }} DH</span>
+                      <span class="text-emerald-700 font-extrabold">{{ (c.quantityUsed * c.stockItem.pricePerUse) | money }}</span>
                     </div>
                   </div>
                 } @empty {
@@ -86,7 +87,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
             <!-- Cumulative cost summary -->
             <div class="border-t border-ortho-navy/5 pt-3 flex justify-between items-center text-xs">
               <span class="text-ink-500 font-bold uppercase tracking-wider">{{ "TREATMENTS.MATERIALS_COST" | translate }}</span>
-              <span class="font-bold text-emerald-700">{{ getConsumablesTotal(t) | number:'1.2-2' }} DH</span>
+              <span class="font-bold text-emerald-700">{{ getConsumablesTotal(t) | money }}</span>
             </div>
 
           </div>
@@ -127,7 +128,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   @for (n of faceCounts; track n) {
                     <label class="block text-xs font-semibold text-ink-600">
                       {{ "TREATMENTS.FACES_N" | translate: { n: n } }}
-                      <input type="number" min="0" step="any" [(ngModel)]="faceTariff[n]" [attr.aria-label]="('TREATMENTS.FACES_N' | translate: { n: n }) + ' (DH)'" class="mt-1 w-full px-2 py-1.5 border border-ortho-navy/10 rounded-lg text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                      <input type="number" min="0" step="any" [(ngModel)]="faceTariff[n]" [attr.aria-label]="('TREATMENTS.FACES_N' | translate: { n: n })" class="mt-1 w-full px-2 py-1.5 border border-ortho-navy/10 rounded-lg text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
                     </label>
                   }
                 </div>
@@ -218,7 +219,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       </div>
                       <div class="col-span-3 text-right">
                         <span class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.MATERIALS_COST" | translate }}</span>
-                        <span class="font-bold text-emerald-700 block py-1.5 text-xs">{{ (c.quantityUsed * (c.stockItem?.pricePerUse || 0)) | number:'1.2-2' }} DH</span>
+                        <span class="font-bold text-emerald-700 block py-1.5 text-xs">{{ (c.quantityUsed * (c.stockItem?.pricePerUse || 0)) | money }}</span>
                       </div>
                       <div class="col-span-1 text-center">
                         <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="removeConsumableLine(idx)" class="p-1.5 hover:bg-red-50 text-red-700 rounded-lg transition mb-1">
@@ -232,7 +233,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                 <div class="flex justify-end pt-3 border-t border-ortho-navy/5">
                   <div class="text-right">
                     <span class="text-xs font-bold text-ink-500 uppercase tracking-wider block">{{ "TREATMENTS.CUMULATIVE_MATERIAL_COST" | translate }}</span>
-                    <span class="text-lg font-bold text-emerald-700">{{ formCumulativeCost() | number:'1.2-2' }} DH</span>
+                    <span class="text-lg font-bold text-emerald-700">{{ formCumulativeCost() | money }}</span>
                   </div>
                 </div>
               </div>

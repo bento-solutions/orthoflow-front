@@ -1,5 +1,6 @@
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
+import { MoneyPipe } from '../../shared/pipes/money.pipe';
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../core/services/api-error.service';
@@ -23,7 +24,7 @@ type FormAction = 'printed' | 'handed-over' | 'refresh' | 'void';
 @Component({
   selector: 'app-insurance-forms',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, RouterLink, TranslateModule, IconComponent],
+  imports: [AppDatePipe, MoneyPipe, RouterLink, TranslateModule, IconComponent],
   template: `
     <div class="anim-rise">
       <div class="seg mb-4" role="group" [attr.aria-label]="'INSURANCE.STATUS_FILTER' | translate">
@@ -46,8 +47,8 @@ type FormAction = 'printed' | 'handed-over' | 'refresh' | 'void';
                   · {{ ('INSURANCE.PURPOSE.' + f.purpose) | translate }} · {{ f.number }}
                 </p>
                 <p class="text-sm text-ink-600">
-                  {{ f.careDate | date: 'dd/MM/yyyy' }} · {{ f.insurerName || ('INSURANCE.NO_INSURER' | translate) }} · {{ f.formName }}
-                  @if (f.total > 0) { · {{ f.total | number: '1.2-2' }} MAD }
+                  {{ f.careDate | appDate }} · {{ f.insurerName || ('INSURANCE.NO_INSURER' | translate) }} · {{ f.formName }}
+                  @if (f.total > 0) { · {{ f.total | money }} }
                   @if (f.singleUse) { <span class="pill pill-attention ms-1">{{ 'INSURANCE.SINGLE_USE' | translate }}</span> }
                 </p>
                 @if (f.missing.length && f.status === 'TO_PRINT') {

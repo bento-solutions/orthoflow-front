@@ -1,23 +1,26 @@
+import { IconComponent } from '../../../../shared/ui/icon.component';
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { InvoiceService } from '../../services/invoice.service';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 
 @Component({
   selector: 'app-quote-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, TranslateModule],
+  imports: [IconComponent, AppDatePipe, MoneyPipe, CommonModule, RouterModule, TranslateModule],
   template: `
     <div class="billing-container">
       <header class="page-header">
         <div class="header-content">
           <button type="button" class="back-btn" [attr.aria-label]="'COMMON.BACK' | translate" routerLink="/billing/invoices">
-            <span class="material-icons" aria-hidden="true">arrow_back</span>
+            <app-icon class="mi" name="arrow_back" size="1em" />
           </button>
         </div>
         <button type="button" class="btn btn-primary">
-          <span aria-hidden="true" class="material-icons">add</span>
+          <app-icon class="mi" name="add" size="1em" />
           {{ 'BILLING.NEW_QUOTE' | translate }}
         </button>
       </header>
@@ -46,16 +49,16 @@ import { InvoiceService } from '../../services/invoice.service';
                      {{ 'BILLING.STATUS.' + quote.status | translate }}
                   </span>
                 </td>
-                <td>{{ quote.issueDate | date:'mediumDate' }}</td>
-                <td>{{ quote.expiryDate | date:'mediumDate' }}</td>
-                <td><span class="amount">{{ quote.total | number:'1.2-2' }} {{ quote.currency }}</span></td>
+                <td>{{ quote.issueDate | appDate }}</td>
+                <td>{{ quote.expiryDate | appDate }}</td>
+                <td><span class="amount">{{ quote.total | money:quote.currency }}</span></td>
                 <td>
                   <div class="row-actions">
                     <button type="button" class="icon-btn" [title]="'BILLING.ACCEPT_CONVERT' | translate" [attr.aria-label]="'BILLING.ACCEPT_CONVERT' | translate">
-                      <span class="material-icons" aria-hidden="true">check_circle</span>
+                      <app-icon class="mi" name="check_circle" size="1em" />
                     </button>
                     <button type="button" class="icon-btn" [title]="'BILLING.DOWNLOAD_PDF' | translate" [attr.aria-label]="'BILLING.DOWNLOAD_PDF' | translate">
-                      <span class="material-icons" aria-hidden="true">download</span>
+                      <app-icon class="mi" name="download" size="1em" />
                     </button>
                   </div>
                 </td>

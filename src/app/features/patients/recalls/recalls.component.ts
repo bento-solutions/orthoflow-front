@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -11,6 +10,7 @@ import { CanDirective } from '../../../shared/directives/can.directive';
 import { ExportMenuComponent } from '../../../shared/ui/export-menu.component';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { PatientDirectoryApi, RECALL_KINDS, RecallKind, RecallRow } from '../patient-directory-api.service';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 const SORTS = ['last', 'remaining', 'name'] as const;
 
@@ -31,7 +31,7 @@ export function reminderOutcome(selected: number, queued: number): { queued: num
 @Component({
   selector: 'app-recalls',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, IconComponent, ExportMenuComponent, CanDirective],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, IconComponent, ExportMenuComponent, CanDirective],
   template: `
     <div class="anim-rise">
       <header class="page-head">
@@ -104,15 +104,15 @@ export function reminderOutcome(selected: number, queued: number): { queued: num
                     </span>
                   </td>
                   <td>{{ r.primaryPractitionerName || '—' }}</td>
-                  <td>@if (r.lastVisit) { {{ r.lastVisit | date: 'mediumDate' }} } @else { <span class="text-ink-500">{{ 'REC.NEVER' | translate }}</span> }</td>
-                  <td>{{ r.nextAppointment ? (r.nextAppointment | date: 'mediumDate') : '—' }}</td>
+                  <td>@if (r.lastVisit) { {{ r.lastVisit | appDate }} } @else { <span class="text-ink-500">{{ 'REC.NEVER' | translate }}</span> }</td>
+                  <td>{{ r.nextAppointment ? (r.nextAppointment | appDate) : '—' }}</td>
                   <td>
                     <span class="flex items-center gap-2" [attr.title]="r.progress + ' %'">
                       <span class="h-1.5 w-20 overflow-hidden rounded-full bg-ink-100"><span class="block h-full rounded-full bg-petrol-500" [style.width.%]="r.progress"></span></span>
                       <span class="text-2xs tabular-nums text-ink-500">{{ r.progress }}%</span>
                     </span>
                   </td>
-                  @if (retention()) { <td>{{ r.dueSince ? (r.dueSince | date: 'mediumDate') : '—' }}</td> }
+                  @if (retention()) { <td>{{ r.dueSince ? (r.dueSince | appDate) : '—' }}</td> }
                 </tr>
               } @empty {
                 <tr><td [attr.colspan]="retention() ? 7 : 6" class="!p-0">

@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -10,6 +9,7 @@ import { Period, periodFor } from '../../core/utils/format';
 import { loadable } from '../../core/utils/loadable';
 import { NumPipe } from '../../shared/pipes/money.pipe';
 import { PeriodPickerComponent } from '../../shared/ui/period-picker.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /** Five characters for a rating out of five: "★★★☆☆". The number is always beside it, since a glyph alone says little to a screen reader. */
 export function stars(rating: number | null | undefined): string {
@@ -30,7 +30,7 @@ export function shares(distribution: readonly number[]): number[] {
 @Component({
   selector: 'app-surveys',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, NumPipe, PeriodPickerComponent],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, NumPipe, PeriodPickerComponent],
   template: `
     <div class="anim-rise">
       <div class="mb-4 flex flex-wrap items-end gap-3">
@@ -74,7 +74,7 @@ export function shares(distribution: readonly number[]): number[] {
                   @if (row.callMe) { <span class="pill pill-critical pill-nodot">{{ 'SURV.CALL_ME' | translate }}</span> }
                 </p>
                 @if (row.comment) { <p class="mt-0.5 whitespace-pre-line text-sm text-ink-700">{{ row.comment }}</p> }
-                <p class="text-2xs text-ink-500">{{ row.submittedAt | date: 'medium' }}@if (row.handledAt) { · {{ 'COM.INBOX.HANDLED_AT' | translate: { at: (row.handledAt | date: 'short') } }} }</p>
+                <p class="text-2xs text-ink-500">{{ row.submittedAt | appDate:'datetime' }}@if (row.handledAt) { · {{ 'COM.INBOX.HANDLED_AT' | translate: { at: (row.handledAt | appDate:'datetime') } }} }</p>
               </div>
               @if (row.callMe && !row.handledAt) {
                 <button type="button" class="btn btn-secondary btn-sm shrink-0" [disabled]="busy()" (click)="handled(row.id)">{{ 'COM.INBOX.MARK_HANDLED' | translate }}</button>

@@ -1,3 +1,4 @@
+import { IconComponent } from '../../../ui/icon.component';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, output, signal,
 } from '@angular/core';
@@ -33,7 +34,7 @@ import { CockpitStageComponent } from './cockpit-stage.component';
 @Component({
   selector: 'app-consultation-cockpit',
   standalone: true,
-  imports: [TranslateModule, CockpitControlsComponent, CockpitRailComponent, CockpitStageComponent, CockpitLastActionComponent, CockpitConversationComponent],
+  imports: [IconComponent, TranslateModule, CockpitControlsComponent, CockpitRailComponent, CockpitStageComponent, CockpitLastActionComponent, CockpitConversationComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="ck" [style.height.px]="height()" data-cockpit>
@@ -47,7 +48,7 @@ import { CockpitStageComponent } from './cockpit-stage.component';
         }
         @if (focus.lastAction(); as last) {
           <span class="ck-now-action" [attr.data-kind]="last.kind">
-            <span class="material-icons" aria-hidden="true">{{ last.kind === 'unsure' ? 'help' : 'check_circle' }}</span>{{ last.title }}
+            <app-icon class="mi" [name]="last.kind === 'unsure' ? 'help' : 'check_circle'" size="1em" />{{ last.title }}
           </span>
         }
       </button>
@@ -58,7 +59,7 @@ import { CockpitStageComponent } from './cockpit-stage.component';
       <!-- The end-of-consultation analysis, over the stage: the conversation stays in view beside it. -->
       @if (c.analysis(); as a) {
         <div class="ck-analysis ck-a-stage" role="status" aria-live="polite" data-analysis [attr.data-step]="a.step">
-          <span class="material-icons ck-analysis-icon" aria-hidden="true">autorenew</span>
+          <app-icon class="mi ck-analysis-icon" name="autorenew" size="1em" />
           <strong>{{ 'CONSULTATION.ANALYSIS_TITLE' | translate }}</strong>
           <span>
             @switch (a.step) {
@@ -84,7 +85,7 @@ import { CockpitStageComponent } from './cockpit-stage.component';
         <div class="ck-sheet" role="dialog" aria-modal="true" [attr.aria-label]="'COCKPIT.CONVERSATION' | translate">
           <div class="ck-sheet-body">
             <button type="button" class="ck-sheet-close" (click)="sheet.set(false)" [attr.aria-label]="'COMMON.CLOSE' | translate">
-              <span class="material-icons" aria-hidden="true">close</span>
+              <app-icon class="mi" name="close" size="1em" />
             </button>
             <app-cockpit-last-action />
             <app-cockpit-conversation class="ck-side-conv" />
@@ -125,7 +126,7 @@ import { CockpitStageComponent } from './cockpit-stage.component';
       .ck-now-time { font-size: .75rem; color: rgb(var(--ink-600)); font-variant-numeric: tabular-nums; }
       .ck-now-action { display: flex; align-items: center; gap: .25rem; font-weight: 700; color: rgb(var(--positive-800)); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
       .ck-now-action[data-kind='unsure'] { color: rgb(var(--caution-800)); }
-      .ck-now-action .material-icons { font-size: 1.1rem; }
+      .ck-now-action app-icon.mi { font-size: 1.1rem; }
     }
     .ck-sheet { position: fixed; inset: 0; z-index: 50; background: rgb(0 0 0 / .4); display: flex; align-items: flex-end; }
     .ck-sheet-body { position: relative; width: 100%; height: 80dvh; display: flex; flex-direction: column; gap: .5rem; padding: 2.75rem .5rem calc(.5rem + env(safe-area-inset-bottom, 0px)); background: var(--app-bg); border-radius: 1rem 1rem 0 0; }

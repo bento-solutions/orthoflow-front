@@ -89,8 +89,9 @@ describe('ConsultationCockpitComponent', () => {
   });
 
   it('carries nothing that deletes, edits or prints', () => {
-    const icons = [...element.querySelectorAll('.material-icons')].map(icon => icon.textContent?.trim());
-    for (const forbidden of ['delete', 'edit', 'print']) expect(icons).not.toContain(forbidden);
+    const icons = [...element.querySelectorAll('app-icon')].map(icon => icon.getAttribute('name') ?? icon.getAttribute('ng-reflect-name'));
+    expect(icons.length).toBeGreaterThan(0);
+    for (const forbidden of ['delete', 'trash', 'edit', 'print']) expect(icons).not.toContain(forbidden);
     expect(element.textContent).not.toMatch(/COMMON\.DELETE|COMMON\.PRINT|COMMON\.EDIT/u);
   });
 

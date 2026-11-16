@@ -1,3 +1,4 @@
+import { IconComponent } from '../../../../shared/ui/icon.component';
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
@@ -11,18 +12,20 @@ import { downloadInvoicePdf } from '../../../../core/utils/invoice-pdf';
 import { DownloadService } from '../../../../core/services/download.service';
 import { LanguageService } from '../../../../core/services/language.service';
 import { PatientService } from '../../../../core/services/patient.service';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 
 @Component({
   selector: 'app-invoice-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, TranslateModule],
+  imports: [IconComponent, AppDatePipe, MoneyPipe, CommonModule, RouterModule, FormsModule, TranslateModule],
   template: `
     @if (invoice(); as inv) {
       <div class="invoice-detail-container">
         <header class="page-header">
           <div class="header-content">
             <button type="button" class="back-btn" [attr.aria-label]="'COMMON.BACK' | translate" routerLink="..">
-              <span class="material-icons" aria-hidden="true">arrow_back</span>
+              <app-icon class="mi" name="arrow_back" size="1em" />
             </button>
             <div class="title-with-status">
               <p class="print-name">{{ 'BILLING.INVOICE_NUMBER' | translate }} {{ inv.invoiceNumber }}</p>
@@ -33,11 +36,11 @@ import { PatientService } from '../../../../core/services/patient.service';
           </div>
           <div class="header-actions">
             <button type="button" class="btn btn-secondary" (click)="downloadPdf(inv)">
-              <span aria-hidden="true" class="material-icons">download</span>
+              <app-icon class="mi" name="download" size="1em" />
               PDF
             </button>
             <button type="button" class="btn btn-secondary">
-              <span aria-hidden="true" class="material-icons">email</span>
+              <app-icon class="mi" name="email" size="1em" />
               {{ 'BILLING.FORM.SEND' | translate }}
             </button>
             @if (inv.status === 'DRAFT') {
@@ -65,11 +68,11 @@ import { PatientService } from '../../../../core/services/patient.service';
                 </div>
                 <div class="info-group">
                   <label>{{ 'BILLING.ISSUE_DATE' | translate }}</label>
-                  <span class="info-value">{{ inv.issueDate | date:'longDate' }}</span>
+                  <span class="info-value">{{ inv.issueDate | appDate }}</span>
                 </div>
                 <div class="info-group">
                   <label>{{ 'BILLING.EXPIRY_DATE' | translate }}</label>
-                  <span class="info-value">{{ inv.dueDate | date:'longDate' }}</span>
+                  <span class="info-value">{{ inv.dueDate | appDate }}</span>
                 </div>
               </div>
             </div>
@@ -93,9 +96,9 @@ import { PatientService } from '../../../../core/services/patient.service';
                     <tr>
                       <td>{{ line.label }}</td>
                       <td class="text-right">{{ line.quantity }}</td>
-                      <td class="text-right">{{ line.unitPrice | number:'1.2-2' }}</td>
+                      <td class="text-right">{{ line.unitPrice | money:inv.currency }}</td>
                       <td class="text-right">{{ line.discountPct }}%</td>
-                      <td class="text-right font-bold">{{ line.lineTotal | number:'1.2-2' }}</td>
+                      <td class="text-right font-bold">{{ line.lineTotal | money:inv.currency }}</td>
                     </tr>
                   }
                 </tbody>
@@ -103,19 +106,19 @@ import { PatientService } from '../../../../core/services/patient.service';
               <div class="totals-section">
                 <div class="total-row">
                   <span>{{ 'BILLING.FORM.SUBTOTAL' | translate }}</span>
-                  <span>{{ inv.subtotal | number:'1.2-2' }} {{ inv.currency }}</span>
+                  <span>{{ inv.subtotal | money:inv.currency }}</span>
                 </div>
                 <div class="total-row">
                   <span>{{ 'BILLING.FORM.DISCOUNT' | translate }}</span>
-                  <span class="text-success">-{{ inv.discountAmount | number:'1.2-2' }} {{ inv.currency }}</span>
+                  <span class="text-success">-{{ inv.discountAmount | money:inv.currency }}</span>
                 </div>
                 <div class="total-row">
                   <span>{{ 'BILLING.FORM.TAX' | translate }}</span>
-                  <span>{{ inv.taxAmount | number:'1.2-2' }} {{ inv.currency }}</span>
+                  <span>{{ inv.taxAmount | money:inv.currency }}</span>
                 </div>
                 <div class="total-row grand-total">
                   <span>{{ 'COMMON.TOTAL' | translate }}</span>
-                  <span>{{ inv.total | number:'1.2-2' }} {{ inv.currency }}</span>
+                  <span>{{ inv.total | money:inv.currency }}</span>
                 </div>
               </div>
             </div>
@@ -130,17 +133,17 @@ import { PatientService } from '../../../../core/services/patient.service';
                     @for (payment of inv.payments; track payment.id) {
                       <div class="payment-item">
                         <div class="payment-icon" [ngSwitch]="payment.method">
-                          <span aria-hidden="true" class="material-icons" *ngSwitchCase="'CASH'">payments</span>
-                          <span aria-hidden="true" class="material-icons" *ngSwitchCase="'CARD'">credit_card</span>
-                          <span aria-hidden="true" class="material-icons" *ngSwitchDefault>account_balance</span>
+                          <app-icon class="mi" *ngSwitchCase="'CASH'" name="payments" size="1em" />
+                          <app-icon class="mi" *ngSwitchCase="'CARD'" name="credit_card" size="1em" />
+                          <app-icon class="mi" *ngSwitchDefault name="account_balance" size="1em" />
                         </div>
                         <div class="payment-details">
                           <div class="payment-main">
-                            <span class="payment-amount">{{ payment.amount | number:'1.2-2' }} {{ inv.currency }}</span>
+                            <span class="payment-amount">{{ payment.amount | money:inv.currency }}</span>
                             <span class="payment-method">{{ 'BILLING.METHODS.' + payment.method | translate }}</span>
                           </div>
                           <div class="payment-meta">
-                            <span>{{ payment.paymentDate | date:'mediumDate' }}</span>
+                            <span>{{ payment.paymentDate | appDate }}</span>
                             <span>•</span>
                             <span>By {{ payment.recordedBy }}</span>
                           </div>
@@ -160,12 +163,12 @@ import { PatientService } from '../../../../core/services/patient.service';
               <div class="balance-content">
                 <span class="balance-label">{{ 'BILLING.REMAINING_BALANCE' | translate }}</span>
                 <span class="balance-value" [class.paid]="remainingBalance() === 0">
-                  {{ remainingBalance() | number:'1.2-2' }} {{ inv.currency }}
+                  {{ remainingBalance() | money:inv.currency }}
                 </span>
               </div>
               @if (remainingBalance() > 0) {
                 <button type="button" class="btn btn-primary full-width" (click)="showPaymentForm.set(true)">
-                  <span aria-hidden="true" class="material-icons">add</span>
+                  <app-icon class="mi" name="add" size="1em" />
                   {{ 'BILLING.RECORD_PAYMENT' | translate }}
                 </button>
               }
@@ -176,7 +179,7 @@ import { PatientService } from '../../../../core/services/patient.service';
                 <div class="card-header">
                   <h3>{{ 'BILLING.RECORD_PAYMENT' | translate }}</h3>
                   <button type="button" class="icon-btn" [attr.aria-label]="'COMMON.CLOSE' | translate" (click)="showPaymentForm.set(false)">
-                    <span class="material-icons" aria-hidden="true">close</span>
+                    <app-icon class="mi" name="close" size="1em" />
                   </button>
                 </div>
                 <div class="card-body">

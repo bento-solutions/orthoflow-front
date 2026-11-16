@@ -1,5 +1,4 @@
 import { Component, DestroyRef, ViewChild, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateModule } from '@ngx-translate/core';
@@ -18,6 +17,7 @@ import { Appointment, ChairBoard, FrontDesk, FrontDeskApi, WaitingCard } from '.
 import { AbsencesComponent } from './absences.component';
 import { WaitingListComponent } from './waiting-list.component';
 import { WaitingRoomDesignerComponent } from './waiting-room/waiting-room-designer.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 type Tab = 'today' | 'list' | 'absences';
 
@@ -33,7 +33,7 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
 @Component({
   selector: 'app-front-desk',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent, PatientPickerComponent, WaitingListComponent, AbsencesComponent, WaitingRoomDesignerComponent],
+  imports: [AppDatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent, PatientPickerComponent, WaitingListComponent, AbsencesComponent, WaitingRoomDesignerComponent],
   template: `
     <div class="page-head">
       <div class="page-actions">
@@ -82,8 +82,8 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
                     </p>
                     <p class="truncate text-sm text-ink-500">
                       {{ w.typeName }} · {{ w.practitionerName || '—' }}
-                      @if (!w.walkIn) { · {{ w.scheduledFor | date: 'shortTime' }} }
-                      @if (w.arrivedAt) { · {{ 'FD.WR.TIP_ARRIVED' | translate }} {{ w.arrivedAt | date: 'shortTime' }} }
+                      @if (!w.walkIn) { · {{ w.scheduledFor | appDate:'time' }} }
+                      @if (w.arrivedAt) { · {{ 'FD.WR.TIP_ARRIVED' | translate }} {{ w.arrivedAt | appDate:'time' }} }
                     </p>
                   </div>
                   <span class="text-sm font-bold tabular-nums" [class.text-critical-700]="tone(w) === 'critical'" [class.text-caution-700]="tone(w) === 'warn'" [attr.title]="'FD.WAITING_SINCE' | translate">
@@ -145,7 +145,7 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
               <tbody>
                 @for (a of expected(); track a.id) {
                   <tr>
-                    <td class="tabular-nums font-semibold">{{ a.dateTime | date: 'shortTime' }}</td>
+                    <td class="tabular-nums font-semibold">{{ a.dateTime | appDate:'time' }}</td>
                     <td class="font-semibold">{{ a.patientName }}<span class="block text-xs font-normal text-ink-500">{{ a.patientPhone }}</span></td>
                     <td>{{ a.type }}</td>
                     <td>{{ a.practitionerName || '—' }}</td>

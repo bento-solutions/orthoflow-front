@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -13,6 +12,7 @@ import { loadable } from '../../../core/utils/loadable';
 import { CanDirective } from '../../../shared/directives/can.directive';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 import { ModalComponent } from '../../../shared/ui/modal.component';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 /**
  * Payment-plan instalments that are due, the overdue ones first: the list the desk works down to
@@ -22,7 +22,7 @@ import { ModalComponent } from '../../../shared/ui/modal.component';
 @Component({
   selector: 'app-instalments',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, ModalComponent, CanDirective],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, ModalComponent, CanDirective],
   template: `
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <label class="field w-auto"><span class="label">{{ 'FIN.INST.UNTIL' | translate }}</span>
@@ -41,7 +41,7 @@ import { ModalComponent } from '../../../shared/ui/modal.component';
               <td><a class="font-bold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/patients', d.patientId]">{{ d.patientName }}</a>
                 @if (d.patientPhone) { <a class="block text-xs text-ink-500" [href]="'tel:' + d.patientPhone">{{ d.patientPhone }}</a> }</td>
               <td>{{ d.seq === 0 ? ('ACC.PLAN.DOWN' | translate) : d.seq }}</td>
-              <td>{{ d.dueDate | date: 'mediumDate' }}
+              <td>{{ d.dueDate | appDate }}
                 @if (d.daysOverdue > 0) { <span class="pill pill-critical pill-nodot ms-2">{{ 'FIN.INST.LATE' | translate: { days: d.daysOverdue } }}</span> }</td>
               <td class="cell-num font-semibold">{{ d.remaining | money }}</td>
               <td class="cell-actions"><button *appCan="'BILLING_WRITE'" type="button" class="btn btn-secondary btn-sm" (click)="open(d)">{{ 'ACC.PLAN.PAY' | translate }}</button></td>

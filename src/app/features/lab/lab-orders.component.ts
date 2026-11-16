@@ -1,5 +1,5 @@
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -115,7 +115,7 @@ const blankOrder = (): OrderForm => ({ labId: '', practitionerId: '', itemType: 
 @Component({
   selector: 'app-lab-orders',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, IconComponent, ModalComponent, PatientPickerComponent, CanDirective],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, IconComponent, ModalComponent, PatientPickerComponent, CanDirective],
   template: `
     <div class="anim-rise">
       <header class="page-head">
@@ -164,9 +164,9 @@ const blankOrder = (): OrderForm => ({ labId: '', practitionerId: '', itemType: 
                 <td>{{ 'LAB.ITEMS.' + o.itemType | translate }}@if (o.description) { <span class="block text-xs text-ink-500">{{ o.description }}</span> }
                   @if (o.cost) { <span class="block text-xs text-ink-500">{{ o.cost | money }}</span> }</td>
                 <td>{{ o.labName }}</td>
-                <td>{{ o.dueDate ? (o.dueDate | date: 'mediumDate') : '—' }}
+                <td>{{ o.dueDate ? (o.dueDate | appDate) : '—' }}
                   @if (o.warnings.includes('OVERDUE')) { <span class="block"><span class="pill pill-critical pill-nodot">{{ 'LAB.WARNINGS.OVERDUE' | translate }}</span></span> }</td>
-                <td>{{ o.fittingAt ? (o.fittingAt | date: 'medium') : '—' }}
+                <td>{{ o.fittingAt ? (o.fittingAt | appDate:'datetime') : '—' }}
                   @if (o.warnings.includes('FITTING_BEFORE_DUE')) { <span class="block"><span class="pill pill-attention pill-nodot">{{ 'LAB.WARNINGS.FITTING_BEFORE_DUE' | translate }}</span></span> }
                   @if (o.warnings.includes('NOT_RECEIVED_BEFORE_FITTING')) { <span class="block"><span class="pill pill-attention pill-nodot">{{ 'LAB.WARNINGS.NOT_RECEIVED_BEFORE_FITTING' | translate }}</span></span> }</td>
                 <td><span class="pill" [class]="'pill ' + tone(o.status)">{{ 'LAB.STATUSES.' + o.status | translate }}</span></td>
@@ -222,7 +222,7 @@ const blankOrder = (): OrderForm => ({ labId: '', practitionerId: '', itemType: 
         <label class="field"><span class="label">{{ 'LAB.FITTING_APPOINTMENT' | translate }}</span>
           <select class="select" name="fitting" [ngModel]="form.value().fittingAppointmentId" (ngModelChange)="form.set('fittingAppointmentId', $event)" [disabled]="!patient() && !editing()?.id">
             <option value="">{{ 'LAB.NO_FITTING' | translate }}</option>
-            @for (a of appointments(); track a.id) { <option [value]="a.id">{{ a.dateTime | date: 'medium' }} — {{ a.type }}</option> }
+            @for (a of appointments(); track a.id) { <option [value]="a.id">{{ a.dateTime | appDate:'datetime' }} — {{ a.type }}</option> }
           </select>
           @if (fittingWarning()) { <span class="hint text-caution-700">{{ 'LAB.WARNINGS.FITTING_BEFORE_DUE' | translate }}</span> }
         </label>

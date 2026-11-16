@@ -1,5 +1,4 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../core/services/api-error.service';
@@ -9,6 +8,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { isoDate } from '../../core/utils/format';
 import { ModalComponent } from '../../shared/ui/modal.component';
 import { PatientPickerComponent, PickedPatient } from '../../shared/ui/patient-picker.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /** Tone of an item's state: sterile is settled, used and waiting for cleaning need attention, in a cycle waits for its control. */
 export function stateTone(state: SterilItem['state']): string {
@@ -32,7 +32,7 @@ export function candidateAppointments(all: readonly Pick<Appointment, 'id' | 'pa
 @Component({
   selector: 'app-item-actions',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, ModalComponent, PatientPickerComponent],
+  imports: [AppDatePipe, FormsModule, TranslateModule, ModalComponent, PatientPickerComponent],
   template: `
     <div class="flex flex-wrap gap-2">
       @for (a of item().nextActions; track a) {
@@ -53,7 +53,7 @@ export function candidateAppointments(all: readonly Pick<Appointment, 'id' | 'pa
           <label class="field"><span class="label">{{ 'STER.USE.APPOINTMENT' | translate }}</span>
             <select class="select" name="appointment" [ngModel]="appointmentId()" (ngModelChange)="appointmentId.set($event)">
               <option value="">—</option>
-              @for (a of appointments(); track a.id) { <option [value]="a.id">{{ a.dateTime | date: 'shortTime' }} — {{ a.type }} ({{ 'SCHEDULE.STATUS.' + a.status | translate }})</option> }
+              @for (a of appointments(); track a.id) { <option [value]="a.id">{{ a.dateTime | appDate:'time' }} — {{ a.type }} ({{ 'SCHEDULE.STATUS.' + a.status | translate }})</option> }
             </select></label>
         }
         <label class="field"><span class="label">{{ 'COMMON.NOTES' | translate }}</span><input class="input" name="note" maxlength="500" [ngModel]="note()" (ngModelChange)="note.set($event)" /></label>

@@ -1,3 +1,4 @@
+import { IconComponent } from '../../ui/icon.component';
 import { Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -65,7 +66,7 @@ interface ToothGroup {
 @Component({
   selector: 'app-voice-session-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, Dental3dChartComponent, DentalChartComponent, SessionReviewComponent],
+  imports: [IconComponent, CommonModule, FormsModule, TranslateModule, Dental3dChartComponent, DentalChartComponent, SessionReviewComponent],
   template: `
     <section class="vs" [attr.data-phase]="phase()">
       <header class="vs-head">
@@ -81,12 +82,12 @@ interface ToothGroup {
                   [attr.aria-label]="(feedback.enabled() ? 'VOICE.AUDIO_ON' : 'VOICE.AUDIO_OFF') | translate"
                   [attr.aria-pressed]="feedback.enabled()"
                   [title]="(feedback.enabled() ? 'VOICE.AUDIO_ON' : 'VOICE.AUDIO_OFF') | translate">
-            <span class="material-icons" aria-hidden="true">{{ feedback.enabled() ? 'volume_up' : 'volume_off' }}</span>
+            <app-icon class="mi" [name]="feedback.enabled() ? 'volume_up' : 'volume_off'" size="1em" />
           </button>
           <button type="button" class="icon-btn" [class.active]="showHelp()" (click)="showHelp.set(!showHelp())"
                   [attr.aria-label]="'VOICE.HELP' | translate" [attr.aria-expanded]="showHelp()"
                   [title]="'VOICE.HELP' | translate">
-            <span class="material-icons" aria-hidden="true">help_outline</span>
+            <app-icon class="mi" name="help_outline" size="1em" />
           </button>
         </div>
       </header>
@@ -99,8 +100,8 @@ interface ToothGroup {
               <li>“{{ example }}”</li>
             }
           </ul>
-          <p class="vs-note"><span class="material-icons" aria-hidden="true">record_voice_over</span>{{ 'VOICE.HOW_WAKE' | translate }}</p>
-          <p class="vs-note"><span class="material-icons" aria-hidden="true">bolt</span>{{ 'VOICE.HOW_DIRECT' | translate }}</p>
+          <p class="vs-note"><app-icon class="mi" name="record_voice_over" size="1em" />{{ 'VOICE.HOW_WAKE' | translate }}</p>
+          <p class="vs-note"><app-icon class="mi" name="bolt" size="1em" />{{ 'VOICE.HOW_DIRECT' | translate }}</p>
           @if (!voice.needsConsent() && phase() !== 'live') {
             <button type="button" class="link-btn" (click)="voice.revokeMicrophoneConsent()">{{ 'VOICE.REVOKE' | translate }}</button>
           }
@@ -110,16 +111,16 @@ interface ToothGroup {
       @switch (phase()) {
         @case ('consent') {
           <div class="card vs-intro">
-            <span class="material-icons vs-intro-icon" aria-hidden="true">mic</span>
+            <app-icon class="mi vs-intro-icon" name="mic" size="1em" />
             <h3>{{ 'VOICE.CONSENT_TITLE' | translate }}</h3>
             <p>{{ 'VOICE.CONSENT_BODY' | translate }}</p>
-            <p class="vs-note vs-notice"><span class="material-icons" aria-hidden="true">info</span>{{ 'VOICE.PATIENT_NOTICE' | translate }}</p>
+            <p class="vs-note vs-notice"><app-icon class="mi" name="info" size="1em" />{{ 'VOICE.PATIENT_NOTICE' | translate }}</p>
             <ul class="vs-how">
               <li>{{ 'VOICE.HOW_WAKE' | translate }}</li>
               <li>{{ 'VOICE.HOW_DIRECT' | translate }}</li>
             </ul>
             <button type="button" class="btn-big primary" (click)="consent()" [disabled]="starting()">
-              <span class="material-icons" aria-hidden="true">mic</span>
+              <app-icon class="mi" name="mic" size="1em" />
               {{ (starting() ? 'VOICE.STARTING' : 'VOICE.CONSENT_ACCEPT') | translate }}
             </button>
             <p class="vs-note">{{ 'VOICE.CONSENT_ONCE' | translate }}</p>
@@ -128,9 +129,9 @@ interface ToothGroup {
 
         @case ('idle') {
           <div class="card vs-intro">
-            <span class="material-icons vs-intro-icon" aria-hidden="true">mic</span>
+            <app-icon class="mi vs-intro-icon" name="mic" size="1em" />
             <p>{{ 'VOICE.IDLE_BODY' | translate }}</p>
-            <p class="vs-note vs-notice"><span class="material-icons" aria-hidden="true">info</span>{{ 'VOICE.PATIENT_NOTICE' | translate }}</p>
+            <p class="vs-note vs-notice"><app-icon class="mi" name="info" size="1em" />{{ 'VOICE.PATIENT_NOTICE' | translate }}</p>
             <ul class="vs-how">
               <li>{{ 'VOICE.HOW_WAKE' | translate }}</li>
               <li>{{ 'VOICE.HOW_DIRECT' | translate }}</li>
@@ -153,7 +154,7 @@ interface ToothGroup {
               </p>
             </fieldset>
             <button type="button" class="btn-big primary" (click)="begin.emit()" [disabled]="starting()">
-              <span class="material-icons" aria-hidden="true">mic</span>
+              <app-icon class="mi" name="mic" size="1em" />
               {{ (starting() ? 'VOICE.STARTING' : 'VOICE.START') | translate }}
             </button>
             @if (voice.error(); as error) {
@@ -164,11 +165,11 @@ interface ToothGroup {
 
         @case ('saved') {
           <div class="card vs-intro done">
-            <span class="material-icons vs-intro-icon" aria-hidden="true">task_alt</span>
+            <app-icon class="mi vs-intro-icon" name="task_alt" size="1em" />
             <h3>{{ 'VOICE.SAVED_TITLE' | translate }}</h3>
             <p>{{ 'VOICE.SAVED_BODY' | translate }}</p>
             <button type="button" class="btn-big primary" (click)="begin.emit()" [disabled]="starting()">
-              <span class="material-icons" aria-hidden="true">mic</span>
+              <app-icon class="mi" name="mic" size="1em" />
               {{ (starting() ? 'VOICE.STARTING' : 'VOICE.NEW_SESSION') | translate }}
             </button>
           </div>
@@ -177,7 +178,7 @@ interface ToothGroup {
 
         @case ('interrupted') {
           <div class="card vs-intro warn">
-            <span class="material-icons vs-intro-icon" aria-hidden="true">mic_off</span>
+            <app-icon class="mi vs-intro-icon" name="mic_off" size="1em" />
             <h3>{{ 'VOICE.INTERRUPTED_TITLE' | translate }}</h3>
             <p>{{ 'VOICE.INTERRUPTED_BODY' | translate }}</p>
             @if (voice.error(); as error) {
@@ -185,11 +186,11 @@ interface ToothGroup {
             }
             <div class="vs-actions">
               <button type="button" class="btn-big primary" (click)="begin.emit()" [disabled]="starting()">
-                <span class="material-icons" aria-hidden="true">mic</span>
+                <app-icon class="mi" name="mic" size="1em" />
                 {{ (starting() ? 'VOICE.STARTING' : 'VOICE.RESUME') | translate }}
               </button>
               <button type="button" class="btn-big" (click)="endSession()" [disabled]="session.busy()">
-                <span class="material-icons" aria-hidden="true">fact_check</span>
+                <app-icon class="mi" name="fact_check" size="1em" />
                 {{ 'VOICE.END_AND_REVIEW' | translate }}
               </button>
             </div>
@@ -201,23 +202,23 @@ interface ToothGroup {
         @case ('live') {
           @if (voice.microphoneSuspended()) {
             <button type="button" class="vs-alert action" (click)="voice.resumeMicrophone()">
-              <span class="material-icons" aria-hidden="true">touch_app</span>
+              <app-icon class="mi" name="touch_app" size="1em" />
               {{ 'VOICE.MIC_SUSPENDED' | translate }}
             </button>
           }
           @if (voice.audioWarning() === 'no-voice') {
             <p class="vs-alert caution" role="status">
-              <span class="material-icons" aria-hidden="true">volume_off</span>{{ 'VOICE.NO_VOICE_WARNING' | translate }}
+              <app-icon class="mi" name="volume_off" size="1em" />{{ 'VOICE.NO_VOICE_WARNING' | translate }}
             </p>
           }
           @if (voice.transcriptionIssue(); as issue) {
             <p class="vs-alert caution" role="status">
-              <span class="material-icons" aria-hidden="true">cloud_off</span>{{ issue }}
+              <app-icon class="mi" name="cloud_off" size="1em" />{{ issue }}
             </p>
           }
           @if (voice.error(); as error) {
             <p class="vs-alert critical" role="alert">
-              <span class="material-icons" aria-hidden="true">error</span>{{ error }}
+              <app-icon class="mi" name="error" size="1em" />{{ error }}
             </p>
           }
 
@@ -227,10 +228,10 @@ interface ToothGroup {
               <p class="vs-prompt-text">{{ pending.preview }}</p>
               <div class="vs-actions">
                 <button type="button" class="btn-big positive" (click)="voice.confirmPending()">
-                  <span class="material-icons" aria-hidden="true">check</span>{{ 'VOICE.CONFIRM' | translate }}
+                  <app-icon class="mi" name="check" size="1em" />{{ 'VOICE.CONFIRM' | translate }}
                 </button>
                 <button type="button" class="btn-big" (click)="voice.rejectPending()">
-                  <span class="material-icons" aria-hidden="true">close</span>{{ 'VOICE.REJECT' | translate }}
+                  <app-icon class="mi" name="close" size="1em" />{{ 'VOICE.REJECT' | translate }}
                 </button>
               </div>
               <p class="vs-hint">{{ 'VOICE.STATUS_CONFIRM' | translate }}</p>
@@ -275,7 +276,7 @@ interface ToothGroup {
             }
             @if (voice.undoAvailable()) {
               <button type="button" class="vs-undo" (click)="voice.undoLast()">
-                <span class="material-icons" aria-hidden="true">undo</span>{{ 'VOICE.UNDO' | translate }}
+                <app-icon class="mi" name="undo" size="1em" />{{ 'VOICE.UNDO' | translate }}
               </button>
             }
           </div>
@@ -288,7 +289,7 @@ interface ToothGroup {
                    [placeholder]="'VOICE.TYPE_PLACEHOLDER' | translate"
                    [attr.aria-label]="'VOICE.TYPE_PLACEHOLDER' | translate" />
             <button type="submit" class="icon-btn solid" [attr.aria-label]="'VOICE.SEND' | translate">
-              <span class="material-icons" aria-hidden="true">send</span>
+              <app-icon class="mi" name="send" size="1em" />
             </button>
           </form>
         }
@@ -402,7 +403,7 @@ interface ToothGroup {
                         </div>
                         <button type="button" class="icon-btn" (click)="remove(entry)"
                                 [attr.aria-label]="('VOICE.REMOVE' | translate) + ' — ' + entry.preview">
-                          <span class="material-icons" aria-hidden="true">close</span>
+                          <app-icon class="mi" name="close" size="1em" />
                         </button>
                       </li>
                     }
@@ -424,7 +425,7 @@ interface ToothGroup {
                     </div>
                     <button type="button" class="icon-btn" (click)="remove(entry)"
                             [attr.aria-label]="('VOICE.REMOVE' | translate) + ' — ' + entry.preview">
-                      <span class="material-icons" aria-hidden="true">close</span>
+                      <app-icon class="mi" name="close" size="1em" />
                     </button>
                   </li>
                 }
@@ -482,7 +483,7 @@ interface ToothGroup {
     .btn-big.primary { background: rgb(var(--petrol-600)); border-color: transparent; color: #fff; }
     .btn-big.primary:hover:not(:disabled) { background: rgb(var(--petrol-700)); }
     .btn-big.positive { background: rgb(var(--positive-600)); border-color: transparent; color: #fff; }
-    .btn-big .material-icons { font-size: 1.25rem; }
+    .btn-big app-icon.mi { font-size: 1.25rem; }
 
     .vs-intro { display: flex; flex-direction: column; align-items: flex-start; gap: .625rem; }
     .vs-intro h3 { margin: 0; font-size: 1rem; }
@@ -501,7 +502,7 @@ interface ToothGroup {
       display: flex; align-items: flex-start; gap: .5rem; margin: 0; padding: .75rem .875rem;
       border-radius: 12px; font-size: .875rem; line-height: 1.45; text-align: start; width: 100%;
     }
-    .vs-alert .material-icons { font-size: 1.125rem; flex-shrink: 0; }
+    .vs-alert app-icon.mi { font-size: 1.125rem; flex-shrink: 0; }
     .vs-alert.caution { background: rgb(var(--caution-50)); border: 1px solid rgb(var(--caution-200)); color: rgb(var(--caution-800)); }
     .vs-alert.critical { background: rgb(var(--critical-50)); border: 1px solid rgb(var(--critical-200)); color: rgb(var(--critical-700)); }
     .vs-alert.action {
@@ -552,7 +553,7 @@ interface ToothGroup {
       padding: .375rem .75rem; border-radius: 10px; border: 1px dashed rgb(var(--ink-300));
       background: rgb(var(--ink-50)); color: rgb(var(--ink-700)); font-weight: 600; cursor: pointer;
     }
-    .vs-undo .material-icons { font-size: 1.125rem; }
+    .vs-undo app-icon.mi { font-size: 1.125rem; }
 
     .vs-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; }
     @media (min-width: 1024px) {
@@ -608,7 +609,7 @@ interface ToothGroup {
       border-radius: 8px; padding: .25rem .5rem; color: rgb(var(--ink-800));
     }
     .vs-note { display: flex; gap: .375rem; margin: 0; font-size: .8125rem; color: rgb(var(--ink-600)); line-height: 1.45; }
-    .vs-note .material-icons { font-size: 1rem; color: rgb(var(--petrol-700)); flex-shrink: 0; }
+    .vs-note app-icon.mi { font-size: 1rem; color: rgb(var(--petrol-700)); flex-shrink: 0; }
     .vs-notice { font-weight: 500; color: rgb(var(--ink-700)); }
 
     .vs-typed { display: flex; gap: .5rem; }

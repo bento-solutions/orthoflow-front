@@ -1,3 +1,4 @@
+import { IconComponent } from '../../../shared/ui/icon.component';
 import { Component, ElementRef, HostListener, effect, inject, input, output, signal, viewChild } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -12,24 +13,24 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
   selector: 'app-consultation-menu',
   standalone: true,
-  imports: [TranslateModule],
+  imports: [IconComponent, TranslateModule],
   template: `
     <button #trigger type="button" class="btn btn-primary cm-trigger" (click)="open.set(!open())" [disabled]="starting()"
             aria-haspopup="menu" [attr.aria-expanded]="open()" [attr.aria-controls]="open() ? 'consultation-menu' : null">
-      <span class="material-icons" aria-hidden="true">mic</span>
+      <app-icon class="mi" name="mic" size="1em" />
       {{ (starting() ? 'VOICE.STARTING' : 'CONSULTATION.BUTTON') | translate }}
-      <span class="material-icons cm-caret" aria-hidden="true">expand_more</span>
+      <app-icon class="mi cm-caret" name="expand_more" size="1em" />
     </button>
     @if (open()) {
       <div #menu id="consultation-menu" class="cm-menu" role="menu" [attr.aria-label]="'CONSULTATION.BUTTON' | translate"
            (keydown)="onMenuKeydown($event)">
         <button type="button" role="menuitem" tabindex="-1" class="cm-item" (click)="pick('voice')">
-          <span class="material-icons" aria-hidden="true">mic</span>
+          <app-icon class="mi" name="mic" size="1em" />
           <span class="cm-text"><strong>{{ 'VOICE.START' | translate }}</strong><small>{{ 'CONSULTATION.MENU_VOICE_HINT' | translate }}</small></span>
         </button>
         <button type="button" role="menuitem" tabindex="-1" class="cm-item" (click)="pick('consultation')" [disabled]="!consultationAvailable()"
                 [attr.aria-describedby]="consultationAvailable() ? null : 'consultation-menu-off'">
-          <span class="material-icons" aria-hidden="true">forum</span>
+          <app-icon class="mi" name="forum" size="1em" />
           <span class="cm-text"><strong>{{ 'CONSULTATION.MENU_NEW' | translate }}</strong>
             @if (consultationAvailable()) {
               <small>{{ 'CONSULTATION.BUTTON_HINT' | translate }}</small>
@@ -40,7 +41,7 @@ import { TranslateModule } from '@ngx-translate/core';
         </button>
         @if (introHidden() && consultationAvailable()) {
           <button type="button" role="menuitem" tabindex="-1" class="cm-item cm-minor" (click)="pick('showIntro')">
-            <span class="material-icons" aria-hidden="true">visibility</span>
+            <app-icon class="mi" name="visibility" size="1em" />
             <span class="cm-text">{{ 'CONSULTATION.SHOW_INTRO_AGAIN' | translate }}</span>
           </button>
         }
@@ -66,15 +67,15 @@ import { TranslateModule } from '@ngx-translate/core';
     .cm-item:hover:not(:disabled), .cm-item:focus-visible { background: rgb(var(--ink-50)); outline: none; }
     .cm-item:focus-visible { box-shadow: inset 0 0 0 2px var(--focus-ring); }
     .cm-item:disabled { cursor: not-allowed; color: rgb(var(--ink-500)); }
-    .cm-item > .material-icons { font-size: 1.25rem; margin-top: .0625rem; color: rgb(var(--petrol-700)); }
-    .cm-item:disabled > .material-icons { color: rgb(var(--ink-400)); }
+    .cm-item > app-icon.mi { font-size: 1.25rem; margin-top: .0625rem; color: rgb(var(--petrol-700)); }
+    .cm-item:disabled > app-icon.mi { color: rgb(var(--ink-400)); }
     .cm-text { display: flex; flex-direction: column; gap: .125rem; min-width: 0; font-size: .875rem; }
     .cm-text strong { font-weight: 600; }
     .cm-text small { font-size: .75rem; line-height: 1.35; color: rgb(var(--ink-500)); white-space: normal; }
     .cm-off { color: rgb(var(--caution-700)) !important; }
     .cm-minor { border-top: 1px solid rgb(var(--ink-100)); border-radius: 0 0 .5rem .5rem; margin-top: .25rem; padding-top: .625rem; }
     .cm-minor .cm-text { font-size: .8125rem; color: rgb(var(--ink-600)); }
-    .cm-minor > .material-icons { font-size: 1.0625rem; color: rgb(var(--ink-500)); }
+    .cm-minor > app-icon.mi { font-size: 1.0625rem; color: rgb(var(--ink-500)); }
   `],
 })
 export class ConsultationMenuComponent {

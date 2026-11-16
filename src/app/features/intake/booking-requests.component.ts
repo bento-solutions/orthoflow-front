@@ -1,5 +1,4 @@
 import { Component, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -14,6 +13,7 @@ import { loadable } from '../../core/utils/loadable';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { ModalComponent } from '../../shared/ui/modal.component';
 import { PatientDirectoryApi, DirectoryRow } from '../patients/patient-directory-api.service';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /** A moment as the `datetime-local` input wants it (`yyyy-MM-ddTHH:mm`, the viewer's own clock). */
 export function toLocalInput(iso: string | null | undefined): string {
@@ -42,7 +42,7 @@ export function matchTerm(request: Pick<BookingRequest, 'phone' | 'lastName'>): 
 @Component({
   selector: 'app-booking-requests',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent],
   template: `
     <div class="seg mb-4" role="group" [attr.aria-label]="'COMMON.STATUS' | translate">
       @for (s of statuses; track s) {
@@ -61,14 +61,14 @@ export function matchTerm(request: Pick<BookingRequest, 'phone' | 'lastName'>): 
               <p class="text-sm text-ink-600">
                 @if (r.phone) { <a class="no-underline hover:text-petrol-700" [href]="'tel:' + r.phone">{{ r.phone }}</a> }
                 @if (r.email) { · {{ r.email }} }
-                @if (r.dateOfBirth) { · {{ r.dateOfBirth | date: 'mediumDate' }} }
+                @if (r.dateOfBirth) { · {{ r.dateOfBirth | appDate }} }
               </p>
               @if (r.note) { <p class="mt-1 text-sm text-ink-700">« {{ r.note }} »</p> }
             </div>
             <div class="text-end">
-              <p class="font-semibold text-ink-900">{{ r.startsAt | date: 'EEEE d MMMM, HH:mm' }}</p>
+              <p class="font-semibold text-ink-900">{{ r.startsAt | appDate:'datetime' }}</p>
               <p class="text-sm text-ink-600">{{ r.typeName }} · {{ r.durationMinutes }} min@if (r.practitionerName) { · {{ r.practitionerName }} }</p>
-              <p class="text-xs text-ink-500">{{ 'INT.BOOK.RECEIVED' | translate: { at: (r.createdAt | date: 'short') } }}</p>
+              <p class="text-xs text-ink-500">{{ 'INT.BOOK.RECEIVED' | translate: { at: (r.createdAt | appDate:'datetime') } }}</p>
             </div>
           </div>
           @if (r.status === 'PENDING') {

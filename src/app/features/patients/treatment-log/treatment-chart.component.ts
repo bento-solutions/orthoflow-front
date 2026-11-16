@@ -1,3 +1,5 @@
+import { IconComponent } from '../../../shared/ui/icon.component';
+import { formatDate } from '../../../core/utils/format';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -226,7 +228,7 @@ export class TreatmentChartComponent {
     const shorthand = surfaceShorthand((use.surfaces ?? []).join('-'));
     const where = use.teeth?.length ? use.teeth.join(', ') : this.translate.instant('TREATMENT_CHART.WHOLE_MOUTH');
     const details: string[] = [];
-    if (use.date) details.push(new Date(`${use.date}T00:00:00`).toLocaleDateString(this.translate.currentLang || undefined, { year: 'numeric', month: 'short', day: 'numeric' }));
+    if (use.date) details.push(formatDate(use.date, 'date', this.translate.currentLang || 'fr'));
     if (use.origin === 'EXTERNAL') details.push(this.translate.instant('TOOTH_DETAIL.ELSEWHERE'));
     if (use.provider) details.push(use.provider);
     return { teeth: shorthand ? `${where} (${shorthand})` : where, detail: details.join(', ') };
@@ -242,7 +244,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
 @Component({
   selector: 'app-treatment-summary',
   standalone: true,
-  imports: [TranslateModule, TreatmentChartComponent],
+  imports: [IconComponent, TranslateModule, TreatmentChartComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="head">
@@ -258,7 +260,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
           </select>
         </label>
         <button type="button" class="btn" [disabled]="busy()" (click)="download()">
-          <span class="material-icons" aria-hidden="true">picture_as_pdf</span>{{ 'TREATMENT_CHART.DOWNLOAD' | translate }}
+          <app-icon class="mi" name="picture_as_pdf" size="1em" />{{ 'TREATMENT_CHART.DOWNLOAD' | translate }}
         </button>
       </div>
     </header>
@@ -282,7 +284,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
     .btn:hover:not(:disabled) { background: var(--action-tint); }
     .btn:disabled { opacity: .5; cursor: not-allowed; }
     .btn:focus-visible, select:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-    .btn .material-icons { font-size: 1.125rem; }
+    .btn app-icon.mi { font-size: 1.125rem; }
     .error { color: var(--status-critical-text); }
     .muted { color: var(--text-muted); font-size: .875rem; margin: 0; }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

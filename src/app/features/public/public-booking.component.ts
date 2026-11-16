@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -9,6 +8,7 @@ import { LanguageService } from '../../core/services/language.service';
 import { isoDate } from '../../core/utils/format';
 import { zonedIso } from '../../core/utils/zoned';
 import { PublicShellComponent, useClinicLanguage } from './public-shell.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 type Step = 'type' | 'doctor' | 'time' | 'details' | 'done';
 type PublicType = PublicBookingInfo['types'][number];
@@ -34,7 +34,7 @@ export function slotMoment(day: string, time: string, timeZone: string | null | 
 @Component({
   selector: 'app-public-booking',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, PublicShellComponent],
+  imports: [AppDatePipe, FormsModule, TranslateModule, PublicShellComponent],
   template: `
     <app-public-shell [clinic]="info()?.clinicName ?? ''">
       @if (state() === 'loading') {
@@ -81,7 +81,7 @@ export function slotMoment(day: string, time: string, timeZone: string | null | 
             @if (loadingDays()) { <p class="text-ink-500" role="status">{{ 'COMMON.LOADING' | translate }}</p> }
             @for (day of dayList(); track day.day) {
               <div class="mb-4">
-                <h3 class="mb-1.5 text-sm font-semibold text-ink-700">{{ day.day + 'T12:00:00' | date: 'fullDate' }}</h3>
+                <h3 class="mb-1.5 text-sm font-semibold text-ink-700">{{ day.day + 'T12:00:00' | appDate:'long' }}</h3>
                 <div class="flex flex-wrap gap-2">
                   @for (t of day.times; track t) {
                     <button type="button" class="rounded-md border border-ink-200 bg-surface px-3 py-1.5 text-sm font-semibold tabular-nums text-ink-900 hover:border-petrol-400 hover:bg-petrol-50"

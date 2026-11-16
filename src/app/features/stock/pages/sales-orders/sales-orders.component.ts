@@ -5,6 +5,8 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { StockService } from '../../../../core/services/stock.service';
 import { SalesOrder, SalesOrderLine, StockItem, SOStatus } from '../../../../core/models/stock.model';
 import { Patient } from '../../../../core/models/patient.model';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
@@ -15,7 +17,7 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
 @Component({
   selector: 'app-sales-orders',
   standalone: true,
-  imports: [RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink, PatientPickerComponent],
+  imports: [AppDatePipe, MoneyPipe, RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink, PatientPickerComponent],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       
@@ -81,7 +83,7 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
                     <div class="font-bold text-ink-900">{{ so.patient?.firstName }} {{ so.patient?.lastName }}</div>
                     <div class="text-[10px] text-ink-500">{{ "STOCK.EMAIL_LABEL" | translate }}: {{ so.patient?.email }}</div>
                   </td>
-                  <td class="p-4 text-ink-500 font-medium">{{ so.createdAt | date:'yyyy-MM-dd HH:mm' }}</td>
+                  <td class="p-4 text-ink-500 font-medium">{{ so.createdAt | appDate:'datetime' }}</td>
                   <td class="p-4 text-center">
                     <span class="px-2.5 py-1 text-xs font-bold rounded-full border uppercase" [ngClass]="getSOStatusClasses(so.status!)">
                       {{ so.status }}
@@ -96,7 +98,7 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
                       }
                     </div>
                   </td>
-                  <td class="p-4 text-right font-bold text-emerald-700">{{ so.totalAmount | number:'1.2-2' }} DH</td>
+                  <td class="p-4 text-right font-bold text-emerald-700">{{ so.totalAmount | money }}</td>
                   <td class="p-4 text-right">
                     <div class="flex items-center justify-end gap-2">
                       @if (so.status === 'DRAFT') {
@@ -169,12 +171,12 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
                           <input [id]="'sales-orders-line-quantity-' + $index" type="number" [(ngModel)]="line.quantity" (change)="calculateSOTotal()" min="1" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none" />
                         </div>
                         <div class="col-span-2">
-                          <label [attr.for]="'sales-orders-line-unitPrice-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.UNIT_PRICE" | translate }} (DH)</label>
+                          <label [attr.for]="'sales-orders-line-unitPrice-' + $index" class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.UNIT_PRICE" | translate }}</label>
                           <input [id]="'sales-orders-line-unitPrice-' + $index" type="number" [(ngModel)]="line.unitPrice" (change)="calculateSOTotal()" min="0" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-right focus:outline-none" />
                         </div>
                         <div class="col-span-2 text-right">
-                          <span class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.TOTAL" | translate }} (DH)</span>
-                          <span class="font-bold text-xs text-ink-900 block py-1.5">{{ (line.quantity * line.unitPrice) | number:'1.2-2' }}</span>
+                          <span class="block text-[10px] font-bold text-ink-600 uppercase mb-1">{{ "STOCK.TOTAL" | translate }}</span>
+                          <span class="font-bold text-xs text-ink-900 block py-1.5">{{ (line.quantity * line.unitPrice) | money }}</span>
                         </div>
                         <div class="col-span-1 text-center">
                           <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="removeSOLine(idx)" class="p-1.5 hover:bg-red-50 text-red-700 rounded-lg transition mb-1">
@@ -188,7 +190,7 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
                   <div class="flex justify-end pt-3 border-t border-ortho-navy/5">
                     <div class="text-right">
                       <span class="text-xs font-bold text-ink-500 uppercase tracking-wider block">{{ "STOCK.GRAND_TOTAL" | translate }}</span>
-                      <span class="text-xl font-bold text-emerald-700">{{ total | number:'1.2-2' }} DH</span>
+                      <span class="text-xl font-bold text-emerald-700">{{ total | money }}</span>
                     </div>
                   </div>
                 </div>

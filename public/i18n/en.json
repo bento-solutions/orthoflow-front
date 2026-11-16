@@ -1673,7 +1673,7 @@
     "PAYMENT_NO_METHOD": "method to set",
     "PAYMENTS_HINT": "Each validated payment becomes a receipt in the patient’s account, spread over their open invoices.",
     "INVOICE_TITLE": "Invoice the acts done",
-    "INVOICE_BODY": "{{count}} act(s) done today: {{total}} MAD.",
+    "INVOICE_BODY": "{{count}} act(s) done today: {{total}}.",
     "INVOICE_CREATE": "Make a draft invoice",
     "INVOICE_SKIP": "Do not invoice",
     "INVOICE_CREATE_CHOSEN": "A draft invoice will be made for the front desk.",

@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -16,6 +15,7 @@ import { IconComponent } from '../../../shared/ui/icon.component';
 import { ModalComponent } from '../../../shared/ui/modal.component';
 import { PatientPickerComponent, PickedPatient } from '../../../shared/ui/patient-picker.component';
 import { StatusPillComponent } from '../../../shared/ui/status-pill.component';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 const STATUSES: ChequeStatus[] = ['PENDING', 'DEPOSITED', 'CASHED', 'REJECTED'];
 
@@ -37,7 +37,7 @@ export function chequeActions(cheque: Pick<Cheque, 'status' | 'guarantee'>): { d
 @Component({
   selector: 'app-cheques',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, IconComponent, ModalComponent, PatientPickerComponent, StatusPillComponent, CanDirective],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, IconComponent, ModalComponent, PatientPickerComponent, StatusPillComponent, CanDirective],
   template: `
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <div class="seg" role="group" [attr.aria-label]="'COMMON.STATUS' | translate">
@@ -67,14 +67,14 @@ export function chequeActions(cheque: Pick<Cheque, 'status' | 'guarantee'>): { d
                 @if (c.patientId && c.drawerName) { <span class="block text-xs text-ink-500">{{ c.drawerName }}</span> }
               </td>
               <td class="cell-num font-semibold">{{ c.amount | money }}</td>
-              <td>{{ c.dueDate ? (c.dueDate | date: 'mediumDate') : '—' }}@if (c.postDated) { <span class="pill pill-attention pill-nodot ms-2">{{ 'FIN.CHQ.POST_DATED' | translate }}</span> }</td>
+              <td>{{ c.dueDate ? (c.dueDate | appDate) : '—' }}@if (c.postDated) { <span class="pill pill-attention pill-nodot ms-2">{{ 'FIN.CHQ.POST_DATED' | translate }}</span> }</td>
               <td>
                 <span class="flex flex-wrap items-center gap-1.5">
                   <app-status-pill [status]="c.status" />
                   @if (c.guarantee) { <span class="pill pill-idle pill-nodot">{{ 'FIN.CHQ.GUARANTEE' | translate }}</span> }
                 </span>
-                @if (c.status === 'DEPOSITED' && c.depositDate) { <span class="block text-xs text-ink-500">{{ c.depositDate | date: 'mediumDate' }}</span> }
-                @if (c.status === 'CASHED' && c.cashedDate) { <span class="block text-xs text-ink-500">{{ c.cashedDate | date: 'mediumDate' }}</span> }
+                @if (c.status === 'DEPOSITED' && c.depositDate) { <span class="block text-xs text-ink-500">{{ c.depositDate | appDate }}</span> }
+                @if (c.status === 'CASHED' && c.cashedDate) { <span class="block text-xs text-ink-500">{{ c.cashedDate | appDate }}</span> }
               </td>
               <td class="cell-actions">
                 <span *appCan="'FINANCE_MANAGE'" class="inline-flex flex-wrap justify-end gap-1">

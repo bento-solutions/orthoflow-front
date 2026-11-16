@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -15,6 +14,7 @@ import { MoneyPipe } from '../../shared/pipes/money.pipe';
 import { ExportMenuComponent } from '../../shared/ui/export-menu.component';
 import { ModalComponent } from '../../shared/ui/modal.component';
 import { PeriodPickerComponent } from '../../shared/ui/period-picker.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /** Toggles `value` in a list, keeping the order of {@code all} so the same choices always produce the same request. */
 export function toggled<T>(selected: readonly T[], value: T, all: readonly T[]): T[] {
@@ -36,7 +36,7 @@ export function toggled<T>(selected: readonly T[], value: T, all: readonly T[]):
 @Component({
   selector: 'app-retro-simulation',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, ExportMenuComponent, ModalComponent, PeriodPickerComponent, CanDirective],
+  imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, MoneyPipe, ExportMenuComponent, ModalComponent, PeriodPickerComponent, CanDirective],
   template: `
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <app-period-picker [value]="period()" (valueChange)="period.set($event)" [presets]="presets" />
@@ -97,7 +97,7 @@ export function toggled<T>(selected: readonly T[], value: T, all: readonly T[]):
                 <tbody>
                   @for (l of f.lines; track $index) {
                     <tr>
-                      <td>{{ l.date | date: 'shortDate' }}</td>
+                      <td>{{ l.date | appDate }}</td>
                       <td>@if (l.invoiceId) { <a class="no-underline hover:text-petrol-700" [routerLink]="['/billing/invoices', l.invoiceId]">{{ l.invoiceNumber }}</a> }<span class="block text-xs text-ink-500 mono">{{ l.patientCode }}</span></td>
                       <td>{{ l.label }}@if (l.category) { <span class="block text-xs text-ink-500">{{ l.category }}</span> }<span class="block text-2xs uppercase tracking-wider text-ink-500">{{ 'RETRO.LINE.KINDS.' + l.kind | translate }}</span></td>
                       <td class="cell-num">{{ l.base | money }}</td>
@@ -118,7 +118,7 @@ export function toggled<T>(selected: readonly T[], value: T, all: readonly T[]):
     <app-modal [open]="validating() !== null" [title]="'RETRO.SIM.VALIDATE_TITLE' | translate" size="sm" [dismissable]="!busy()" (closed)="validating.set(null)">
       @if (validating(); as f) {
         <form id="validate-form" class="space-y-3" (ngSubmit)="validate()">
-          <p class="text-sm text-ink-700"><strong>{{ f.practitionerName }}</strong> · {{ period().from | date: 'mediumDate' }} → {{ period().to | date: 'mediumDate' }}</p>
+          <p class="text-sm text-ink-700"><strong>{{ f.practitionerName }}</strong> · {{ period().from | appDate }} → {{ period().to | appDate }}</p>
           <p class="rounded-md bg-ink-50 p-3 text-sm text-ink-700">{{ 'RETRO.SIM.VALIDATE_HINT' | translate: { amount: money(f.net) } }}</p>
           <label class="field"><span class="label">{{ 'COMMON.NOTES' | translate }}</span><textarea class="textarea" rows="2" name="notes" [ngModel]="notes()" (ngModelChange)="notes.set($event)"></textarea></label>
         </form>

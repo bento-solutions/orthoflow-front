@@ -1,5 +1,7 @@
+import { formatDate } from '../../../core/utils/format';
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -18,6 +20,7 @@ import { entityString, stagedFindingCodes } from '../../../core/voice/voice-inte
 import { findingLabel } from '../../../core/voice/clinical-lexicon';
 import { describeFdi, isValidFdi } from '../../../core/voice/tooth-lexicon';
 import { CommitAmendmentDto } from '../../../core/voice/voice-api.service';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 /**
  * Where a dictated examination becomes part of the record — or doesn't.
@@ -42,7 +45,7 @@ import { CommitAmendmentDto } from '../../../core/voice/voice-api.service';
 @Component({
   selector: 'app-session-review',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [AppDatePipe, CommonModule, FormsModule, TranslateModule, MoneyPipe],
   template: `
     <div class="review" [class.embedded]="embedded()">
       <header class="review-header">
@@ -153,7 +156,7 @@ import { CommitAmendmentDto } from '../../../core/voice/voice-api.service';
                       }
                     }
                   </div>
-                  <time class="entry-time">{{ entry.at | date:'HH:mm' }}</time>
+                  <time class="entry-time">{{ entry.at | appDate:'time' }}</time>
                 </li>
               }
             </ul>
@@ -199,7 +202,7 @@ import { CommitAmendmentDto } from '../../../core/voice/voice-api.service';
               <dd>{{ nextAppointment() ?? '—' }}</dd>
               <dt>{{ 'BILLING.OUTSTANDING' | translate }}</dt>
               <dd [class.alert]="outstanding() > 0">
-                {{ outstanding() > 0 ? (outstanding() | number:'1.2-2') + ' MAD' : '—' }}
+                {{ outstanding() > 0 ? (outstanding() | money) : '—' }}
               </dd>
             </dl>
           </section>
@@ -473,7 +476,7 @@ export class SessionReviewComponent implements OnInit {
       .filter(appointment => appointment.patientId === this.patientId
         && new Date(appointment.dateTime).getTime() > now)
       .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())[0];
-    this.nextAppointmentSignal.set(next ? new Date(next.dateTime).toLocaleString() : null);
+    this.nextAppointmentSignal.set(next ? formatDate(next.dateTime, 'datetime', this.translate.currentLang || 'fr') : null);
   }
 
   // ── Correcting a tooth ──────────────────────────────────────────────

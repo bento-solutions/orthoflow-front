@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -17,6 +17,7 @@ import { CanDirective } from '../../shared/directives/can.directive';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { ModalComponent } from '../../shared/ui/modal.component';
 import { PatientPickerComponent, PickedPatient } from '../../shared/ui/patient-picker.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 const PRIORITY_PILL: Record<Task['priority'], string> = { LOW: 'pill-idle', NORMAL: 'pill-idle', HIGH: 'pill-attention', URGENT: 'pill-critical' };
 
@@ -53,7 +54,7 @@ const blankTask = (assignee = ''): TaskForm => ({ title: '', description: '', as
 @Component({
   selector: 'app-tasks',
   standalone: true,
-  imports: [DatePipe, NgTemplateOutlet, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent, PatientPickerComponent, CanDirective],
+  imports: [AppDatePipe, NgTemplateOutlet, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent, PatientPickerComponent, CanDirective],
   template: `
     <div class="anim-rise">
       <header class="page-head">
@@ -116,7 +117,7 @@ const blankTask = (assignee = ''): TaskForm => ({ title: '', description: '', as
           }
           <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500">
             <span class="pill pill-nodot" [class]="'pill pill-nodot ' + pill(t.priority)">{{ 'TASK.PRIORITIES.' + t.priority | translate }}</span>
-            @if (t.dueDate) { <span [class.text-critical-700]="t.overdue" [class.font-semibold]="t.overdue">{{ t.dueDate | date: 'mediumDate' }}</span> }
+            @if (t.dueDate) { <span [class.text-critical-700]="t.overdue" [class.font-semibold]="t.overdue">{{ t.dueDate | appDate }}</span> }
             @if (t.assigneeName || t.assigneeRole) { <span>{{ t.assigneeName || ('TASK.ROLES.' + t.assigneeRole | translate) }}</span> }
             @if (t.patientId) { <a class="text-petrol-700 no-underline hover:underline" [routerLink]="['/patients', t.patientId]">{{ t.patientName }}</a> }
           </p>

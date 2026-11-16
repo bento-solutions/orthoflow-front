@@ -1,5 +1,4 @@
 import { Component, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AnalyticsApi, RetroAdvance } from '../../core/services/analytics-api.service';
@@ -13,6 +12,7 @@ import { CanDirective } from '../../shared/directives/can.directive';
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { ModalComponent } from '../../shared/ui/modal.component';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 
 /**
  * Money advanced to a doctor against what they will be owed. An advance is deducted from the next
@@ -22,7 +22,7 @@ import { ModalComponent } from '../../shared/ui/modal.component';
 @Component({
   selector: 'app-retro-advances',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, MoneyPipe, IconComponent, ModalComponent, CanDirective],
+  imports: [AppDatePipe, FormsModule, TranslateModule, MoneyPipe, IconComponent, ModalComponent, CanDirective],
   template: `
     <div class="mb-4 flex justify-end"><button *appCan="'RETROCESSION_MANAGE'" type="button" class="btn btn-primary btn-sm" (click)="openNew()"><app-icon name="plus" [size]="15" /> {{ 'RETRO.ADV.NEW' | translate }}</button></div>
     <div class="table-wrap" [attr.aria-busy]="advances.loading()"><div class="table-scroll">
@@ -34,7 +34,7 @@ import { ModalComponent } from '../../shared/ui/modal.component';
         <tbody>
           @for (a of advances.data(); track a.id) {
             <tr>
-              <td>{{ a.advanceDate | date: 'mediumDate' }}</td>
+              <td>{{ a.advanceDate | appDate }}</td>
               <td class="font-semibold">{{ a.practitionerName }}@if (a.notes) { <span class="block text-xs font-normal text-ink-500">{{ a.notes }}</span> }</td>
               <td class="cell-num">{{ a.amount | money }}</td>
               <td class="cell-num font-semibold" [class.text-ink-500]="a.outstanding === 0">{{ a.outstanding | money }}</td>

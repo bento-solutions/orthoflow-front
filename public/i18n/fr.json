@@ -558,7 +558,7 @@
     "TITLE": "Schéma Dentaire",
     "ADULT_TITLE": "Dentition Adulte",
     "CHILD_TITLE": "Dentition Enfant",
-    "HOVER_PROMPT": "Survolez une dent pour l'inspecter",
+    "HOVER_PROMPT": "Pointez ou touchez une dent pour l'examiner",
     "TOOTH_NUMBER": "Dent n°",
     "RESET_PRESENT": "Réinitialiser (Présente)",
     "COPY_STATE": "Copier l'état",
@@ -4330,7 +4330,9 @@
     "GUMS": "Gencives et palais",
     "GUMS_HIDE": "Masquer les gencives et le palais",
     "GUMS_SHOW": "Afficher les gencives et le palais",
-    "GUM": "Gencive"
+    "GUM": "Gencive",
+    "HELP": "Raccourcis clavier et crédit du modèle",
+    "ZOOM_PICK_FIRST": "Choisissez une dent pour zoomer dessus"
   },
   "TOOTH_NAME": {
     "11": "Incisive centrale supérieure droite",

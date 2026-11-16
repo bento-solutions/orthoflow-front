@@ -86,12 +86,6 @@ interface SummaryGroup {
                 }
               </div>
             }
-            @if (focusCard(); as card) {
-              <div class="d3-focus" role="status">
-                <b>{{ card.title }}</b>
-                @if (card.lines.length) { <span>{{ card.lines.join(' · ') }}</span> }
-              </div>
-            }
             <div class="d3-tools">
               @if (view.view() === 'overview' && !view.zoomedFdi()) {
                 <!-- The gums hide the roots' surroundings and the palate hides nothing: the mouth with or without them. -->
@@ -101,9 +95,12 @@ interface SummaryGroup {
                   <span class="material-icons" aria-hidden="true">{{ view.gums() ? 'visibility' : 'visibility_off' }}</span>
                 </button>
               }
-              @if (!view.zoomedFdi() && selected(); as fdi) {
-                <button type="button" class="d3-tool" [title]="'DENTAL_3D.ZOOM_TOOTH' | translate: { fdi: fdi }"
-                  [attr.aria-label]="'DENTAL_3D.ZOOM_TOOTH' | translate: { fdi: fdi }" (click)="enterCloseUp(fdi)">
+              <!-- Always there, so picking a tooth never rewraps the toolbar under the doctor's eyes (P1-6). -->
+              @if (!view.zoomedFdi()) {
+                <button type="button" class="d3-tool" [disabled]="!selected()"
+                  [title]="selected() ? ('DENTAL_3D.ZOOM_TOOTH' | translate: { fdi: selected() }) : ('DENTAL_3D.ZOOM_PICK_FIRST' | translate)"
+                  [attr.aria-label]="selected() ? ('DENTAL_3D.ZOOM_TOOTH' | translate: { fdi: selected() }) : ('DENTAL_3D.ZOOM_PICK_FIRST' | translate)"
+                  (click)="selected() && enterCloseUp(selected()!)">
                   <span class="material-icons" aria-hidden="true">center_focus_strong</span>
                 </button>
               }
@@ -129,11 +126,26 @@ interface SummaryGroup {
               <button type="button" class="d3-tool" [disabled]="!moved()" [title]="'DENTAL_3D.RESET' | translate" [attr.aria-label]="'DENTAL_3D.RESET' | translate" (click)="reset()">
                 <span class="material-icons" aria-hidden="true">restart_alt</span>
               </button>
+              @if (!compact()) {
+                <!-- The keyboard keys and the model's licence, a press away rather than always on screen (P1-8). -->
+                <button type="button" class="d3-tool" [class.on]="helpOpen()" [attr.aria-pressed]="helpOpen()" aria-controls="d3-help-{{ keysId }}"
+                  [title]="'DENTAL_3D.HELP' | translate" [attr.aria-label]="'DENTAL_3D.HELP' | translate" (click)="helpOpen.set(!helpOpen())">
+                  <span class="d3-q" aria-hidden="true">?</span>
+                </button>
+              }
             </div>
           </div>
 
           <div class="d3-stage" dir="ltr" role="group" [attr.aria-label]="'DENTAL_3D.STAGE' | translate" (keydown)="onKeydown($event)">
             <div class="d3-canvas" #canvasHost aria-hidden="true"></div>
+
+            @if (focusCard(); as card) {
+              <!-- What the last voice command was about, over the stage's free corner, not in the toolbar. -->
+              <div class="d3-focus" role="status">
+                <b>{{ card.title }}</b>
+                @if (card.lines.length) { <span>{{ card.lines.join(' · ') }}</span> }
+              </div>
+            }
 
             @if (view.zoomedFdi()) {
               <!-- On the stage, where the corner is free: in the toolbar it would wrap it, and the stage would jump. -->
@@ -206,9 +218,6 @@ interface SummaryGroup {
           </div>
 
           <p class="sr-only" [id]="keysId">{{ (view.zoomedFdi() ? 'DENTAL_3D.KEYS_CLOSE_UP' : 'DENTAL_3D.KEYS_MOUTH') | translate }}</p>
-          @if (!compact()) {
-          <app-chart-keys [closeUp]="!!view.zoomedFdi()" [faces]="closeUpLetters()" [detail]="sidePanel()" [turnable]="true" />
-          }
 
           <div class="d3-legend" [class.d3-legend--compact]="compact()">
             <span class="d3-key"><i class="sw sw-existing"></i>{{ 'DENTAL_3D.LEGEND.EXISTING' | translate }}</span>
@@ -226,6 +235,9 @@ interface SummaryGroup {
               <span class="d3-key"><i class="sw sw-ring" [style.borderColor]="ringColour(ring)"></i>{{ ('DENTAL_3D.LEGEND.RING_' + ring) | translate }}</span>
             }
           </div>
+          @if (!compact() && helpOpen()) {
+          <div class="d3-help" [id]="'d3-help-' + keysId">
+          <app-chart-keys [closeUp]="!!view.zoomedFdi()" [faces]="closeUpLetters()" [detail]="sidePanel()" [turnable]="true" />
           <p class="d3-credit">
             {{ 'DENTAL_3D.ILLUSTRATIVE' | translate }}
             @if (chart().chartType === 'child') { {{ 'DENTAL_3D.ILLUSTRATIVE_CHILD' | translate }} }
@@ -234,6 +246,15 @@ interface SummaryGroup {
             <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>
             {{ 'DENTAL_3D.ADAPTED' | translate }}
           </p>
+          </div>
+          } @else if (compact()) {
+          <p class="d3-credit">
+            {{ 'DENTAL_3D.ILLUSTRATIVE' | translate }}
+            <a href="https://sketchfab.com/3d-models/permanent-dentition-2f69d7b59c3e4a6a8bcae041bd8e591b" target="_blank" rel="noopener noreferrer" lang="en">“Permanent Dentition”</a>,
+            <span lang="en">University of Dundee</span>,
+            <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>
+          </p>
+          }
         </div>
 
         @if (sidePanel() && (!overlayPanel() || selected())) {
@@ -328,6 +349,8 @@ export class Dental3dChartComponent {
    * reach them), and the credit line stays — it is the model's licence.
    */
   readonly compact = input(false);
+  /** The keyboard keys and the model's licence, shown on demand. */
+  protected readonly helpOpen = signal(false);
   /**
    * The patient file's one-view layout: the chart fills the height it is given, without
    * a frame, and a picked tooth's panel opens over whatever sits beside the chart (the
@@ -725,6 +748,8 @@ export class Dental3dChartComponent {
   }
 
   protected hoverFromLabel(fdi: string | null, event: PointerEvent): void {
+    // A finger lifting is not a pointer leaving: what a tap showed stays until the next tap (P1-7).
+    if (!fdi && event.pointerType && event.pointerType !== 'mouse') return;
     this.engine()?.hoverTooth(fdi);
     this.hover.set(fdi ? { hit: null, fdi, x: event.clientX, y: event.clientY } : null);
   }

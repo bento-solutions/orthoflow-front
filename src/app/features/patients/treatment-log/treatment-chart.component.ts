@@ -117,7 +117,7 @@ const GROUP_ORDER = ['DONE', 'CONDITION', 'PLANNED', 'WATCH', 'ABSENT'];
     .defs { position: absolute; }
     h3 { margin: 0 0 .5rem; font-size: .9375rem; }
     h4 { margin: 0 0 .25rem; font-size: .75rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--text-muted); }
-    h4[data-group='DONE'] { color: rgb(var(--positive-700)); }
+    h4[data-group='DONE'] { color: rgb(var(--petrol-700)); }
     h4[data-group='CONDITION'] { color: rgb(var(--critical-700)); }
     h4[data-group='PLANNED'] { color: rgb(var(--caution-700)); }
     .group { margin-bottom: .875rem; }

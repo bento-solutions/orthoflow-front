@@ -38,6 +38,7 @@ import { PatientImagingPaneComponent } from './patient-imaging-pane.component';
               [focusFdi]="focusFdi()"
               [selected]="null"
               [sidePanel]="false"
+              [overlayPanel]="true"
               (selectedChange)="$event && openTooth.emit($event)"
             />
           } @placeholder {

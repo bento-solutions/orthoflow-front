@@ -45,7 +45,6 @@ interface ToothGroup {
             [staged]="staged()"
             [focusFdi]="focusFdi()"
             [(selected)]="selected"
-            [overlayPanel]="true"
             (assignTreatment)="assigned().open(undefined, $event)"
           />
         } @placeholder {
@@ -202,8 +201,8 @@ interface ToothGroup {
   `,
   styles: [`
     :host { display: block; }
-    .cp-chart { height: max(26rem, calc(100vh - 16rem)); margin-bottom: 1rem; }
-    .cp-placeholder { height: 100%; border-radius: var(--radius-lg); background: var(--surface-hover); }
+    .cp-chart { margin-bottom: 1rem; }
+    .cp-placeholder { height: clamp(22rem, 58vh, 40rem); border-radius: var(--radius-lg); background: var(--surface-hover); }
     .cp-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); }
     @media (max-width: 30rem) { .cp-grid { grid-template-columns: minmax(0, 1fr); } }
     .cp-fdi {

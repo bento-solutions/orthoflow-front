@@ -558,7 +558,7 @@
     "TITLE": "Dental Chart",
     "ADULT_TITLE": "Adult Dentition",
     "CHILD_TITLE": "Child Dentition",
-    "HOVER_PROMPT": "Hover over a tooth to inspect",
+    "HOVER_PROMPT": "Point at or tap a tooth to inspect it",
     "TOOTH_NUMBER": "Tooth #",
     "RESET_PRESENT": "Reset to Present",
     "COPY_STATE": "Copy state string",
@@ -4330,7 +4330,9 @@
     "GUMS": "Gums and palate",
     "GUMS_HIDE": "Hide the gums and the palate",
     "GUMS_SHOW": "Show the gums and the palate",
-    "GUM": "Gum"
+    "GUM": "Gum",
+    "HELP": "Keyboard keys and model credit",
+    "ZOOM_PICK_FIRST": "Pick a tooth to zoom on it"
   },
   "TOOTH_NAME": {
     "11": "Upper right central incisor",

@@ -508,3 +508,7 @@
   .svg-stage { transform: none !important; }
   .tooth-cells { display: none; }
 }
+
+/* The tooth numbers come from the drawing in a serif face; they take the product's own (P1-5). */
+.svg-drawing ::ng-deep svg text,
+.svg-drawing :is(text, tspan) { font-family: var(--font-sans) !important; font-weight: 700; }

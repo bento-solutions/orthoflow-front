@@ -149,7 +149,8 @@ export const FAMILY_PAINT: Readonly<Record<ToothStatusFamily, FamilyPaint>> = {
     solid: `rgb(${CRITICAL_500})`,
   },
   absent: {
-    ground: `rgb(${INK_200} / 0.7)`,
+    /* No wash: an absent tooth is drawn as a dashed outline in 2D as in 3D. */
+    ground: 'transparent',
     ink: `rgb(${INK_500})`,
     text: `rgb(${INK_700})`,
     tint: `rgb(${INK_50})`,
@@ -164,11 +165,15 @@ export const FAMILY_PAINT: Readonly<Record<ToothStatusFamily, FamilyPaint>> = {
  * done/attention/action status colours (tokens.css) instead of inventing a
  * fourth palette for the same three-state idea.
  */
-const POSITIVE_600 = '18 124 74';
+/**
+ * One colour language for the 2D and the 3D chart (UX audit P1-5), taken from the status tokens:
+ * petrol is work in place (done), amber is work to do (planned or under way), red is a condition,
+ * a dashed outline is a tooth that is absent.
+ */
 export const TREATMENT_PLAN_INK = {
-  COMPLETED: `rgb(${POSITIVE_600})`,
+  COMPLETED: `rgb(${PETROL_700})`,
   ACTIVE: `rgb(${CAUTION_600})`,
-  PLANNED: `rgb(${PETROL_500})`,
+  PLANNED: `rgb(${CAUTION_500})`,
 } as const;
 
 /** Dictated, not yet saved. Amber reads as "pending" beside every status family. */

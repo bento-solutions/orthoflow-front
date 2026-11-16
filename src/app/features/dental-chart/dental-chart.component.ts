@@ -681,6 +681,11 @@ export class DentalChartComponent implements AfterViewInit, OnChanges, OnDestroy
     const paint = toothPaint(status);
     el.style.fill = paint.fill;
     el.style.fillOpacity = paint.fillOpacity;
+    // An absent tooth is a dashed outline, as in the 3D chart (P1-5).
+    if (toothStatusDefinition(status).family === 'absent') {
+      el.style.stroke = paint.stroke;
+      el.style.strokeDasharray = '3,2';
+    }
   }
 
   getToothStatusLabel(toothId: string): string {

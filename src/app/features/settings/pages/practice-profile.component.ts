@@ -1,13 +1,15 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiErrors } from '../../../core/services/api-error.service';
 import { PracticeProfileInput, PracticeProfileService } from '../../../core/services/practice-profile.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { formState } from '../../../core/utils/form-state';
+import { missingForDocuments, profileFieldLabels } from '../../../core/utils/profile-fields';
+import { IconComponent } from '../../../shared/ui/icon.component';
 
 type Form = {
-  name: string; legalName: string; ice: string; taxId: string; patente: string; cnssNumber: string; rib: string; inpe: string;
+  name: string; legalName: string; ice: string; taxId: string; patente: string; rc: string; cnssNumber: string; rib: string; inpe: string;
   address: string; city: string; phone: string; email: string; website: string; currency: string; timezone: string; defaultLanguage: string;
 };
 
@@ -15,18 +17,36 @@ const TIMEZONES = ['Africa/Casablanca', 'Europe/Paris', 'Europe/Madrid', 'Africa
 const CURRENCIES = ['MAD', 'EUR', 'USD'];
 
 const fromProfile = (p: Partial<Record<keyof Form, string | undefined>>): Form => ({
-  name: p.name ?? '', legalName: p.legalName ?? '', ice: p.ice ?? '', taxId: p.taxId ?? '', patente: p.patente ?? '', cnssNumber: p.cnssNumber ?? '',
+  name: p.name ?? '', legalName: p.legalName ?? '', ice: p.ice ?? '', taxId: p.taxId ?? '', patente: p.patente ?? '', rc: p.rc ?? '', cnssNumber: p.cnssNumber ?? '',
   rib: p.rib ?? '', inpe: p.inpe ?? '', address: p.address ?? '', city: p.city ?? '', phone: p.phone ?? '', email: p.email ?? '', website: p.website ?? '',
   currency: p.currency ?? 'MAD', timezone: p.timezone ?? 'Africa/Casablanca', defaultLanguage: p.defaultLanguage ?? 'fr',
 });
 
-/** The clinic's identity: what is printed on every invoice, fee note, statement and label. Held on the server so every station agrees. */
+/**
+ * The clinic's identity: the header and legal footer of every printed document. Held on the server so every
+ * station agrees. Invoices, fee notes, care forms and prescriptions are refused while it lacks what they must
+ * carry, so the page says up front which fields each of them still needs.
+ */
 @Component({
   selector: 'app-practice-profile',
   standalone: true,
-  imports: [FormsModule, TranslateModule],
+  imports: [FormsModule, TranslateModule, IconComponent],
   template: `
     <form class="space-y-6" (ngSubmit)="save()">
+      @if (documentGaps().length) {
+        <div class="flex items-start gap-3 rounded-lg border border-caution-200 bg-caution-50 px-4 py-3 text-sm text-caution-800" role="status">
+          <app-icon name="alert-triangle" [size]="18" class="mt-0.5 shrink-0" />
+          <div>
+            <p class="font-semibold">{{ 'SET.PROFILE.DOCS_TITLE' | translate }}</p>
+            <ul class="mt-1 space-y-0.5">
+              @for (gap of documentGaps(); track gap.key) {
+                <li>{{ gap.key | translate: { fields: gap.fields } }}</li>
+              }
+            </ul>
+            <p class="mt-1 text-caution-700">{{ 'SET.PROFILE.DOCS_HINT' | translate }}</p>
+          </div>
+        </div>
+      }
       <section class="card card-pad">
         <h2 class="mb-1 text-lg font-bold text-ink-900">{{ 'SET.PROFILE.IDENTITY' | translate }}</h2>
         <p class="mb-4 text-sm text-ink-500">{{ 'SET.PROFILE.IDENTITY_HINT' | translate }}</p>
@@ -67,6 +87,7 @@ const fromProfile = (p: Partial<Record<keyof Form, string | undefined>>): Form =
         <div class="grid gap-4 sm:grid-cols-3">
           <label class="field"><span class="label">ICE</span><input class="input mono" name="ice" maxlength="30" [ngModel]="f.value().ice" (ngModelChange)="f.set('ice', $event)" /></label>
           <label class="field"><span class="label">IF</span><input class="input mono" name="taxId" maxlength="30" [ngModel]="f.value().taxId" (ngModelChange)="f.set('taxId', $event)" /></label>
+          <label class="field"><span class="label">{{ 'SET.PROFILE.RC' | translate }}</span><input class="input mono" name="rc" maxlength="30" [ngModel]="f.value().rc" (ngModelChange)="f.set('rc', $event)" /></label>
           <label class="field"><span class="label">{{ 'SET.PROFILE.PATENTE' | translate }}</span><input class="input mono" name="patente" maxlength="30" [ngModel]="f.value().patente" (ngModelChange)="f.set('patente', $event)" /></label>
           <label class="field"><span class="label">CNSS</span><input class="input mono" name="cnssNumber" maxlength="30" [ngModel]="f.value().cnssNumber" (ngModelChange)="f.set('cnssNumber', $event)" /></label>
           <label class="field"><span class="label">INPE</span><input class="input mono" name="inpe" maxlength="20" [ngModel]="f.value().inpe" (ngModelChange)="f.set('inpe', $event)" /></label>
@@ -109,6 +130,14 @@ export class PracticeProfileComponent {
   protected readonly timezones = TIMEZONES;
   protected readonly f = formState<Form>(fromProfile({}));
   protected readonly saving = signal(false);
+  /** What each kind of legal document still needs, from what is typed now, before the server refuses one. */
+  protected readonly documentGaps = computed(() => {
+    const missing = missingForDocuments(this.f.value());
+    return [
+      { key: 'SET.PROFILE.DOCS_FINANCIAL', fields: missing.financial },
+      { key: 'SET.PROFILE.DOCS_PRESCRIPTION', fields: missing.prescription },
+    ].filter(g => g.fields.length).map(g => ({ key: g.key, fields: profileFieldLabels(g.fields, this.translate) }));
+  });
 
   constructor() {
     void this.profile.refresh().then(() => {
@@ -123,7 +152,7 @@ export class PracticeProfileComponent {
     const v = this.f.value();
     const blank = (s: string) => (s.trim() === '' ? undefined : s.trim());
     const input: PracticeProfileInput = {
-      name: v.name.trim(), legalName: blank(v.legalName), ice: blank(v.ice), taxId: blank(v.taxId), patente: blank(v.patente),
+      name: v.name.trim(), legalName: blank(v.legalName), ice: blank(v.ice), taxId: blank(v.taxId), patente: blank(v.patente), rc: blank(v.rc),
       cnssNumber: blank(v.cnssNumber), rib: blank(v.rib), inpe: blank(v.inpe), address: blank(v.address), city: blank(v.city), phone: blank(v.phone),
       email: blank(v.email), website: blank(v.website), currency: v.currency, timezone: v.timezone, defaultLanguage: v.defaultLanguage as 'fr' | 'en' | 'ar',
       logoFileId: this.profile.profile()?.logoFileId,

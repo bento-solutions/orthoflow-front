@@ -100,7 +100,9 @@
     "SAVED": "Enregistré.",
     "SCROLLABLE": "Contenu défilant",
     "CHANGE_PATIENT": "Changer de patient",
-    "RESULTS_COUNT": "{{count}} résultat(s)"
+    "RESULTS_COUNT": "{{count}} résultat(s)",
+    "ERROR_PROFILE_INCOMPLETE": "Complétez le profil du cabinet avant d'imprimer ce document. Il manque : {{fields}}.",
+    "OPEN_CLINIC_PROFILE": "Ouvrir le profil du cabinet"
   },
   "DASHBOARD": {
     "TODAYS_VISITS": "Visites du jour",
@@ -1812,7 +1814,7 @@
     },
     "PROFILE": {
       "IDENTITY": "Identité du cabinet",
-      "IDENTITY_HINT": "Imprimée sur les factures, notes d'honoraires, relevés et étiquettes, depuis n'importe quel poste.",
+      "IDENTITY_HINT": "Imprimée en en-tête de chaque document, depuis n'importe quel poste.",
       "NO_LOGO": "Pas de logo",
       "CHOOSE_LOGO": "Choisir un logo",
       "LOGO_HINT": "PNG ou JPG, 500 Ko au plus.",
@@ -1823,13 +1825,18 @@
       "PHONE": "Téléphone",
       "WEBSITE": "Site web",
       "LEGAL": "Mentions légales",
-      "LEGAL_HINT": "Figurent en pied des documents officiels.",
+      "LEGAL_HINT": "Imprimées en pied de chaque document. Le RIB ne figure que sur les factures et les notes d'honoraires.",
       "PATENTE": "Patente",
       "REGIONAL": "Régional",
       "CURRENCY": "Devise",
       "TIMEZONE": "Fuseau horaire",
       "DEFAULT_LANGUAGE": "Langue par défaut",
-      "DEFAULT_LANGUAGE_HINT": "Langue des messages envoyés aux patients qui n'ont pas de langue préférée."
+      "DEFAULT_LANGUAGE_HINT": "Langue des messages envoyés aux patients qui n'ont pas de langue préférée.",
+      "RC": "Registre de commerce (RC)",
+      "DOCS_TITLE": "Certains documents ne peuvent pas encore être imprimés",
+      "DOCS_FINANCIAL": "Factures, notes d'honoraires et feuilles de soins : il manque {{fields}}.",
+      "DOCS_PRESCRIPTION": "Ordonnances : il manque {{fields}}.",
+      "DOCS_HINT": "Ces informations figurent dans l'en-tête et le pied de page légal de chaque document."
     },
     "HOURS": {
       "TITLE": "Horaires d'ouverture",

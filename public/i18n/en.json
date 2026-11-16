@@ -100,7 +100,9 @@
     "SAVED": "Saved.",
     "SCROLLABLE": "Scrollable content",
     "CHANGE_PATIENT": "Change patient",
-    "RESULTS_COUNT": "{{count}} result(s)"
+    "RESULTS_COUNT": "{{count}} result(s)",
+    "ERROR_PROFILE_INCOMPLETE": "Complete the clinic profile before printing this document. Missing: {{fields}}.",
+    "OPEN_CLINIC_PROFILE": "Open the clinic profile"
   },
   "DASHBOARD": {
     "TODAYS_VISITS": "Today's Visits",
@@ -1812,7 +1814,7 @@
     },
     "PROFILE": {
       "IDENTITY": "Practice identity",
-      "IDENTITY_HINT": "Printed on invoices, fee notes, statements and labels, from any workstation.",
+      "IDENTITY_HINT": "Printed in the header of every document, from any workstation.",
       "NO_LOGO": "No logo",
       "CHOOSE_LOGO": "Choose a logo",
       "LOGO_HINT": "PNG or JPG, 500 KB at most.",
@@ -1823,13 +1825,18 @@
       "PHONE": "Phone",
       "WEBSITE": "Website",
       "LEGAL": "Legal details",
-      "LEGAL_HINT": "Shown at the foot of official documents.",
+      "LEGAL_HINT": "Printed in the footer of every document. The RIB only goes on invoices and fee notes.",
       "PATENTE": "Business licence",
       "REGIONAL": "Regional",
       "CURRENCY": "Currency",
       "TIMEZONE": "Time zone",
       "DEFAULT_LANGUAGE": "Default language",
-      "DEFAULT_LANGUAGE_HINT": "Language of messages to patients who have no preferred language."
+      "DEFAULT_LANGUAGE_HINT": "Language of messages to patients who have no preferred language.",
+      "RC": "Trade register (RC)",
+      "DOCS_TITLE": "Some documents can't be printed yet",
+      "DOCS_FINANCIAL": "Invoices, fee notes and care forms need: {{fields}}.",
+      "DOCS_PRESCRIPTION": "Prescriptions need: {{fields}}.",
+      "DOCS_HINT": "These details go in the header and legal footer of every document."
     },
     "HOURS": {
       "TITLE": "Opening hours",

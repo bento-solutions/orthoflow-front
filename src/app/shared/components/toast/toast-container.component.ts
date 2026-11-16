@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { ToastService } from '../../../core/services/toast.service';
 import { IconComponent, IconName } from '../../ui/icon.component';
 import { TranslateModule } from '@ngx-translate/core';
+import { RouterLink } from '@angular/router';
 
 /**
  * Transient feedback region.
@@ -15,13 +16,18 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
   selector: 'app-toast-container',
   standalone: true,
-  imports: [TranslateModule, IconComponent],
+  imports: [TranslateModule, IconComponent, RouterLink],
   template: `
     <div class="region" role="status" aria-live="polite">
       @for (toast of toastService.toasts(); track toast.id) {
         <div class="toast" [class]="toast.variant">
           <span class="icon-slot"><app-icon [name]="iconFor(toast.variant)" [size]="17" /></span>
-          <span class="message">{{ toast.message }}</span>
+          <span class="message">
+            {{ toast.message }}
+            @if (toast.action; as action) {
+              <a class="action" [routerLink]="action.link" (click)="toastService.dismiss(toast.id)">{{ action.label }}</a>
+            }
+          </span>
           <button
             type="button"
             class="dismiss"
@@ -83,6 +89,14 @@ import { TranslateModule } from '@ngx-translate/core';
     .toast.info .icon-slot    { color: rgb(var(--petrol-700)); }
 
     .message { flex: 1; line-height: var(--leading-snug); }
+    .action {
+      display: block;
+      margin-top: var(--space-1);
+      font-weight: 600;
+      color: rgb(var(--petrol-700));
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
 
     .dismiss {
       display: flex;

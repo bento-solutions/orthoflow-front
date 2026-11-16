@@ -4,9 +4,9 @@ import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InvoiceService } from '../../services/invoice.service';
 import { Invoice, InvoiceStatus } from '../../models/billing.model';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslateModule } from '@ngx-translate/core';
 import { downloadInvoicePdf } from '../../../../core/utils/invoice-pdf';
-import { ToastService } from '../../../../core/services/toast.service';
+import { ApiErrors } from '../../../../core/services/api-error.service';
 import { DownloadService } from '../../../../core/services/download.service';
 import { LanguageService } from '../../../../core/services/language.service';
 import { IconComponent } from '../../../../shared/ui/icon.component';
@@ -213,8 +213,7 @@ export class InvoiceListComponent {
   private readonly patients = inject(PatientService);
   private readonly downloads = inject(DownloadService);
   private readonly language = inject(LanguageService);
-  private readonly toast = inject(ToastService);
-  private readonly translate = inject(TranslateService);
+  private readonly errors = inject(ApiErrors);
 
   readonly query = signal('');
   readonly statusFilter = signal<'' | InvoiceStatus>('');
@@ -278,7 +277,7 @@ export class InvoiceListComponent {
 
   downloadPdf(invoice: Invoice): void {
     downloadInvoicePdf(this.downloads, invoice, this.language.currentLang())
-      .catch(() => this.toast.error(this.translate.instant('COMMON.EXPORT_FAILED')));
+      .catch(error => this.errors.report(error, 'COMMON.EXPORT_FAILED'));
   }
 
   /**

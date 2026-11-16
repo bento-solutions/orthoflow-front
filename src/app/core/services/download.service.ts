@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { api } from '../api/url';
 
@@ -45,6 +45,25 @@ export function filenameFromDisposition(header: string | null, fallback: string)
 }
 
 /**
+ * A failed blob request carries its problem document as a Blob, which the error toast cannot
+ * read: it is parsed back into JSON so the person sees why ("Complete the clinic profile…"),
+ * not "The export failed".
+ */
+export async function readableError(error: unknown): Promise<unknown> {
+  if (!(error instanceof HttpErrorResponse) || !(error.error instanceof Blob) || !/json/.test(error.error.type)) {
+    return error;
+  }
+  try {
+    const body: unknown = JSON.parse(await error.error.text());
+    return new HttpErrorResponse({
+      error: body, headers: error.headers, status: error.status, statusText: error.statusText, url: error.url ?? undefined,
+    });
+  } catch {
+    return error;
+  }
+}
+
+/**
  * Downloads or previews a file the API generates (an export, a statement, a label sheet).
  * These endpoints need the bearer token, so a plain link or `<a download>` cannot reach
  * them: the bytes are fetched with the authenticated client and handed to the browser.
@@ -75,9 +94,14 @@ export class DownloadService {
   }
 
   private async fetch(path: string, query: Record<string, QueryValue> | undefined, fallbackName: string) {
-    const response = await firstValueFrom(
-      this.http.get(api(path), { params: toParams(query), responseType: 'blob', observe: 'response' }),
-    );
+    let response;
+    try {
+      response = await firstValueFrom(
+        this.http.get(api(path), { params: toParams(query), responseType: 'blob', observe: 'response' }),
+      );
+    } catch (error) {
+      throw await readableError(error);
+    }
     return {
       blob: response.body as Blob,
       name: filenameFromDisposition(response.headers.get('Content-Disposition'), fallbackName),

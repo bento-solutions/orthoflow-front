@@ -8707,6 +8707,7 @@ export interface components {
             name: string;
             patente?: string;
             phone?: string;
+            rc?: string;
             rib?: string;
             taxId?: string;
             timezone?: string;

@@ -14,7 +14,7 @@ import { TranslateModule } from '@ngx-translate/core';
   standalone: true,
   imports: [TranslateModule],
   template: `
-    <button #trigger type="button" class="btn btn-record cm-trigger" (click)="open.set(!open())" [disabled]="starting()"
+    <button #trigger type="button" class="btn btn-primary cm-trigger" (click)="open.set(!open())" [disabled]="starting()"
             aria-haspopup="menu" [attr.aria-expanded]="open()" [attr.aria-controls]="open() ? 'consultation-menu' : null">
       <span class="material-icons" aria-hidden="true">mic</span>
       {{ (starting() ? 'VOICE.STARTING' : 'CONSULTATION.BUTTON') | translate }}
@@ -49,9 +49,8 @@ import { TranslateModule } from '@ngx-translate/core';
   `,
   styles: [`
     :host { position: relative; display: inline-flex; }
-    /* The banner's one recording action: the same blue as the voice button it replaces. */
-    .cm-trigger { display: inline-flex; align-items: center; gap: .4rem; background: var(--primary, #2563eb); color: #fff; border-color: transparent; }
-    .cm-trigger:hover:not(:disabled) { filter: brightness(.94); }
+    /* The banner's one main action, in the action colour like every other primary button (P1-9). */
+    .cm-trigger { display: inline-flex; align-items: center; gap: .4rem; width: 100%; }
     .cm-trigger:disabled { opacity: .7; }
     .cm-caret { margin-inline-start: -.125rem; transition: transform .15s; }
     .cm-trigger[aria-expanded='true'] .cm-caret { transform: rotate(180deg); }

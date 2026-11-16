@@ -6,6 +6,7 @@ import { ConsultationFocusService } from '../../../../core/consultation/consulta
 import { InputLanguageService } from '../../../../core/voice/input-language.service';
 import { INPUT_LANGUAGES } from '../../../../core/voice/language-filter';
 import { VoiceOrchestratorService } from '../../../../core/voice/voice-orchestrator.service';
+import { ClinicalRecordService } from '../../../../core/services/clinical-record.service';
 import { VoicePreferencesService } from '../../../../core/voice/voice-preferences.service';
 
 /**
@@ -38,6 +39,12 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
           @for (a of model.allergyBadges(); track a.label) {
             <span class="ck-allergy" [class.new]="!a.fromRecord">{{ a.label }}</span>
           }
+        </span>
+      }
+      <!-- Conditions and current medications, from the same alert list as the patient banner. -->
+      @if (otherAlerts().length) {
+        <span class="ck-allergies ck-conditions" role="note" [attr.aria-label]="'ALERTS.TITLE' | translate">
+          @for (a of otherAlerts(); track a.id) { <span class="ck-allergy">{{ a.label }}</span> }
         </span>
       }
 
@@ -110,6 +117,8 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
     .ck-allergies .material-icons { font-size: 1.1rem; }
     .ck-allergy { font-size: .8125rem; font-weight: 600; padding: .05rem .4rem; border-radius: 999px; background: rgb(var(--critical-50)); white-space: nowrap; }
     .ck-allergy.new { outline: 1px dashed rgb(var(--critical-400)); }
+    .ck-conditions { color: rgb(var(--caution-700)); }
+    .ck-conditions .ck-allergy { background: rgb(var(--caution-50)); }
     .ck-spacer { flex: 1; }
     .ck-icon { display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: .5rem; color: rgb(var(--ink-700)); flex: none; }
     .ck-icon:hover { background: var(--surface-hover); }
@@ -126,7 +135,7 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
     .ck-alert.critical { background: rgb(var(--critical-50)); color: rgb(var(--critical-800)); }
     .ck-alert-btn { margin-inline-start: auto; font-weight: 700; text-decoration: underline; }
     @media (max-width: 1099.98px) {
-      .ck-name, .ck-allergies, .ck-chip-label { display: none; }
+      .ck-name, .ck-conditions, .ck-chip-label { display: none; }
       .ck-bar { padding: .375rem .5rem; gap: .375rem; }
     }
     /* A phone: every control stays, as an icon, and End keeps its colour and its name for screen readers. */
@@ -142,6 +151,9 @@ import { VoicePreferencesService } from '../../../../core/voice/voice-preference
 export class CockpitControlsComponent {
   protected readonly c = inject(ConsultationService);
   protected readonly model = inject(CockpitModelService);
+  private readonly records = inject(ClinicalRecordService);
+  /** The allergies are shown above, with what the consultation has just heard. */
+  protected readonly otherAlerts = computed(() => this.records.medicalAlerts().filter(a => a.kind !== 'ALLERGY'));
   protected readonly focus = inject(ConsultationFocusService);
   protected readonly voice = inject(VoiceOrchestratorService);
   protected readonly prefs = inject(VoicePreferencesService);

@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ScheduleService } from '../../core/services/schedule.service';
 import { PatientService } from '../../core/services/patient.service';
@@ -866,6 +866,26 @@ export class ScheduleComponent {
 
     // Someone at the front desk checking a patient in changes this screen too.
     this.live.of('appointment').pipe(takeUntilDestroyed()).subscribe(() => this.scheduleService.refreshAppointments());
+
+    this.openBookingFromAddress();
+  }
+
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  /**
+   * "Book appointment" in a patient file comes here as `?book=<patientId>`: the new-appointment
+   * form opens with that patient filled in. The address is cleaned at once, so a reload or Back
+   * does not open it again. Only the id travels: no name in the history of a shared computer.
+   */
+  private openBookingFromAddress(): void {
+    const id = this.route.snapshot.queryParamMap.get('book');
+    if (!id) return;
+    this.openAddModal();
+    const current = this.patientService.currentPatient();
+    const name = current?.id === id ? `${current.firstName} ${current.lastName}`.trim() : this.patientService.nameFor(id) ?? '';
+    this.pickPatient({ id, name, phone: current?.id === id ? current.phone || undefined : undefined });
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { book: null }, queryParamsHandling: 'merge', replaceUrl: true });
   }
 
   yearMonths = Array.from({ length: 12 }, (_, i) => {

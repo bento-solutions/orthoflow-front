@@ -4,6 +4,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { DocumentCategory, PatientFile, PatientFilesApi } from '../../../core/services/patient-files-api.service';
 import { ModelType, isModel } from './scan-model';
 import { ScanViewerComponent } from './scan-viewer.component';
+import { IconComponent } from '../../../shared/ui/icon.component';
 
 type PaneKind = Extract<DocumentCategory, 'XRAY' | 'INTRAORAL_3D'>;
 
@@ -16,9 +17,16 @@ type PaneKind = Extract<DocumentCategory, 'XRAY' | 'INTRAORAL_3D'>;
 @Component({
   selector: 'app-patient-imaging-pane',
   standalone: true,
-  imports: [DatePipe, TranslateModule, ScanViewerComponent],
+  imports: [DatePipe, TranslateModule, ScanViewerComponent, IconComponent],
   host: { class: 'flex min-h-0 min-w-0 flex-col' },
   template: `
+    @if (nothing()) {
+      <!-- Nothing to show: one slim row instead of half the screen, so the summary rises (P1-8). -->
+      <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-ink-300 bg-surface px-3 py-2">
+        <p class="flex items-center gap-2 text-sm text-ink-600"><app-icon name="image" [size]="16" />{{ 'PFILES.NO_IMAGING' | translate }}</p>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="openDocuments.emit()"><app-icon name="upload" [size]="14" />{{ 'PFILES.ADD_XRAY' | translate }}</button>
+      </div>
+    } @else {
     <div class="flex flex-wrap items-center justify-between gap-2 pb-2">
       <div class="inline-flex overflow-hidden rounded-lg border border-ink-200 bg-surface text-[0.8125rem] font-semibold" role="group"
            [attr.aria-label]="'PFILES.PANE_LABEL' | translate">
@@ -72,11 +80,14 @@ type PaneKind = Extract<DocumentCategory, 'XRAY' | 'INTRAORAL_3D'>;
         </div>
       }
     </div>
+    }
   `,
 })
 export class PatientImagingPaneComponent implements OnDestroy {
   readonly patientId = input.required<string>();
   readonly openDocuments = output<void>();
+  /** True once loaded with neither an X-ray nor an intraoral scan. */
+  readonly emptyChange = output<boolean>();
 
   private readonly api = inject(PatientFilesApi);
 
@@ -94,8 +105,11 @@ export class PatientImagingPaneComponent implements OnDestroy {
     this.files().filter((f) => f.category === this.kind() && (f.contentType.startsWith('image/') || (this.kind() === 'INTRAORAL_3D' && isModel(f.contentType)))),
   );
   readonly current = computed(() => this.list()[this.index()] ?? null);
+  readonly nothing = computed(() => !this.loading() && !this.files().some((f) =>
+    this.kinds.includes(f.category as PaneKind) && (f.contentType.startsWith('image/') || isModel(f.contentType))));
 
   constructor() {
+    effect(() => this.emptyChange.emit(this.nothing()));
     effect(() => {
       const id = this.patientId();
       this.api.version();

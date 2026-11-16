@@ -1,8 +1,8 @@
-import { Component, effect, inject, OnInit, OnDestroy, signal, computed, ElementRef } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { Subject, switchMap, filter, map, takeUntil } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, filter, map, switchMap, takeUntil } from 'rxjs';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { CommandRegistryService } from '../../../core/services/command-registry.service';
@@ -10,20 +10,12 @@ import { PatientService } from '../../../core/services/patient.service';
 import { DentalChartService } from '../../../core/services/dental-chart.service';
 import { Dental3dViewService } from '../../../core/services/dental-3d-view.service';
 import { ScheduleService } from '../../../core/services/schedule.service';
-import { Patient, DentalChartState, DentalChartType, Appointment } from '../../../core/models/patient.model';
-import { GumStatusComponent } from '../gum-status/gum-status.component';
-import { TreatmentLogComponent } from '../treatment-log/treatment-log.component';
-import { TreatmentSummaryComponent } from '../treatment-log/treatment-chart.component';
-import { Dental3dChartComponent } from '../../dental-3d/dental-3d-chart.component';
+import { Appointment } from '../../../core/models/patient.model';
 import { InvoiceService } from '../../billing/services/invoice.service';
 import { Invoice } from '../../billing/models/billing.model';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PageLabelService } from '../../../core/services/page-label.service';
-import { FormsModule } from '@angular/forms';
-import { PatientTreatmentService, PatientTreatmentRequestPayload } from '../../../core/services/patient-treatment.service';
-import { StockService } from '../../../core/services/stock.service';
-import { PatientTreatment, PatientTreatmentConsumable, PatientTreatmentStatus } from '../../../core/models/patient-treatment.model';
-import { Treatment, StockItem } from '../../../core/models/stock.model';
+import { PatientTreatmentService } from '../../../core/services/patient-treatment.service';
+import { PatientTreatment } from '../../../core/models/patient-treatment.model';
 import { ClinicalRecordService } from '../../../core/services/clinical-record.service';
 import { VoiceContextService } from '../../../core/voice/voice-context.service';
 import { stagedToothFindings } from '../../../core/voice/voice-chart-marks';
@@ -36,32 +28,83 @@ import { ConsultationCockpitComponent } from '../../../shared/components/consult
 import { ConsultationService } from '../../../core/consultation/consultation.service';
 import { ConsultationApiService } from '../../../core/consultation/consultation-api.service';
 import { ConsultationLogComponent } from '../../../shared/components/consultation/consultation-log.component';
-import { ConsultationMenuComponent } from './consultation-menu.component';
-import { ConsultationReportComponent } from './consultation-report.component';
-import { PatientGalleryComponent } from './patient-gallery.component';
-import { MedicalHistoryCategory, NoteCategory } from '../../../core/models/clinical-record.model';
 import { PermissionService } from '../../../core/services/permission.service';
+import { IconComponent, IconName } from '../../../shared/ui/icon.component';
 import { PatientAccountComponent } from '../account/patient-account.component';
-import { RegistrationInviteComponent } from '../registration-invite.component';
 import { PatientDocumentsComponent } from '../documents/patient-documents.component';
 import { PatientFilesComponent } from '../documents/patient-files.component';
-import { PatientImagingPaneComponent } from './patient-imaging-pane.component';
 import { PatientPhotosComponent } from '../patient-photos/patient-photos.component';
-import { DialogDirective } from '../../../shared/ui/dialog.directive';
-import { findingLabel } from '../../../core/clinical/finding-options';
+import { TreatmentLogComponent } from '../treatment-log/treatment-log.component';
+import { ChartPlanTabComponent } from './chart-plan-tab.component';
+import { MedicalHistoryPanelComponent } from './medical-history-panel.component';
+import { PatientBannerComponent, PatientState } from './patient-banner.component';
+import { SummaryTabComponent } from './summary-tab.component';
+import { VisitsTabComponent } from './visits-tab.component';
 
+export type DossierTab = 'voice' | 'summary' | 'chart' | 'visits' | 'imaging' | 'billing' | 'documents';
+
+interface TabDef {
+  id: DossierTab;
+  key: string;
+  icon: IconName;
+}
+
+/** The file's six sections, in the order a visit goes (P1-1). Voice comes first while a session runs. */
+export const DOSSIER_TABS: readonly TabDef[] = [
+  { id: 'summary', key: 'PATIENTS.DOSSIER.TAB.SUMMARY', icon: 'grid' },
+  { id: 'chart', key: 'PATIENTS.DOSSIER.TAB.CHART', icon: 'tooth' },
+  { id: 'visits', key: 'PATIENTS.DOSSIER.TAB.VISITS', icon: 'history' },
+  { id: 'imaging', key: 'PATIENTS.DOSSIER.TAB.IMAGING', icon: 'image' },
+  { id: 'billing', key: 'PATIENTS.DOSSIER.TAB.BILLING', icon: 'wallet' },
+  { id: 'documents', key: 'PATIENTS.DOSSIER.TAB.DOCUMENTS', icon: 'file-text' },
+];
+
+/** Addresses of the former tabs still open the right section: bookmarks and links keep working. */
+const LEGACY_TABS: Record<string, DossierTab> = { overview: 'summary', clinical: 'chart', financial: 'billing' };
+
+/** The tab an address names, or Summary for none, an unknown one, or one this person may not open. */
+export function tabFromQuery(value: string | null, allowed: readonly string[]): DossierTab {
+  const id = (value && (LEGACY_TABS[value] ?? value)) || 'summary';
+  return (id === 'voice' || allowed.includes(id) ? id : 'summary') as DossierTab;
+}
+
+/**
+ * What the badge says (P1-3): the patient's own status when the practice set one (on hold,
+ * completed), and otherwise read from the same treatments the summary and the plan show, so the
+ * badge can no longer say "Active Treatment" over "No active treatments".
+ */
+export function patientState(status: string | null | undefined, treatments: readonly PatientTreatment[]): PatientState {
+  if (status === 'ON_HOLD') return { key: 'PATIENTS.DOSSIER.STATUS_ON_HOLD', pill: 'pill-attention' };
+  if (status === 'COMPLETED') return { key: 'PATIENTS.DOSSIER.STATUS_COMPLETED', pill: 'pill-done' };
+  if (treatments.some(t => t.status === 'ACTIVE')) return { key: 'PATIENTS.DOSSIER.STATE.IN_TREATMENT', pill: 'pill-active' };
+  if (treatments.some(t => t.status === 'PLANNED')) return { key: 'PATIENTS.DOSSIER.STATE.PLANNED', pill: 'pill-attention' };
+  return { key: 'PATIENTS.DOSSIER.STATE.NONE', pill: 'pill-idle' };
+}
+
+/**
+ * The patient file.
+ *
+ * The banner stays in view on every tab, with the medical alerts (P0-2, P0-3); under it six tabs,
+ * each with its own address (`?tab=chart`), so Reload, Back and a shared link land where they were
+ * (P1-2). A change of query keeps the component, and with it the voice session and the
+ * consultation, alive.
+ */
 @Component({
   selector: 'app-patient-dossier',
   standalone: true,
-  imports: [DialogDirective, CommonModule, RouterModule, Dental3dChartComponent, TranslateModule, FormsModule, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent, ConsultationCockpitComponent, ConsultationLogComponent, ConsultationMenuComponent, ConsultationReportComponent, PatientGalleryComponent, PatientAccountComponent, RegistrationInviteComponent, PatientDocumentsComponent, PatientFilesComponent, PatientImagingPaneComponent, PatientPhotosComponent, GumStatusComponent, TreatmentLogComponent, TreatmentSummaryComponent],
+  imports: [
+    TranslateModule, IconComponent, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent,
+    ConsultationCockpitComponent, ConsultationLogComponent, PatientAccountComponent, PatientDocumentsComponent,
+    PatientFilesComponent, PatientPhotosComponent, TreatmentLogComponent, ChartPlanTabComponent, MedicalHistoryPanelComponent,
+    PatientBannerComponent, SummaryTabComponent, VisitsTabComponent,
+  ],
   template: `
     <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive() && !cockpit()"
          [class.has-consultation]="consultation.visible() && !cockpit()" [class.is-cockpit]="cockpit()">
       @if (patientService.currentPatient(); as patient) {
       @if (cockpit()) {
-        <!-- While a consultation records, one screen: the cockpit replaces the tabs,
-             the dictation panel, the side panel and the dock. Nothing that deletes,
-             edits or prints is on it. -->
+        <!-- While a consultation records, one screen: the cockpit replaces the tabs, the dictation
+             panel, the side panel and the dock. Nothing that deletes, edits or prints is on it. -->
         <app-consultation-cockpit
           [chart]="dentalChartState()"
           [findings]="clinicalRecordService.findings()"
@@ -69,1824 +112,207 @@ import { findingLabel } from '../../../core/clinical/finding-options';
           (leave)="leaveForList()"
         />
       } @else {
-      <div class="dossier-top">
-      <!-- Tabs first: the sections of the file, above whose file it is. -->
-      <nav class="dossier-tabs no-print" role="tablist" [attr.aria-label]="'PATIENTS.DOSSIER.TITLE' | translate" (keydown)="onTabKeydown($event, navTabs(), activeTab(), setActiveTab.bind(this), 'dossier-tab-')">
-        @for (tab of navTabs(); track tab.id) {
-          <button type="button"
-            [id]="'dossier-tab-' + tab.id"
-            role="tab"
-            [attr.aria-selected]="activeTab() === tab.id"
-            [attr.aria-controls]="'dossier-panel-' + tab.id"
-            [tabindex]="activeTab() === tab.id ? 0 : -1"
-            [class.active]="activeTab() === tab.id"
-            [class.voice-tab]="tab.id === 'voice'"
-            (click)="activeTab.set(tab.id)"
-          >
-            <span class="material-icons" aria-hidden="true">{{ tab.icon }}</span>
-            {{ tab.key | translate }}
-            @if (tab.id === 'voice' && voiceSession.isActive()) {
-              <span class="tab-live-dot" aria-hidden="true"></span>
-            }
-          </button>
-        }
-      </nav>
+      <!-- The banner and the tabs stay in view; once scrolled, the banner is one row (P0-3). -->
+      <div class="dossier-top" [class.is-compact]="compact()">
+        <app-patient-banner
+          [patient]="patient"
+          [state]="state()"
+          [nextAppointment]="nextAppointment()"
+          [balance]="canBilling() ? balanceDueForPatient() : null"
+          [starting]="voiceStarting() || consultation.starting()"
+          [compact]="compact()"
+          (startVoice)="startSession()"
+          (startConsultation)="startConsultation()"
+          (endSession)="endSession()"
+          (openVoice)="goTo('voice')"
+          (openHistory)="historyOpen.set(true)"
+          (openBilling)="goTo('billing')"
+          (book)="bookAppointment()"
+          (print)="onPrint()"
+          (archive)="onArchive()"
+        />
 
-      <!-- Patient banner: the name and every action on one line, then the facts.
-           It scrolls away with the page. -->
-      <header class="dossier-header">
-        <div class="header-top">
-          <div class="patient-title">
-            <h1>{{ patient.firstName }} {{ patient.lastName }}</h1>
-            <span class="pill" [class]="'pill ' + statusPillClass(patient.status)">{{ 'PATIENTS.DOSSIER.STATUS_' + patient.status | translate }}</span>
-          </div>
-          <div class="header-actions no-print">
-            <!-- Recording starts here and nowhere else: a session only means
-                 something in the context of one patient's dossier. While one runs,
-                 its state takes the place of the menu. -->
-            @if (voiceSession.isActive()) {
-              <button type="button" class="btn btn-recording" (click)="endSession()"
-                      [disabled]="voiceSession.busy()">
-                <span class="material-icons" aria-hidden="true">stop_circle</span>
-                {{ (voiceSession.busy() ? 'VOICE.ENDING' : 'VOICE.END_AND_REVIEW') | translate }}
-              </button>
-            } @else if (voiceSession.reviewing()) {
-              <button type="button" class="btn btn-record" (click)="activeTab.set('voice')">
-                <span class="material-icons" aria-hidden="true">fact_check</span>
-                {{ 'VOICE.REVIEWING' | translate }}
-              </button>
-            } @else if (consultation.isOpen() || consultation.intro()) {
-              <button type="button" class="btn btn-record btn-consult live" (click)="activeTab.set('voice')">
-                <span class="material-icons" aria-hidden="true">forum</span>
-                {{ 'CONSULTATION.IN_PROGRESS' | translate }}
-              </button>
-            } @else {
-              <!-- One button, two ways to record: dictate findings, or keep the whole conversation. -->
-              <app-consultation-menu
-                [consultationAvailable]="consultation.available()"
-                [introHidden]="consultation.introHidden()"
-                [starting]="voiceStarting() || consultation.starting()"
-                (voice)="startSession()"
-                (consultation)="startConsultation()"
-                (showIntro)="consultation.setIntroHidden(false)"
-              />
-            }
-            <app-registration-invite [patientId]="patient.id" [name]="patient.firstName + ' ' + patient.lastName" />
-            <button type="button" class="btn btn-secondary btn-compact" (click)="onPrint()"
-                    [attr.aria-label]="'COMMON.PRINT' | translate" [title]="'COMMON.PRINT' | translate">
-              <span class="material-icons" aria-hidden="true">print</span>
-              <span class="btn-label">{{ 'COMMON.PRINT' | translate }}</span>
+        <nav class="dossier-tabs no-print" role="tablist" [attr.aria-label]="'PATIENTS.DOSSIER.TITLE' | translate"
+             (keydown)="onTabKeydown($event)">
+          @for (tab of navTabs(); track tab.id) {
+            <button type="button"
+              [id]="'dossier-tab-' + tab.id"
+              role="tab"
+              [attr.aria-selected]="activeTab() === tab.id"
+              [attr.aria-controls]="'dossier-panel-' + tab.id"
+              [tabindex]="activeTab() === tab.id ? 0 : -1"
+              [class.active]="activeTab() === tab.id"
+              (click)="goTo(tab.id, false)"
+            >
+              <app-icon [name]="tab.icon" [size]="16" />
+              {{ tab.key | translate }}
+              @if (tab.id === 'voice' && voiceSession.isActive()) {
+                <span class="tab-live-dot" aria-hidden="true"></span>
+              }
             </button>
-            <button type="button" class="btn btn-primary btn-compact" [routerLink]="['edit']"
-                    [attr.aria-label]="('COMMON.EDIT' | translate) + ' ' + ('PATIENTS.NAME' | translate)"
-                    [title]="('COMMON.EDIT' | translate) + ' ' + ('PATIENTS.NAME' | translate)">
-              <span class="material-icons" aria-hidden="true">edit</span>
-              <span class="btn-label">{{ 'COMMON.EDIT' | translate }} {{ 'PATIENTS.NAME' | translate }}</span>
-            </button>
-            <button type="button" class="btn btn-danger btn-compact" (click)="onDelete()"
-                    [attr.aria-label]="'COMMON.DELETE' | translate" [title]="'COMMON.DELETE' | translate">
-              <span class="material-icons" aria-hidden="true">delete</span>
-              <span class="btn-label">{{ 'COMMON.DELETE' | translate }}</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="patient-quick-info">
-          <div class="info-item">
-            <span class="label">{{ 'PATIENTS.DOSSIER.AGE' | translate }}</span>
-            <span class="value">
-              @if (patient.dateOfBirth) { {{ calculateAge(patient.dateOfBirth) }} {{ 'PATIENTS.DOSSIER.YEARS' | translate }} }
-              @else { <span class="value-unknown">—</span> }
-            </span>
-          </div>
-          <div class="info-divider"></div>
-          <div class="info-item">
-            <span class="label">{{ 'PATIENTS.DOSSIER.GENDER' | translate }}</span>
-            <span class="value">
-              @if (patient.gender) { {{ 'PATIENTS.DOSSIER.GENDER_' + patient.gender | translate }} }
-              @else { <span class="value-unknown">—</span> }
-            </span>
-          </div>
-          <div class="info-divider"></div>
-          <div class="info-item">
-            <span class="label">{{ 'PATIENTS.DOSSIER.PHONE' | translate }}</span>
-            <span class="value">{{ patient.phone || '—' }}</span>
-          </div>
-          <div class="info-divider"></div>
-          <div class="info-item">
-            <span class="label">{{ 'PATIENTS.DOSSIER.CIN' | translate }}</span>
-            <span class="value">{{ patient.cin || 'N/A' }}</span>
-          </div>
-          <div class="info-divider"></div>
-          <div class="info-item">
-            <span class="label">{{ 'PATIENTS.DOSSIER.INSURANCE' | translate }}</span>
-            <span class="value">{{ patient.insuranceProvider || ('PATIENTS.DOSSIER.PRIVATE' | translate) }}</span>
-          </div>
-          <!-- The two figures the doctor wants without opening anything. -->
-          <div class="info-divider"></div>
-          <div class="info-item info-kpi">
-            <span class="label">{{ 'PATIENTS.NEXT_APPOINTMENT' | translate }}</span>
-            <span class="value">
-              @if (nextAppointment(); as appt) {
-                {{ appt.dateTime | date:'mediumDate' }} · {{ appt.dateTime | date:'shortTime' }}
-                @if (appt.type) { <span class="value-sub">{{ appt.type }}</span> }
-              } @else { <span class="value-unknown">{{ 'PATIENTS.DOSSIER.NO_UPCOMING_APPOINTMENT' | translate }}</span> }
-            </span>
-          </div>
-          <div class="info-divider"></div>
-          <div class="info-item info-kpi">
-            <span class="label">{{ 'BILLING.OUTSTANDING' | translate }}</span>
-            <span class="value">
-              @if (balanceDueForPatient() > 0) {
-                <button type="button" class="link-btn balance-due" (click)="activeTab.set('financial')">{{ balanceDueForPatient() | number:'1.2-2' }} MAD</button>
-              } @else { <span class="value-unknown">0.00 MAD</span> }
-            </span>
-          </div>
-        </div>
-      </header>
+          }
+        </nav>
       </div>
 
-      <!-- Main Content Area -->
-      <div class="dossier-content" [class.is-one-view]="activeTab() === 'overview'">
+      <div class="dossier-content" [class.is-wide]="activeTab() === 'summary' || activeTab() === 'chart'">
+        <div class="tab-pane" role="tabpanel" [id]="'dossier-panel-' + activeTab()" [attr.aria-labelledby]="'dossier-tab-' + activeTab()" tabindex="0">
         @switch (activeTab()) {
           @case ('voice') {
-            <!-- Every voice result is shown here: the chart with what is staged
-                 drawn on it, what was dictated, and the review. Nothing a
-                 dentist says moves them to another tab or view. -->
-            <div class="tab-pane" role="tabpanel" id="dossier-panel-voice" aria-labelledby="dossier-tab-voice" tabindex="0">
-              <app-voice-session-panel
-                [chart]="dentalChartState()"
-                [findings]="clinicalRecordService.findings()"
-                [treatments]="patientTreatments()"
-                [patientId]="patient.id"
-                [starting]="voiceStarting()"
-                [consultation]="consultation.isOpen()"
-                (begin)="beginSession()"
-                (saved)="onVoiceSaved()"
-              />
+            <!-- Every voice result is shown here: the chart with what is staged drawn on it, what
+                 was dictated, and the review. Nothing a dentist says moves them to another tab. -->
+            <app-voice-session-panel
+              [chart]="dentalChartState()"
+              [findings]="clinicalRecordService.findings()"
+              [treatments]="patientTreatments()"
+              [patientId]="patient.id"
+              [starting]="voiceStarting()"
+              [consultation]="consultation.isOpen()"
+              (begin)="beginSession()"
+              (saved)="onVoiceSaved()"
+            />
+          }
+          @case ('summary') {
+            <app-summary-tab
+              [patient]="patient"
+              [chart]="dentalChartState()"
+              [findings]="clinicalRecordService.findings()"
+              [notes]="clinicalRecordService.notes()"
+              [treatments]="patientTreatments()"
+              [staged]="stagedFindings()"
+              [focusFdi]="voiceFocusFdi()"
+              [nextAppointment]="nextAppointment()"
+              [balance]="canBilling() ? balanceDueForPatient() : null"
+              (openTooth)="openTooth($event)"
+              (openTab)="goTo($any($event), false)"
+              (openHistory)="historyOpen.set(true)"
+              (openLog)="openConsultationLog($event)"
+              (book)="bookAppointment()"
+            />
+          }
+          @case ('chart') {
+            <app-chart-plan-tab
+              [patient]="patient"
+              [chart]="dentalChartState()"
+              [findings]="clinicalRecordService.findings()"
+              [notes]="clinicalRecordService.notes()"
+              [treatments]="patientTreatments()"
+              [staged]="stagedFindings()"
+              [focusFdi]="voiceFocusFdi()"
+              [selected]="selectedToothForTreatments()"
+              (selectedChange)="onToothSelected3D($event)"
+              (treatmentsChanged)="loadPatientTreatments(patient.id)"
+            />
+          }
+          @case ('visits') {
+            <app-visits-tab
+              [patientId]="patient.id"
+              [appointments]="patientAppointments()"
+              [notes]="clinicalRecordService.notes()"
+              (book)="bookAppointment()"
+              (openLog)="openConsultationLog($event)"
+            />
+          }
+          @case ('imaging') {
+            <h2 class="sr-only">{{ 'PATIENTS.DOSSIER.TAB.IMAGING' | translate }}</h2>
+            <div class="space-y-6">
+              @if (canClinical()) { <app-patient-photos [patientId]="patient.id" /> }
+              <app-patient-files [patientId]="patient.id" />
             </div>
           }
-          @case ('overview') {
-            <div class="tab-pane" role="tabpanel" id="dossier-panel-overview" aria-labelledby="dossier-tab-overview" tabindex="0">
-              <!-- One view: the 3D chart and the X-ray / intraoral scan side by side,
-                   frameless and as large as the window allows. A picked tooth opens
-                   over the picture, so the chart never moves. -->
-              <h2 class="sr-only">{{ 'DENTAL_3D.TITLE' | translate }}</h2>
-              <div class="one-view-row">
-                <div class="one-view-chart">
-                  @if (dentalChartState(); as chart) {
-                    <!-- three.js and the model load only when the chart comes into view. -->
-                    @defer (on viewport; prefetch on idle) {
-                      <app-dental-3d-chart
-                        [chart]="chart"
-                        [findings]="clinicalRecordService.findings()"
-                        [treatments]="patientTreatments()"
-                        [staged]="stagedFindings()"
-                        [focusFdi]="voiceFocusFdi()"
-                        [selected]="selectedToothForTreatments()"
-                        [overlayPanel]="true"
-                        (selectedChange)="onToothSelected3D($event)"
-                        (assignTreatment)="openAssignModalFrom3D($event)"
-                      />
-                    } @placeholder {
-                      <div class="chart-placeholder" aria-hidden="true"></div>
-                    }
-                  }
-                </div>
-                <app-patient-imaging-pane class="one-view-image" [patientId]="patient.id" (openDocuments)="activeTab.set('documents')" />
-              </div>
-
-              <!-- Whatever else the doctor pins under the scans: pictures or 3D files. -->
-              <app-patient-gallery [patientId]="patient.id" />
-
-              <div class="overview-grid">
-                <div class="summary-card">
-                  <h2>{{ 'PATIENTS.DOSSIER.ACTIVE_TREATMENTS' | translate }}</h2>
-                  <div class="card-content">
-                    @if (activeTreatmentsCount() > 0) {
-                      <span class="date">{{ activeTreatmentsCount() }}</span>
-                      <span class="desc">{{ 'PATIENTS.DOSSIER.ACTIVE_TREATMENTS' | translate }}</span>
-                    } @else {
-                      <p class="empty-hint">{{ 'PATIENTS.DOSSIER.NO_ACTIVE_TREATMENTS' | translate }}</p>
-                    }
-                  </div>
-                </div>
-                <div class="summary-card">
-                  <h2>{{ 'PATIENTS.DOSSIER.LATEST_NOTE' | translate }}</h2>
-                  <div class="card-content">
-                    @if (latestNote(); as note) {
-                      <span class="desc">{{ note.content }}</span>
-                      <span class="clinical-item-meta">{{ note.createdAt | date:'mediumDate' }}</span>
-                    } @else {
-                      <p class="empty-hint">{{ 'PATIENTS.DOSSIER.NO_NOTES' | translate }}</p>
-                    }
-                  </div>
-                </div>
-                <div class="summary-card" [class.has-allergies]="clinicalRecordService.allergies().length > 0">
-                  <h2>{{ 'PATIENTS.DOSSIER.ALLERGIES' | translate }}</h2>
-                  <div class="card-content">
-                    @if (clinicalRecordService.allergies().length) {
-                      <div class="allergy-chips">
-                        @for (allergy of clinicalRecordService.allergies(); track allergy.id) {
-                          <span class="allergy-chip" [class]="(allergy.severity || 'mild').toLowerCase()">
-                            <span aria-hidden="true" class="material-icons">warning</span>
-                            {{ allergy.substance }}
-                          </span>
-                        }
-                      </div>
-                    } @else {
-                      <p class="empty-hint">{{ 'PATIENTS.DOSSIER.NO_ALLERGIES' | translate }}</p>
-                    }
-                  </div>
-                </div>
-              </div>
-
-              <!-- The last consultation's medical report, in full; earlier ones a pick away. -->
-              <app-consultation-report [notes]="clinicalRecordService.notes()" (openLog)="openConsultationLog($event)" />
-            </div>
-          }
-          @case ('clinical') {
-            <div class="tab-pane" role="tabpanel" id="dossier-panel-clinical" aria-labelledby="dossier-tab-clinical" tabindex="0">
-              <!-- Secondary in-page navigation — consolidated here from what
-                   were six separate top-level tabs (audit VIII.5) -->
-              <nav class="clinical-subtabs no-print" role="tablist" [attr.aria-label]="'PATIENTS.DOSSIER.CLINICAL' | translate" (keydown)="onTabKeydown($event, visibleClinicalSubTabs(), activeClinicalSubTab(), setActiveClinicalSubTab.bind(this), 'clinical-subtab-')">
-                @for (sub of visibleClinicalSubTabs(); track sub.id) {
-                  <button
-                    type="button"
-                    [id]="'clinical-subtab-' + sub.id"
-                    role="tab"
-                    [attr.aria-selected]="activeClinicalSubTab() === sub.id"
-                    [attr.aria-controls]="activeClinicalSubTab() === sub.id ? 'clinical-subpanel-' + sub.id : null"
-                    [tabindex]="activeClinicalSubTab() === sub.id ? 0 : -1"
-                    [class.active]="activeClinicalSubTab() === sub.id"
-                    (click)="activeClinicalSubTab.set(sub.id)"
-                  >
-                    <span class="material-icons" aria-hidden="true">{{ sub.icon }}</span>
-                    {{ sub.key | translate }}
-                  </button>
-                }
-              </nav>
-
-              <div role="tabpanel" [id]="'clinical-subpanel-' + activeClinicalSubTab()" [attr.aria-labelledby]="'clinical-subtab-' + activeClinicalSubTab()">
-              @switch (activeClinicalSubTab()) {
-                @case ('photos') {
-                  <app-patient-photos [patientId]="patient.id" />
-                }
-                @case ('history') {
-                  <section class="dossier-section">
-                    <div class="notes-header">
-                      <h2>{{ 'PATIENTS.DOSSIER.MEDICAL_HISTORY' | translate }}</h2>
-                      <button type="button" class="btn btn-primary btn-sm" (click)="showHistoryForm.set(!showHistoryForm())">
-                        {{ 'COMMON.ADD' | translate }}
-                      </button>
-                    </div>
-
-                    @if (showHistoryForm()) {
-                      <div class="inline-form">
-                        <select [attr.aria-label]="'PATIENTS.DOSSIER.UI.CATEGORY' | translate" [(ngModel)]="historyForm.category" class="select">
-                          @for (cat of medicalHistoryCategories; track cat) {
-                            <option [value]="cat">{{ 'CONSULTATION.CAT_' + cat | translate }}</option>
-                          }
-                        </select>
-                        <input [attr.aria-label]="'PATIENTS.DOSSIER.UI.HISTORY_LABEL' | translate" type="text" [(ngModel)]="historyForm.label" [placeholder]="'PATIENTS.DOSSIER.UI.HISTORY_LABEL' | translate" class="input" />
-                        <textarea [attr.aria-label]="'PATIENTS.DOSSIER.UI.DETAIL_OPTIONAL' | translate" [(ngModel)]="historyForm.detail" [placeholder]="'PATIENTS.DOSSIER.UI.DETAIL_OPTIONAL' | translate" rows="2" class="textarea"></textarea>
-                        <div class="inline-form-actions">
-                          <button type="button" class="btn btn-ghost btn-sm" (click)="showHistoryForm.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
-                          <button type="button" class="btn btn-primary btn-sm" [disabled]="!historyForm.label" (click)="submitMedicalHistory()">{{ 'COMMON.SAVE' | translate }}</button>
-                        </div>
-                      </div>
-                    }
-
-                    @if (clinicalRecordService.medicalHistory().length) {
-                      <div class="clinical-list">
-                        @for (entry of clinicalRecordService.medicalHistory(); track entry.id) {
-                          <div class="clinical-item">
-                            <div class="clinical-item-main">
-                              <span class="clinical-item-badge">{{ entry.category }}</span>
-                              <span class="clinical-item-label">{{ entry.label }}</span>
-                              @if (entry.detail) { <p class="clinical-item-detail">{{ entry.detail }}</p> }
-                            </div>
-                            <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" class="btn btn-ghost btn-icon" (click)="removeMedicalHistory(entry.id)" [title]="'COMMON.DELETE' | translate">
-                              <span aria-hidden="true" class="material-icons text-sm">delete</span>
-                            </button>
-                          </div>
-                        }
-                      </div>
-                    } @else if (!showHistoryForm()) {
-                      <div class="empty">
-                        <span aria-hidden="true" class="material-icons">medical_services</span>
-                        <p>{{ 'PATIENTS.DOSSIER.NO_MEDICAL_HISTORY' | translate }}</p>
-                      </div>
-                    }
-                  </section>
-                }
-                @case ('diagnostics') {
-                  <section class="dossier-section">
-                    <div class="notes-header">
-                      <h2>{{ 'PATIENTS.DOSSIER.DIAGNOSTICS' | translate }}</h2>
-                      <button type="button" class="btn btn-primary btn-sm" (click)="openFindingForm('diagnostic')">
-                        {{ 'COMMON.ADD' | translate }}
-                      </button>
-                    </div>
-
-                    @if (showFindingForm() === 'diagnostic') {
-                      <div class="inline-form">
-                        <input [attr.aria-label]="'PATIENTS.DOSSIER.UI.TOOTH_FDI' | translate" type="text" [(ngModel)]="findingForm.fdi" [placeholder]="'PATIENTS.DOSSIER.UI.TOOTH_FDI' | translate" maxlength="2" class="input" />
-                        <select [attr.aria-label]="'PATIENTS.DOSSIER.UI.SELECT_FINDING' | translate" [(ngModel)]="findingForm.findingCode" class="select">
-                          <option value="" disabled>{{ 'PATIENTS.DOSSIER.UI.SELECT_FINDING' | translate }}</option>
-                          @for (def of diagnosticCatalogCodes(); track def.code) {
-                            <option [value]="def.code">{{ findingName(def.code) }}</option>
-                          }
-                        </select>
-                        <select [attr.aria-label]="'PATIENTS.DOSSIER.UI.SEVERITY' | translate" [(ngModel)]="findingForm.severity" class="select">
-                          <option value="">{{ 'PATIENTS.DOSSIER.UI.NO_SEVERITY' | translate }}</option>
-                          <option value="MILD">{{ 'PATIENTS.DOSSIER.UI.MILD' | translate }}</option>
-                          <option value="MODERATE">{{ 'PATIENTS.DOSSIER.UI.MODERATE' | translate }}</option>
-                          <option value="SEVERE">{{ 'PATIENTS.DOSSIER.UI.SEVERE' | translate }}</option>
-                        </select>
-                        <textarea [attr.aria-label]="'PATIENTS.DOSSIER.UI.NOTE_OPTIONAL' | translate" [(ngModel)]="findingForm.note" [placeholder]="'PATIENTS.DOSSIER.UI.NOTE_OPTIONAL' | translate" rows="2" class="textarea"></textarea>
-                        <div class="inline-form-actions">
-                          <button type="button" class="btn btn-ghost btn-sm" (click)="showFindingForm.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
-                          <button type="button" class="btn btn-primary btn-sm" [disabled]="!findingForm.fdi || !findingForm.findingCode" (click)="submitFinding()">{{ 'COMMON.SAVE' | translate }}</button>
-                        </div>
-                      </div>
-                    }
-
-                    @if (diagnosticFindings().length) {
-                      <div class="clinical-list">
-                        @for (finding of diagnosticFindings(); track finding.id) {
-                          <div class="clinical-item">
-                            <div class="clinical-item-main">
-                              <span class="clinical-item-badge tooth">#{{ finding.fdi }}</span>
-                              <span class="clinical-item-label">{{ findingName(finding.findingCode) }}</span>
-                              @if (finding.severity) { <span class="clinical-item-severity" [class]="finding.severity.toLowerCase()">{{ finding.severity }}</span> }
-                              @if (finding.note) { <p class="clinical-item-detail">{{ finding.note }}</p> }
-                            </div>
-                            <button [attr.aria-label]="'TOOTH_DETAIL.MARK_TREATED' | translate" type="button" class="btn btn-ghost btn-icon" (click)="resolveFinding(finding.id)" [title]="'PATIENTS.DOSSIER.UI.MARK_RESOLVED' | translate">
-                              <span aria-hidden="true" class="material-icons text-sm">check_circle</span>
-                            </button>
-                          </div>
-                        }
-                      </div>
-                    } @else if (showFindingForm() !== 'diagnostic') {
-                      <div class="empty">
-                        <span aria-hidden="true" class="material-icons">biotech</span>
-                        <p>{{ 'PATIENTS.DOSSIER.NO_DIAGNOSTICS' | translate }}</p>
-                      </div>
-                    }
-                  </section>
-                }
-                @case ('plan') {
-                  <section class="dossier-section">
-                    <div class="notes-header">
-                      <h2>{{ 'PATIENTS.DOSSIER.TREATMENT_PLAN' | translate }}</h2>
-                      <button type="button" class="btn btn-primary btn-sm" (click)="openFindingForm('plan')">
-                        {{ 'COMMON.ADD' | translate }}
-                      </button>
-                    </div>
-
-                    @if (showFindingForm() === 'plan') {
-                      <div class="inline-form">
-                        <input [attr.aria-label]="'PATIENTS.DOSSIER.UI.TOOTH_FDI' | translate" type="text" [(ngModel)]="findingForm.fdi" [placeholder]="'PATIENTS.DOSSIER.UI.TOOTH_FDI' | translate" maxlength="2" class="input" />
-                        <select [attr.aria-label]="'PATIENTS.DOSSIER.UI.SELECT_REQUIRED' | translate" [(ngModel)]="findingForm.findingCode" class="select">
-                          <option value="" disabled>{{ 'PATIENTS.DOSSIER.UI.SELECT_REQUIRED' | translate }}</option>
-                          @for (def of treatmentRequiredCatalogCodes(); track def.code) {
-                            <option [value]="def.code">{{ findingName(def.code) }}</option>
-                          }
-                        </select>
-                        <textarea [attr.aria-label]="'PATIENTS.DOSSIER.UI.NOTE_OPTIONAL' | translate" [(ngModel)]="findingForm.note" [placeholder]="'PATIENTS.DOSSIER.UI.NOTE_OPTIONAL' | translate" rows="2" class="textarea"></textarea>
-                        <div class="inline-form-actions">
-                          <button type="button" class="btn btn-ghost btn-sm" (click)="showFindingForm.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
-                          <button type="button" class="btn btn-primary btn-sm" [disabled]="!findingForm.fdi || !findingForm.findingCode" (click)="submitFinding()">{{ 'COMMON.SAVE' | translate }}</button>
-                        </div>
-                      </div>
-                    }
-
-                    @if (treatmentRequiredFindings().length) {
-                      <div class="clinical-list">
-                        @for (finding of treatmentRequiredFindings(); track finding.id) {
-                          <div class="clinical-item">
-                            <div class="clinical-item-main">
-                              <span class="clinical-item-badge tooth">#{{ finding.fdi }}</span>
-                              <span class="clinical-item-label">{{ findingName(finding.findingCode) }}</span>
-                              @if (finding.note) { <p class="clinical-item-detail">{{ finding.note }}</p> }
-                            </div>
-                            <button [attr.aria-label]="'TOOTH_DETAIL.MARK_TREATED' | translate" type="button" class="btn btn-ghost btn-icon" (click)="resolveFinding(finding.id)" [title]="'TOOTH_DETAIL.MARK_TREATED' | translate">
-                              <span aria-hidden="true" class="material-icons text-sm">check_circle</span>
-                            </button>
-                          </div>
-                        }
-                      </div>
-                    } @else if (showFindingForm() !== 'plan') {
-                      <div class="empty">
-                        <span aria-hidden="true" class="material-icons">assignment</span>
-                        <p>{{ 'PATIENTS.DOSSIER.NO_TREATMENT_PLAN' | translate }}</p>
-                      </div>
-                    }
-                  </section>
-                }
-                @case ('appointments') {
-                  <section class="dossier-section">
-                    <h2>{{ 'COMMON.SCHEDULE' | translate }}</h2>
-                    @if (patientAppointments().length) {
-                      <div class="table-wrap">
-                        <div class="table-scroll">
-                          <table class="data-table">
-                            <thead>
-                              <tr>
-                                <th scope="col">{{ 'COMMON.DATE' | translate }}</th>
-                                <th scope="col">{{ 'COMMON.TYPE' | translate }}</th>
-                                <th scope="col">{{ 'COMMON.STATUS' | translate }}</th>
-                                <th scope="col">{{ 'COMMON.NOTES' | translate }}</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              @for (app of patientAppointments(); track app.id) {
-                                <tr>
-                                  <td>{{ app.dateTime | date:'mediumDate' }}</td>
-                                  <td>{{ app.type }}</td>
-                                  <td><span class="status-badge">{{ app.status }}</span></td>
-                                  <td>{{ app.notes }}</td>
-                                </tr>
-                              }
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    } @else {
-                      <div class="empty">
-                        <span aria-hidden="true" class="material-icons">event_busy</span>
-                        <p>{{ 'PATIENTS.DOSSIER.NO_APPOINTMENTS' | translate }}</p>
-                      </div>
-                    }
-                  </section>
-                }
-                @case ('treatment-log') {
-                  <section class="dossier-section">
-                    <app-treatment-log [patientId]="patient.id" />
-                  </section>
-                }
-                @case ('gums') {
-                  <section class="dossier-section">
-                    <app-gum-status [patientId]="patient.id" [patientName]="patient.firstName + ' ' + patient.lastName" [patientBirthDate]="patient.dateOfBirth ?? null" />
-                  </section>
-                }
-                @case ('notes') {
-                  <section class="dossier-section">
-                    <div class="notes-header">
-                      <h2>{{ 'DENTAL_CHART.REPORT_TITLE' | translate }}</h2>
-                      <button type="button" class="btn btn-primary btn-sm" (click)="showNoteForm.set(!showNoteForm())">
-                        {{ 'COMMON.ADD' | translate }} {{ 'DENTAL_CHART.NOTE_LABEL' | translate }}
-                      </button>
-                    </div>
-
-                    @if (showNoteForm()) {
-                      <div class="inline-form">
-                        <select [attr.aria-label]="'PATIENTS.DOSSIER.UI.CATEGORY' | translate" [(ngModel)]="noteForm.category" class="select">
-                          @for (cat of noteCategories; track cat) {
-                            <option [value]="cat">{{ 'PATIENTS.DOSSIER.UI.NOTE_CAT.' + cat | translate }}</option>
-                          }
-                        </select>
-                        <textarea [attr.aria-label]="'PATIENTS.DOSSIER.UI.NOTE_CONTENT' | translate" [(ngModel)]="noteForm.content" [placeholder]="'PATIENTS.DOSSIER.UI.NOTE_CONTENT' | translate" rows="3" class="textarea"></textarea>
-                        <div class="inline-form-actions">
-                          <button type="button" class="btn btn-ghost btn-sm" (click)="showNoteForm.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
-                          <button type="button" class="btn btn-primary btn-sm" [disabled]="!noteForm.content" (click)="submitNote()">{{ 'COMMON.SAVE' | translate }}</button>
-                        </div>
-                      </div>
-                    }
-
-                    @if (clinicalRecordService.notes().length) {
-                      <div class="clinical-list">
-                        @for (note of clinicalRecordService.notes(); track note.id) {
-                          <div class="clinical-item">
-                            <div class="clinical-item-main">
-                              <span class="clinical-item-badge">{{
-                                note.category === 'CONSULTATION_REPORT' ? ('VOICE.REPORT_BADGE' | translate)
-                                : note.category === 'CONSULTATION_TRANSCRIPT' ? ('CONSULTATION.TRANSCRIPT_BADGE' | translate)
-                                : note.category }}</span>
-                              @if (note.fdi) { <span class="clinical-item-badge tooth">#{{ note.fdi }}</span> }
-                              @if (note.category === 'CONSULTATION_TRANSCRIPT') {
-                                <!-- Everything that was said, as transcribed: long, and for looking things up. -->
-                                <details class="clinical-item-transcript">
-                                  <summary>{{ 'CONSULTATION.TRANSCRIPT_OPEN' | translate }}</summary>
-                                  <p class="clinical-item-detail">{{ note.content }}</p>
-                                </details>
-                                <!-- Beside the commands the examination understood and what was validated. -->
-                                <button type="button" class="btn btn-ghost btn-sm" (click)="openConsultationLog(note.sessionId)">
-                                  <span aria-hidden="true" class="material-icons text-sm">history</span> {{ 'CONSULTATION.OPEN_LOG' | translate }}
-                                </button>
-                              } @else {
-                                <p class="clinical-item-detail">{{ note.content }}</p>
-                              }
-                              <span class="clinical-item-meta">{{ note.createdAt | date:'medium' }}</span>
-                            </div>
-                            <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" class="btn btn-ghost btn-icon" (click)="removeNote(note.id)" [title]="'COMMON.DELETE' | translate">
-                              <span aria-hidden="true" class="material-icons text-sm">delete</span>
-                            </button>
-                          </div>
-                        }
-                      </div>
-                    } @else if (!showNoteForm()) {
-                      <div class="empty">
-                        <span aria-hidden="true" class="material-icons">history_edu</span>
-                        <p>{{ 'PATIENTS.DOSSIER.NO_NOTES' | translate }}</p>
-                      </div>
-                    }
-                  </section>
-                }
-                @case ('treatments') {
-                  <div class="treatments-summary">
-                    <section class="summary-card summary-chart">
-                      <app-treatment-summary [patientId]="patient.id" [version]="patientTreatments()" />
-                    </section>
-                    <div class="treatments-tracker">
-                      <div class="tracker-header">
-                        <h2>{{ 'PATIENTS.DOSSIER.UI.TREATMENTS' | translate }}</h2>
-                        <button type="button" class="btn btn-primary" (click)="openAssignModal()">
-                          <span aria-hidden="true" class="material-icons">add</span>
-                          {{ 'PATIENTS.DOSSIER.UI.ASSIGN' | translate }}
-                        </button>
-                      </div>
-
-                      <div class="treatments-list">
-                        @for (pt of patientTreatments(); track pt.id) {
-                          <div class="treatment-card">
-                            <div class="card-left">
-                              <div class="treatment-icon">
-                                <span aria-hidden="true" class="material-icons">healing</span>
-                              </div>
-                              <div class="treatment-meta">
-                                <div class="flex flex-wrap items-center gap-2">
-                                  <span class="treatment-name">{{ pt.treatment.name }}</span>
-                                  <span class="teeth-list">{{ 'PATIENTS.DOSSIER.UI.TEETH' | translate: { teeth: pt.teeth } }}</span>
-                                </div>
-                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
-                                  <span><span class="font-semibold text-slate-700">{{ 'PATIENTS.DOSSIER.UI.DOCTOR' | translate }}</span> {{ pt.doctorName }}</span>
-                                  <span *ngIf="pt.startDate">
-                                    <span class="font-semibold text-slate-700">{{ 'PATIENTS.DOSSIER.UI.STARTED' | translate }}</span> {{ pt.startDate | date:'mediumDate' }}
-                                  </span>
-                                </div>
-                                <p class="treatment-desc text-xs text-slate-600 mt-2" *ngIf="pt.notes">
-                                  {{ pt.notes }}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div class="card-right">
-                              <div class="status-progress">
-                                <span [class]="getStatusClass(pt.status)">{{ pt.status }}</span>
-                                <div class="progress-bar-container">
-                                  <div class="progress-fill" [style.width.%]="pt.progress"></div>
-                                  <span class="progress-val">{{ pt.progress }}%</span>
-                                </div>
-                              </div>
-
-                              <div class="card-actions">
-                                <button [attr.aria-label]="'COMMON.EDIT' | translate" type="button" class="btn btn-ghost btn-icon" (click)="openAssignModal(pt)" [title]="'COMMON.EDIT' | translate">
-                                  <span aria-hidden="true" class="material-icons text-slate-500 hover:text-slate-800">edit</span>
-                                </button>
-                                <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" class="btn btn-ghost btn-icon" (click)="deletePatientTreatment(pt)" [title]="'COMMON.DELETE' | translate">
-                                  <span aria-hidden="true" class="material-icons text-red-700 hover:text-red-700">delete</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        } @empty {
-                          <div class="no-treatments">
-                            <span aria-hidden="true" class="material-icons large">health_and_safety</span>
-                            <p>{{ 'PATIENTS.DOSSIER.UI.NO_TREATMENTS' | translate }}</p>
-                            <button type="button" class="btn btn-secondary btn-sm mt-3" (click)="openAssignModal()">{{ 'PATIENTS.DOSSIER.UI.ASSIGN_FIRST' | translate }}</button>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                }
-              }
-              </div>
-            </div>
-
-          }
-          @case ('financial') {
-            <div class="tab-pane" role="tabpanel" id="dossier-panel-financial" aria-labelledby="dossier-tab-financial" tabindex="0">
+          @case ('billing') {
+            <h2 class="sr-only">{{ 'PATIENTS.DOSSIER.TAB.BILLING' | translate }}</h2>
+            <div class="space-y-6">
               <app-patient-account [patientId]="patient.id" />
+              <app-patient-documents [patientId]="patient.id" [patientName]="patient.firstName + ' ' + patient.lastName" [sections]="['forms']" />
             </div>
           }
           @case ('documents') {
-            <div class="tab-pane" role="tabpanel" id="dossier-panel-documents" aria-labelledby="dossier-tab-documents" tabindex="0">
-              <app-patient-files class="mb-6 block" [patientId]="patient.id" />
-              <app-patient-documents [patientId]="patient.id" [patientName]="patient.firstName + ' ' + patient.lastName" />
+            <h2 class="sr-only">{{ 'PATIENTS.DOSSIER.TAB.DOCUMENTS' | translate }}</h2>
+            <div class="space-y-6">
+              <app-patient-documents [patientId]="patient.id" [patientName]="patient.firstName + ' ' + patient.lastName" [sections]="['prescriptions']" />
+              <section class="card p-5"><app-treatment-log [patientId]="patient.id" mode="share" /></section>
             </div>
           }
         }
+        </div>
       </div>
 
-        <!-- Custom Modal Backdrop -->
-        @if (showAssignModal()) {
-          <div class="modal-backdrop" (click)="closeAssignModal()">
-            <div class="modal-card" appDialog="assign-title" (dialogClosed)="closeAssignModal()" (click)="$event.stopPropagation()">
-              <header class="modal-header">
-                <h2 id="assign-title">{{ (isEditingTreatment() ? 'PATIENTS.DOSSIER.UI.EDIT_ASSIGNMENT' : 'PATIENTS.DOSSIER.UI.NEW_ASSIGNMENT') | translate }}</h2>
-                <button type="button" class="btn btn-ghost btn-icon" [attr.aria-label]="'COMMON.CLOSE' | translate" (click)="closeAssignModal()">
-                  <span class="material-icons" aria-hidden="true">close</span>
-                </button>
-              </header>
-
-              <div class="modal-body">
-                <div class="form-grid">
-                  <!-- Select Treatment -->
-                  <div class="form-group col-span-2">
-                    <label for="patient-dossier-formTreatmentId">{{ 'PATIENTS.DOSSIER.UI.TREATMENT_SETUP' | translate }} <span aria-hidden="true">*</span></label>
-                    <select id="patient-dossier-formTreatmentId" [(ngModel)]="formTreatmentId" (ngModelChange)="onTreatmentSelected($event)" [disabled]="isEditingTreatment()" class="select">
-                      <option value="" disabled>{{ 'PATIENTS.DOSSIER.UI.CHOOSE_TREATMENT' | translate }}</option>
-                      @for (t of availableTreatments(); track t.id) {
-                        <option [value]="t.id">{{ t.name }} ({{ t.code }})</option>
-                      }
-                    </select>
-                  </div>
-
-                  <!-- Teeth comma separated -->
-                  <div class="form-group">
-                    <label for="patient-dossier-formTeeth">{{ 'PATIENTS.DOSSIER.UI.ASSIGNED_TEETH' | translate }} <span aria-hidden="true">*</span></label>
-                    <input id="patient-dossier-formTeeth" type="text" [(ngModel)]="formTeeth" placeholder="e.g. 11, 12, 13" class="input">
-                  </div>
-
-                  <!-- Doctor Name -->
-                  <div class="form-group">
-                    <label for="patient-dossier-formDoctorName">{{ 'PATIENTS.DOSSIER.UI.ASSIGNED_DOCTOR' | translate }} <span aria-hidden="true">*</span></label>
-                    <input id="patient-dossier-formDoctorName" type="text" [(ngModel)]="formDoctorName" class="input">
-                  </div>
-
-                  <!-- Status -->
-                  <div class="form-group">
-                    <label for="patient-dossier-formStatus">{{ 'COMMON.STATUS' | translate }}</label>
-                    <select id="patient-dossier-formStatus" [(ngModel)]="formStatus" class="select">
-                      <option value="PLANNED">{{ 'PATIENTS.DOSSIER.UI.STATUS_PLANNED' | translate }}</option>
-                      <option value="ACTIVE">{{ 'PATIENTS.DOSSIER.UI.STATUS_ACTIVE' | translate }}</option>
-                      <option value="COMPLETED">{{ 'PATIENTS.DOSSIER.UI.STATUS_COMPLETED' | translate }}</option>
-                      <option value="CANCELLED">{{ 'PATIENTS.DOSSIER.UI.STATUS_CANCELLED' | translate }}</option>
-                    </select>
-                  </div>
-
-                  <!-- Progress Slider -->
-                  <div class="form-group">
-                    <label for="patient-dossier-formProgress">{{ 'PATIENTS.DOSSIER.UI.PROGRESS' | translate: { value: formProgress } }}</label>
-                    <div class="flex items-center gap-2">
-                      <input id="patient-dossier-formProgress" type="range" min="0" max="100" step="5" [(ngModel)]="formProgress" class="flex-1">
-                    </div>
-                  </div>
-
-                  <!-- Start Date -->
-                  <div class="form-group">
-                    <label for="patient-dossier-formStartDate">{{ 'PATIENTS.DOSSIER.UI.START_DATE' | translate }}</label>
-                    <input id="patient-dossier-formStartDate" type="date" [(ngModel)]="formStartDate" class="input">
-                  </div>
-
-                  <!-- End Date -->
-                  <div class="form-group">
-                    <label for="patient-dossier-formEndDate">{{ 'PATIENTS.DOSSIER.UI.END_DATE' | translate }}</label>
-                    <input id="patient-dossier-formEndDate" type="date" [(ngModel)]="formEndDate" class="input">
-                  </div>
-
-                  <!-- Notes -->
-                  <div class="form-group col-span-2">
-                    <label for="patient-dossier-formNotes">{{ 'PATIENTS.DOSSIER.UI.CLINICAL_NOTES' | translate }}</label>
-                    <textarea id="patient-dossier-formNotes" [(ngModel)]="formNotes" [placeholder]="'PATIENTS.DOSSIER.UI.CLINICAL_NOTES_HINT' | translate" class="textarea"></textarea>
-                  </div>
-
-                  <!-- Predefined Materials / Consumables -->
-                  <div class="form-group col-span-2">
-                    <div class="flex justify-between items-center mb-2">
-                      <span class="font-bold text-slate-700 text-sm">{{ 'PATIENTS.DOSSIER.UI.MATERIALS' | translate }}</span>
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="addConsumableToForm()">
-                        <span aria-hidden="true" class="material-icons">add</span> {{ 'PATIENTS.DOSSIER.UI.ADD_MATERIAL' | translate }}
-                      </button>
-                    </div>
-                    
-                    <div class="consumables-editor bg-slate-50 p-3 rounded-xl border border-slate-200">
-                      @if (formConsumables.length > 0) {
-                        @for (c of formConsumables; track $index) {
-                          <div class="consumable-editor-row">
-                            <div class="item-select">
-                              <select [attr.aria-label]="'STOCK.UI.STOCK_ITEM' | translate" [(ngModel)]="c.stockItem" class="select">
-                                @for (item of availableStockItems(); track item.id) {
-                                  <option [ngValue]="item">{{ item.name }} ({{ 'STOCK.UI.SKU' | translate }} {{ item.sku }})</option>
-                                }
-                              </select>
-                            </div>
-                            <div class="item-qty">
-                              <input [attr.aria-label]="'BILLING.FORM.QTY' | translate" type="number" step="any" [(ngModel)]="c.quantityUsed" class="input" style="width: 80px;">
-                              <span class="text-xs text-slate-500 ms-1">{{ c.stockItem.unitLabel || 'Units' }}</span>
-                            </div>
-                            <div class="item-actions">
-                              <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" class="btn btn-ghost btn-icon" (click)="removeConsumableFromForm($index)">
-                                <span aria-hidden="true" class="material-icons text-sm text-red-700">delete</span>
-                              </button>
-                            </div>
-                          </div>
-                        }
-                      } @else {
-                        <p class="text-slate-500 text-xs italic text-center p-2">{{ 'PATIENTS.DOSSIER.UI.NO_MATERIALS' | translate }}</p>
-                      }
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <footer class="modal-footer mt-4">
-                <button type="button" class="btn btn-secondary" (click)="closeAssignModal()">{{ 'COMMON.CANCEL' | translate }}</button>
-                <button type="button" class="btn btn-primary" (click)="savePatientTreatment()">{{ 'PATIENTS.DOSSIER.UI.SAVE_ASSIGNMENT' | translate }}</button>
-              </footer>
-            </div>
-          </div>
-        }
+      <app-medical-history-panel [open]="historyOpen()" [patientId]="patient.id" (closed)="historyOpen.set(false)" />
       }
       } @else {
-        <div class="loading">
-          <p>{{ 'COMMON.LOADING' | translate }}</p>
-        </div>
+        <div class="loading"><p>{{ 'COMMON.LOADING' | translate }}</p></div>
       }
 
-      <!-- The consultation: what is heard and what the system catches, beside the
-           dossier while it runs, and the review once it ends. In the cockpit the
-           recording view is the cockpit itself. -->
+      <!-- The consultation: what is heard and what the system catches, beside the file while it
+           runs, and the review once it ends. In the cockpit the recording view is the cockpit. -->
       @if (!cockpit()) {
         <app-consultation-panel class="dossier-consultation" />
       }
       <app-consultation-log [consultationId]="logConsultationId()" (closed)="logConsultationId.set(null)" />
 
-      <!-- Scoped to the dossier rather than mounted at the app root. A voice
-           command like "sixteen, recurrent caries" only has a referent when a
-           patient's record is open; showing a live microphone on the billing
-           screen invited exactly the ambiguity this rework removes. -->
+      <!-- Scoped to the file: a voice command like "sixteen, recurrent caries" only has a referent
+           while a patient's record is open. -->
       @if (!cockpit()) {
         <app-voice-session-dock
           [onVoiceTab]="activeTab() === 'voice'"
-          (openPanel)="activeTab.set('voice')"
+          (openPanel)="goTo('voice')"
           (resume)="beginSession()"
         />
       }
     </div>
   `,
   styles: [`
-    .dossier-container {
-      background: rgb(var(--ink-50));
-      min-height: 100vh;
-    }
-    /* The cockpit sizes itself to the window below the bar; the container must not add to it. */
+    .dossier-container { min-height: 100vh; }
     .dossier-container.is-cockpit { min-height: 0; }
 
-    /* Not sticky: the banner scrolls away so the chart below gets the window. */
-    .dossier-top { background: var(--surface); border-bottom: 1px solid rgb(var(--ink-200)); }
-    /* As wide as the one-view row below it: into the page's own padding, leaving half a rem. */
-    .dossier-container:not(.is-cockpit) > .dossier-top { margin-inline: -.5rem; }
-    @media (min-width: 768px) { .dossier-container:not(.is-cockpit) > .dossier-top { margin-inline: -1rem; } }
-    @media (min-width: 1024px) { .dossier-container:not(.is-cockpit) > .dossier-top { margin-inline: -1.5rem; } }
-    .dossier-header {
-      padding: .75rem 1.25rem .75rem;
+    /* The banner and the tabs stick under the app bar (h-16 from md up; it scrolls on a phone). */
+    .dossier-top {
+      position: sticky; top: 0; z-index: var(--z-sticky);
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      margin-inline: -1rem; margin-top: -1rem;
     }
+    @media (min-width: 768px) { .dossier-top { top: 4rem; margin-inline: -1.5rem; margin-top: -1.5rem; } }
+    @media (min-width: 1024px) { .dossier-top { margin-inline: -2rem; margin-top: -2rem; } }
+    .dossier-top.is-compact { box-shadow: var(--shadow-sm); }
 
-    /* Name, status and every action on one line; buttons shrink to fit. */
-    .header-top {
-      display: flex;
-      flex-wrap: nowrap;
-      align-items: center;
-      gap: .75rem;
-      margin-bottom: .625rem;
+    .dossier-tabs { display: flex; gap: 1.5rem; padding: 0 1.25rem; overflow-x: auto; scrollbar-width: none; }
+    .dossier-tabs::-webkit-scrollbar { display: none; }
+    .dossier-tabs button {
+      position: relative; display: flex; align-items: center; gap: .5rem; padding: .75rem 0; min-height: 2.75rem;
+      background: transparent; border: none; white-space: nowrap; cursor: pointer;
+      color: var(--text-muted); font: inherit; font-weight: 600; font-size: var(--text-base);
     }
+    .dossier-tabs button:hover, .dossier-tabs button.active { color: var(--action-text); }
+    .dossier-tabs button.active::after {
+      content: ''; position: absolute; bottom: 0; inset-inline: 0; height: 2px; background: var(--action);
+    }
+    .tab-live-dot { width: .5rem; height: .5rem; border-radius: 50%; background: rgb(var(--critical-600)); animation: dossier-pulse 1.6s ease-in-out infinite; }
+    @keyframes dossier-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+    @media (prefers-reduced-motion: reduce) { .tab-live-dot { animation: none; } }
 
-    .back-btn {
-      background: rgb(var(--ink-100));
-      border: none;
-      padding: 0.5rem;
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      transition: all 0.2s;
-    }
+    .dossier-content { padding: 1.5rem 0 2rem; max-width: 75rem; margin: 0 auto; }
+    .dossier-content.is-wide { max-width: none; padding-top: .75rem; }
+    .tab-pane:focus-visible { outline: none !important; }
 
-    .back-btn:hover {
-      background: rgb(var(--ink-200));
-    }
-
-    .patient-title {
-      flex: 0 1 auto;
-      min-width: 0;
-      display: flex;
-      align-items: center;
-      gap: .625rem;
-    }
-
-    .patient-title h1 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: rgb(var(--ink-900));
-      margin: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .patient-title .pill { flex: none; }
-
-    .header-actions {
-      display: flex;
-      gap: .375rem;
-      flex: 1 1 auto;
-      flex-wrap: nowrap;
-      justify-content: flex-end;
-      align-items: center;
-      min-width: 0;
-    }
-    .header-actions > * { flex: none; }
-    .header-actions .btn, .header-actions ::ng-deep .btn {
-      min-height: 2rem;
-      padding: .3125rem .625rem;
-      font-size: .8125rem;
-      white-space: nowrap;
-      border-radius: .5rem;
-    }
-    .header-actions .material-icons { font-size: 1.0625rem; }
-    /* Below a wide window the secondary actions keep their icon and tooltip only. */
-    @media (max-width: 1440px) {
-      .header-actions .btn-compact .btn-label { display: none; }
-      .header-actions .btn-compact { padding-inline: .5rem; }
-    }
-    /* Beside the consultation panel the banner is narrower: icons only there too. */
-    .dossier-container.has-consultation .header-actions .btn-compact .btn-label { display: none; }
-    .dossier-container.has-consultation .header-actions .btn-compact { padding-inline: .5rem; }
-
-    .patient-quick-info {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: .5rem 1.25rem;
-      color: rgb(var(--ink-500));
-      font-size: 0.875rem;
-    }
-    .info-item .value-sub { margin-inline-start: .375rem; font-weight: 500; color: rgb(var(--ink-500)); }
-    .info-item .link-btn.balance-due { color: rgb(var(--critical-700)); font-weight: 700; text-decoration: none; }
-    .info-item .link-btn.balance-due:hover { text-decoration: underline; }
-
-    .info-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .info-item .label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.025em;
-      font-weight: 600;
-      color: rgb(var(--ink-500));
-    }
-
-    .info-item .value {
-      color: rgb(var(--ink-700));
-      font-weight: 600;
-    }
-
-    .info-divider {
-      width: 1px;
-      height: 24px;
-      background: rgb(var(--ink-200));
-    }
-
-    .btn-record, .btn-recording {
-      display: inline-flex; align-items: center; gap: .4rem;
-    }
-    .btn-compact { display: inline-flex; align-items: center; gap: .4rem; }
-    .tab-live-dot {
-      width: .5rem; height: .5rem; border-radius: 50%; background: #c62828;
-      animation: recording-pulse 1.6s ease-in-out infinite;
-    }
     /* Room for the recording dock, so it never covers the last row. */
     .dossier-container.has-voice-dock { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
-    .clinical-item-detail { white-space: pre-line; }
-    .clinical-item-transcript summary { cursor: pointer; font-size: .8125rem; color: rgb(var(--ink-600)); }
-    .value-unknown { color: rgb(var(--ink-500)); }
 
-    /* A consultation puts its panel beside the dossier: the doctor keeps the
-       chart in view while the conversation is read. Below the breakpoint there
-       is no room for two columns, so the panel stacks above the content. */
-    .btn-consult { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-800)); border: 1px solid rgb(var(--petrol-300)); }
-    .btn-consult.live { background: rgb(var(--petrol-600)); color: #fff; }
+    /* A consultation puts its panel beside the file: the doctor keeps the chart in view while the
+       conversation is read. Below the breakpoint the panel stacks above the content. */
     .dossier-container.has-consultation { display: grid; grid-template-columns: minmax(0, 1fr); }
     .dossier-container.has-consultation > .dossier-consultation { grid-column: 1; grid-row: 2; }
     .dossier-container.has-consultation > .dossier-content { grid-row: 3; }
     @media (min-width: 1100px) {
-      .dossier-container.has-consultation { grid-template-columns: minmax(0, 1fr) 27rem; grid-template-rows: auto 1fr; }
+      .dossier-container.has-consultation { grid-template-columns: minmax(0, 1fr) 27rem; grid-template-rows: auto 1fr; column-gap: 1rem; }
       .dossier-container.has-consultation > .dossier-top { grid-column: 1; grid-row: 1; }
       .dossier-container.has-consultation > .dossier-content { grid-column: 1; grid-row: 2; }
       .dossier-container.has-consultation > .dossier-consultation {
-        /* Below the app's own sticky bar (h-16), and no taller than what is left of the viewport. */
         grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 4rem; height: calc(100vh - 6rem); align-self: start;
       }
     }
-    .btn-record { background: var(--primary, #2563eb); color: #fff; }
-    /* Unmissable while the microphone is live — the dentist is not looking at
-       the screen, so the one person who can see this state is whoever else is
-       in the room. */
-    .btn-recording { background: #c62828; color: #fff; }
-    .btn-recording .material-icons { animation: recording-pulse 1.6s ease-in-out infinite; }
-    @keyframes recording-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
-    @media (prefers-reduced-motion: reduce) {
-      .btn-recording .material-icons { animation: none; }
-    }
-
-    .dossier-tabs {
-      display: flex;
-      gap: 1.75rem;
-      padding: 0 1.25rem;
-      border-bottom: 1px solid rgb(var(--ink-100));
-      overflow-x: auto;
-    }
-
-    .dossier-tabs button {
-      background: transparent;
-      border: none;
-      white-space: nowrap;
-      padding: .75rem 0;
-      color: rgb(var(--ink-500));
-      font-weight: 600;
-      font-size: 0.95rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      position: relative;
-      transition: all 0.2s;
-    }
-
-    .dossier-tabs button:hover {
-      color: rgb(var(--petrol-800));
-    }
-
-    .dossier-tabs button.active {
-      color: rgb(var(--petrol-800));
-    }
-
-    .dossier-tabs button.active::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      inset-inline-start: 0;
-      inset-inline-end: 0;
-      height: 2px;
-      background: var(--action);
-    }
-
-    .dossier-tabs button:focus-visible {
-      outline: 2px solid var(--focus-ring);
-      outline-offset: 2px;
-    }
-
-    .dossier-content {
-      padding: 2rem;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    /* Overview: the whole width, with only a hairline of margin, for the 3D. */
-    .dossier-content.is-one-view { max-width: none; padding: .5rem 0 1.5rem; }
-    .one-view-row {
-      position: relative; /* the picked tooth's panel is placed against this row */
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: .75rem;
-      /* What is left of the window under the app bar, the tabs and the banner. */
-      height: max(24rem, calc(100vh - 17.25rem));
-      --d3-overlay-width: calc(50% - .375rem);
-      /* Into the page's own padding (main: p-4 / md:p-6 / lg:p-8), leaving half a rem. */
-      margin-inline: -.5rem;
-    }
-    @media (min-width: 768px) { .one-view-row { margin-inline: -1rem; } }
-    @media (min-width: 1024px) { .one-view-row { margin-inline: -1.5rem; } }
-    .one-view-chart { min-width: 0; min-height: 0; height: 100%; }
-    .one-view-chart .chart-placeholder { height: 100%; }
-    .one-view-image { height: 100%; }
-    .dossier-content.is-one-view .overview-grid { margin-top: 1rem; gap: .75rem; }
-    /* Everything under the 3D row lines up with it, edge to edge. */
-    .dossier-content.is-one-view app-patient-gallery,
-    .dossier-content.is-one-view .overview-grid,
-    .dossier-content.is-one-view app-consultation-report { display: block; margin-inline: -.5rem; }
-    .dossier-content.is-one-view .overview-grid { display: grid; }
-    @media (min-width: 768px) {
-      .dossier-content.is-one-view app-patient-gallery,
-      .dossier-content.is-one-view .overview-grid,
-      .dossier-content.is-one-view app-consultation-report { margin-inline: -1rem; }
-    }
-    @media (min-width: 1024px) {
-      .dossier-content.is-one-view app-patient-gallery,
-      .dossier-content.is-one-view .overview-grid,
-      .dossier-content.is-one-view app-consultation-report { margin-inline: -1.5rem; }
-    }
-    /* A short note stays short on the card; the whole of it is in Clinical. */
-    .dossier-content.is-one-view .summary-card .card-content .desc {
-      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line;
-    }
-    @media (max-width: 1099px) {
-      .one-view-row { grid-template-columns: minmax(0, 1fr); height: auto; }
-      .one-view-chart { height: 62vh; }
-      .one-view-image { height: 50vh; }
-    }
-
-    .tab-pane {
-      animation: fadeIn 0.3s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .overview-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .summary-card {
-      background: var(--surface);
-      padding: 1.5rem;
-      border-radius: 16px;
-      border: 1px solid rgb(var(--ink-200));
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-    }
-
-    .summary-card h2 {
-      font-size: 1rem;
-      margin: 0 0 1rem 0;
-      color: rgb(var(--ink-500));
-      font-weight: 600;
-    }
-
-    .card-content {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .card-content .date {
-      color: rgb(var(--petrol-800));
-      font-weight: 700;
-      font-size: 1.1rem;
-    }
-
-    .card-content .desc {
-      color: rgb(var(--ink-700));
-    }
-
-    .card-content .date.balance-due {
-      color: rgb(var(--critical-700));
-    }
-
-    .link-btn {
-      background: none;
-      border: none;
-      padding: 0;
-      color: rgb(var(--petrol-800));
-      font-weight: 600;
-      text-decoration: underline;
-      cursor: pointer;
-      text-align: start;
-      font-size: inherit;
-    }
-
-    .clinical-subtabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.25rem;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid rgb(var(--ink-200));
-    }
-
-    .clinical-subtabs button {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.5rem 0.9rem;
-      border: none;
-      border-radius: 999px;
-      background: transparent;
-      color: rgb(var(--ink-500));
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .clinical-subtabs button .material-icons {
-      font-size: 18px;
-    }
-
-    .clinical-subtabs button:hover {
-      background: rgb(var(--ink-100));
-      color: rgb(var(--ink-700));
-    }
-
-    .clinical-subtabs button.active {
-      background: rgb(var(--petrol-50));
-      color: rgb(var(--petrol-800));
-    }
-
-    .clinical-subtabs button:focus-visible {
-      outline: 2px solid var(--focus-ring);
-      outline-offset: 2px;
-    }
-
-    .dental-chart-card {
-      grid-column: 1 / -1;
-    }
-
-    /* The height of the stage below, so nothing moves when the chart arrives. */
-    .chart-placeholder {
-      height: clamp(22rem, 58vh, 40rem);
-      border-radius: 0.75rem;
-      background: var(--surface-hover);
-    }
-
-    /* Treatments Layout */
-    .treatments-layout {
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 2rem;
-      align-items: start;
-    }
-
-    .chart-sidebar {
-      background: var(--surface);
-      border: 1px solid rgb(var(--ink-200));
-      border-radius: 16px;
-      padding: 1.5rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    }
-
-    .sidebar-header-custom h3 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: rgb(var(--ink-900));
-      margin: 0 0 0.25rem 0;
-    }
-
-    .dental-chart-small {
-      margin: 1rem 0;
-      border-bottom: 1px solid rgb(var(--ink-100));
-      padding-bottom: 1rem;
-    }
-
-    .tooth-treatment-details {
-      background: rgb(var(--ink-50));
-      border-radius: 12px;
-      padding: 1rem;
-      border: 1px solid rgb(var(--ink-200));
-    }
-
-    .detail-header {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-      border-bottom: 1px solid rgb(var(--ink-200));
-      padding-bottom: 0.5rem;
-    }
-
-    .detail-header h4 {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: rgb(var(--ink-900));
-      margin: 0;
-    }
-
-    .tooth-badge {
-      background: rgb(var(--petrol-700));
-      color: white;
-      font-weight: 700;
-      padding: 0.2rem 0.5rem;
-      border-radius: 6px;
-      font-size: 0.75rem;
-    }
-
-    .small-timeline {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .timeline-detail-item {
-      background: var(--surface);
-      border: 1px solid rgb(var(--ink-200));
-      border-radius: 8px;
-      padding: 0.75rem;
-    }
-
-    .material-chip {
-      background: rgb(var(--ink-100));
-      color: rgb(var(--ink-600));
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 0.15rem 0.4rem;
-      border-radius: 9999px;
-      border: 1px solid rgb(var(--ink-300));
-    }
-
-    .treatments-summary {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    .summary-chart {
-      padding: 1.5rem;
-    }
-
-    .treatments-tracker {
-      background: var(--surface);
-      border: 1px solid rgb(var(--ink-200));
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    }
-
-    .tracker-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .tracker-header h2 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: rgb(var(--ink-900));
-      margin: 0;
-    }
-
-    .treatments-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .treatment-card {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: space-between;
-      align-items: center;
-      background: rgb(var(--ink-50));
-      border: 1px solid rgb(var(--ink-200));
-      border-radius: 12px;
-      padding: 1.25rem;
-      transition: all 0.2s;
-    }
-
-    .treatment-card:hover {
-      border-color: rgb(var(--petrol-900));
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(3, 4, 94, 0.05);
-    }
-
-    .card-left {
-      display: flex;
-      gap: 1rem;
-      align-items: flex-start;
-      flex: 1 1 14rem;
-      min-width: 0;
-    }
-
-    .treatment-icon {
-      background: rgb(var(--petrol-50));
-      color: rgb(var(--petrol-800));
-      padding: 0.5rem;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .treatment-meta {
-      flex: 1;
-    }
-
-    .treatment-name {
-      font-weight: 700;
-      color: rgb(var(--ink-900));
-      font-size: 1rem;
-    }
-
-    .teeth-list {
-      font-size: 0.75rem;
-      font-weight: 700;
-      background: rgb(var(--ink-200));
-      color: rgb(var(--ink-600));
-      padding: 0.1rem 0.4rem;
-      border-radius: 4px;
-    }
-
-    .card-right {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 1.5rem;
-    }
-
-    .status-progress {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 0.5rem;
-      min-width: 120px;
-    }
-
-    .progress-bar-container {
-      width: 100px;
-      height: 6px;
-      background: rgb(var(--ink-200));
-      border-radius: 9999px;
-      position: relative;
-    }
-
-    .progress-fill {
-      height: 100%;
-      background: var(--action);
-      border-radius: 9999px;
-      transition: width 0.3s ease;
-    }
-
-    .progress-val {
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: rgb(var(--ink-500));
-      margin-top: 0.2rem;
-    }
-
-    .card-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .no-treatments {
-      text-align: center;
-      padding: 4rem 2rem;
-      background: rgb(var(--ink-50));
-      border: 2px dashed rgb(var(--ink-300));
-      border-radius: 12px;
-      color: rgb(var(--ink-500));
-    }
-
-    .no-treatments .material-icons.large {
-      font-size: 3rem;
-      color: rgb(var(--ink-500));
-      margin-bottom: 1rem;
-    }
-
-    /* Modal Styling */
-    .modal-backdrop {
-      position: fixed;
-      top: 0;
-      inset-inline-start: 0;
-      inset-inline-end: 0;
-      bottom: 0;
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-      animation: fadeIn 0.2s ease-out;
-    }
-
-    .modal-card {
-      background: var(--surface);
-      border-radius: 20px;
-      width: 650px;
-      max-width: 90%;
-      max-height: 85vh;
-      overflow-y: auto;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      animation: slideUp 0.2s ease-out;
-    }
-
-    @keyframes slideUp {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      border-bottom: 1px solid rgb(var(--ink-100));
-      padding-bottom: 0.75rem;
-    }
-
-    .modal-header h2 {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: rgb(var(--ink-900));
-      margin: 0;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.25rem;
-    }
-
-    .col-span-2 {
-      grid-column: span 2;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-    }
-
-    .form-group label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: rgb(var(--ink-600));
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .consumable-editor-row {
-      display: grid;
-      grid-template-columns: 1fr 160px 40px;
-      gap: 0.75rem;
-      align-items: center;
-      margin-bottom: 0.5rem;
-    }
-
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      border-top: 1px solid rgb(var(--ink-100));
-      padding-top: 1rem;
-    }
-
-    .dossier-section {
-      background: var(--surface);
-      padding: 2rem;
-      border-radius: 16px;
-      border: 1px solid rgb(var(--ink-200));
-    }
-
-    .section-title { margin-top: 0; }
-
-    .info-group { margin-bottom: 1.5rem; }
-    .info-group label {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      color: rgb(var(--ink-500));
-      margin-bottom: 0.5rem;
-    }
-
-    .tag-list { display: flex; gap: 0.5rem; }
-    .tag {
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      background: rgb(var(--ink-100));
-      color: rgb(var(--ink-600));
-    }
-    .tag.alert { background: rgb(var(--critical-100)); color: rgb(var(--critical-700)); }
-
-    .notes-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .note-item {
-      background: var(--surface);
-      padding: 1.5rem;
-      border-radius: 12px;
-      border: 1px solid rgb(var(--ink-200));
-      margin-bottom: 1rem;
-    }
-    .note-meta {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.75rem;
-      font-size: 0.85rem;
-    }
-    .note-meta .author { font-weight: 700; color: rgb(var(--ink-900)); }
-    .note-meta .date { color: rgb(var(--ink-500)); }
-    .note-content { margin: 0; color: rgb(var(--ink-600)); line-height: 1.5; }
-
-    .docs-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-    .doc-card {
-      background: var(--surface);
-      border: 1px solid rgb(var(--ink-200));
-      border-radius: 12px;
-      padding: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .doc-card:hover { border-color: rgb(var(--petrol-900)); transform: translateY(-2px); }
-    .doc-icon {
-      color: rgb(var(--petrol-800));
-      background: rgb(var(--petrol-50));
-      padding: 0.5rem;
-      border-radius: 8px;
-    }
-    .doc-info .name { display: block; font-weight: 600; font-size: 0.9rem; color: rgb(var(--ink-900)); }
-    .doc-info .date { font-size: 0.75rem; color: rgb(var(--ink-500)); }
-    
-    .billing-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .billing-summary-mini {
-      display: flex;
-      gap: 2rem;
-      margin-bottom: 2rem;
-      background: rgb(var(--ink-50));
-      padding: 1.5rem;
-      border-radius: 12px;
-      border: 1px solid rgb(var(--ink-200));
-    }
-
-    .mini-stat {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .mini-stat .label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: rgb(var(--ink-500));
-      text-transform: uppercase;
-    }
-
-    .mini-stat .value {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: rgb(var(--ink-900));
-    }
-
-    .mini-stat .value.warning { color: rgb(var(--caution-700)); }
-
-    .invoice-link {
-      color: rgb(var(--petrol-800));
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .invoice-link:hover { text-decoration: underline; }
-
-    /* .empty (shared) supplies the flex/centering/padding shell; this only
-       adapts the icon+paragraph markup used here to look the same as before. */
-    .empty p {
-      color: rgb(var(--ink-500));
-      font-style: italic;
-    }
-
-    .empty .material-icons {
-      font-size: 2rem;
-      color: rgb(var(--ink-300));
-    }
-
-    .empty-hint {
-      color: rgb(var(--ink-500));
-      font-style: italic;
-      font-size: 0.85rem;
-    }
-
-    .summary-card.has-allergies {
-      border-color: rgb(var(--critical-300));
-      background: rgb(var(--critical-50));
-    }
-
-    .allergy-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-    }
-
-    .allergy-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      border-radius: 999px;
-      padding: 0.25rem 0.7rem;
-      background: rgb(var(--critical-100));
-      color: rgb(var(--critical-800));
-    }
-    .allergy-chip .material-icons { font-size: 14px; }
-    .allergy-chip.moderate { background: rgb(var(--caution-200)); color: rgb(var(--caution-800)); }
-    .allergy-chip.severe { background: rgb(var(--critical-200)); color: rgb(var(--critical-800)); font-weight: 700; }
-
-    .inline-form {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-      background: rgb(var(--ink-50));
-      border: 1px solid rgb(var(--ink-200));
-      border-radius: 12px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .inline-form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.5rem;
-    }
-
-    .clinical-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-    }
-
-    .clinical-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 0.75rem;
-      background: var(--surface);
-      border: 1px solid rgb(var(--ink-200));
-      border-radius: 10px;
-      padding: 0.75rem 1rem;
-    }
-
-    .clinical-item-main {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.5rem;
-      flex: 1;
-    }
-
-    .clinical-item-badge {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-      background: rgb(var(--ink-100));
-      color: rgb(var(--ink-600));
-      border-radius: 999px;
-      padding: 0.15rem 0.6rem;
-    }
-
-    .clinical-item-badge.tooth {
-      background: rgb(var(--petrol-700));
-      color: white;
-    }
-
-    .clinical-item-label {
-      font-weight: 600;
-      color: rgb(var(--ink-900));
-      font-size: 0.9rem;
-    }
-
-    .clinical-item-severity {
-      font-size: 0.7rem;
-      font-weight: 700;
-      border-radius: 999px;
-      padding: 0.15rem 0.6rem;
-    }
-    .clinical-item-severity.mild { background: rgb(var(--caution-100)); color: rgb(var(--caution-700)); }
-    .clinical-item-severity.moderate { background: rgb(var(--caution-200)); color: rgb(var(--caution-800)); }
-    .clinical-item-severity.severe { background: rgb(var(--critical-100)); color: rgb(var(--critical-800)); }
-
-    .clinical-item-detail {
-      flex-basis: 100%;
-      /* A consultation report has line breaks and lists; run together it is unreadable. */
-      white-space: pre-line;
-      margin: 0.25rem 0 0 0;
-      font-size: 0.85rem;
-      color: rgb(var(--ink-600));
-    }
-
-    .clinical-item-meta {
-      flex-basis: 100%;
-      font-size: 0.75rem;
-      color: rgb(var(--ink-500));
-    }
-
-    .loading {
-      display: flex;
-      justify-content: center;
-      padding: 4rem;
-      color: rgb(var(--ink-500));
-    }
-
-    /* Responsive Styles */
-    @media (max-width: 768px) {
-      /* The header used to stack four full-width buttons and stay sticky,
-         which on a phone pinned most of the screen above the content. It now
-         scrolls away, keeps the voice button as the one full-width action,
-         and reduces the others to icons. */
-      .dossier-header {
-        position: static;
-        padding: .75rem 1rem 0 1rem;
-      }
-
-      .header-top {
-        flex-wrap: wrap;
-        gap: .5rem .75rem;
-        margin-bottom: 1rem;
-      }
-
-      .patient-title {
-        min-width: 0;
-        flex-wrap: wrap;
-        gap: .5rem;
-      }
-
-      .patient-title h1 {
-        font-size: 1.25rem;
-        overflow-wrap: anywhere;
-      }
-
-      .header-actions {
-        width: 100%;
-        gap: .5rem;
-      }
-
-      .header-actions .btn-record,
-      .header-actions .btn-recording {
-        flex: 1;
-        justify-content: center;
-        min-height: 2.75rem;
-      }
-
-      .header-actions .btn-compact {
-        min-width: 2.75rem;
-        min-height: 2.75rem;
-        justify-content: center;
-        padding-inline: .625rem;
-      }
-
-      .header-actions .btn-compact .btn-label {
-        display: none;
-      }
-
-      .patient-quick-info {
-        flex-wrap: wrap;
-        gap: 1rem;
-        padding-bottom: 1rem;
-      }
-
-      .info-divider {
-        display: none;
-      }
-
-      .info-item {
-        flex: 1 1 40%;
-      }
-
-      .dossier-tabs {
-        overflow-x: auto;
-        padding-bottom: 2px;
-        gap: 1.5rem;
-      }
-
-      .dossier-tabs button {
-        white-space: nowrap;
-      }
-
-      .dossier-content {
-        padding: 1rem;
-      }
-
-      .overview-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .docs-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  `]
+    .loading { display: flex; justify-content: center; padding: 4rem; color: var(--text-muted); }
+    @media (max-width: 767.98px) { .dossier-tabs { gap: 1.25rem; padding-inline: 1rem; } }
+  `],
 })
 export class PatientDossierComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
@@ -1910,20 +336,25 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   clinicalRecordService = inject(ClinicalRecordService);
   private voiceContext = inject(VoiceContextService);
   private voice = inject(VoiceOrchestratorService);
+  private readonly permissions = inject(PermissionService);
+  private readonly patientTreatmentService = inject(PatientTreatmentService);
+  private readonly elementRef = inject(ElementRef);
 
-  /**
-   * A tooth named by voice becomes the dossier's selected tooth, so the
-   * treatment panel follows it when the dentist later looks there.
-   *
-   * It no longer switches tabs. That used to throw the dossier onto Clinical
-   * and its 3D viewer on every dictated tooth — the view moving under a
-   * dentist who cannot touch the screen to get back. Voice results are shown
-   * in the voice panel's own chart instead (audit XII.2's visual check,
-   * without the navigation).
-   *
-   * Declared as a field rather than created in ngOnInit: `effect()` requires
-   * an injection context, and a field initializer is one.
-   */
+  readonly canBilling = computed(() => this.permissions.can('BILLING_READ'));
+  readonly canClinical = computed(() => this.permissions.can('CLINICAL_READ'));
+
+  /** The medical history side panel, opened from the alert strip and the summary. */
+  readonly historyOpen = signal(false);
+
+  /** The banner's one-row form, once the page has scrolled (with some slack, so it does not flicker). */
+  readonly compact = signal(false);
+  @HostListener('window:scroll')
+  protected onScroll(): void {
+    const y = window.scrollY;
+    if (!this.compact() && y > 160) this.compact.set(true);
+    else if (this.compact() && y < 40) this.compact.set(false);
+  }
+
   /**
    * The breadcrumb ends on the patient's name, set once per loaded patient and cleared when the
    * file closes. It does not read the label back: it used to, and re-set the name while a
@@ -1938,35 +369,26 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     }
   });
 
+  /** A tooth named by voice becomes the file's selected tooth. It no longer switches tabs. */
   private readonly voiceToothSync = effect(() => {
     const fdi = this.voiceContext.selectedFdi();
-    if (fdi && fdi !== this.selectedToothForTreatments()) this.selectedToothForTreatments.set(fdi);
+    if (fdi && fdi !== untracked(this.selectedToothForTreatments)) this.selectedToothForTreatments.set(fdi);
   });
 
-  /**
-   * A consultation saved: the chart findings, the patient's details, allergies
-   * and notes it wrote are what the rest of the dossier should now show. The
-   * first run (version 0) is not a save.
-   */
+  /** A consultation saved: what it wrote is what the rest of the file should now show. Version 0 is not a save. */
   private readonly consultationSaved = effect(() => {
-    if (this.consultation.savedVersion() > 0) this.onVoiceSaved();
+    if (this.consultation.savedVersion() > 0) untracked(() => this.onVoiceSaved());
   });
 
-  /**
-   * The consultation cockpit, while recording: one screen, no tabs. Off (the
-   * server's CONSULTATION_COCKPIT_ENABLED) it is the two panels of before.
-   */
+  /** The consultation cockpit, while recording: one screen, no tabs. */
   readonly cockpit = computed(() => this.consultation.isRecording() && this.consultation.cockpitEnabled());
 
-  /**
-   * The intro and the review are shown beside the dictation tab; while the
-   * cockpit records, it is the whole screen and there is no tab to move to.
-   */
+  /** The intro and the review are shown beside the dictation tab. */
   private readonly consultationFocus = effect(() => {
-    if (this.consultation.intro() || (this.consultation.isOpen() && !this.cockpit())) this.activeTab.set('voice');
+    if (this.consultation.intro() || (this.consultation.isOpen() && !this.cockpit())) untracked(() => this.goTo('voice'));
   });
 
-  /** The cockpit's back arrow: leave the dossier, as its own back button does; the consultation stays open. */
+  /** The cockpit's back arrow: leave the file, as its own back button does; the consultation stays open. */
   leaveForList(): void {
     void this.router.navigate(['/patients']);
   }
@@ -1974,104 +396,78 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   /** The microphone is being opened and the session created. */
   voiceStarting = signal(false);
 
-  activeTab = signal('overview');
-  private elementRef = inject(ElementRef);
+  // ── Tabs ───────────────────────────────────────────────────────────────
 
-  setActiveTab(id: string): void {
-    this.activeTab.set(id);
-  }
+  private readonly visibleTabs = computed(() => DOSSIER_TABS.filter(t =>
+    t.id === 'billing' ? this.permissions.can('BILLING_READ')
+      : t.id === 'documents' ? this.permissions.can('CLINICAL_READ')
+        : true));
 
-  setActiveClinicalSubTab(id: string): void {
-    this.activeClinicalSubTab.set(id);
-  }
+  readonly navTabs = computed<TabDef[]>(() =>
+    this.voiceSession.isActive() || this.voiceSession.reviewing() || this.activeTab() === 'voice'
+      ? [{ id: 'voice', key: 'VOICE.TAB', icon: 'mic' }, ...this.visibleTabs()]
+      : [...this.visibleTabs()]);
+
+  private readonly queryTab = toSignal(this.route.queryParamMap.pipe(map(q => q.get('tab'))),
+    { initialValue: this.route.snapshot.queryParamMap.get('tab') });
+
+  readonly activeTab = signal<DossierTab>('summary');
+
+  /** The address says which tab: Reload, Back and a shared link land on it. */
+  private readonly tabFromAddress = effect(() => {
+    const wanted = tabFromQuery(this.queryTab(), this.visibleTabs().map(t => t.id));
+    if (wanted !== untracked(this.activeTab)) this.activeTab.set(wanted);
+  });
 
   /**
-   * WAI-ARIA tabs pattern: ArrowLeft/ArrowRight (and Home/End) move both
-   * focus and selection between tabs in a tablist, with roving tabindex
-   * (only the active tab is in the natural tab order).
+   * Opens a tab and writes it in the address. A tab the doctor picks is a step Back can undo;
+   * one the file opens by itself (voice, a consultation) replaces the address instead.
    */
-  onTabKeydown(event: KeyboardEvent, items: { id: string }[], currentId: string, setActive: (id: string) => void, idPrefix: string): void {
-    const index = items.findIndex(t => t.id === currentId);
-    if (index === -1) return;
-    let nextIndex: number | null = null;
-
-    switch (event.key) {
-      case 'ArrowRight':
-      case 'ArrowDown':
-        nextIndex = (index + 1) % items.length;
-        break;
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        nextIndex = (index - 1 + items.length) % items.length;
-        break;
-      case 'Home':
-        nextIndex = 0;
-        break;
-      case 'End':
-        nextIndex = items.length - 1;
-        break;
-      default:
-        return;
-    }
-
-    event.preventDefault();
-    const nextId = items[nextIndex].id;
-    setActive(nextId);
-    setTimeout(() => {
-      const el = this.elementRef.nativeElement.querySelector(`#${idPrefix}${nextId}`) as HTMLElement | null;
-      el?.focus();
-    }, 0);
+  goTo(id: DossierTab, replace = true): void {
+    this.activeTab.set(id);
+    const current = this.route.snapshot.queryParamMap.get('tab');
+    const next = id === 'summary' ? null : id;
+    if (current === next) return;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab: next },
+      queryParamsHandling: 'merge',
+      replaceUrl: replace,
+    });
   }
+
+  /** WAI-ARIA tabs: arrows, Home and End move focus and selection, with a roving tabindex. */
+  onTabKeydown(event: KeyboardEvent): void {
+    const items = this.navTabs();
+    const index = items.findIndex(t => t.id === this.activeTab());
+    if (index === -1) return;
+    const keys: Record<string, number> = {
+      ArrowRight: (index + 1) % items.length, ArrowDown: (index + 1) % items.length,
+      ArrowLeft: (index - 1 + items.length) % items.length, ArrowUp: (index - 1 + items.length) % items.length,
+      Home: 0, End: items.length - 1,
+    };
+    if (!(event.key in keys)) return;
+    event.preventDefault();
+    const nextId = items[keys[event.key]].id;
+    this.goTo(nextId, false);
+    setTimeout(() => (this.elementRef.nativeElement.querySelector(`#dossier-tab-${nextId}`) as HTMLElement | null)?.focus(), 0);
+  }
+
+  // ── What the file shows ────────────────────────────────────────────────
 
   /** The chart as the server last gave it. Findings change it; DentalChartService re-reads it. */
   dentalChartState = computed(() => this.chartService.currentChart());
 
   patientInvoices = signal<Invoice[]>([]);
-
-  // Patient Treatment Signals
-  private patientTreatmentService = inject(PatientTreatmentService);
-  private stockService = inject(StockService);
-
   patientTreatments = signal<PatientTreatment[]>([]);
-  availableTreatments = signal<Treatment[]>([]);
-  availableStockItems = signal<StockItem[]>([]);
-
-  // Modal State
-  showAssignModal = signal(false);
-  isEditingTreatment = signal(false);
-  selectedTreatmentForEdit = signal<PatientTreatment | null>(null);
-
-  // Form Fields
-  formTreatmentId = '';
-  formTeeth = '';
-  formStatus: PatientTreatmentStatus = 'PLANNED';
-  formProgress = 0;
-  formNotes = '';
-  formDoctorName = '';
-  formStartDate = '';
-  formEndDate = '';
-  formConsumables: PatientTreatmentConsumable[] = [];
-
-  // Tooth selection detail panel
   selectedToothForTreatments = signal<string | null>(null);
-  selectedToothTreatments = computed(() => {
-    const tooth = this.selectedToothForTreatments();
-    if (!tooth) return [];
-    return this.patientTreatments().filter(t => t.teeth.split(',').map(x => x.trim()).includes(tooth));
-  });
 
-  totalInvoicedForPatient = computed(() => {
-    return this.patientInvoices().reduce((sum, inv) => sum + inv.total, 0);
-  });
+  readonly state = computed(() => patientState(this.patientService.currentPatient()?.status, this.patientTreatments()));
 
-  balanceDueForPatient = computed(() => {
-    // Sums each invoice's remaining balance (total minus what's already been
-    // paid), not the full invoice total — a partially-paid invoice used to
-    // contribute its entire value to "Outstanding" (audit III.7).
-    return this.patientInvoices()
-      .filter(inv => inv.status !== 'PAID' && inv.status !== 'CANCELLED')
-      .reduce((sum, inv) => sum + (inv.balanceDue ?? inv.total), 0);
-  });
+  /** Each invoice's remaining balance, not its full total. */
+  balanceDueForPatient = computed(() => this.patientInvoices()
+    .filter(inv => inv.status !== 'PAID' && inv.status !== 'CANCELLED')
+    .reduce((sum, inv) => sum + (inv.balanceDue ?? inv.total), 0));
 
   patientAppointments = computed<Appointment[]>(() => {
     const patient = this.patientService.currentPatient();
@@ -2089,176 +485,94 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     return upcoming[0] ?? null;
   });
 
-  // Consolidated from nine tabs to three (audit VIII.5: "nine tabs where six
-  // are hollow is worse than three that work"). The six former secondary
-  // tabs (Treatments/History/Diagnostics/Plan/Appointments/Notes) still
-  // exist and are still independently reachable — they're nested inside
-  // Clinical as an in-page tab strip rather than deleted, since Treatments
-  // in particular is "the strongest screen in the product" per the audit
-  // and nothing about it needed to change, only where it lives.
-  tabs = [
-    { id: 'overview', key: 'COMMON.OVERVIEW', icon: 'dashboard' },
-    { id: 'clinical', key: 'PATIENTS.DOSSIER.CLINICAL', icon: 'healing' },
-    { id: 'financial', key: 'PATIENTS.DOSSIER.FINANCIAL', icon: 'payments' },
-    { id: 'documents', key: 'PATIENTS.DOSSIER.DOCUMENTS', icon: 'description' },
-  ];
+  /** While a session runs, what it has heard is drawn on the chart wherever the doctor is looking. */
+  stagedFindings = computed(() => stagedToothFindings(this.voice.buffered()));
+  voiceFocusFdi = computed(() => (this.voiceSession.isActive() ? this.voice.highlightedFdi() : null));
 
-  /** The voice tab exists while a session does, or while one is being started. */
-  private readonly permissions = inject(PermissionService);
+  ngOnInit() {
+    // switchMap cancels the previous patient's in-flight resolution when the route param changes
+    // again before it settles, so A's response can never load under B's name.
+    this.route.params
+      .pipe(
+        map(params => params['id'] as string | undefined),
+        filter((id): id is string => !!id),
+        switchMap(id => this.patientService.setCurrentPatient(id)),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (patient) => {
+          // How the last patient's mouth was being looked at says nothing about this one's.
+          this.chartView.reset();
+          this.selectedToothForTreatments.set(null);
+          this.historyOpen.set(false);
+          this.chartService.loadChart(patient.id, patient.dateOfBirth);
+          this.loadPatientBilling(patient.id);
+          this.loadPatientTreatments(patient.id);
+          this.clinicalRecordService.refresh(patient.id);
+          void this.restoreConsultationAndVoice(patient.id);
+        },
+        error: (err) => console.error('Failed to load patient', err)
+      });
 
-  /** The money tab is for those who may see billing: a clinical assistant never sees what a patient owes. */
-  private readonly visibleTabs = computed(() => this.tabs.filter(t =>
-    t.id === 'financial' ? this.permissions.can('BILLING_READ')
-      // Insurance forms are the front desk's, ordonnances the clinical team's: either is enough to open the tab.
-      : t.id === 'documents' ? this.permissions.can('BILLING_READ') || this.permissions.can('CLINICAL_READ')
-        : true));
+    this.clinicalRecordService.loadCatalogOnce();
+    void this.consultation.loadConfig();
 
-  navTabs = computed(() =>
-    this.voiceSession.isActive() || this.voiceSession.reviewing() || this.activeTab() === 'voice'
-      ? [{ id: 'voice', key: 'VOICE.TAB', icon: 'mic' }, ...this.visibleTabs()]
-      : this.visibleTabs());
-
-  clinicalSubTabs = [
-    { id: 'treatments', key: 'COMMON.TREATMENTS', icon: 'healing' },
-    { id: 'photos', key: 'PATIENTS.PHOTOS.TAB', icon: 'photo_library' },
-    { id: 'history', key: 'PATIENTS.DOSSIER.MEDICAL_HISTORY', icon: 'medical_services' },
-    { id: 'diagnostics', key: 'PATIENTS.DOSSIER.DIAGNOSTICS', icon: 'biotech' },
-    { id: 'plan', key: 'PATIENTS.DOSSIER.TREATMENT_PLAN', icon: 'assignment' },
-    { id: 'appointments', key: 'COMMON.SCHEDULE', icon: 'event' },
-    { id: 'treatment-log', key: 'TREATMENT_LOG.TAB', icon: 'history' },
-    { id: 'gums', key: 'GUMS.TAB', icon: 'healing' },
-    { id: 'notes', key: 'DENTAL_CHART.REPORT_TITLE', icon: 'history_edu' },
-  ];
-  /** Photos are part of the clinical record and follow its read permission. */
-  visibleClinicalSubTabs = computed(() =>
-    this.clinicalSubTabs.filter(t => t.id !== 'photos' || this.permissions.can('CLINICAL_READ')));
-  activeClinicalSubTab = signal('treatments');
-
-  activeTreatmentsCount = computed(() =>
-    this.patientTreatments().filter(t => t.status === 'ACTIVE').length
-  );
-
-  // ── Clinical record (findings / notes / allergies / medical history) ──
-  /** The last note, leaving out what a consultation save filed: its report has its own section below. */
-  latestNote = computed(() => {
-    const filedBySave = new Set(['CONSULTATION_REPORT', 'CONSULTATION_TRANSCRIPT', 'CHIEF_COMPLAINT', 'TREATMENT_PLAN']);
-    const notes = this.clinicalRecordService.notes().filter(n => !(n.sessionId && filedBySave.has(n.category)));
-    if (!notes.length) return null;
-    return [...notes].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-  });
-
-  diagnosticFindings = computed(() =>
-    this.clinicalRecordService.findings().filter(f =>
-      f.status === 'ACTIVE' && (f.kind === 'EXISTING' || f.kind === 'CONDITION')
-    )
-  );
-  treatmentRequiredFindings = computed(() =>
-    this.clinicalRecordService.findings().filter(f => f.status === 'ACTIVE' && f.kind === 'TREATMENT_REQUIRED')
-  );
-
-  protected findingName(code: string): string {
-    return findingLabel(this.translate, code);
+    // Context-scoped commands: only in the palette while a patient file is open.
+    this.commandRegistry.registerMany(
+      DOSSIER_TABS.map(tab => ({
+        id: `dossier.tab.${tab.id}`,
+        label: `Open ${tab.id} tab`,
+        category: 'navigation' as const,
+        icon: tab.icon,
+        routeScope: '/patients/',
+        execute: () => this.goTo(tab.id, false),
+      }))
+    );
   }
 
-  readonly medicalHistoryCategories: MedicalHistoryCategory[] =
-    ['CONDITION', 'MEDICATION', 'SURGERY', 'DENTAL_HISTORY', 'FAMILY', 'LIFESTYLE', 'OTHER'];
-  readonly noteCategories: NoteCategory[] =
-    ['GENERAL', 'CHIEF_COMPLAINT', 'OBSERVATION', 'DENTAL_HISTORY', 'MEDICAL_HISTORY', 'DIAGNOSIS', 'FOLLOW_UP', 'TREATMENT_PLAN'];
-
-  showHistoryForm = signal(false);
-  historyForm: { category: MedicalHistoryCategory; label: string; detail: string } =
-    { category: 'CONDITION', label: '', detail: '' };
-
-  showNoteForm = signal(false);
-  noteForm: { category: NoteCategory; content: string } = { category: 'GENERAL', content: '' };
-
-  showFindingForm = signal<'diagnostic' | 'plan' | null>(null);
-  findingForm: { fdi: string; findingCode: string; severity: string; note: string } =
-    { fdi: '', findingCode: '', severity: '', note: '' };
-
-  diagnosticCatalogCodes = computed(() =>
-    (this.clinicalRecordService.catalog()?.definitions ?? []).filter(d => d.kind === 'EXISTING' || d.kind === 'CONDITION')
-  );
-  treatmentRequiredCatalogCodes = computed(() =>
-    (this.clinicalRecordService.catalog()?.definitions ?? []).filter(d => d.kind === 'TREATMENT_REQUIRED')
-  );
-
-  openFindingForm(target: 'diagnostic' | 'plan'): void {
-    this.findingForm = { fdi: '', findingCode: '', severity: '', note: '' };
-    this.showFindingForm.set(target);
+  ngOnDestroy() {
+    this.pageLabel.clear(this);
+    this.destroy$.next();
+    this.destroy$.complete();
+    DOSSIER_TABS.forEach(tab => this.commandRegistry.unregister(`dossier.tab.${tab.id}`));
+    // Leaving the file closes the microphone: a live microphone behind another screen is one
+    // nobody is watching. The session is kept and offered back when this file opens again; a
+    // consultation is let go of the same way, before the session whose routing it holds.
+    this.consultation.detach();
+    this.voiceSession.detach();
+    // A tooth selected on this patient must not follow the doctor to the next one.
+    this.voiceContext.selectTooth(null);
   }
 
-  submitFinding(): void {
-    const patient = this.patientService.currentPatient();
-    if (!patient || !this.findingForm.fdi || !this.findingForm.findingCode) return;
-    this.clinicalRecordService.addFinding(patient.id, this.findingForm.fdi, {
-      findingCode: this.findingForm.findingCode,
-      severity: (this.findingForm.severity || undefined) as any,
-      note: this.findingForm.note || undefined,
-      source: 'manual',
-    }).subscribe({
-      next: () => {
-        this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.FINDING_RECORDED'));
-        this.showFindingForm.set(null);
-      },
-      error: (err) => this.toast.error(err.error?.detail || err.error?.message || 'Could not save the finding.')
-    });
+  loadPatientBilling(patientId: string) {
+    if (!this.canBilling()) return;
+    this.invoiceService.getPatientInvoices(patientId).subscribe(invoices => this.patientInvoices.set(invoices));
   }
 
-  submitMedicalHistory(): void {
-    const patient = this.patientService.currentPatient();
-    if (!patient || !this.historyForm.label) return;
-    this.clinicalRecordService.addMedicalHistory(patient.id, {
-      category: this.historyForm.category,
-      label: this.historyForm.label,
-      detail: this.historyForm.detail || undefined,
-      source: 'manual',
-    }).subscribe({
-      next: () => {
-        this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.HISTORY_ADDED'));
-        this.historyForm = { category: 'CONDITION', label: '', detail: '' };
-        this.showHistoryForm.set(false);
-      },
-      error: (err) => this.toast.error(err.error?.detail || err.error?.message || 'Could not save the entry.')
-    });
+  loadPatientTreatments(patientId: string) {
+    this.patientTreatmentService.getPatientTreatments(patientId).subscribe(list => this.patientTreatments.set(list));
   }
 
-  async removeMedicalHistory(entryId: string): Promise<void> {
+  onToothSelected3D(toothId: string | null) {
+    this.selectedToothForTreatments.set(toothId);
+    // Selecting by hand is also how the doctor tells the assistant what "that tooth" refers to.
+    this.voiceContext.selectTooth(toothId);
+  }
+
+  /** A tooth picked on the summary's chart opens it where it is edited. */
+  openTooth(fdi: string): void {
+    this.onToothSelected3D(fdi);
+    this.goTo('chart', false);
+  }
+
+  /** The schedule's own form, with this patient filled in. Only the id travels in the address. */
+  bookAppointment(): void {
     const patient = this.patientService.currentPatient();
     if (!patient) return;
-    const entry = this.clinicalRecordService.medicalHistory().find(e => e.id === entryId);
-    const confirmed = await this.confirmDialog.confirm(
-      this.translate.instant('PATIENTS.DOSSIER.UI.HISTORY_DELETE_CONFIRM', { label: entry?.label ?? '' }),
-      { danger: true, confirmLabel: this.translate.instant('COMMON.DELETE') });
-    if (!confirmed) return;
-    this.clinicalRecordService.deleteMedicalHistory(patient.id, entryId).subscribe({
-      next: () => this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.ENTRY_REMOVED')),
-      error: (err) => this.toast.error(err.error?.detail || err.error?.message || 'Could not remove the entry.')
-    });
+    void this.router.navigate(['/schedule'], { queryParams: { book: patient.id } });
   }
 
-  submitNote(): void {
-    const patient = this.patientService.currentPatient();
-    if (!patient || !this.noteForm.content) return;
-    this.clinicalRecordService.addNote(patient.id, {
-      category: this.noteForm.category,
-      content: this.noteForm.content,
-      source: 'manual',
-    }).subscribe({
-      next: () => {
-        this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.NOTE_ADDED'));
-        this.noteForm = { category: 'GENERAL', content: '' };
-        this.showNoteForm.set(false);
-      },
-      error: (err) => this.toast.error(err.error?.detail || err.error?.message || 'Could not save the note.')
-    });
-  }
-
-  /**
-   * Opens the log of the consultation a filed transcript came from. The note
-   * carries the dictated session's id, not the consultation's, so the patient's
-   * consultations are searched for the one that owns that session.
-   */
+  /** Opens the log of the consultation a filed transcript came from. */
   openConsultationLog(sessionId?: string): void {
     const patient = this.patientService.currentPatient();
     if (!patient || !sessionId) return;
@@ -2272,322 +586,37 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     });
   }
 
-  async removeNote(noteId: string): Promise<void> {
-    const patient = this.patientService.currentPatient();
-    if (!patient) return;
-    const note = this.clinicalRecordService.notes().find(n => n.id === noteId);
-    const excerpt = (note?.content ?? '').replace(/\s+/g, ' ').trim();
-    const confirmed = await this.confirmDialog.confirm(
-      this.translate.instant('PATIENTS.DOSSIER.UI.NOTE_DELETE_CONFIRM', { excerpt: excerpt.length > 80 ? excerpt.slice(0, 80) + '…' : excerpt }),
-      { danger: true, confirmLabel: this.translate.instant('COMMON.DELETE') });
-    if (!confirmed) return;
-    this.clinicalRecordService.deleteNote(patient.id, noteId).subscribe({
-      next: () => this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.NOTE_DELETED')),
-      error: (err) => this.toast.error(err.error?.detail || err.error?.message || 'Could not delete the note.')
-    });
-  }
-
-  resolveFinding(findingId: string): void {
-    const patient = this.patientService.currentPatient();
-    if (!patient) return;
-    this.clinicalRecordService.changeFindingStatus(patient.id, findingId, 'RESOLVED').subscribe({
-      next: () => this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.FINDING_RESOLVED')),
-      error: (err) => this.toast.error(err.error?.detail || err.error?.message || 'Could not update the finding.')
-    });
-  }
-
-  ngOnInit() {
-    // switchMap cancels the previous patient's in-flight resolution when the
-    // route param changes again before it settles — without it, navigating
-    // quickly from patient A to patient B could resolve A's response after
-    // B's and load A's clinical data under B's name (see III.1 in the audit).
-    this.route.params
-      .pipe(
-        map(params => params['id'] as string | undefined),
-        filter((id): id is string => !!id),
-        switchMap(id => this.patientService.setCurrentPatient(id)),
-        takeUntil(this.destroy$)
-      )
-      .subscribe({
-        next: (patient) => {
-          // How the last patient's mouth was being looked at says nothing about this one's.
-          this.chartView.reset();
-          this.selectedToothForTreatments.set(null);
-          this.chartService.loadChart(patient.id, patient.dateOfBirth);
-          this.loadPatientBilling(patient.id);
-          this.loadPatientTreatments(patient.id);
-          this.clinicalRecordService.refresh(patient.id);
-          void this.restoreConsultationAndVoice(patient.id);
-        },
-        error: (err) => console.error('Failed to load patient', err)
-      });
-
-    this.clinicalRecordService.loadCatalogOnce();
-    void this.consultation.loadConfig();
-
-    // Load available treatments and stock items for selectors
-    this.stockService.getTreatments().subscribe(list => this.availableTreatments.set(list));
-    this.stockService.getStockItems().subscribe(list => this.availableStockItems.set(list));
-
-    // Context-scoped commands (audit XII.4 §7): only reachable from the
-    // command palette while a patient dossier is open, unregistered on
-    // leaving so they never linger and match against an unrelated screen.
-    this.commandRegistry.registerMany(
-      this.tabs.map(tab => ({
-        id: `dossier.tab.${tab.id}`,
-        label: `Open ${tab.key.split('.').pop()?.replace(/_/g, ' ')} Tab`,
-        category: 'navigation' as const,
-        icon: tab.icon,
-        routeScope: '/patients/',
-        execute: () => this.activeTab.set(tab.id),
-      }))
-    );
-  }
-
-  ngOnDestroy() {
-    this.pageLabel.clear(this);
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.tabs.forEach(tab => this.commandRegistry.unregister(`dossier.tab.${tab.id}`));
-    // Leaving the dossier closes the microphone: there is nowhere else a
-    // session's results are shown, and a live microphone behind another
-    // screen is one nobody is watching. The session itself is kept and
-    // offered back when this patient's dossier opens again.
-    // A consultation is let go of the same way — kept on the server, offered
-    // back on return — and before the session, whose routing it holds.
-    this.consultation.detach();
-    this.voiceSession.detach();
-    // A tooth selected by voice on this patient must not follow the doctor to
-    // the next one — "that tooth" would silently resolve to the wrong record.
-    this.voiceContext.selectTooth(null);
-  }
-
-  loadPatientBilling(patientId: string) {
-    this.invoiceService.getPatientInvoices(patientId).subscribe(invoices => {
-      this.patientInvoices.set(invoices);
-    });
-  }
-
-  onToothSelected3D(toothId: string | null) {
-    this.selectedToothForTreatments.set(toothId);
-    // Selecting by hand is also how the doctor tells the assistant what "that tooth"
-    // refers to, so the next dictated finding needs no tooth name.
-    this.voiceContext.selectTooth(toothId);
-  }
-
-  /** While a session runs, what it has heard is drawn on the chart wherever the doctor is looking. */
-  stagedFindings = computed(() => stagedToothFindings(this.voice.buffered()));
-
-  voiceFocusFdi = computed(() => (this.voiceSession.isActive() ? this.voice.highlightedFdi() : null));
-
-  openAssignModalFrom3D(toothId: string) {
-    this.selectedToothForTreatments.set(toothId);
-    this.openAssignModal();
-  }
-
-  loadPatientTreatments(patientId: string) {
-    this.patientTreatmentService.getPatientTreatments(patientId).subscribe(list => {
-      this.patientTreatments.set(list);
-    });
-  }
-
-  openAssignModal(treatment?: PatientTreatment) {
-    if (treatment) {
-      this.isEditingTreatment.set(true);
-      this.selectedTreatmentForEdit.set(treatment);
-      this.formTreatmentId = treatment.treatment.id || '';
-      this.formTeeth = treatment.teeth;
-      this.formStatus = treatment.status;
-      this.formProgress = treatment.progress;
-      this.formNotes = treatment.notes || '';
-      this.formDoctorName = treatment.doctorName || '';
-      this.formStartDate = treatment.startDate || '';
-      this.formEndDate = treatment.endDate || '';
-      this.formConsumables = treatment.consumables ? [...treatment.consumables.map(c => ({...c}))] : [];
-    } else {
-      this.isEditingTreatment.set(false);
-      this.selectedTreatmentForEdit.set(null);
-      this.formTreatmentId = '';
-      this.formTeeth = this.selectedToothForTreatments() || '';
-      this.formStatus = 'PLANNED';
-      this.formProgress = 0;
-      this.formNotes = '';
-      this.formDoctorName = '';
-      this.formStartDate = new Date().toISOString().split('T')[0];
-      this.formEndDate = '';
-      this.formConsumables = [];
-    }
-    this.showAssignModal.set(true);
-  }
-
-  closeAssignModal() {
-    this.showAssignModal.set(false);
-    this.isEditingTreatment.set(false);
-    this.selectedTreatmentForEdit.set(null);
-  }
-
-  onTreatmentSelected(treatmentId: string) {
-    const matched = this.availableTreatments().find(t => t.id === treatmentId);
-    if (matched && matched.consumables) {
-      this.formConsumables = matched.consumables.map(c => ({
-        stockItem: c.stockItem,
-        quantityUsed: c.quantityUsed,
-        pricePerUnit: c.stockItem.pricePerUse,
-        notes: ''
-      }));
-    } else {
-      this.formConsumables = [];
-    }
-  }
-
-  addConsumableToForm() {
-    this.formConsumables.push({
-      stockItem: this.availableStockItems()[0],
-      quantityUsed: 1,
-      pricePerUnit: this.availableStockItems()[0]?.pricePerUse || 0,
-      notes: ''
-    });
-  }
-
-  removeConsumableFromForm(index: number) {
-    this.formConsumables.splice(index, 1);
-  }
-
-  savePatientTreatment() {
-    const patient = this.patientService.currentPatient();
-    if (!patient) return;
-
-    const matchedTreatment = this.availableTreatments().find(t => t.id === this.formTreatmentId);
-    if (!matchedTreatment) {
-      this.toast.error(this.translate.instant('PATIENTS.DOSSIER.UI.SELECT_VALID_TREATMENT'));
-      return;
-    }
-
-    const payload: PatientTreatmentRequestPayload = {
-      treatmentId: matchedTreatment.id!,
-      teeth: this.formTeeth,
-      status: this.formStatus,
-      progress: this.formProgress,
-      notes: this.formNotes,
-      doctorName: this.formDoctorName,
-      startDate: this.formStartDate || undefined,
-      endDate: this.formEndDate || undefined,
-      consumables: this.formConsumables.map(c => ({
-        stockItemId: c.stockItem.id,
-        quantityUsed: c.quantityUsed,
-        notes: c.notes
-      }))
-    };
-
-    if (this.isEditingTreatment() && this.selectedTreatmentForEdit()) {
-      const treatmentId = this.selectedTreatmentForEdit()!.id!;
-      this.patientTreatmentService.updatePatientTreatment(patient.id, treatmentId, payload).subscribe({
-        next: () => {
-          this.loadPatientTreatments(patient.id);
-          this.closeAssignModal();
-        },
-        error: (err: any) => {
-          this.toast.error(err.error?.detail || err.error?.message || err.message || 'Error updating treatment. Check stock quantities.');
-        }
-      });
-    } else {
-      this.patientTreatmentService.createPatientTreatment(patient.id, payload).subscribe({
-        next: () => {
-          this.loadPatientTreatments(patient.id);
-          this.closeAssignModal();
-        },
-        error: (err: any) => {
-          this.toast.error(err.error?.detail || err.error?.message || err.message || 'Error assigning treatment. Check stock quantities.');
-        }
-      });
-    }
-  }
-
-  async deletePatientTreatment(treatment: PatientTreatment) {
-    const patient = this.patientService.currentPatient();
-    if (!patient || !treatment.id) return;
-
-    const confirmed = await this.confirmDialog.confirm(
-      this.translate.instant('PATIENTS.DOSSIER.UI.ASSIGNMENT_DELETE_CONFIRM'),
-      { danger: true, confirmLabel: this.translate.instant('COMMON.DELETE') }
-    );
-    if (!confirmed) return;
-
-    this.patientTreatmentService.deletePatientTreatment(patient.id, treatment.id).subscribe({
-      next: () => {
-        this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.ASSIGNMENT_DELETED'));
-        this.loadPatientTreatments(patient.id);
-      },
-      error: (err: any) => {
-        console.error('Error deleting patient treatment', err);
-        this.toast.error(this.translate.instant('PATIENTS.DOSSIER.UI.ASSIGNMENT_DELETE_FAILED'));
-      }
-    });
-  }
-
-  getStatusClass(status: PatientTreatmentStatus): string {
-    switch (status) {
-      case 'PLANNED': return 'status-badge sent';
-      case 'ACTIVE': return 'status-badge partially-paid';
-      case 'COMPLETED': return 'status-badge paid';
-      case 'CANCELLED': return 'status-badge cancelled';
-      default: return 'status-badge';
-    }
-  }
-
-  /** The badge says what the status is: petrol in treatment, amber on hold, green completed (P1-4). */
-  statusPillClass(status: string | null | undefined): string {
-    switch (status) {
-      case 'ACTIVE': return 'pill-active';
-      case 'ON_HOLD': return 'pill-attention';
-      case 'COMPLETED': return 'pill-done';
-      default: return 'pill-idle';
-    }
-  }
-
-  calculateAge(dob: string | null | undefined): number | null {
-    if (!dob) return null;
-    const birthDate = new Date(dob);
-    if (Number.isNaN(birthDate.getTime())) return null;
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  }
-
   onPrint(): void {
     window.print();
   }
 
-  async onDelete() {
+  /** Archive, from the More menu: asks first and names the patient (P0-7). */
+  async onArchive() {
     const patient = this.patientService.currentPatient();
     if (!patient) return;
-
     const confirmMsg = this.translate.instant('PATIENTS.DOSSIER.ARCHIVE_CONFIRM', { name: `${patient.firstName} ${patient.lastName}` });
     const confirmed = await this.confirmDialog.confirm(confirmMsg, { danger: true, confirmLabel: this.translate.instant('PATIENTS.DOSSIER.UI.ARCHIVE') });
     if (!confirmed) return;
-
     this.patientService.deletePatient(patient.id).subscribe({
       next: () => {
         this.toast.success(this.translate.instant('PATIENTS.DOSSIER.UI.PATIENT_DELETED'));
-        this.router.navigate(['/patients']);
+        void this.router.navigate(['/patients']);
       },
       error: (err) => {
-        console.error('Error deleting patient', err);
+        console.error('Error archiving patient', err);
         this.toast.error(this.translate.instant('PATIENTS.DOSSIER.UI.PATIENT_DELETE_FAILED'));
       }
     });
   }
 
+  // ── Voice and consultation ─────────────────────────────────────────────
+
   /**
-   * The menu's New consultation: shows the attestation card, then the tap there starts
-   * recording. A doctor who asked not to see the card again starts at once, from this tap.
+   * The menu's New consultation: shows the attestation card, then the tap there starts recording.
+   * A doctor who asked not to see the card again starts at once, from this tap.
    */
   startConsultation(): void {
-    this.activeTab.set('voice');
+    this.goTo('voice');
     if (this.consultation.introHidden()) {
       if (this.voice.needsConsent()) this.voice.grantMicrophoneConsent();
       void this.consultation.startWithoutIntro();
@@ -2596,13 +625,9 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     this.consultation.openIntro();
   }
 
-  /**
-   * The header's voice button. Opens the voice tab; the session starts at
-   * once unless consent is still needed, in which case the panel asks for it
-   * and its button starts the session from inside that tap.
-   */
+  /** The menu's dictation: opens the voice tab; starts at once unless consent is still needed. */
   startSession(): void {
-    this.activeTab.set('voice');
+    this.goTo('voice');
     if (this.voice.needsConsent()) return;
     void this.beginSession();
   }
@@ -2610,29 +635,20 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   /**
    * Opens the microphone and starts — or resumes — dictation for this patient.
    *
-   * **Must be reached synchronously from a tap.** The microphone is requested
-   * before anything is awaited, because iOS only lets audio start inside the
-   * user's gesture and the round trip that creates the session would outlive
-   * it; this ordering is what makes the microphone work on an iPhone.
-   *
-   * An interrupted examination for this patient has already been restored by
-   * the time the dossier shows its voice tab, so resuming is the same tap as
-   * starting. It is scoped to this patient on purpose: offering Ahmed's
-   * half-finished examination while Fatima's chart is on screen is how
-   * findings end up on the wrong record.
+   * **Must be reached synchronously from a tap.** The microphone is requested before anything is
+   * awaited, because iOS only lets audio start inside the user's gesture.
    */
   async beginSession(): Promise<void> {
     const patient = this.patientService.currentPatient();
     if (!patient || this.voiceStarting() || this.voiceSession.busy()) return;
-    // A consultation that lost its microphone comes back the same way a dictated
-    // examination does — one tap — but it must reopen *its* recording.
+    // A consultation that lost its microphone comes back the same way, but reopens *its* recording.
     if (this.consultation.isRecording()) {
       void this.consultation.resumeRecording();
       return;
     }
 
     const microphone = this.voice.openMicrophone();
-    this.activeTab.set('voice');
+    this.goTo('voice');
     this.voiceStarting.set(true);
     try {
       if (!this.voiceSession.isActive()) {
@@ -2642,7 +658,6 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
           return;
         }
         if (restored === null) {
-          // No server session for a microphone that will not open.
           if (!(await microphone) && this.voice.captureSupported()) {
             await this.voice.startExaminationMode();
             return;
@@ -2661,7 +676,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
 
   /** Ends dictation and switches the voice panel to review. Nothing is written here. */
   async endSession(): Promise<void> {
-    this.activeTab.set('voice');
+    this.goTo('voice');
     await this.voiceSession.end();
   }
 
@@ -2671,17 +686,12 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     if (!patient) return;
     this.chartService.loadChart(patient.id, patient.dateOfBirth);
     this.clinicalRecordService.refresh(patient.id);
+    this.loadPatientTreatments(patient.id);
   }
 
   /**
-   * Picks up an examination left unfinished for this patient — still
-   * dictating, or waiting in review — and shows it in the voice tab. A
-   * session belonging to a different patient is let go first.
-   */
-  /**
-   * An unfinished consultation for this patient comes back first: it owns the
-   * dictated session, and restoring that session on its own would show the
-   * dictated-examination review where the consultation's belongs.
+   * An unfinished consultation for this patient comes back first: it owns the dictated session,
+   * and restoring that session alone would show the wrong review.
    */
   private async restoreConsultationAndVoice(patientId: string): Promise<void> {
     const current = this.consultation.consultation();
@@ -2701,8 +711,6 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     const current = this.voiceSession.session();
     if (current && current.patientId !== patientId) this.voiceSession.detach();
     const restored = await this.voiceSession.resumeIfAvailable(patientId);
-    if (restored && this.patientService.currentPatient()?.id === patientId) {
-      this.activeTab.set('voice');
-    }
+    if (restored && this.patientService.currentPatient()?.id === patientId) this.goTo('voice');
   }
 }

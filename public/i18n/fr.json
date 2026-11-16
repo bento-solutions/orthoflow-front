@@ -302,7 +302,8 @@
         "TEETH": "Dents : {{teeth}}",
         "PROGRESS": "Avancement ({{value}} %)",
         "HISTORY_DELETE_CONFIRM": "Supprimer « {{label}} » des antécédents médicaux ? Cette action est définitive.",
-        "NOTE_DELETE_CONFIRM": "Supprimer cette note ? « {{excerpt}} » Cette action est définitive."
+        "NOTE_DELETE_CONFIRM": "Supprimer cette note ? « {{excerpt}} » Cette action est définitive.",
+        "ASSIGNMENT_SAVE_FAILED": "Impossible d'enregistrer le traitement. Vérifiez les quantités en stock."
       },
       "REPORT": {
         "TITLE": "Compte rendu médical",
@@ -312,6 +313,55 @@
         "REPORT": "Compte rendu",
         "PLAN": "Plan de traitement",
         "EMPTY": "Aucun compte rendu pour l'instant. Il s'affiche ici dès qu'une consultation ou une session vocale est enregistrée."
+      },
+      "TAB": {
+        "SUMMARY": "Synthèse",
+        "CHART": "Schéma et plan",
+        "VISITS": "Visites",
+        "IMAGING": "Imagerie",
+        "BILLING": "Facturation",
+        "DOCUMENTS": "Documents"
+      },
+      "STATE": {
+        "IN_TREATMENT": "En traitement",
+        "PLANNED": "Traitement prévu",
+        "NONE": "Aucun traitement en cours"
+      },
+      "BOOK": "Prendre rendez-vous",
+      "MORE": "Plus d'actions",
+      "EDIT_DETAILS": "Modifier la fiche patient",
+      "AGE_SHORT": "{{age}} ans",
+      "NO_UPCOMING_BOOK": "Aucun — en prendre un",
+      "FINDINGS_BY_TOOTH": "Constats par dent",
+      "PRICE": "Prix",
+      "PLAN_TOTAL": "Total prévu",
+      "TO_DO_BY_TOOTH": "À faire, par dent",
+      "PROPOSED_PLAN": "Plan proposé à la dernière consultation",
+      "NOT_ACCEPTED": "Proposé, pas encore accepté",
+      "CURRENT_TREATMENT": "Traitement en cours",
+      "OPEN_PLAN": "Ouvrir le plan",
+      "OPEN_BILLING": "Ouvrir la facturation",
+      "EMPTY": {
+        "TREATMENTS": "Attribuez un traitement du catalogue pour suivre son avancement et son matériel.",
+        "FINDINGS": "Choisissez une dent sur le schéma, ou ajoutez un constat par son numéro.",
+        "ADD_FINDING": "Ajouter un constat",
+        "PLAN": "Ce qui est à faire, dent par dent, avec son prix, apparaît ici."
+      },
+      "VISITS": {
+        "FILTER": "Afficher",
+        "KIND": {
+          "all": "Tout",
+          "appointment": "Rendez-vous",
+          "consultation": "Consultation",
+          "note": "Note",
+          "work": "Acte réalisé"
+        },
+        "ADD_NOTE": "Ajouter une note",
+        "UPCOMING": "À venir",
+        "HISTORY": "Historique",
+        "RECORDINGS": "Consultations enregistrées",
+        "EMPTY": "Rien pour l'instant",
+        "EMPTY_TEXT": "Rendez-vous, consultations, notes et actes réalisés s'afficheront ici, du plus récent au plus ancien."
       }
     },
     "ADD": "Nouveau patient",
@@ -4554,7 +4604,9 @@
       "XRAY": "Radio",
       "INTRAORAL_3D": "Intra-orale 3D",
       "IMAGE": "Image"
-    }
+    },
+    "NO_IMAGING": "Pas encore de radio ni d'empreinte optique",
+    "ADD_XRAY": "Ajouter une radio"
   },
   "ALERTS": {
     "TITLE": "Alertes médicales",
@@ -4575,6 +4627,13 @@
     "NOTHING_TO_REPORT_HINT": "Indique que le patient a été interrogé et n'a ni allergie, ni pathologie, ni traitement.",
     "NOTHING_TO_REPORT_NOTE": "Antécédents interrogés : aucune allergie, pathologie ou traitement connu.",
     "ALLERGY_ADDED": "Allergie ajoutée",
-    "ALLERGY_DELETE_CONFIRM": "Supprimer l'allergie « {{label}} » ? Cette action est définitive."
+    "ALLERGY_DELETE_CONFIRM": "Supprimer l'allergie « {{label}} » ? Cette action est définitive.",
+    "KIND": {
+      "ALLERGY": "allergie",
+      "CONDITION": "pathologie",
+      "MEDICATION": "traitement en cours"
+    },
+    "NOT_ASKED_TEXT": "Interrogez sur les allergies, pathologies et traitements avant de soigner.",
+    "ASK_NOW": "Renseigner les antécédents"
   }
 }

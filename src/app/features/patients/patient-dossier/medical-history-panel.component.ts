@@ -9,7 +9,6 @@ import { ToastService } from '../../../core/services/toast.service';
 import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { ModalComponent } from '../../../shared/ui/modal.component';
-import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 
 /**
  * The medical history, edited rarely and read always: allergies, conditions, medications and the
@@ -19,7 +18,7 @@ import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 @Component({
   selector: 'app-medical-history-panel',
   standalone: true,
-  imports: [FormsModule, TranslateModule, IconComponent, ModalComponent, EmptyStateComponent, AppDatePipe],
+  imports: [FormsModule, TranslateModule, IconComponent, ModalComponent, AppDatePipe],
   template: `
     <app-modal [open]="open()" placement="side" size="md" [title]="'PATIENTS.DOSSIER.MEDICAL_HISTORY' | translate" (closed)="closed.emit()">
       <div class="space-y-6">
@@ -140,7 +139,7 @@ import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
         </section>
 
         <!-- Asked, and nothing to report: said once, so the strip can say so instead of "not asked". -->
-        @if (canWrite()) {
+        @if (canWrite() && (reviewedOn() || records.alertsState() !== 'alerts')) {
           <section class="rounded-lg border border-dashed border-ink-300 p-3">
             @if (reviewedOn(); as date) {
               <p class="text-sm text-ink-600">{{ 'ALERTS.REVIEWED_ON' | translate: { date: (date | appDate) } }}</p>

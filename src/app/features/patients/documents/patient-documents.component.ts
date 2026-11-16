@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -17,7 +16,8 @@ import { PrescriptionEditorComponent } from '../../../shared/components/prescrip
 import { ConsultationRecordsComponent } from '../../../shared/components/consultation/consultation-records.component';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { ModalComponent } from '../../../shared/ui/modal.component';
-import { TreatmentSummaryComponent } from '../treatment-log/treatment-chart.component';
+import { MoneyPipe } from '../../../shared/pipes/money.pipe';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
 const STATUS_PILL: Record<InsuranceFormStatus, string> = {
   TO_PRINT: 'pill-attention', PRINTED: 'pill-idle', HANDED_OVER: 'pill-ok', VOID: 'pill-critical',
@@ -58,10 +58,10 @@ export function actLines(acts: readonly ActDraft[]): InsuranceFormLineInput[] {
 @Component({
   selector: 'app-patient-documents',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent, PrescriptionEditorComponent, TreatmentSummaryComponent, ConsultationRecordsComponent],
+  imports: [FormsModule, RouterLink, TranslateModule, IconComponent, ModalComponent, PrescriptionEditorComponent, ConsultationRecordsComponent, MoneyPipe, AppDatePipe],
   template: `
     <div class="space-y-6">
-      @if (canForms()) {
+      @if (canForms() && has('forms')) {
         <section class="card p-4" aria-labelledby="ins-title">
           <header class="mb-3 flex flex-wrap items-start justify-between gap-2">
             <div>
@@ -99,8 +99,8 @@ export function actLines(acts: readonly ActDraft[]): InsuranceFormLineInput[] {
                       <span class="pill {{ pill(f.status) }} ms-1">{{ ('INSURANCE.STATUS.' + f.status) | translate }}</span>
                     </p>
                     <p class="text-sm text-ink-600">
-                      {{ f.careDate | date: 'dd/MM/yyyy' }} · {{ f.insurerName || ('INSURANCE.NO_INSURER' | translate) }} · {{ 'INSURANCE.ACTS' | translate: { count: f.lines.length } }}
-                      @if (f.total > 0) { · {{ f.total | number: '1.2-2' }} MAD }
+                      {{ f.careDate | appDate }} · {{ f.insurerName || ('INSURANCE.NO_INSURER' | translate) }} · {{ 'INSURANCE.ACTS' | translate: { count: f.lines.length } }}
+                      @if (f.total > 0) { · {{ f.total | money }} }
                     </p>
                     <p class="truncate text-xs text-ink-500">{{ actsText(f) }}</p>
                     @if (f.missing.length && f.status === 'TO_PRINT') {
@@ -136,15 +136,12 @@ export function actLines(acts: readonly ActDraft[]): InsuranceFormLineInput[] {
       }
 
       <!-- Each recorded consultation: its timestamped transcript and its audio. -->
-      @if (canPrescriptions()) {
+      @if (canPrescriptions() && has('records')) {
         <app-consultation-records [patientId]="patientId()" />
       }
 
-      @if (canPrescriptions()) {
-        <section class="card p-4">
-          <app-treatment-summary [patientId]="patientId()" />
-        </section>
-
+      <!-- The chart is drawn once, on the Chart & plan tab; its PDF keeps its own drawing. -->
+      @if (canPrescriptions() && has('prescriptions')) {
         <section class="card p-4" aria-labelledby="rx-title">
           <header class="mb-3 flex flex-wrap items-start justify-between gap-2">
             <h2 id="rx-title" class="section-title !mb-0">{{ 'RX.TITLE' | translate }}</h2>
@@ -160,7 +157,7 @@ export function actLines(acts: readonly ActDraft[]): InsuranceFormLineInput[] {
                 <li class="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
                   <div class="min-w-[14rem] flex-1">
                     <p class="font-semibold text-ink-900" [class.line-through]="rx.status === 'VOID'">
-                      {{ rx.number }} · {{ rx.issuedAt | date: 'dd/MM/yyyy' }}
+                      {{ rx.number }} · {{ rx.issuedAt | appDate }}
                       @if (rx.status === 'VOID') { <span class="pill pill-critical ms-1">{{ 'RX.VOID' | translate }}</span> }
                       @if (rx.warnings.length) { <span class="pill pill-attention ms-1" [title]="warningText(rx)">{{ 'RX.ALLERGY_OVERRIDDEN' | translate }}</span> }
                     </p>
@@ -242,6 +239,11 @@ export class PatientDocumentsComponent {
 
   readonly patientId = input.required<string>();
   readonly patientName = input('');
+  /** Which parts to show: the patient file puts the care forms under Billing and the prescriptions under Documents. */
+  readonly sections = input<readonly ('forms' | 'records' | 'prescriptions')[]>(['forms', 'records', 'prescriptions']);
+  protected has(section: 'forms' | 'records' | 'prescriptions'): boolean {
+    return this.sections().includes(section);
+  }
 
   protected readonly canForms = computed(() => this.permissions.can('BILLING_READ'));
   protected readonly canWriteForms = computed(() => this.permissions.can('BILLING_WRITE'));

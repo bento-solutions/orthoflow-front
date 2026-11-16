@@ -302,7 +302,8 @@
         "TEETH": "Teeth: {{teeth}}",
         "PROGRESS": "Progress ({{value}}%)",
         "HISTORY_DELETE_CONFIRM": "Delete “{{label}}” from the medical history? This cannot be undone.",
-        "NOTE_DELETE_CONFIRM": "Delete this note? “{{excerpt}}” This cannot be undone."
+        "NOTE_DELETE_CONFIRM": "Delete this note? “{{excerpt}}” This cannot be undone.",
+        "ASSIGNMENT_SAVE_FAILED": "Could not save the treatment. Check the stock quantities."
       },
       "REPORT": {
         "TITLE": "Medical report",
@@ -312,6 +313,55 @@
         "REPORT": "Report",
         "PLAN": "Treatment plan",
         "EMPTY": "No medical report yet. It appears here once a consultation or voice session is saved."
+      },
+      "TAB": {
+        "SUMMARY": "Summary",
+        "CHART": "Chart & plan",
+        "VISITS": "Visits",
+        "IMAGING": "Imaging",
+        "BILLING": "Billing",
+        "DOCUMENTS": "Documents"
+      },
+      "STATE": {
+        "IN_TREATMENT": "In treatment",
+        "PLANNED": "Treatment planned",
+        "NONE": "No treatment under way"
+      },
+      "BOOK": "Book appointment",
+      "MORE": "More actions",
+      "EDIT_DETAILS": "Edit patient details",
+      "AGE_SHORT": "{{age}} y",
+      "NO_UPCOMING_BOOK": "None — book one",
+      "FINDINGS_BY_TOOTH": "Findings by tooth",
+      "PRICE": "Price",
+      "PLAN_TOTAL": "Total planned",
+      "TO_DO_BY_TOOTH": "To do, by tooth",
+      "PROPOSED_PLAN": "Plan proposed at the last consultation",
+      "NOT_ACCEPTED": "Proposed, not yet accepted",
+      "CURRENT_TREATMENT": "Current treatment",
+      "OPEN_PLAN": "Open the plan",
+      "OPEN_BILLING": "Open billing",
+      "EMPTY": {
+        "TREATMENTS": "Assign a treatment from the catalogue to follow its progress and its materials.",
+        "FINDINGS": "Pick a tooth on the chart, or add a finding by its number.",
+        "ADD_FINDING": "Add a finding",
+        "PLAN": "What is to be done, tooth by tooth, with its price, appears here."
+      },
+      "VISITS": {
+        "FILTER": "Show",
+        "KIND": {
+          "all": "All",
+          "appointment": "Appointment",
+          "consultation": "Consultation",
+          "note": "Note",
+          "work": "Work done"
+        },
+        "ADD_NOTE": "Add a note",
+        "UPCOMING": "Coming up",
+        "HISTORY": "History",
+        "RECORDINGS": "Recorded consultations",
+        "EMPTY": "Nothing yet",
+        "EMPTY_TEXT": "Appointments, consultations, notes and work done will be listed here, newest first."
       }
     },
     "ADD": "New patient",
@@ -4554,7 +4604,9 @@
       "XRAY": "X-Ray",
       "INTRAORAL_3D": "3D Intraoral",
       "IMAGE": "Image"
-    }
+    },
+    "NO_IMAGING": "No X-ray or intraoral scan yet",
+    "ADD_XRAY": "Add an X-ray"
   },
   "ALERTS": {
     "TITLE": "Medical alerts",
@@ -4575,6 +4627,13 @@
     "NOTHING_TO_REPORT_HINT": "Records that the patient was asked and has no allergy, condition or medication.",
     "NOTHING_TO_REPORT_NOTE": "Medical history asked: no known allergy, condition or medication.",
     "ALLERGY_ADDED": "Allergy added",
-    "ALLERGY_DELETE_CONFIRM": "Delete the allergy “{{label}}”? This cannot be undone."
+    "ALLERGY_DELETE_CONFIRM": "Delete the allergy “{{label}}”? This cannot be undone.",
+    "KIND": {
+      "ALLERGY": "allergy",
+      "CONDITION": "condition",
+      "MEDICATION": "current medication"
+    },
+    "NOT_ASKED_TEXT": "Ask about allergies, conditions and medications before treating.",
+    "ASK_NOW": "Fill in the medical history"
   }
 }

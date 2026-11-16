@@ -42,9 +42,10 @@
     /* What the keyboard lands on must not end up under the sticky header (WCAG 2.4.11). */
     scroll-padding-top: 5rem;
   }
-  /* The dossier's own header is taller, and stays too, from the width at which it sticks. */
-  @media (min-width: 769px) {
-    html:has(.dossier-header) { scroll-padding-top: 16rem; }
+  /* The patient file's banner and tabs stick under the bar too: its compact form is about 6rem. */
+  html:has(.dossier-top) { scroll-padding-top: 7rem; }
+  @media (min-width: 768px) {
+    html:has(.dossier-top) { scroll-padding-top: 11rem; }
   }
 
   body {

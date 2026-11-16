@@ -61,7 +61,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
       <p class="error" role="alert">{{ 'TREATMENT_LOG.LOAD_FAILED' | translate }}</p>
     }
 
-    @if (service.passport(); as p) {
+    @if (mode() === 'full' && service.passport(); as p) {
       <section class="block">
         <h3>{{ 'TREATMENT_CHART.TITLE' | translate }}</h3>
         <app-treatment-chart [passport]="p" />
@@ -150,7 +150,7 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
           <p class="muted">{{ 'TREATMENT_LOG.NO_GUMS' | translate }}</p>
         }
       </section>
-    } @else if (service.loading()) {
+    } @else if (mode() === 'full' && service.loading()) {
       <p class="muted">{{ 'COMMON.LOADING' | translate }}</p>
     }
   `,
@@ -202,6 +202,11 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
 })
 export class TreatmentLogComponent {
   readonly patientId = input.required<string>();
+  /**
+   * `share`: only what hands the record over (the passport PDF, the chart PDF, the data file), as
+   * the patient file's Documents tab shows it; the work done is on Visits, the chart on Chart & plan.
+   */
+  readonly mode = input<'full' | 'share'>('full');
 
   protected readonly service = inject(TreatmentPassportService);
   private readonly translate = inject(TranslateService);

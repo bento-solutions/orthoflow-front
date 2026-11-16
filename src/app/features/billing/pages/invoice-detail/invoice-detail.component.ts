@@ -85,20 +85,20 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
                 <thead>
                   <tr>
                     <th scope="col">{{ 'BILLING.FORM.DESCRIPTION' | translate }}</th>
-                    <th scope="col" class="text-right">{{ 'BILLING.FORM.QTY' | translate }}</th>
-                    <th scope="col" class="text-right">{{ 'BILLING.FORM.UNIT_PRICE' | translate }}</th>
-                    <th scope="col" class="text-right">{{ 'BILLING.FORM.DISCOUNT' | translate }}</th>
-                    <th scope="col" class="text-right">{{ 'COMMON.TOTAL' | translate }}</th>
+                    <th scope="col" class="text-end">{{ 'BILLING.FORM.QTY' | translate }}</th>
+                    <th scope="col" class="text-end">{{ 'BILLING.FORM.UNIT_PRICE' | translate }}</th>
+                    <th scope="col" class="text-end">{{ 'BILLING.FORM.DISCOUNT' | translate }}</th>
+                    <th scope="col" class="text-end">{{ 'COMMON.TOTAL' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (line of inv.lines; track $index) {
                     <tr>
                       <td>{{ line.label }}</td>
-                      <td class="text-right">{{ line.quantity }}</td>
-                      <td class="text-right">{{ line.unitPrice | money:inv.currency }}</td>
-                      <td class="text-right">{{ line.discountPct }}%</td>
-                      <td class="text-right font-bold">{{ line.lineTotal | money:inv.currency }}</td>
+                      <td class="text-end">{{ line.quantity }}</td>
+                      <td class="text-end">{{ line.unitPrice | money:inv.currency }}</td>
+                      <td class="text-end">{{ line.discountPct }}%</td>
+                      <td class="text-end font-bold">{{ line.lineTotal | money:inv.currency }}</td>
                     </tr>
                   }
                 </tbody>

@@ -36,7 +36,9 @@ export function formatMoney(amount: number | null | undefined, currency: string,
     return '—';
   }
   const figure = numberFormat(lang, { minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'negative' as Intl.NumberFormatOptions['signDisplay'] }).format(amount);
-  return tidy(`${figure}\u00a0${currency}`);
+  const text = tidy(`${figure}\u00a0${currency}`);
+  // Isolated left to right in Arabic, or the line around it turns "0.00 MAD" into "MAD 0.00".
+  return lang === 'ar' ? `\u2066${text}\u2069` : text;
 }
 
 /** A plain number with the language's grouping, for counts and quantities. */

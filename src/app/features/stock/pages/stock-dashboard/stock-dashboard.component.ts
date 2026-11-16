@@ -156,7 +156,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
                     <!-- Catalog Table -->
           <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-sm">
+            <table class="w-full text-start border-collapse text-sm">
               <thead>
                 <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
                   <th scope="col" class="p-4" [attr.aria-sort]="ariaSort('catalog','sku')">
@@ -171,14 +171,14 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   <th scope="col" class="p-4 text-center" [attr.aria-sort]="ariaSort('catalog','currentStock')">
                     <button type="button" class="sort-button group justify-center" (click)="sortCatalog('currentStock')">{{ 'STOCK.UI.AVAILABLE' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','currentStock') }}</span></button>
                   </th>
-                  <th scope="col" class="p-4 text-right" [attr.aria-sort]="ariaSort('catalog','purchasePrice')">
+                  <th scope="col" class="p-4 text-end" [attr.aria-sort]="ariaSort('catalog','purchasePrice')">
                     <button type="button" class="sort-button group justify-end" (click)="sortCatalog('purchasePrice')">{{ 'STOCK.UI.UNIT_COST' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','purchasePrice') }}</span></button>
                   </th>
-                  <th scope="col" class="p-4 text-right" [attr.aria-sort]="ariaSort('catalog','pricePerUse')">
+                  <th scope="col" class="p-4 text-end" [attr.aria-sort]="ariaSort('catalog','pricePerUse')">
                     <button type="button" class="sort-button group justify-end" (click)="sortCatalog('pricePerUse')">{{ 'STOCK.UI.USAGE_COST' | translate }} <span aria-hidden="true" class="opacity-50 group-hover:opacity-100">{{ getSortIcon('catalog','pricePerUse') }}</span></button>
                   </th>
                   <th scope="col" class="p-4">{{ 'STOCK.UI.SUPPLIER' | translate }}</th>
-                  <th scope="col" class="p-4 text-right">{{ 'COMMON.ACTIONS' | translate }}</th>
+                  <th scope="col" class="p-4 text-end">{{ 'COMMON.ACTIONS' | translate }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-ortho-navy/5">
@@ -217,10 +217,10 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                         }
                       </div>
                     </td>
-                    <td class="p-4 text-right font-medium text-ink-700">{{ item.purchasePrice | money }} <span class="text-xs text-ink-500">/{{ item.unitSize }}</span></td>
-                    <td class="p-4 text-right font-medium text-emerald-700">{{ item.pricePerUse | money }}</td>
+                    <td class="p-4 text-end font-medium text-ink-700">{{ item.purchasePrice | money }} <span class="text-xs text-ink-500">/{{ item.unitSize }}</span></td>
+                    <td class="p-4 text-end font-medium text-emerald-700">{{ item.pricePerUse | money }}</td>
                     <td class="p-4 text-ink-500 font-medium">{{ item.supplier?.name || 'N/A' }}</td>
-                    <td class="p-4 text-right">
+                    <td class="p-4 text-end">
                       <div class="flex items-center justify-end gap-2">
                         <button type="button" (click)="openAdjustmentModal(item)" class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition border border-emerald-100">
                           {{ 'STOCK.UI.ADJUST' | translate }}
@@ -283,7 +283,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
           </div>
 
           <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-sm">
+            <table class="w-full text-start border-collapse text-sm">
               <thead>
                 <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
                   <th scope="col" class="p-4" [attr.aria-sort]="ariaSort('mov','createdAt')">
@@ -362,7 +362,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
           </div>
 
           <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-sm">
+            <table class="w-full text-start border-collapse text-sm">
               <thead>
                 <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
                   <th scope="col" class="p-4">{{ 'STOCK.UI.COMPANY' | translate }}</th>
@@ -370,7 +370,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   <th scope="col" class="p-4">{{ 'STOCK.UI.EMAIL' | translate }}</th>
                   <th scope="col" class="p-4">{{ 'STOCK.UI.PHONE' | translate }}</th>
                   <th scope="col" class="p-4">{{ 'STOCK.UI.ADDRESS' | translate }}</th>
-                  <th scope="col" class="p-4 text-right">{{ 'COMMON.ACTIONS' | translate }}</th>
+                  <th scope="col" class="p-4 text-end">{{ 'COMMON.ACTIONS' | translate }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-ortho-navy/5">
@@ -381,7 +381,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     <td class="p-4 text-ink-500 font-medium"><span class="ltr-data">{{ sup.email || '-' }}</span></td>
                     <td class="p-4 text-ink-500 font-medium"><span class="ltr-data">{{ sup.phone || '-' }}</span></td>
                     <td class="p-4 text-ink-500 max-w-xs truncate" [title]="sup.address">{{ sup.address || '-' }}</td>
-                    <td class="p-4 text-right">
+                    <td class="p-4 text-end">
                       <div class="flex items-center justify-end gap-2">
                         <button type="button" (click)="openEditSupplierModal(sup)" [attr.aria-label]="('COMMON.EDIT' | translate) + ' — ' + sup.name" [title]="'COMMON.EDIT' | translate" class="p-1 hover:bg-ortho-navy/5 text-ink-500 hover:text-ink-900 rounded-lg transition">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
@@ -437,7 +437,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
               <!-- Lines Table -->
               <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
+                <table class="w-full text-start border-collapse text-sm">
                   <thead>
                     <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
                       <th scope="col" class="p-4">{{ 'STOCK.UI.SKU' | translate }}</th>
@@ -445,8 +445,8 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       <th scope="col" class="p-4 text-center">{{ 'STOCK.UI.THEORETICAL' | translate }}</th>
                       <th scope="col" class="p-4 text-center" style="width: 150px;">{{ 'STOCK.UI.PHYSICAL' | translate }}</th>
                       <th scope="col" class="p-4 text-center">{{ 'STOCK.UI.QTY_VARIANCE' | translate }}</th>
-                      <th scope="col" class="p-4 text-right">{{ 'STOCK.UI.UNIT_PRICE' | translate }}</th>
-                      <th scope="col" class="p-4 text-right">{{ 'STOCK.UI.COST_VARIANCE' | translate }}</th>
+                      <th scope="col" class="p-4 text-end">{{ 'STOCK.UI.UNIT_PRICE' | translate }}</th>
+                      <th scope="col" class="p-4 text-end">{{ 'STOCK.UI.COST_VARIANCE' | translate }}</th>
                       <th scope="col" class="p-4">{{ 'STOCK.UI.REMARKS' | translate }}</th>
                     </tr>
                   </thead>
@@ -465,8 +465,8 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                             {{ qVar > 0 ? '+' : '' }}{{ qVar }}
                           </span>
                         </td>
-                        <td class="p-4 text-right text-ink-500">{{ line.stockItem.purchasePrice | money }}</td>
-                        <td class="p-4 text-right font-bold font-mono">
+                        <td class="p-4 text-end text-ink-500">{{ line.stockItem.purchasePrice | money }}</td>
+                        <td class="p-4 text-end font-bold font-mono">
                           @let cVar = calculateLineCostVariance(line.theoreticalQuantity, line.stockItem.purchasePrice, line.stockItem.id);
                           <span [ngClass]="cVar > 0 ? 'text-emerald-700' : cVar < 0 ? 'text-red-700' : 'text-ink-500'">
                             {{ cVar > 0 ? '+' : '' }}{{ cVar | money }}
@@ -532,14 +532,14 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                 </div>
 
                 <div class="overflow-x-auto flex-1">
-                  <table class="w-full text-left border-collapse text-sm">
+                  <table class="w-full text-start border-collapse text-sm">
                     <thead>
                       <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
                         <th scope="col" class="p-4">{{ 'STOCK.UI.COUNT_ID' | translate }}</th>
                         <th scope="col" class="p-4">{{ 'COMMON.STATUS' | translate }}</th>
                         <th scope="col" class="p-4">{{ 'STOCK.UI.FROZEN_DATE' | translate }}</th>
                         <th scope="col" class="p-4 text-center">{{ 'STOCK.UI.QTY_VARIANCE' | translate }}</th>
-                        <th scope="col" class="p-4 text-right">{{ 'STOCK.UI.COST_VARIANCE' | translate }}</th>
+                        <th scope="col" class="p-4 text-end">{{ 'STOCK.UI.COST_VARIANCE' | translate }}</th>
                         <th scope="col" class="p-4">{{ 'STOCK.UI.VALIDATED_BY' | translate }}</th>
                       </tr>
                     </thead>
@@ -556,7 +556,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                           <td class="p-4 text-center font-mono" [ngClass]="sess.totalQuantityVariance > 0 ? 'text-emerald-700' : sess.totalQuantityVariance < 0 ? 'text-red-700' : 'text-ink-500'">
                             {{ sess.totalQuantityVariance > 0 ? '+' : '' }}{{ sess.totalQuantityVariance || 0 }}
                           </td>
-                          <td class="p-4 text-right font-bold font-mono" [ngClass]="sess.totalCostVariance > 0 ? 'text-emerald-700' : sess.totalCostVariance < 0 ? 'text-red-700' : 'text-ink-500'">
+                          <td class="p-4 text-end font-bold font-mono" [ngClass]="sess.totalCostVariance > 0 ? 'text-emerald-700' : sess.totalCostVariance < 0 ? 'text-red-700' : 'text-ink-500'">
                             {{ sess.totalCostVariance > 0 ? '+' : '' }}{{ (sess.totalCostVariance || 0) | money }}
                           </td>
                           <td class="p-4 text-ink-500">{{ sess.validatedBy || '-' }}</td>

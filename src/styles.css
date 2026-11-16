@@ -211,6 +211,12 @@
   input[type='tel'], input[type='email'] { direction: ltr; }
   [dir='rtl'] input[type='tel'], [dir='rtl'] input[type='email'] { text-align: right; }
 
+  /* Arabic: letters join, so spacing them apart breaks the words, and a monospace face has no
+     Arabic. Key hints and spaced capitals read as plain text there (UI V2 audit M9). */
+  [lang='ar'] body { font-family: 'IBM Plex Sans Arabic', var(--font-sans); }
+  [lang='ar'] :where(*) { letter-spacing: normal !important; }
+  [lang='ar'] .kbd { font-family: var(--font-sans); }
+
   /* Numeric columns: money, quantities, counts. */
   .tnum { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
 

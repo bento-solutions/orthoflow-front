@@ -240,7 +240,8 @@
      clinical UI runs at, and it reads less generic than the default UI
      sans. Cormorant Garamond was loaded but never used — dropped.
      --------------------------------------------------------------------- */
-  --font-sans: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Latin letters in Manrope, Arabic letters in IBM Plex Sans Arabic: the browser picks per letter. */
+  --font-sans: 'Manrope', 'IBM Plex Sans Arabic', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Type scale — 14px UI base. Clinical screens are dense; 16px base

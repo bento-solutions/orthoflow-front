@@ -11,6 +11,13 @@
 
    Manrope for the product; Inter for the periodontal chart alone (its figures
    are 9-11px and the chart is drawn to the pixel around that face). */
+/* Manrope has no Arabic letters, so Arabic took whatever the device had. IBM Plex Sans Arabic is
+   drawn for interfaces and sits well beside Manrope; its files carry an Arabic unicode-range, so a
+   French or English page never downloads them (UI V2 audit M9). */
+@import '@fontsource/ibm-plex-sans-arabic/400.css';
+@import '@fontsource/ibm-plex-sans-arabic/500.css';
+@import '@fontsource/ibm-plex-sans-arabic/600.css';
+@import '@fontsource/ibm-plex-sans-arabic/700.css';
 @import '@fontsource/manrope/400.css';
 @import '@fontsource/manrope/500.css';
 @import '@fontsource/manrope/600.css';

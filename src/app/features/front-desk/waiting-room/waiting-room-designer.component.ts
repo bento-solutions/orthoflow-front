@@ -292,7 +292,7 @@ type Mode = 'live' | 'edit';
 
             @if (hovered(); as h) {
               @if (h.occupant; as o) {
-                <div class="pointer-events-none absolute left-3 top-3 z-10 max-w-xs rounded-lg bg-ink-900/95 px-3 py-2 text-xs text-white shadow-lg" role="tooltip">
+                <div class="pointer-events-none absolute start-3 top-3 z-10 max-w-xs rounded-lg bg-ink-900/95 px-3 py-2 text-xs text-white shadow-lg" role="tooltip">
                   <p class="font-bold">{{ o.patientName || '—' }}</p>
                   <p class="mt-1 text-ink-200">{{ 'FD.WR.TIP_APPOINTMENT' | translate }}: {{ o.scheduledFor | appDate:'time' }}</p>
                   <p class="text-ink-200">{{ 'FD.WR.TIP_ARRIVED' | translate }}: {{ o.arrivedAt | appDate:'time' }}</p>

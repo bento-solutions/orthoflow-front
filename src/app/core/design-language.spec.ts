@@ -47,6 +47,15 @@ describe('one design language', () => {
     expect(offending(/(^|[\s"'`])dark:[a-z]/)).toEqual([]);
   });
 
+  it('uses logical directions, so Arabic mirrors (UI V2 audit M4)', () => {
+    // ms-/me-/ps-/pe-/start-/end-/text-start, margin-inline-start…, not left and right. Positions
+    // computed in px for a canvas or a 3D label (left: 0 + transform) are not directions.
+    const physicalClass = /class="[^"]*(?<![\w-])(-?(ml|mr|pl|pr)-|text-(left|right)(?![\w-])|rounded-[lr]-|border-[lr](?=[-\s"]))/;
+    const physicalCss = /(margin|padding)-(left|right):|text-align:\s*(left|right)/;
+    expect(offending(physicalClass)).toEqual([]);
+    expect(offending(physicalCss, path => /svg-data/.test(path))).toEqual([]);
+  });
+
   it('draws icons with app-icon only', () => {
     expect(offending(/class="[^"]*\bmaterial-icons\b/)).toEqual([]);
   });

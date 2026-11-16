@@ -96,7 +96,7 @@ const POPOVER_WIDTH = 224;
                background: rgb(var(--on-inverse)); color: var(--perio-fg); font-size: 14px; line-height: 20px;
                box-shadow: var(--shadow-md); }
     .option { display: flex; width: 100%; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 6px; background: transparent;
-              color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background-color .15s; }
+              color: inherit; font: inherit; text-align: start; cursor: pointer; transition: background-color .15s; }
     .option:hover, .option:focus-visible { background: var(--perio-muted); outline: none; }
     .option.selected { font-weight: 500; }
     .option.selected.present { background: var(--perio-muted); }

@@ -86,7 +86,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
           </div>
 
           <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-sm">
+            <table class="w-full text-start border-collapse text-sm">
               <thead>
                 <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
                   <th scope="col" class="p-4">{{ "STOCK.PURCHASE_ORDER_NUMBER" | translate }}</th>
@@ -94,8 +94,8 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   <th scope="col" class="p-4">{{ "STOCK.ORDER_DATE" | translate }}</th>
                   <th scope="col" class="p-4 text-center">{{ "STOCK.STATUS" | translate }}</th>
                   <th scope="col" class="p-4 text-center">{{ "STOCK.ITEMS_ORDERED" | translate }}</th>
-                  <th scope="col" class="p-4 text-right">{{ "STOCK.TOTAL_AMOUNT" | translate }}</th>
-                  <th scope="col" class="p-4 text-right">{{ "STOCK.ACTIONS" | translate }}</th>
+                  <th scope="col" class="p-4 text-end">{{ "STOCK.TOTAL_AMOUNT" | translate }}</th>
+                  <th scope="col" class="p-4 text-end">{{ "STOCK.ACTIONS" | translate }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-ortho-navy/5">
@@ -110,8 +110,8 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       </span>
                     </td>
                     <td class="p-4 text-center font-bold text-ink-600">{{ po.lines.length }}</td>
-                    <td class="p-4 text-right font-bold text-ink-900">{{ po.totalAmount | money }}</td>
-                    <td class="p-4 text-right">
+                    <td class="p-4 text-end font-bold text-ink-900">{{ po.totalAmount | money }}</td>
+                    <td class="p-4 text-end">
                       <div class="flex items-center justify-end gap-2">
                         @if (po.status === 'DRAFT') {
                           <button type="button" (click)="markAsSent(po)" class="px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg border border-blue-200 transition">
@@ -149,7 +149,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
           </div>
 
           <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-sm">
+            <table class="w-full text-start border-collapse text-sm">
               <thead>
                 <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
                   <th scope="col" class="p-4">{{ "STOCK.DELIVERY_NOTE_NUMBER" | translate }}</th>
@@ -289,14 +289,14 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
                   <!-- Lines Table -->
                   <div class="overflow-x-auto border border-ortho-navy/5 rounded-xl">
-                    <table class="w-full text-left border-collapse text-xs">
+                    <table class="w-full text-start border-collapse text-xs">
                       <thead>
                         <tr class="bg-ortho-navy/[0.01] text-ink-500 font-bold border-b border-ortho-navy/5">
                           <th scope="col" class="p-3">{{ "STOCK.SKU" | translate }}</th>
                           <th scope="col" class="p-3">{{ "STOCK.PRODUCT_NAME" | translate }}</th>
                           <th scope="col" class="p-3 text-center">{{ "STOCK.QTY_RECEIVED" | translate }}</th>
-                          <th scope="col" class="p-3 text-right">{{ "STOCK.PO_UNIT_PRICE" | translate }}</th>
-                          <th scope="col" class="p-3 text-right">{{ "STOCK.EXPECTED_COST" | translate }}</th>
+                          <th scope="col" class="p-3 text-end">{{ "STOCK.PO_UNIT_PRICE" | translate }}</th>
+                          <th scope="col" class="p-3 text-end">{{ "STOCK.EXPECTED_COST" | translate }}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -305,8 +305,8 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                             <td class="p-3 font-mono text-xs text-ink-500">{{ line.stockItem?.sku }}</td>
                             <td class="p-3 font-bold">{{ line.stockItem?.name }}</td>
                             <td class="p-3 text-center font-mono">{{ line.quantityReceived }}</td>
-                            <td class="p-3 text-right font-mono">{{ (line.poLine?.unitPrice || 0) | money }}</td>
-                            <td class="p-3 text-right font-mono font-bold text-ink-900">
+                            <td class="p-3 text-end font-mono">{{ (line.poLine?.unitPrice || 0) | money }}</td>
+                            <td class="p-3 text-end font-mono font-bold text-ink-900">
                               {{ ((line.quantityReceived || 0) * (line.poLine?.unitPrice || 0)) | money }}
                             </td>
                           </tr>
@@ -333,14 +333,14 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
             </div>
 
             <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse text-sm">
+              <table class="w-full text-start border-collapse text-sm">
                 <thead>
                   <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
                     <th scope="col" class="p-4">{{ "STOCK.INVOICE_NUMBER" | translate }}</th>
                     <th scope="col" class="p-4">{{ "STOCK.VENDOR" | translate }}</th>
                     <th scope="col" class="p-4">{{ "STOCK.INVOICE_DATE" | translate }}</th>
                     <th scope="col" class="p-4">{{ "STOCK.TERMS" | translate }}</th>
-                    <th scope="col" class="p-4 text-right">{{ "STOCK.INVOICE_AMOUNT_FIELD" | translate }}</th>
+                    <th scope="col" class="p-4 text-end">{{ "STOCK.INVOICE_AMOUNT_FIELD" | translate }}</th>
                     <th scope="col" class="p-4 text-center">{{ "STOCK.ACCOUNTING_STATUS" | translate }}</th>
                     <th scope="col" class="p-4">{{ "STOCK.RECEIPT_CLEARED" | translate }}</th>
                   </tr>
@@ -352,7 +352,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       <td class="p-4 font-bold">{{ inv.supplierName }}</td>
                       <td class="p-4 text-ink-500">{{ inv.invoiceDate | appDate }}</td>
                       <td class="p-4"><span class="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded text-xs">{{ inv.paymentTerms }}</span></td>
-                      <td class="p-4 text-right font-mono text-emerald-700 font-bold">{{ inv.invoiceAmount | money }}</td>
+                      <td class="p-4 text-end font-mono text-emerald-700 font-bold">{{ inv.invoiceAmount | money }}</td>
                       <td class="p-4 text-center">
                         <span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase">
                           {{ "STOCK.POSTED_AND_CLEARED" | translate }}
@@ -425,9 +425,9 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                         </div>
                         <div class="col-span-2">
                           <label [attr.for]="'purchase-orders-line-unitPrice-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.UNIT_COST_DH" | translate }}</label>
-                          <input [id]="'purchase-orders-line-unitPrice-' + $index" type="number" [(ngModel)]="line.unitPrice" (change)="calculatePOTotal()" min="0" step="0.01" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-right focus:outline-none" />
+                          <input [id]="'purchase-orders-line-unitPrice-' + $index" type="number" [(ngModel)]="line.unitPrice" (change)="calculatePOTotal()" min="0" step="0.01" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-end focus:outline-none" />
                         </div>
-                        <div class="col-span-2 text-right">
+                        <div class="col-span-2 text-end">
                           <span class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.TOTAL_DH" | translate }}</span>
                           <span class="font-bold text-xs text-ink-900 block py-1.5">{{ (line.quantityOrdered * line.unitPrice) | money }}</span>
                         </div>
@@ -441,7 +441,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   </div>
 
                   <div class="flex justify-end pt-3 border-t border-ortho-navy/5">
-                    <div class="text-right">
+                    <div class="text-end">
                       <span class="text-xs font-bold text-ink-500 uppercase tracking-wider block">{{ "STOCK.ESTIMATED_TOTAL" | translate }}</span>
                       <span class="text-xl font-bold text-ink-900">{{ newPOTotal | money }}</span>
                     </div>
@@ -496,7 +496,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                           <span class="font-bold text-ink-900 block text-sm">{{ line.stockItem?.name }}</span>
                           <span class="text-xs text-ink-500 block font-mono">{{ "STOCK.SKU" | translate }}: {{ line.stockItem?.sku }}</span>
                         </div>
-                        <div class="text-right">
+                        <div class="text-end">
                           <span class="text-xs text-ink-500 font-bold uppercase block">{{ "STOCK.ORDERED_QTY" | translate }}</span>
                           <span class="font-bold text-sm text-ink-900">{{ line.poLine.quantityOrdered }} {{ "STOCK.UNITS" | translate }}</span>
                         </div>

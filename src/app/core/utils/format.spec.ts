@@ -10,6 +10,8 @@ describe('formatMoney', () => {
   it('keeps Latin digits in Arabic', () => {
     expect(formatMoney(1234.5, 'MAD', 'ar')).toMatch(/1.?234.50/);
     expect(formatMoney(1234.5, 'MAD', 'ar')).not.toMatch(/[٠-٩]/);
+    // Isolated left to right, so an Arabic line does not move the code before the amount.
+    expect(formatMoney(5, 'MAD', 'ar')).toMatch(/^\u2066.*MAD\u2069$/);
   });
 
   it('always shows two decimals', () => {

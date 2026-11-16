@@ -18,8 +18,8 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
     <main class="h-screen w-screen bg-[rgb(var(--ink-50))] text-slate-800 flex flex-col justify-between items-center overflow-hidden p-6 relative select-none">
       
       <!-- Background decorative gradients matching webapp -->
-      <div class="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-ortho-sky/10 blur-3xl"></div>
-      <div class="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-ortho-teal/10 blur-3xl"></div>
+      <div class="absolute -top-24 -start-24 h-72 w-72 rounded-full bg-ortho-sky/10 blur-3xl"></div>
+      <div class="absolute -bottom-24 -end-24 h-72 w-72 rounded-full bg-ortho-teal/10 blur-3xl"></div>
 
       <!-- App Header logo / name -->
       <header class="w-full max-w-md flex justify-between items-center z-10 shrink-0">
@@ -81,7 +81,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                       'border-ortho-sky bg-ortho-ice/30 ring-2 ring-ortho-sky/20': selectedRole() === 'doctor',
                       'border-slate-200 hover:border-slate-300': selectedRole() !== 'doctor'
                     }"
-                    class="p-4 rounded-xl border text-left transition-all flex items-center gap-4 group"
+                    class="p-4 rounded-xl border text-start transition-all flex items-center gap-4 group"
                   >
                     <div 
                       [ngClass]="{
@@ -106,7 +106,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                       'border-ortho-sky bg-ortho-ice/30 ring-2 ring-ortho-sky/20': selectedRole() === 'assistant',
                       'border-slate-200 hover:border-slate-300': selectedRole() !== 'assistant'
                     }"
-                    class="p-4 rounded-xl border text-left transition-all flex items-center gap-4 group"
+                    class="p-4 rounded-xl border text-start transition-all flex items-center gap-4 group"
                   >
                     <div 
                       [ngClass]="{
@@ -257,7 +257,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
                         }
                       </div>
 
-                      <div class="flex-1 text-left space-y-1">
+                      <div class="flex-1 text-start space-y-1">
                         <p class="text-xs font-semibold text-slate-700">{{ 'ONBOARDING.UI.UPLOAD_LOGO' | translate }}</p>
                         <p class="text-xs text-slate-500">{{ 'ONBOARDING.UI.LOGO_FORMATS' | translate }}</p>
                         <div class="pt-0.5">
@@ -439,7 +439,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
             </div>
 
             <div class="pt-4 flex flex-col items-center gap-3">
-              <div class="h-6 w-6 animate-spin rounded-full border-2 border-solid border-petrol-600 border-r-transparent" role="status"></div>
+              <div class="h-6 w-6 animate-spin rounded-full border-2 border-solid border-petrol-600 border-e-transparent" role="status"></div>
               <span class="text-xs text-slate-500 tracking-wider uppercase">{{ 'ONBOARDING.UI.LOADING' | translate }}</span>
             </div>
           </div>

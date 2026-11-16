@@ -221,7 +221,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
                         </label>
                         <input [id]="'treatments-list-c-quantityUsed-' + $index" type="number" [(ngModel)]="c.quantityUsed" min="0.0001" step="any" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none font-mono" />
                       </div>
-                      <div class="col-span-3 text-right">
+                      <div class="col-span-3 text-end">
                         <span class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.MATERIALS_COST" | translate }}</span>
                         <span class="font-bold text-emerald-700 block py-1.5 text-xs">{{ (c.quantityUsed * (c.stockItem?.pricePerUse || 0)) | money }}</span>
                       </div>
@@ -235,7 +235,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
                 </div>
 
                 <div class="flex justify-end pt-3 border-t border-ortho-navy/5">
-                  <div class="text-right">
+                  <div class="text-end">
                     <span class="text-xs font-bold text-ink-500 uppercase tracking-wider block">{{ "TREATMENTS.CUMULATIVE_MATERIAL_COST" | translate }}</span>
                     <span class="text-lg font-bold text-emerald-700">{{ formCumulativeCost() | money }}</span>
                   </div>

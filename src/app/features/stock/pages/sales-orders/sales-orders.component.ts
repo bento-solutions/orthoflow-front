@@ -63,7 +63,7 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-sm">
+          <table class="w-full text-start border-collapse text-sm">
             <thead>
               <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
                 <th scope="col" class="p-4">{{ "STOCK.SO_NUMBER" | translate }}</th>
@@ -71,8 +71,8 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
                 <th scope="col" class="p-4">{{ "STOCK.PURCHASE_DATE" | translate }}</th>
                 <th scope="col" class="p-4 text-center">{{ "STOCK.STATUS" | translate }}</th>
                 <th scope="col" class="p-4">{{ "STOCK.SOLD_ITEMS" | translate }}</th>
-                <th scope="col" class="p-4 text-right">{{ "STOCK.TOTAL_AMOUNT" | translate }}</th>
-                <th scope="col" class="p-4 text-right">{{ "STOCK.ACTIONS" | translate }}</th>
+                <th scope="col" class="p-4 text-end">{{ "STOCK.TOTAL_AMOUNT" | translate }}</th>
+                <th scope="col" class="p-4 text-end">{{ "STOCK.ACTIONS" | translate }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-ortho-navy/5">
@@ -98,8 +98,8 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
                       }
                     </div>
                   </td>
-                  <td class="p-4 text-right font-bold text-emerald-700">{{ so.totalAmount | money }}</td>
-                  <td class="p-4 text-right">
+                  <td class="p-4 text-end font-bold text-emerald-700">{{ so.totalAmount | money }}</td>
+                  <td class="p-4 text-end">
                     <div class="flex items-center justify-end gap-2">
                       @if (so.status === 'DRAFT') {
                         <button type="button" (click)="confirmSale(so)" class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition">
@@ -172,9 +172,9 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
                         </div>
                         <div class="col-span-2">
                           <label [attr.for]="'sales-orders-line-unitPrice-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.UNIT_PRICE" | translate }}</label>
-                          <input [id]="'sales-orders-line-unitPrice-' + $index" type="number" [(ngModel)]="line.unitPrice" (change)="calculateSOTotal()" min="0" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-right focus:outline-none" />
+                          <input [id]="'sales-orders-line-unitPrice-' + $index" type="number" [(ngModel)]="line.unitPrice" (change)="calculateSOTotal()" min="0" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-end focus:outline-none" />
                         </div>
-                        <div class="col-span-2 text-right">
+                        <div class="col-span-2 text-end">
                           <span class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.TOTAL" | translate }}</span>
                           <span class="font-bold text-xs text-ink-900 block py-1.5">{{ (line.quantity * line.unitPrice) | money }}</span>
                         </div>
@@ -188,7 +188,7 @@ import { PatientPickerComponent, PickedPatient } from '../../../../shared/ui/pat
                   </div>
 
                   <div class="flex justify-end pt-3 border-t border-ortho-navy/5">
-                    <div class="text-right">
+                    <div class="text-end">
                       <span class="text-xs font-bold text-ink-500 uppercase tracking-wider block">{{ "STOCK.GRAND_TOTAL" | translate }}</span>
                       <span class="text-xl font-bold text-emerald-700">{{ total | money }}</span>
                     </div>

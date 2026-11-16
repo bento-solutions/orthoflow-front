@@ -80,7 +80,7 @@
 .tooth-status-label {
   font-weight: 600;
   font-size: 0.75rem;
-  padding-left: 0.5rem;
+  padding-inline-start: 0.5rem;
   border-left: 2px solid rgb(var(--ink-200));
 }
 
@@ -462,7 +462,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .status-text-sm {

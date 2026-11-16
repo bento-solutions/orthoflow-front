@@ -73,7 +73,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-sm">
+          <table class="w-full text-start border-collapse text-sm">
             <thead>
               <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
                 <th scope="col" class="p-4">{{ "TREATMENTS.INVOICE_NUMBER" | translate }}</th>
@@ -81,9 +81,9 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                 <th scope="col" class="p-4">{{ "TREATMENTS.TREATMENT" | translate }}</th>
                 <th scope="col" class="p-4">{{ "TREATMENTS.SESSION_DATE" | translate }}</th>
                 <th scope="col" class="p-4 text-center">{{ "COMMON.STATUS" | translate }}</th>
-                <th scope="col" class="p-4 text-right">{{ "TREATMENTS.MATERIALS_COST" | translate }}</th>
-                <th scope="col" class="p-4 text-right">{{ "TREATMENTS.GRAND_TOTAL" | translate }}</th>
-                <th scope="col" class="p-4 text-right">{{ "COMMON.ACTIONS" | translate }}</th>
+                <th scope="col" class="p-4 text-end">{{ "TREATMENTS.MATERIALS_COST" | translate }}</th>
+                <th scope="col" class="p-4 text-end">{{ "TREATMENTS.GRAND_TOTAL" | translate }}</th>
+                <th scope="col" class="p-4 text-end">{{ "COMMON.ACTIONS" | translate }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-ortho-navy/5">
@@ -101,9 +101,9 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       {{ ('STATUS.' + inv.status) | translate }}
                     </span>
                   </td>
-                  <td class="p-4 text-right font-medium text-emerald-700">{{ inv.consumablesCost | money }}</td>
-                  <td class="p-4 text-right font-bold text-ink-900">{{ inv.total | money }}</td>
-                  <td class="p-4 text-right">
+                  <td class="p-4 text-end font-medium text-emerald-700">{{ inv.consumablesCost | money }}</td>
+                  <td class="p-4 text-end font-bold text-ink-900">{{ inv.total | money }}</td>
+                  <td class="p-4 text-end">
                     <div class="flex items-center justify-end gap-2">
                       @if (inv.status === 'DRAFT') {
                         <button type="button" (click)="openDraftEditModal(inv)" class="px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg border border-blue-200 transition">
@@ -237,7 +237,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                                 <span class="text-xs font-bold text-ink-600 font-mono select-none shrink-0">{{ c.stockItem?.unit || 'units' }}</span>
                               </div>
                             </div>
-                            <div class="col-span-3 text-right">
+                            <div class="col-span-3 text-end">
                               <span class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.USAGE_COST" | translate }}</span>
                               <span class="font-bold text-emerald-700 block py-1.5 text-xs">{{ (c.actualQuantity * c.pricePerUnit) | money }}</span>
                             </div>

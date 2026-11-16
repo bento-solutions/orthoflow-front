@@ -42,13 +42,6 @@ export function describeDevice(userAgent: string | null | undefined): string {
   standalone: true,
   imports: [FormsModule, TranslateModule, DatePipe, VoiceSettingsCardComponent],
   template: `
-    <div class="page-head">
-      <div>
-        <h1 class="page-title">{{ 'NAV.ACCOUNT' | translate }}</h1>
-        <p class="page-sub">{{ user()?.email }} · {{ 'SET.USERS.ROLES.' + user()?.role | translate }}</p>
-      </div>
-    </div>
-
     <div class="grid gap-6 lg:grid-cols-2">
       <section class="card card-pad space-y-5">
         <h2 class="text-lg font-bold text-ink-900">{{ 'SET.ACCOUNT.PREFERENCES' | translate }}</h2>

@@ -370,7 +370,8 @@
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
-    justify-content: space-between;
+    /* A screen's title is the breadcrumb in the header, so what is left here is its actions. */
+    justify-content: flex-end;
     gap: var(--space-4);
     margin-bottom: var(--space-6);
   }

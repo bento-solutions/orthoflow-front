@@ -9,12 +9,6 @@ import { FINANCE_TABS } from './finance-tabs';
   standalone: true,
   imports: [RouterLink, RouterLinkActive, RouterOutlet, TranslateModule],
   template: `
-    <div class="page-head">
-      <div>
-        <h1 class="page-title">{{ 'NAV.FINANCE' | translate }}</h1>
-        <p class="page-sub">{{ 'FIN.SUBTITLE' | translate }}</p>
-      </div>
-    </div>
     <nav class="tabs mb-6 overflow-x-auto" data-tour="finance-tabs" [attr.aria-label]="'NAV.FINANCE' | translate">
       @for (tab of visible(); track tab.path) {
         <a class="tab whitespace-nowrap" [routerLink]="tab.path" routerLinkActive="is-active" ariaCurrentWhenActive="page">{{ tab.key | translate }}</a>

@@ -10,12 +10,6 @@ import { PermissionService } from '../../core/services/permission.service';
   standalone: true,
   imports: [RouterLink, RouterLinkActive, RouterOutlet, TranslateModule],
   template: `
-    <div class="page-head">
-      <div>
-        <h1 class="page-title">{{ 'NAV.COMMUNICATION' | translate }}</h1>
-        <p class="page-sub">{{ 'COM.SUBTITLE' | translate }}</p>
-      </div>
-    </div>
     <nav class="tabs mb-6" [attr.aria-label]="'NAV.COMMUNICATION' | translate">
       @for (tab of tabs; track tab.path) {
         <a class="tab whitespace-nowrap" [routerLink]="tab.path" routerLinkActive="is-active" ariaCurrentWhenActive="page">

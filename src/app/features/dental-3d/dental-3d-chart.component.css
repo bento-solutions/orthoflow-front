@@ -204,3 +204,16 @@
 :host(.d3-compact) .d3-stage { aspect-ratio: auto; flex: 1 1 auto; min-height: 10rem; max-height: none; }
 :host(.d3-compact) .d3-legend--compact { font-size: .75rem; gap: .25rem .75rem; }
 :host(.d3-compact) .d3-credit { margin: 0; font-size: .6875rem; }
+
+/* One-view patient file (overlayPanel): frameless, filling the row it is given; a picked
+   tooth opens over the pane beside the chart. The host and .d3 stay unpositioned on
+   purpose, so the panel is placed against the row in the patient file. */
+:host(.d3-overlay) { height: 100%; }
+:host(.d3-overlay) .d3 { height: 100%; gap: 0; }
+:host(.d3-overlay) .d3-main { height: 100%; }
+:host(.d3-overlay) .d3-stage { aspect-ratio: auto; flex: 1 1 auto; min-height: 16rem; max-height: none; border: 0; border-radius: 0; background: transparent; }
+:host(.d3-overlay) .d3-panel {
+  position: absolute; inset-block: 0; inset-inline-end: 0; z-index: 6; width: var(--d3-overlay-width, 50%);
+  max-height: none; overflow-y: auto; border-radius: .75rem; box-shadow: 0 12px 32px -12px rgb(0 0 0 / .35);
+}
+@media (max-width: 1099px) { :host(.d3-overlay) .d3-panel { width: 100%; } }

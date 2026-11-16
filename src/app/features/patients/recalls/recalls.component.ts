@@ -35,10 +35,6 @@ export function reminderOutcome(selected: number, queued: number): { queued: num
   template: `
     <div class="anim-rise">
       <header class="page-head">
-        <div>
-          <h1 class="page-title">{{ 'REC.TITLE' | translate }}</h1>
-          <p class="page-sub">{{ 'REC.SUBTITLE' | translate }}</p>
-        </div>
         <div class="page-actions">
           <app-export-menu [path]="'/recalls/' + kind() + '/export'" [query]="filters()" [fallbackName]="'recalls-' + kind()" />
           <button *appCan="'MESSAGING_SEND'" type="button" class="btn btn-primary btn-sm" [disabled]="selected().size === 0 || sending()" (click)="send()" [attr.aria-describedby]="'send-hint'">

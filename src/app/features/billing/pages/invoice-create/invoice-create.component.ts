@@ -23,7 +23,6 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
           <button type="button" class="back-btn" [attr.aria-label]="'COMMON.BACK' | translate" routerLink="..">
             <span class="material-icons" aria-hidden="true">arrow_back</span>
           </button>
-          <h1>{{ 'BILLING.NEW_INVOICE' | translate }}</h1>
         </div>
       </header>
 

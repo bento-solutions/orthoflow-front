@@ -161,6 +161,11 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                   <input type="checkbox" [ngModel]="informed()" (ngModelChange)="informed.set($event)" />
                   <span>{{ (!c.retainTranscript() ? 'CONSULTATION.INTRO_ACK_NOT_KEPT' : c.keepAudio() ? 'CONSULTATION.INTRO_ACK_AUDIO' : 'CONSULTATION.INTRO_ACK') | translate }}</span>
                 </label>
+                <!-- For a doctor who tells every patient anyway: the next consultations start at once. -->
+                <label class="cp-ack cp-ack-minor">
+                  <input type="checkbox" [ngModel]="dontShowAgain()" (ngModelChange)="dontShowAgain.set($event)" />
+                  <span>{{ 'CONSULTATION.HIDE_INTRO' | translate }}</span>
+                </label>
                 <ng-container *ngTemplateOutlet="languagePicker" />
                 @if (voice.error(); as error) {
                   <p class="cp-alert critical" role="alert">{{ error }}</p>
@@ -872,6 +877,8 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-audio { display: flex; align-items: center; gap: .375rem; }
     .cp-audio .material-icons { font-size: 1rem; }
     .cp-ack input { margin-top: .2rem; width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
+    .cp-ack-minor { font-weight: 500; font-size: .8125rem; color: rgb(var(--ink-600)); }
+    .cp-ack-minor input { width: 1rem; height: 1rem; }
 
     .cp-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
     .cp-actions.col { flex-direction: column; align-items: stretch; width: 100%; }
@@ -1026,6 +1033,8 @@ export class ConsultationPanelComponent {
   readonly canBill = computed(() => this.permissions.can('BILLING_WRITE'));
 
   informed = signal(false);
+  /** Remembered when the recording starts, never before: the box alone attests nothing. */
+  dontShowAgain = signal(false);
   showHeard = signal(true);
   editKey = signal<string | null>(null);
   edit: EditModel = { ...EMPTY_EDIT };
@@ -1091,6 +1100,7 @@ export class ConsultationPanelComponent {
 
   /** Reached synchronously from the tap: the service opens the microphone before it awaits anything. */
   startRecording(): void {
+    if (this.dontShowAgain() && this.informed()) this.c.setIntroHidden(true);
     if (this.voice.needsConsent()) this.voice.grantMicrophoneConsent();
     void this.c.start();
   }

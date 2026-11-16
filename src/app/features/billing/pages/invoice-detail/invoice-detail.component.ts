@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { InvoiceService } from '../../services/invoice.service';
+import { PageLabelService } from '../../../../core/services/page-label.service';
 import { Invoice, Payment } from '../../models/billing.model';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -24,7 +25,7 @@ import { PatientService } from '../../../../core/services/patient.service';
               <span class="material-icons" aria-hidden="true">arrow_back</span>
             </button>
             <div class="title-with-status">
-              <h1>{{ 'BILLING.INVOICE_NUMBER' | translate }} {{ inv.invoiceNumber }}</h1>
+              <p class="print-name">{{ 'BILLING.INVOICE_NUMBER' | translate }} {{ inv.invoiceNumber }}</p>
               <span class="status-badge" [class]="inv.status.toLowerCase().replace('_', '-')">
                 {{ 'BILLING.STATUS.' + inv.status | translate }}
               </span>
@@ -253,6 +254,11 @@ import { PatientService } from '../../../../core/services/patient.service';
       gap: 1rem;
     }
 
+    .print-name { display: none; margin: 0; }
+    @media print {
+      .print-name { display: block; font-size: 1.5rem; font-weight: 800; }
+    }
+
     .title-with-status h1 {
       margin: 0;
       font-size: 1.875rem;
@@ -451,6 +457,7 @@ import { PatientService } from '../../../../core/services/patient.service';
 export class InvoiceDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private invoiceService = inject(InvoiceService);
+  private pageLabel = inject(PageLabelService);
   /** Read by the template to resolve the patient name off `patientId`. */
   protected patients = inject(PatientService);
   private toast = inject(ToastService);
@@ -478,6 +485,7 @@ export class InvoiceDetailComponent implements OnInit {
     if (id) {
       this.invoiceService.getInvoice(id).subscribe(inv => {
         this.invoice.set(inv);
+        this.pageLabel.set(`${this.translate.instant('BILLING.INVOICE_NUMBER')} ${inv.invoiceNumber}`);
         this.calculateBalance();
       });
     }

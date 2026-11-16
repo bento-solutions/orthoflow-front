@@ -47,9 +47,6 @@ import { CommitAmendmentDto } from '../../../core/voice/voice-api.service';
     <div class="review" [class.embedded]="embedded()">
       <header class="review-header">
         <div>
-          @if (!embedded()) {
-            <h1>{{ 'VOICE.REVIEW_TITLE' | translate }}</h1>
-          }
           <p class="sub">
             @if (!embedded()) {
               {{ patient()?.firstName }} {{ patient()?.lastName }}

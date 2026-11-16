@@ -27,12 +27,6 @@ const TABS: Tab[] = [
   standalone: true,
   imports: [RouterLink, RouterLinkActive, RouterOutlet, TranslateModule],
   template: `
-    <div class="page-head">
-      <div>
-        <h1 class="page-title">{{ 'COMMON.SETTINGS' | translate }}</h1>
-        <p class="page-sub">{{ 'SETTINGS.SUBTITLE' | translate }}</p>
-      </div>
-    </div>
     <nav class="tabs mb-6" [attr.aria-label]="'COMMON.SETTINGS' | translate">
       @for (tab of visible(); track tab.path) {
         <a class="tab" [routerLink]="tab.path" routerLinkActive="is-active" ariaCurrentWhenActive="page">{{ tab.key | translate }}</a>

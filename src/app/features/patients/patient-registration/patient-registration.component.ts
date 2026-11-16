@@ -28,10 +28,6 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
         <button type="button" class="back-btn" [attr.aria-label]="'COMMON.BACK' | translate" [routerLink]="editMode ? ['/patients', patientId] : ['/patients']">
           <span class="material-icons" aria-hidden="true">arrow_back</span>
         </button>
-        <div class="header-content">
-          <h1>{{ (editMode ? 'PATIENTS.DOSSIER.EDIT_DOSSIER' : 'PATIENTS.DOSSIER.REGISTRATION_TITLE') | translate }}</h1>
-          <p>{{ (editMode ? 'PATIENTS.DOSSIER.EDIT_SUBTITLE' : 'PATIENTS.DOSSIER.REGISTRATION_SUBTITLE') | translate }}</p>
-        </div>
       </header>
 
       @if (loading()) {

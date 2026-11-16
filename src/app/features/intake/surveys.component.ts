@@ -33,13 +33,6 @@ export function shares(distribution: readonly number[]): number[] {
   imports: [DatePipe, FormsModule, RouterLink, TranslateModule, NumPipe, PeriodPickerComponent],
   template: `
     <div class="anim-rise">
-      <header class="page-head">
-        <div>
-          <h1 class="page-title">{{ 'NAV.SURVEYS' | translate }}</h1>
-          <p class="page-sub">{{ 'SURV.SUBTITLE' | translate }}</p>
-        </div>
-      </header>
-
       <div class="mb-4 flex flex-wrap items-end gap-3">
         <app-period-picker [value]="period()" (valueChange)="period.set($event)" [presets]="presets" />
         <label class="field w-auto"><span class="label">{{ 'SURV.MAX_RATING' | translate }}</span>

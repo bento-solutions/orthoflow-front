@@ -36,10 +36,6 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
   imports: [DatePipe, FormsModule, TranslateModule, IconComponent, ModalComponent, PatientPickerComponent, WaitingListComponent, AbsencesComponent, WaitingRoomDesignerComponent],
   template: `
     <div class="page-head">
-      <div>
-        <h1 class="page-title">{{ 'FD.TITLE' | translate }}</h1>
-        <p class="page-sub">{{ 'FD.SUBTITLE' | translate }}</p>
-      </div>
       <div class="page-actions">
         @if (!live.connected()) { <span class="pill pill-attention" role="status">{{ 'FD.OFFLINE' | translate }}</span> }
         <button type="button" class="btn btn-secondary btn-sm" (click)="reload()"><app-icon name="refresh" [size]="15" /> {{ 'COMMON.REFRESH' | translate }}</button>

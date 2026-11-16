@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, inject, computed } from '@angular/core';
-import { Router, NavigationEnd, RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { filter, map, startWith } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
 import { CommandRegistryService } from '../../core/services/command-registry.service';
@@ -9,34 +9,9 @@ import { IconComponent } from '../../shared/ui/icon.component';
 import { HelpPanelService } from '../../core/services/help-panel.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { NotificationBellComponent } from './notification-bell.component';
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component';
 import { CanDirective } from '../../shared/directives/can.directive';
 import { NavCounts } from '../../core/services/nav-counts.service';
-
-/* Route prefix → section label. Longest prefix wins, so `/patients/12`
-   still resolves to Patients. */
-const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
-  ['/patients', 'COMMON.PATIENTS'],
-  ['/recalls', 'NAV.RECALLS'],
-  ['/schedule', 'COMMON.SCHEDULE'],
-  ['/front-desk', 'NAV.FRONT_DESK'],
-  ['/billing', 'COMMON.BILLING'],
-  ['/finance', 'NAV.FINANCE'],
-  ['/retrocessions', 'NAV.RETROCESSIONS'],
-  ['/lab-orders', 'NAV.LAB_ORDERS'],
-  ['/sterilization', 'NAV.STERILIZATION'],
-  ['/tasks', 'NAV.TASKS'],
-  ['/messages', 'NAV.MESSAGES'],
-  ['/communication', 'NAV.COMMUNICATION'],
-  ['/booking', 'NAV.BOOKING'],
-  ['/surveys', 'NAV.SURVEYS'],
-  ['/stock', 'COMMON.STOCK'],
-  ['/treatments', 'COMMON.TREATMENTS'],
-  ['/analytics', 'COMMON.ANALYTICS'],
-  ['/insurance-forms', 'NAV.INSURANCE_FORMS'],
-  ['/prescription-templates', 'NAV.PRESCRIPTION_TEMPLATES'],
-  ['/settings', 'COMMON.SETTINGS'],
-  ['/account', 'NAV.ACCOUNT'],
-];
 
 /**
  * Application header.
@@ -52,7 +27,7 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [TranslateModule, IconComponent, NotificationBellComponent, RouterLink, CanDirective],
+  imports: [TranslateModule, IconComponent, NotificationBellComponent, BreadcrumbsComponent, RouterLink, CanDirective],
   template: `
     <header
       class="z-20 flex min-h-16 flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-ink-100 bg-surface/85 px-4 py-2 backdrop-blur-md md:sticky md:top-0 md:h-16 md:flex-nowrap md:px-6 md:py-0"
@@ -70,10 +45,8 @@ const SECTION_TITLES: ReadonlyArray<readonly [string, string]> = [
         </button>
 
         <div class="min-w-0">
-          <!-- Which part of the product this is. The screen's own heading is its h1. -->
-          <p class="truncate text-lg font-bold leading-tight tracking-[-0.014em] text-ink-900">
-            {{ sectionTitle() | translate }}
-          </p>
+          <!-- Where this screen is. Screens carry no title of their own: this trail is it. -->
+          <app-breadcrumbs />
           <p class="truncate text-xs font-medium text-ink-500">{{ today() }}</p>
         </div>
       </div>
@@ -164,17 +137,6 @@ export class HeaderComponent {
   readonly theme = inject(ThemeService);
   readonly help = inject(HelpPanelService);
   readonly counts = inject(NavCounts);
-
-  /** Current section, tracked from the router rather than passed in. */
-  readonly sectionTitle = toSignal(
-    this.router.events.pipe(
-      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
-      map((e) => e.urlAfterRedirects),
-      startWith(this.router.url),
-      map((url) => SECTION_TITLES.find(([prefix]) => url.startsWith(prefix))?.[1] ?? 'COMMON.OVERVIEW'),
-    ),
-    { initialValue: 'COMMON.OVERVIEW' },
-  );
 
   readonly displayName = computed(() => {
     const user = this.auth.currentUser();

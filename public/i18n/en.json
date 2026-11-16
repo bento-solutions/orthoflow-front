@@ -300,6 +300,15 @@
         },
         "TEETH": "Teeth: {{teeth}}",
         "PROGRESS": "Progress ({{value}}%)"
+      },
+      "REPORT": {
+        "TITLE": "Medical report",
+        "PICK": "Consultation of",
+        "LATEST": "latest",
+        "COMPLAINT": "Reason for the visit",
+        "REPORT": "Report",
+        "PLAN": "Treatment plan",
+        "EMPTY": "No medical report yet. It appears here once a consultation or voice session is saved."
       }
     },
     "ADD": "New patient",
@@ -1162,6 +1171,7 @@
     "SAVE_WORKING_HOURS": "Save Working Hours"
   },
   "NAV": {
+    "BREADCRUMB": "Breadcrumb",
     "MAIN": "Main navigation",
     "CLINICAL": "Clinical",
     "PRACTICE": "Practice",
@@ -1360,7 +1370,8 @@
       "TOOTH": "tooth {{fdi}}",
       "CONFIRMING": "Confirming…",
       "CONFIRM": "Confirm findings"
-    }
+    },
+    "CONSENT_ONCE": "Shown once on this computer: after this, the microphone starts straight away."
   },
   "CONSULTATION": {
     "TITLE": "Consultation",
@@ -1651,7 +1662,12 @@
     },
     "CONTINUE": "Continue the consultation",
     "CONTINUE_HINT": "Forgot something, or more to add to the dossier: recording starts again and nothing already caught is lost.",
-    "ERROR_CONTINUE": "The consultation could not be continued. Try again."
+    "ERROR_CONTINUE": "The consultation could not be continued. Try again.",
+    "MENU_NEW": "New consultation",
+    "MENU_VOICE_HINT": "Dictate findings tooth by tooth; nothing is saved until you review it",
+    "MENU_OFF": "Not turned on for this clinic",
+    "HIDE_INTRO": "Don't show this again: I tell every patient before I start recording",
+    "SHOW_INTRO_AGAIN": "Show the consent card again before each consultation"
   },
   "SET": {
     "TABS": {
@@ -4490,5 +4506,50 @@
     "MENTIONS": "Mentions not recorded",
     "DEFERRED": "Analysed at the end",
     "DEFERRED_HINT": "Nothing applies now: everything is analysed at the end, for you to validate."
+  },
+  "PFILES": {
+    "TITLE": "Images, X-rays & 3D scans",
+    "TYPE": "Type",
+    "UPLOAD": "Upload",
+    "UPLOADING": "Uploading…",
+    "FILTER": "Filter by type",
+    "ALL": "All",
+    "EMPTY": "No file uploaded yet.",
+    "LOAD_FAILED": "Could not load the images.",
+    "WRONG_TYPE": "Only JPEG, PNG or WebP images can be uploaded.",
+    "UPLOADED": "{{count}} image(s) uploaded.",
+    "UPLOAD_FAILED": "The upload failed.",
+    "DELETE_CONFIRM": "Delete {{name}}? This cannot be undone.",
+    "DELETE_FAILED": "Could not delete the image.",
+    "PANE_LABEL": "Show the X-ray or the intraoral scan",
+    "OLDER": "Older",
+    "NEWER": "Newer",
+    "NO_XRAY": "No panoramic X-ray uploaded.",
+    "NO_INTRAORAL": "No 3D intraoral scan uploaded.",
+    "GO_UPLOAD": "Upload in Documents",
+    "VIEWER_LABEL": "3D scan ({{format}})",
+    "MODEL_LOADING": "Loading the 3D scan…",
+    "MODEL_FAILED": "Could not open this 3D file.",
+    "NO_WEBGL": "This browser cannot show 3D models.",
+    "VIEW_OCCLUSAL": "Occlusal",
+    "VIEW_FRONT": "Front",
+    "EXPAND": "Full screen",
+    "SHRINK": "Exit full screen",
+    "MODEL_HINT": "Drag to turn, scroll to zoom, right-drag to move",
+    "MODEL_FORMATS": "3D Intraoral and Image also take 3D files: STL, PLY, OBJ, 3MF, glTF or GLB, up to 100 MB.",
+    "OPEN_MODEL": "Open the 3D scan",
+    "WRONG_TYPE_3D": "Only JPEG, PNG, WebP pictures or STL, PLY, OBJ, 3MF, glTF, GLB 3D files can be uploaded.",
+    "MODEL_NEEDS_3D": "An X-ray is a picture. Upload 3D files (STL, PLY, OBJ, 3MF, glTF) as 3D Intraoral or Image.",
+    "GALLERY_TITLE": "Images & 3D files",
+    "ADD_ELEMENT": "Add element",
+    "ADD_HINT": "Picture or 3D file",
+    "GALLERY_EMPTY": "Add photos, a wax-up or an appliance here, as pictures or 3D files. They are also listed in Documents as Image.",
+    "GALLERY_EMPTY_READ": "No other images for this patient.",
+    "OPEN_IMAGE": "Open {{name}}",
+    "CAT": {
+      "XRAY": "X-Ray",
+      "INTRAORAL_3D": "3D Intraoral",
+      "IMAGE": "Image"
+    }
   }
 }

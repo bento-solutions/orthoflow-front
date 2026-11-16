@@ -20,12 +20,6 @@ import { TranslateModule } from '@ngx-translate/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, RouterLinkActive, RouterOutlet, TranslateModule],
   template: `
-    <div class="page-head">
-      <div>
-        <h1 class="page-title">{{ 'STOCK.TITLE' | translate }}</h1>
-      </div>
-    </div>
-
     <div class="mb-6 flex max-w-max flex-wrap gap-2 rounded-xl border border-ortho-navy/5 bg-ortho-navy/[0.03] p-1.5 text-xs font-semibold">
       @for (t of tabs; track t.path) {
         <a

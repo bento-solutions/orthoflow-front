@@ -6807,6 +6807,8 @@ export interface components {
             intent?: string;
         };
         FileInfo: {
+            /** @enum {string} */
+            category?: "XRAY" | "INTRAORAL_3D" | "IMAGE";
             contentType?: string;
             /** Format: date-time */
             createdAt?: string;
@@ -12021,6 +12023,7 @@ export interface operations {
             query: {
                 ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "INSURANCE_FORM" | "PRESCRIPTION" | "CLINICAL_PHOTO" | "CONSULTATION_AUDIO";
                 ownerId?: string;
+                category?: "XRAY" | "INTRAORAL_3D" | "IMAGE";
             };
             header?: never;
             path?: never;

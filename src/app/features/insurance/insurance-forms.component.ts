@@ -26,13 +26,6 @@ type FormAction = 'printed' | 'handed-over' | 'refresh' | 'void';
   imports: [DatePipe, DecimalPipe, RouterLink, TranslateModule, IconComponent],
   template: `
     <div class="anim-rise">
-      <header class="page-head">
-        <div>
-          <h1 class="page-title">{{ 'INSURANCE.PAGE_TITLE' | translate }}</h1>
-          <p class="page-sub">{{ 'INSURANCE.PAGE_SUB' | translate }}</p>
-        </div>
-      </header>
-
       <div class="seg mb-4" role="group" [attr.aria-label]="'INSURANCE.STATUS_FILTER' | translate">
         @for (s of statuses; track s) {
           <button type="button" class="seg-item" [class.is-active]="status() === s" [attr.aria-pressed]="status() === s" (click)="status.set(s)">

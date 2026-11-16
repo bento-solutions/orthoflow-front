@@ -230,6 +230,32 @@ describe('ConsultationService — the deferred mode', () => {
     expect(service.deferred()).toBe(false);
   });
 
+  it('starts without the consent card for a doctor who asked not to see it again, in their mode', async () => {
+    await service.loadConfig();
+    expect(service.introHidden()).toBe(false);
+    service.chooseMode('LIVE');
+    service.setIntroHidden(true);
+    expect(service.introHidden()).toBe(true);
+
+    expect(await service.startWithoutIntro()).toBe(true);
+    expect(service.intro()).toBe(false);
+    expect(startedWith).toBe('LIVE');
+  });
+
+  it('shows the consent card again once the doctor asks for it back', async () => {
+    service.setIntroHidden(true);
+    service.setIntroHidden(false);
+    expect(service.introHidden()).toBe(false);
+  });
+
+  it('does not start without the card when the clinic has consultations off', async () => {
+    config['enabled'] = false;
+    await service.loadConfig();
+    service.setIntroHidden(true);
+    expect(await service.startWithoutIntro()).toBe(false);
+    expect(startedWith).toBeUndefined();
+  });
+
   it('lets the doctor pick live commands for the next one', async () => {
     await service.loadConfig();
     service.openIntro();

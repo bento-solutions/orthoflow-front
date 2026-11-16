@@ -226,6 +226,8 @@ const SPOKEN = {
 
 /** Where the doctor's choice of mode is remembered, per person on a shared PC. */
 const MODE_PREFERENCE_KEY = 'orthoflow.consultation.mode';
+/** The doctor has said they tell every patient, so the consent card no longer stands in the way. */
+const INTRO_HIDDEN_KEY = 'orthoflow.consultation.introHidden';
 
 /** Keys of the labels the printed documents are built from (`CONSULTATION.DOC.*`). */
 export const DOC_LABEL_KEYS = [
@@ -438,8 +440,52 @@ export class ConsultationService {
   }
 
   private modePreferenceKey(): string {
+    return `${MODE_PREFERENCE_KEY}.${this.personKey()}`;
+  }
+
+  private personKey(): string {
     const user = this.auth.currentUser();
-    return `${MODE_PREFERENCE_KEY}.${user?.id ?? user?.email ?? 'anyone'}`;
+    return `${user?.id ?? user?.email ?? 'anyone'}`;
+  }
+
+  // ── The consent card, once and for all ─────────────────────────────
+
+  /**
+   * Whether this doctor asked not to see the consent card again. It is their standing
+   * word that every patient is told before the recording starts, so it is kept per person
+   * (the clinic PC is shared) and the server still records the attestation at each start.
+   */
+  private introHiddenVersion = signal(0);
+  introHidden = computed(() => {
+    this.introHiddenVersion();
+    try {
+      return localStorage.getItem(`${INTRO_HIDDEN_KEY}.${this.personKey()}`) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  /** Remembers, or forgets, that the doctor tells every patient before recording. */
+  setIntroHidden(hidden: boolean): void {
+    try {
+      const key = `${INTRO_HIDDEN_KEY}.${this.personKey()}`;
+      if (hidden) localStorage.setItem(key, 'true');
+      else localStorage.removeItem(key);
+    } catch {
+      // A browser that keeps nothing shows the card each time, which is the safe side.
+    }
+    this.introHiddenVersion.update((v) => v + 1);
+  }
+
+  /**
+   * Starts at once, without the consent card, for a doctor who asked not to see it again:
+   * their remembered mode, the same attestation sent to the server. Like {@link start}, it
+   * must be reached synchronously from the tap.
+   */
+  startWithoutIntro(): Promise<boolean> {
+    if (!this.available() || this.isOpen()) return Promise.resolve(false);
+    this.restoreModePreference();
+    return this.start();
   }
 
   private restoreModePreference(): void {

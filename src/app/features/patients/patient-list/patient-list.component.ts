@@ -34,10 +34,6 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
   template: `
     <div class="anim-rise">
       <header class="page-head">
-        <div>
-          <h1 class="page-title">{{ 'PATIENTS.TITLE' | translate }}</h1>
-          <p class="page-sub">{{ 'PATIENTS.SUBTITLE' | translate }}</p>
-        </div>
         <div class="page-actions">
           @if (canMerge()) {
             <a class="btn btn-secondary" routerLink="duplicates" data-tour="patients-duplicates">

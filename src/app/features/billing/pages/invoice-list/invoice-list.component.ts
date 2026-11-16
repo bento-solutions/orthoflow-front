@@ -31,10 +31,6 @@ import { PatientService } from '../../../../core/services/patient.service';
   template: `
     <div class="anim-rise">
       <header class="page-head">
-        <div>
-          <h1 class="page-title">{{ 'BILLING.TITLE' | translate }}</h1>
-          <p class="page-sub">{{ 'BILLING.SUBTITLE' | translate }}</p>
-        </div>
         <div class="page-actions">
           <!-- No link to quotes: that page is a mock-up with no backend behind it (see billing.routes.ts). -->
           <a class="btn btn-primary" routerLink="create">

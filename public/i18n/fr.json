@@ -300,6 +300,15 @@
         },
         "TEETH": "Dents : {{teeth}}",
         "PROGRESS": "Avancement ({{value}} %)"
+      },
+      "REPORT": {
+        "TITLE": "Compte rendu médical",
+        "PICK": "Consultation du",
+        "LATEST": "la plus récente",
+        "COMPLAINT": "Motif de consultation",
+        "REPORT": "Compte rendu",
+        "PLAN": "Plan de traitement",
+        "EMPTY": "Aucun compte rendu pour l'instant. Il s'affiche ici dès qu'une consultation ou une session vocale est enregistrée."
       }
     },
     "ADD": "Nouveau patient",
@@ -1162,6 +1171,7 @@
     "SAVE_WORKING_HOURS": "Enregistrer les heures"
   },
   "NAV": {
+    "BREADCRUMB": "Fil d'Ariane",
     "MAIN": "Navigation principale",
     "CLINICAL": "Clinique",
     "PRACTICE": "Cabinet",
@@ -1360,7 +1370,8 @@
       "TOOTH": "dent {{fdi}}",
       "CONFIRMING": "Confirmation…",
       "CONFIRM": "Confirmer les constats"
-    }
+    },
+    "CONSENT_ONCE": "Affiché une seule fois sur cet ordinateur : ensuite, le micro démarre directement."
   },
   "CONSULTATION": {
     "TITLE": "Consultation",
@@ -1651,7 +1662,12 @@
     },
     "CONTINUE": "Continuer la consultation",
     "CONTINUE_HINT": "Un oubli ou quelque chose à ajouter au dossier : l’enregistrement reprend, rien de ce qui est déjà relevé n’est perdu.",
-    "ERROR_CONTINUE": "La consultation n’a pas pu reprendre. Réessayez."
+    "ERROR_CONTINUE": "La consultation n’a pas pu reprendre. Réessayez.",
+    "MENU_NEW": "Nouvelle consultation",
+    "MENU_VOICE_HINT": "Dictez les constats dent par dent ; rien n'est enregistré avant votre relecture",
+    "MENU_OFF": "Non activée pour ce cabinet",
+    "HIDE_INTRO": "Ne plus afficher : j'informe chaque patient avant de lancer l'enregistrement",
+    "SHOW_INTRO_AGAIN": "Réafficher la carte de consentement avant chaque consultation"
   },
   "SET": {
     "TABS": {
@@ -4490,5 +4506,50 @@
     "MENTIONS": "Mentions non enregistrées",
     "DEFERRED": "Analyse à la fin",
     "DEFERRED_HINT": "Rien n’est appliqué maintenant : tout sera analysé à la fin, pour validation."
+  },
+  "PFILES": {
+    "TITLE": "Images, radios et scans 3D",
+    "TYPE": "Type",
+    "UPLOAD": "Importer",
+    "UPLOADING": "Import…",
+    "FILTER": "Filtrer par type",
+    "ALL": "Tous",
+    "EMPTY": "Aucun fichier importé.",
+    "LOAD_FAILED": "Impossible de charger les images.",
+    "WRONG_TYPE": "Seules les images JPEG, PNG ou WebP peuvent être importées.",
+    "UPLOADED": "{{count}} image(s) importée(s).",
+    "UPLOAD_FAILED": "L'import a échoué.",
+    "DELETE_CONFIRM": "Supprimer {{name}} ? Cette action est définitive.",
+    "DELETE_FAILED": "Impossible de supprimer l'image.",
+    "PANE_LABEL": "Afficher la radio ou l'empreinte intra-orale",
+    "OLDER": "Plus ancienne",
+    "NEWER": "Plus récente",
+    "NO_XRAY": "Aucune radio panoramique importée.",
+    "NO_INTRAORAL": "Aucune empreinte intra-orale 3D importée.",
+    "GO_UPLOAD": "Importer dans Documents",
+    "VIEWER_LABEL": "Scan 3D ({{format}})",
+    "MODEL_LOADING": "Chargement du scan 3D…",
+    "MODEL_FAILED": "Impossible d'ouvrir ce fichier 3D.",
+    "NO_WEBGL": "Ce navigateur ne peut pas afficher les modèles 3D.",
+    "VIEW_OCCLUSAL": "Occlusale",
+    "VIEW_FRONT": "Face",
+    "EXPAND": "Plein écran",
+    "SHRINK": "Quitter le plein écran",
+    "MODEL_HINT": "Glisser pour tourner, molette pour zoomer, clic droit pour déplacer",
+    "MODEL_FORMATS": "Intra-orale 3D et Image acceptent aussi les fichiers 3D : STL, PLY, OBJ, 3MF, glTF ou GLB, jusqu'à 100 Mo.",
+    "OPEN_MODEL": "Ouvrir le scan 3D",
+    "WRONG_TYPE_3D": "Seules les photos JPEG, PNG, WebP ou les fichiers 3D STL, PLY, OBJ, 3MF, glTF, GLB peuvent être importés.",
+    "MODEL_NEEDS_3D": "Une radio est une image. Importez les fichiers 3D (STL, PLY, OBJ, 3MF, glTF) en Intra-orale 3D ou en Image.",
+    "GALLERY_TITLE": "Images et fichiers 3D",
+    "ADD_ELEMENT": "Ajouter un élément",
+    "ADD_HINT": "Photo ou fichier 3D",
+    "GALLERY_EMPTY": "Ajoutez ici des photos, un wax-up ou un appareil, en image ou en fichier 3D. Ils figurent aussi dans Documents comme Image.",
+    "GALLERY_EMPTY_READ": "Aucune autre image pour ce patient.",
+    "OPEN_IMAGE": "Ouvrir {{name}}",
+    "CAT": {
+      "XRAY": "Radio",
+      "INTRAORAL_3D": "Intra-orale 3D",
+      "IMAGE": "Image"
+    }
   }
 }

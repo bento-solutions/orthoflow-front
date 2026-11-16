@@ -10,12 +10,6 @@ import { ANALYTICS_TABS } from './analytics-tabs';
   standalone: true,
   imports: [RouterLink, RouterLinkActive, RouterOutlet, TranslateModule],
   template: `
-    <div class="page-head">
-      <div>
-        <h1 class="page-title">{{ 'COMMON.ANALYTICS' | translate }}</h1>
-        <p class="page-sub">{{ 'ANA.SUBTITLE' | translate }}</p>
-      </div>
-    </div>
     <nav class="tabs mb-6 overflow-x-auto" [attr.aria-label]="'COMMON.ANALYTICS' | translate">
       @for (tab of visible(); track tab.path) {
         <a class="tab whitespace-nowrap" [routerLink]="tab.path" routerLinkActive="is-active" ariaCurrentWhenActive="page">{{ tab.key | translate }}</a>

@@ -82,7 +82,7 @@ const blankCategory = () => ({ code: '', nameFr: '', nameEn: '', nameAr: '', kin
 
     <section class="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
       <div class="tile p-4"><p class="kpi-label">{{ 'FIN.EXP.TOTAL' | translate }}</p><p class="kpi-value">{{ totals().all | money }}</p></div>
-      <div class="tile p-4"><p class="kpi-label">{{ 'STATUS.PAID' | translate }}</p><p class="kpi-value text-positive-700">{{ totals().paid | money }}</p></div>
+      <div class="tile p-4"><p class="kpi-label">{{ 'STATUS.PAID' | translate }}</p><p class="kpi-value text-ink-900">{{ totals().paid | money }}</p></div>
       <div class="tile p-4"><p class="kpi-label">{{ 'STATUS.PENDING' | translate }}</p><p class="kpi-value">{{ totals().pending | money }}</p></div>
       <div class="tile p-4"><p class="kpi-label">{{ 'STATUS.OVERDUE' | translate }}</p><p class="kpi-value" [class.text-critical-700]="totals().overdue > 0">{{ totals().overdueCount }}</p></div>
     </section>

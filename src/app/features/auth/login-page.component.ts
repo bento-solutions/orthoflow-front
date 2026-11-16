@@ -19,7 +19,7 @@ import { AuthLayoutComponent } from '../../shared/components/auth-layout/auth-la
 
       <form class="space-y-6" [formGroup]="form" (ngSubmit)="submit()">
         @if (errorMessage()) {
-          <div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700" role="alert">
+          <div class="rounded-xl bg-critical-50 border border-critical-200 px-4 py-3 text-sm text-critical-700" role="alert">
             {{ errorMessage() | translate }}
           </div>
         }
@@ -32,11 +32,11 @@ import { AuthLayoutComponent } from '../../shared/components/auth-layout/auth-la
             formControlName="email"
             placeholder="doctor@orthoflow.com"
             autocomplete="username"
-            class="w-full rounded-xl border border-ortho-navy/10 bg-white px-4 py-3.5 transition-all focus:border-ortho-teal focus:ring-4 focus:ring-ortho-teal/5"
+            class="w-full rounded-xl border border-petrol-900/10 bg-white px-4 py-3.5 transition-all focus:border-petrol-600 focus:ring-4 focus:ring-petrol-600/5"
             [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched"
           />
           @if (form.controls.email.invalid && form.controls.email.touched) {
-            <p class="text-xs text-red-700">{{ 'AUTH.EMAIL_ERROR' | translate }}</p>
+            <p class="text-xs text-critical-700">{{ 'AUTH.EMAIL_ERROR' | translate }}</p>
           }
         </div>
 
@@ -51,11 +51,11 @@ import { AuthLayoutComponent } from '../../shared/components/auth-layout/auth-la
             formControlName="password"
             placeholder="••••••••"
             autocomplete="current-password"
-            class="w-full rounded-xl border border-ortho-navy/10 bg-white px-4 py-3.5 transition-all focus:border-ortho-teal focus:ring-4 focus:ring-ortho-teal/5"
+            class="w-full rounded-xl border border-petrol-900/10 bg-white px-4 py-3.5 transition-all focus:border-petrol-600 focus:ring-4 focus:ring-petrol-600/5"
             [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
           />
           @if (form.controls.password.invalid && form.controls.password.touched) {
-            <p class="text-xs text-red-700">{{ 'AUTH.PASSWORD_ERROR' | translate }}</p>
+            <p class="text-xs text-critical-700">{{ 'AUTH.PASSWORD_ERROR' | translate }}</p>
           }
         </div>
 

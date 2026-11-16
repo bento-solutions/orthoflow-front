@@ -23,14 +23,14 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
       </div>
 
       @if (!token()) {
-        <div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700" role="alert">
+        <div class="rounded-xl bg-critical-50 border border-critical-200 px-4 py-3 text-sm text-critical-700" role="alert">
           {{ 'AUTH.RESET_LINK_INVALID' | translate }}
         </div>
         <p class="mt-6 text-center text-sm text-ink-600">
           <a routerLink="/forgot-password" class="font-bold text-petrol-700 hover:underline">{{ 'AUTH.REQUEST_NEW_LINK' | translate }}</a>
         </p>
       } @else if (succeeded()) {
-        <div class="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800" role="status">
+        <div class="rounded-xl bg-positive-50 border border-positive-200 px-4 py-3 text-sm text-positive-800" role="status">
           {{ 'AUTH.RESET_SUCCESS' | translate }}
         </div>
         <p class="mt-6 text-center text-sm text-ink-600">
@@ -39,7 +39,7 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
       } @else {
         <form class="space-y-6" [formGroup]="form" (ngSubmit)="submit()">
           @if (errorMessage()) {
-            <div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700" role="alert">
+            <div class="rounded-xl bg-critical-50 border border-critical-200 px-4 py-3 text-sm text-critical-700" role="alert">
               {{ errorMessage() | translate }}
             </div>
           }
@@ -52,11 +52,11 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
               formControlName="newPassword"
               [placeholder]="'AUTH.PASSWORD_MIN_HINT' | translate"
               autocomplete="new-password"
-              class="w-full rounded-xl border border-ortho-navy/10 bg-white px-4 py-3.5 transition-all focus:border-ortho-teal focus:ring-4 focus:ring-ortho-teal/5"
+              class="w-full rounded-xl border border-petrol-900/10 bg-white px-4 py-3.5 transition-all focus:border-petrol-600 focus:ring-4 focus:ring-petrol-600/5"
               [attr.aria-invalid]="form.controls.newPassword.invalid && form.controls.newPassword.touched"
             />
             @if (form.controls.newPassword.invalid && form.controls.newPassword.touched) {
-              <p class="text-xs text-red-700">{{ 'AUTH.NEW_PASSWORD_ERROR' | translate }}</p>
+              <p class="text-xs text-critical-700">{{ 'AUTH.NEW_PASSWORD_ERROR' | translate }}</p>
             }
           </div>
 
@@ -68,11 +68,11 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
               formControlName="confirmPassword"
               [placeholder]="'AUTH.PASSWORD_REPEAT_HINT' | translate"
               autocomplete="new-password"
-              class="w-full rounded-xl border border-ortho-navy/10 bg-white px-4 py-3.5 transition-all focus:border-ortho-teal focus:ring-4 focus:ring-ortho-teal/5"
+              class="w-full rounded-xl border border-petrol-900/10 bg-white px-4 py-3.5 transition-all focus:border-petrol-600 focus:ring-4 focus:ring-petrol-600/5"
               [attr.aria-invalid]="form.errors?.['passwordMismatch'] && form.controls.confirmPassword.touched"
             />
             @if (form.errors?.['passwordMismatch'] && form.controls.confirmPassword.touched) {
-              <p class="text-xs text-red-700">{{ 'AUTH.PASSWORD_MISMATCH_ERROR' | translate }}</p>
+              <p class="text-xs text-critical-700">{{ 'AUTH.PASSWORD_MISMATCH_ERROR' | translate }}</p>
             }
           </div>
 

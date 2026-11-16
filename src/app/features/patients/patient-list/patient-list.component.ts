@@ -185,7 +185,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
                   @if (canSeeMoney()) {
                     <td class="cell-num" [attr.data-label]="'PAT.BALANCE' | translate">
                       @if (patient.balanceDue > 0) { <span class="font-bold text-critical-700">{{ patient.balanceDue | money }}</span> }
-                      @else if (patient.credit > 0) { <span class="text-positive-700" [attr.title]="'PAT.CREDIT' | translate">+{{ patient.credit | money }}</span> }
+                      @else if (patient.credit > 0) { <span class="text-ink-900" [attr.title]="'PAT.CREDIT' | translate">+{{ patient.credit | money }}</span> }
                       @else { <span class="text-ink-500">—</span> }
                     </td>
                   }

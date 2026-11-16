@@ -30,69 +30,20 @@ module.exports = {
       colors: {
         petrol: ramp('petrol', FULL),
         ink: ramp('ink', FULL),
-        positive: ramp('positive', STATUS),
-        caution: ramp('caution', STATUS),
-        critical: ramp('critical', STATUS),
+        positive: statusRamp('positive'),
+        caution: statusRamp('caution'),
+        critical: statusRamp('critical'),
 
         /* Semantic shorthands for the most common utility cases. */
         surface: token('white'),
         'app-bg': token('ink-50'),
 
-        /* ── Legacy-palette aliases ────────────────────────────────────
-           ~530 utility references across the stock, settings, onboarding
-           and treatments screens still name Tailwind's stock palettes
-           (`text-emerald-600`, `bg-slate-50`, `text-red-600`). Those
-           families are NOT part of this design system, and because
-           `theme.extend` adds rather than replaces, they would otherwise
-           keep resolving to Tailwind's defaults — which is how the product
-           ended up running Tailwind slate and Tailwind gray side by side.
-
-           Pointing the families at the token ramps brings every one of
-           those screens onto the palette without editing a single
-           template, and makes the neutral ramp singular by construction.
-           New code should use `ink-*`, `petrol-*`, `positive-*`,
-           `caution-*` and `critical-*` directly. */
-        slate: ramp('ink', FULL),
-        gray: ramp('ink', FULL),
-        zinc: ramp('ink', FULL),
-        neutral: ramp('ink', FULL),
-        stone: ramp('ink', FULL),
-
-        green: statusRamp('positive'),
-        emerald: statusRamp('positive'),
-        lime: statusRamp('positive'),
-
-        amber: statusRamp('caution'),
-        yellow: statusRamp('caution'),
-        orange: statusRamp('caution'),
-
-        red: statusRamp('critical'),
-        rose: statusRamp('critical'),
-        pink: statusRamp('critical'),
-
-        blue: statusRamp('petrol'),
-        sky: statusRamp('petrol'),
-        cyan: statusRamp('petrol'),
-        teal: statusRamp('petrol'),
-        indigo: statusRamp('petrol'),
-        violet: statusRamp('petrol'),
-        purple: statusRamp('petrol'),
-
-        /* Back-compat: the previous `ortho-*` names still resolve, mapped
-           onto the new ramp, so the ~589 existing utility references keep
-           rendering while screens are migrated one at a time. Do not use
-           these in new code — they are aliases, not tokens. */
-        ortho: {
-          navy: token('petrol-900'),
-          sky: token('petrol-400'),
-          teal: token('petrol-600'),
-          ice: token('petrol-50'),
-          white: token('white'),
-        },
+        /* No Tailwind stock palettes (slate, gray, emerald, red…) and no ortho-* names: every
+           screen names the token ramps above, and design-language.spec.ts keeps it so (UI V2 audit M4). */
       },
 
       fontFamily: {
-        sans: ['Manrope', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        sans: ['Manrope', 'IBM Plex Sans Arabic', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
         mono: ['ui-monospace', 'SF Mono', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
       },
 

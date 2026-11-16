@@ -54,7 +54,7 @@ const fromProfile = (p: Partial<Record<keyof Form, string | undefined>>): Form =
             <input class="input" name="city" maxlength="100" [ngModel]="f.value().city" (ngModelChange)="f.set('city', $event)" /></label>
           <label class="field"><span class="label">{{ 'SET.PROFILE.PHONE' | translate }}</span>
             <input class="input" name="phone" maxlength="40" [ngModel]="f.value().phone" (ngModelChange)="f.set('phone', $event)" /></label>
-          <label class="field"><span class="label">Email</span>
+          <label class="field"><span class="label">{{ 'COMMON.EMAIL' | translate }}</span>
             <input class="input" type="email" name="email" maxlength="255" [ngModel]="f.value().email" (ngModelChange)="f.set('email', $event)" /></label>
           <label class="field"><span class="label">{{ 'SET.PROFILE.WEBSITE' | translate }}</span>
             <input class="input" name="website" maxlength="255" [ngModel]="f.value().website" (ngModelChange)="f.set('website', $event)" /></label>

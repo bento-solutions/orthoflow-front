@@ -1,3 +1,4 @@
+import { StockNavComponent } from '../../stock-nav.component';
 import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
@@ -19,7 +20,7 @@ import {
 } from '../../../../core/models/stock.model';
 import { Patient } from '../../../../core/models/patient.model';
 
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLinkActive } from '@angular/router';
 import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { DialogDirective } from '../../../../shared/ui/dialog.directive';
@@ -27,14 +28,14 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 @Component({
   selector: 'app-treatment-sessions',
   standalone: true,
-  imports: [AppDatePipe, MoneyPipe, RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink],
+  imports: [StockNavComponent, AppDatePipe, MoneyPipe, DialogDirective, CommonModule, FormsModule, TranslateModule],
   template: `
     <div class="space-y-6">
       
       <!-- Top Title Bar -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-          <button type="button" (click)="openLogModal()" class="flex items-center gap-2 px-4 py-2.5 bg-petrol-600 text-white font-medium rounded-xl hover:bg-petrol-700 transition shadow-sm">
+          <button type="button" (click)="openLogModal()" class="btn btn-primary">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             {{ "TREATMENTS.LOG_SESSION" | translate }}
           </button>
@@ -42,32 +43,13 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
       </div>
 
       <!-- Module Navigation Pills -->
-      <div class="flex flex-wrap gap-2 bg-ortho-navy/[0.03] p-1.5 rounded-xl border border-ortho-navy/5 max-w-max font-semibold text-xs">
-        <a routerLink="/stock" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
-          {{ "STOCK.NAV_CATALOG" | translate }}
-        </a>
-        <a routerLink="/stock/procurement" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
-          {{ "STOCK.PROCUREMENT" | translate }}
-        </a>
-        <a routerLink="/stock/direct-sales" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
-          {{ "STOCK.NAV_SALES" | translate }}
-        </a>
-        <a routerLink="/stock/treatment-sessions" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
-          {{ "STOCK.TREATMENT_SESSIONS" | translate }}
-        </a>
-        <a routerLink="/stock/leakage" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
-          {{ "STOCK.LEAKAGE" | translate }}
-        </a>
-        <a routerLink="/stock/forecast" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
-          {{ "STOCK.FORECAST" | translate }}
-        </a>
-      </div>
+      <app-stock-nav />
 
 
       <!-- Invoices Registry -->
-      <div class="bg-white rounded-2xl border border-ortho-navy/5 shadow-sm overflow-hidden">
+      <div class="card overflow-hidden">
         
-        <div class="p-4 border-b border-ortho-navy/5 bg-ortho-navy/[0.01] flex items-center justify-between">
+        <div class="p-4 border-b border-petrol-900/5 bg-petrol-900/[0.01] flex items-center justify-between">
           <h2 class="text-base font-bold text-ink-900">{{ "TREATMENTS.INVOICES_REGISTRY" | translate }}</h2>
           <span class="text-xs text-ink-500 font-medium">{{ "TREATMENTS.INVOICES_REGISTRY_SUBTITLE" | translate }}</span>
         </div>
@@ -75,7 +57,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
         <div class="overflow-x-auto">
           <table class="w-full text-start border-collapse text-sm">
             <thead>
-              <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
+              <tr class="bg-petrol-900/[0.02] text-ink-500 font-semibold border-b border-petrol-900/5">
                 <th scope="col" class="p-4">{{ "TREATMENTS.INVOICE_NUMBER" | translate }}</th>
                 <th scope="col" class="p-4">{{ "TREATMENTS.PATIENT" | translate }}</th>
                 <th scope="col" class="p-4">{{ "TREATMENTS.TREATMENT" | translate }}</th>
@@ -86,9 +68,9 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                 <th scope="col" class="p-4 text-end">{{ "COMMON.ACTIONS" | translate }}</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-ortho-navy/5">
+            <tbody class="divide-y divide-petrol-900/5">
               @for (inv of invoices(); track inv.id) {
-                <tr class="hover:bg-ortho-navy/[0.01] transition">
+                <tr class="hover:bg-petrol-900/[0.01] transition">
                   <td class="p-4 font-mono text-xs font-bold text-ink-900"><span class="ltr-data">{{ inv.invoiceNumber || 'DRAFT' }}</span></td>
                   <td class="p-4">
                     <div class="font-bold text-ink-900">{{ inv.patient?.firstName }} {{ inv.patient?.lastName }}</div>
@@ -101,23 +83,23 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       {{ ('STATUS.' + inv.status) | translate }}
                     </span>
                   </td>
-                  <td class="p-4 text-end font-medium text-emerald-700">{{ inv.consumablesCost | money }}</td>
+                  <td class="p-4 text-end font-medium text-ink-900">{{ inv.consumablesCost | money }}</td>
                   <td class="p-4 text-end font-bold text-ink-900">{{ inv.total | money }}</td>
                   <td class="p-4 text-end">
                     <div class="flex items-center justify-end gap-2">
                       @if (inv.status === 'DRAFT') {
-                        <button type="button" (click)="openDraftEditModal(inv)" class="px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg border border-blue-200 transition">
+                        <button type="button" (click)="openDraftEditModal(inv)" class="btn btn-secondary btn-sm">
                           {{ "TREATMENTS.EDIT_DRAFT" | translate }}
                         </button>
-                        <button type="button" (click)="finalizeInvoice(inv)" class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition">
+                        <button type="button" (click)="finalizeInvoice(inv)" class="btn btn-secondary btn-sm">
                           {{ "TREATMENTS.FINALIZE" | translate }}
                         </button>
                       } @else if (inv.status === 'FINALIZED') {
-                        <button type="button" (click)="cancelInvoice(inv)" class="px-2.5 py-1 text-xs font-semibold bg-red-50 text-red-700 hover:bg-red-100 rounded-lg border border-red-200 transition">
+                        <button type="button" (click)="cancelInvoice(inv)" class="btn btn-secondary text-critical-700 btn-sm">
                           {{ "TREATMENTS.CANCEL_SESSION" | translate }}
                         </button>
                       }
-                      <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="deleteInvoice(inv)" class="p-1 hover:bg-red-50 text-red-700/60 hover:text-red-700 rounded-lg transition" [disabled]="inv.status === 'FINALIZED'">
+                      <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="deleteInvoice(inv)" class="btn btn-ghost btn-icon text-critical-700" [disabled]="inv.status === 'FINALIZED'">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                       </button>
                     </div>
@@ -135,15 +117,15 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
       <!-- Log Session Modal / Editor -->
       @if (showLogModal()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ortho-navy/60 backdrop-blur-sm">
-          <div appDialog="session-log-title" (dialogClosed)="closeLogModal()" class="bg-white rounded-2xl max-w-4xl w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in flex flex-col max-h-[90vh]">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-petrol-900/60 backdrop-blur-sm">
+          <div appDialog="session-log-title" (dialogClosed)="closeLogModal()" class="card max-w-4xl w-full overflow-hidden shadow-2xl animate-fade-in flex flex-col max-h-[90vh]">
             
-            <div class="px-6 py-4 border-b border-ortho-navy/5 flex items-center justify-between bg-ortho-navy/[0.01] shrink-0">
+            <div class="px-6 py-4 border-b border-petrol-900/5 flex items-center justify-between bg-petrol-900/[0.01] shrink-0">
               <div>
                 <h2 id="session-log-title" class="text-lg font-bold text-ink-900">{{ editDraftMode() ? ("TREATMENTS.EDIT_SESSION" | translate) : ("TREATMENTS.LOG_SESSION" | translate) }}</h2>
                 <p class="text-xs text-ink-500">{{ "TREATMENTS.SESSION_MODAL_SUBTITLE" | translate }}</p>
               </div>
-              <button [attr.aria-label]="'COMMON.CLOSE' | translate" type="button" (click)="closeLogModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
+              <button [attr.aria-label]="'COMMON.CLOSE' | translate" type="button" (click)="closeLogModal()" class="btn btn-ghost btn-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -155,7 +137,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label for="treatment-sessions-logPatientId" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1.5">{{ "TREATMENTS.SELECT_PATIENT" | translate }} <span aria-hidden="true">*</span></label>
-                    <select id="treatment-sessions-logPatientId" [(ngModel)]="logPatientId" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white font-medium">
+                    <select id="treatment-sessions-logPatientId" [(ngModel)]="logPatientId" class="select w-full">
                       <option [value]="null">{{ "TREATMENTS.SELECT_PATIENT_PLACEHOLDER" | translate }}</option>
                       @for (p of patients(); track p.id) {
                         <option [value]="p.id">{{ p.lastName }} {{ p.firstName }} (CIN: {{ p.cin || 'N/A' }})</option>
@@ -164,7 +146,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   </div>
                   <div>
                     <label for="treatment-sessions-logTreatmentId" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1.5">{{ "TREATMENTS.SELECT_TREATMENT_PROCEDURE" | translate }} <span aria-hidden="true">*</span></label>
-                    <select id="treatment-sessions-logTreatmentId" [(ngModel)]="logTreatmentId" (ngModelChange)="refreshQuote()" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white font-medium">
+                    <select id="treatment-sessions-logTreatmentId" [(ngModel)]="logTreatmentId" (ngModelChange)="refreshQuote()" class="select w-full">
                       <option [value]="null">{{ "TREATMENTS.SELECT_TREATMENT_PLACEHOLDER" | translate }}</option>
                       @for (t of treatments(); track t.id) {
                         <option [value]="t.id">{{ t.name }} ({{ t.basePrice | money }})</option>
@@ -174,12 +156,12 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                 </div>
 
                 @if (logTreatmentId) {
-                  <fieldset class="rounded-xl border border-ortho-navy/10 p-3">
+                  <fieldset class="rounded-xl border border-petrol-900/10 p-3">
                     <legend class="px-1 text-xs font-bold text-ink-500 uppercase tracking-wide">{{ "TREATMENTS.SESSION_FACES" | translate }}</legend>
                     <div class="flex flex-wrap gap-2">
                       @for (face of faceChoices; track face) {
                         <label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold cursor-pointer"
-                               [class.border-petrol-600]="logFaces.has(face)" [class.bg-petrol-50]="logFaces.has(face)" [class.border-ortho-navy/10]="!logFaces.has(face)">
+                               [class.border-petrol-600]="logFaces.has(face)" [class.bg-petrol-50]="logFaces.has(face)" [class.border-petrol-900/10]="!logFaces.has(face)">
                           <input type="checkbox" class="sr-only" [checked]="logFaces.has(face)" (change)="toggleFace(face)" />
                           {{ "SURFACE." + face.toUpperCase() | translate }}
                         </label>
@@ -198,7 +180,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                 }
 
                 <div class="flex justify-end pt-2">
-                  <button type="button" (click)="initializeDraft()" [disabled]="!logPatientId || !logTreatmentId" class="px-5 py-2 bg-petrol-600 text-white rounded-xl text-sm font-semibold hover:bg-petrol-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button type="button" (click)="initializeDraft()" [disabled]="!logPatientId || !logTreatmentId" class="btn btn-primary">
                     {{ "TREATMENTS.LOAD_SESSION_TEMPLATE" | translate }}
                   </button>
                 </div>
@@ -211,19 +193,19 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     
                     <!-- Consumables Editor Table -->
                     <div class="space-y-3">
-                      <div class="flex items-center justify-between border-b border-ortho-navy/5 pb-2">
+                      <div class="flex items-center justify-between border-b border-petrol-900/5 pb-2">
                         <span class="text-xs font-bold text-ink-500 uppercase tracking-wide">{{ "TREATMENTS.MATERIALS_CONSUMED_LOGGER" | translate }}</span>
-                        <button type="button" (click)="addExtraConsumable()" class="px-2.5 py-1 text-xs font-semibold bg-petrol-600 text-white hover:bg-petrol-700 transition rounded-lg">
+                        <button type="button" (click)="addExtraConsumable()" class="btn btn-primary btn-sm">
                           + {{ "TREATMENTS.ADD_EXTRA_MATERIAL" | translate }}
                         </button>
                       </div>
 
                       <div class="space-y-3">
                         @for (c of draftConsumables; track $index; let idx = $index) {
-                          <div class="grid grid-cols-12 gap-3 items-end bg-gray-50/50 p-3.5 rounded-2xl border border-gray-100 font-semibold text-xs text-ink-900">
+                          <div class="grid grid-cols-12 gap-3 items-end bg-ink-50/50 p-3.5 rounded-2xl border border-ink-100 font-semibold text-xs text-ink-900">
                             <div class="col-span-5">
                               <label [attr.for]="'treatment-sessions-c-stockItem-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.ITEM_NAME" | translate }}</label>
-                              <select [id]="'treatment-sessions-c-stockItem-' + $index" [(ngModel)]="c.stockItem" (change)="onConsumableItemChange(idx)" [disabled]="!!c.id" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none font-semibold text-ink-900">
+                              <select [id]="'treatment-sessions-c-stockItem-' + $index" [(ngModel)]="c.stockItem" (change)="onConsumableItemChange(idx)" [disabled]="!!c.id" class="select w-full">
                                 <option [value]="null">{{ "TREATMENTS.SELECT_ITEM_PLACEHOLDER" | translate }}</option>
                                 @for (item of catalogItems(); track item.id) {
                                   <option [ngValue]="item">{{ item.name }} ({{ 'STOCK.UI.AVAILABLE_COUNT' | translate: { count: item.currentStock, unit: item.unit || ('STOCK.UI.UNITS' | translate) } }})</option>
@@ -233,16 +215,16 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                             <div class="col-span-3">
                               <label [attr.for]="'treatment-sessions-c-actualQuantity-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.QTY_USED" | translate }}</label>
                               <div class="flex items-center gap-1.5">
-                                <input [id]="'treatment-sessions-c-actualQuantity-' + $index" type="number" [(ngModel)]="c.actualQuantity" (change)="recalculateDraftTotals()" min="0.0001" step="any" class="w-full px-2 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none font-mono font-bold" />
+                                <input [id]="'treatment-sessions-c-actualQuantity-' + $index" type="number" [(ngModel)]="c.actualQuantity" (change)="recalculateDraftTotals()" min="0.0001" step="any" class="input w-full text-center font-mono" />
                                 <span class="text-xs font-bold text-ink-600 font-mono select-none shrink-0">{{ c.stockItem?.unit || 'units' }}</span>
                               </div>
                             </div>
                             <div class="col-span-3 text-end">
                               <span class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.USAGE_COST" | translate }}</span>
-                              <span class="font-bold text-emerald-700 block py-1.5 text-xs">{{ (c.actualQuantity * c.pricePerUnit) | money }}</span>
+                              <span class="font-bold text-ink-900 block py-1.5 text-xs">{{ (c.actualQuantity * c.pricePerUnit) | money }}</span>
                             </div>
                             <div class="col-span-1 text-center">
-                              <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="removeDraftConsumable(idx)" class="p-1.5 hover:bg-red-50 text-red-700 rounded-lg transition mb-1">
+                              <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="removeDraftConsumable(idx)" class="btn btn-ghost btn-icon text-critical-700 mb-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                               </button>
                             </div>
@@ -253,40 +235,40 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
                     <!-- Clinical Discounts -->
                     <div class="space-y-3">
-                      <div class="flex items-center justify-between border-b border-ortho-navy/5 pb-2">
+                      <div class="flex items-center justify-between border-b border-petrol-900/5 pb-2">
                         <span class="text-xs font-bold text-ink-500 uppercase tracking-wide">{{ "TREATMENTS.DISCOUNTS_ADJUSTMENTS" | translate }}</span>
-                        <button type="button" (click)="addDiscountLine()" class="px-2.5 py-1 text-xs font-semibold bg-petrol-600 text-white hover:bg-petrol-700 transition rounded-lg">
+                        <button type="button" (click)="addDiscountLine()" class="btn btn-primary btn-sm">
                           + {{ "TREATMENTS.ADD_DISCOUNT" | translate }}
                         </button>
                       </div>
 
                       <div class="space-y-2">
                         @for (d of draftDiscounts; track $index; let idx = $index) {
-                          <div class="grid grid-cols-12 gap-3 items-end bg-amber-50/20 p-3.5 rounded-2xl border border-amber-100/50 font-semibold text-xs text-ink-900">
+                          <div class="grid grid-cols-12 gap-3 items-end bg-caution-50/20 p-3.5 rounded-2xl border border-caution-100/50 font-semibold text-xs text-ink-900">
                             <div class="col-span-3">
                               <label [attr.for]="'treatment-sessions-d-target-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.DISCOUNT_TARGET" | translate }}</label>
-                              <select [id]="'treatment-sessions-d-target-' + $index" [(ngModel)]="d.target" (change)="recalculateDraftTotals()" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none">
+                              <select [id]="'treatment-sessions-d-target-' + $index" [(ngModel)]="d.target" (change)="recalculateDraftTotals()" class="select w-full">
                                 <option value="INVOICE">{{ "TREATMENTS.DISCOUNT_TARGET_INVOICE" | translate }}</option>
                                 <option value="TREATMENT">{{ "TREATMENTS.TREATMENT_FEE" | translate }}</option>
                               </select>
                             </div>
                             <div class="col-span-3">
                               <label [attr.for]="'treatment-sessions-d-type-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "COMMON.TYPE" | translate }}</label>
-                              <select [id]="'treatment-sessions-d-type-' + $index" [(ngModel)]="d.type" (change)="recalculateDraftTotals()" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none">
+                              <select [id]="'treatment-sessions-d-type-' + $index" [(ngModel)]="d.type" (change)="recalculateDraftTotals()" class="select w-full">
                                 <option value="PERCENTAGE">{{ "TREATMENTS.DISCOUNT_TYPE_PERCENTAGE" | translate }}</option>
                                 <option value="FIXED">{{ "TREATMENTS.DISCOUNT_TYPE_FIXED" | translate }}</option>
                               </select>
                             </div>
                             <div class="col-span-2">
                               <label [attr.for]="'treatment-sessions-d-value-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.DISCOUNT_VALUE" | translate }}</label>
-                              <input [id]="'treatment-sessions-d-value-' + $index" type="number" [(ngModel)]="d.value" (change)="recalculateDraftTotals()" min="0" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none font-mono" />
+                              <input [id]="'treatment-sessions-d-value-' + $index" type="number" [(ngModel)]="d.value" (change)="recalculateDraftTotals()" min="0" class="input w-full text-center font-mono" />
                             </div>
                             <div class="col-span-3">
                               <label [attr.for]="'treatment-sessions-d-reason-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.DISCOUNT_REASON" | translate }}</label>
-                              <input [id]="'treatment-sessions-d-reason-' + $index" type="text" [(ngModel)]="d.reason" [placeholder]="'TREATMENTS.DISCOUNT_REASON_PLACEHOLDER' | translate" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none" />
+                              <input [id]="'treatment-sessions-d-reason-' + $index" type="text" [(ngModel)]="d.reason" [placeholder]="'TREATMENTS.DISCOUNT_REASON_PLACEHOLDER' | translate" class="input w-full" />
                             </div>
                             <div class="col-span-1 text-center">
-                              <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="removeDiscountLine(idx)" class="p-1.5 hover:bg-red-50 text-red-700 rounded-lg transition mb-1">
+                              <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="removeDiscountLine(idx)" class="btn btn-ghost btn-icon text-critical-700 mb-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                               </button>
                             </div>
@@ -298,8 +280,8 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   </div>
 
                   <!-- Sidebar Totals / Card Summary -->
-                  <div class="bg-gray-50 border border-gray-100 rounded-2xl p-5 space-y-4 self-start">
-                    <h4 class="text-sm font-bold text-ink-900 border-b border-ortho-navy/5 pb-2 uppercase tracking-wide">{{ "TREATMENTS.SESSION_SUMMARY" | translate }}</h4>
+                  <div class="bg-ink-50 border border-ink-100 rounded-2xl p-5 space-y-4 self-start">
+                    <h4 class="text-sm font-bold text-ink-900 border-b border-petrol-900/5 pb-2 uppercase tracking-wide">{{ "TREATMENTS.SESSION_SUMMARY" | translate }}</h4>
 
                     <div class="space-y-3 text-xs font-semibold text-ink-600">
                       <div class="flex justify-between">
@@ -311,7 +293,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                         <span class="font-bold text-ink-900">{{ activeDraft()?.treatment?.name }}</span>
                       </div>
 
-                      <hr class="border-ortho-navy/5">
+                      <hr class="border-petrol-900/5">
 
                       <div class="flex justify-between">
                         <span>{{ "TREATMENTS.TREATMENT_FEE" | translate }}:</span>
@@ -319,18 +301,18 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       </div>
                       <div class="flex justify-between">
                         <span>{{ "TREATMENTS.MATERIALS_COST" | translate }}:</span>
-                        <span class="font-bold text-emerald-700">+{{ activeDraft()?.consumablesCost | money }}</span>
+                        <span class="font-bold text-ink-900">+{{ activeDraft()?.consumablesCost | money }}</span>
                       </div>
                       <div class="flex justify-between">
                         <span>{{ "TREATMENTS.SUBTOTAL" | translate }}:</span>
                         <span class="font-bold text-ink-900">{{ activeDraft()?.subtotal | money }}</span>
                       </div>
-                      <div class="flex justify-between text-emerald-700">
+                      <div class="flex justify-between text-ink-700">
                         <span>{{ "TREATMENTS.DISCOUNT_LABEL" | translate }}:</span>
                         <span>-{{ activeDraft()?.discountAmount | money }}</span>
                       </div>
 
-                      <hr class="border-ortho-navy/5">
+                      <hr class="border-petrol-900/5">
 
                       <div class="flex justify-between items-baseline text-sm font-bold text-ink-900 pt-2">
                         <span>{{ "TREATMENTS.GRAND_TOTAL" | translate }}:</span>
@@ -338,11 +320,11 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       </div>
                     </div>
 
-                    <div class="pt-3 border-t border-ortho-navy/5 space-y-2">
-                      <button type="button" (click)="saveDraftSession()" class="w-full py-2 bg-petrol-600 text-white text-xs font-bold rounded-xl hover:bg-petrol-700 transition shadow-sm">
+                    <div class="pt-3 border-t border-petrol-900/5 space-y-2">
+                      <button type="button" (click)="saveDraftSession()" class="btn btn-primary btn-sm w-full">
                         {{ "TREATMENTS.SAVE_SESSION_DRAFT" | translate }}
                       </button>
-                      <button type="button" (click)="finalizeSessionFromModal()" class="w-full py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition shadow-sm">
+                      <button type="button" (click)="finalizeSessionFromModal()" class="btn btn-primary btn-sm w-full">
                         {{ "TREATMENTS.FINALIZE_DEDUCT_STOCK" | translate }}
                       </button>
                     </div>
@@ -636,15 +618,15 @@ export class TreatmentSessionsComponent implements OnInit {
   getInvoiceStatusClasses(status: TreatmentInvoiceStatus): string {
     switch (status) {
       case 'DRAFT':
-        return 'bg-gray-50 text-gray-600 border-gray-200';
+        return 'bg-ink-50 text-ink-600 border-ink-200';
       case 'FINALIZED':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        return 'bg-positive-50 text-positive-700 border-positive-200';
       case 'CANCELLED':
-        return 'bg-red-50 text-red-700 border-red-200';
+        return 'bg-critical-50 text-critical-700 border-critical-200';
       case 'REFUNDED':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
+        return 'bg-caution-50 text-caution-700 border-caution-200';
       default:
-        return 'bg-gray-50 text-gray-600 border-gray-200';
+        return 'bg-ink-50 text-ink-600 border-ink-200';
     }
   }
 }

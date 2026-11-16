@@ -30,7 +30,7 @@ import { AppDatePipe } from '../../pipes/app-date.pipe';
       @if (loading()) {
         <p class="text-sm text-ink-500">{{ 'CONSULTATION.LOG.LOADING' | translate }}</p>
       } @else if (error()) {
-        <p class="text-sm text-red-700" role="alert">{{ 'CONSULTATION.LOG.ERROR' | translate }}</p>
+        <p class="text-sm text-critical-700" role="alert">{{ 'CONSULTATION.LOG.ERROR' | translate }}</p>
       } @else if (log(); as l) {
         <p class="mb-3 text-sm text-ink-500">
           {{ l.startedAt | appDate:'datetime' }}
@@ -98,7 +98,7 @@ import { AppDatePipe } from '../../pipes/app-date.pipe';
                     <p class="mt-1 text-xs text-ink-500">« {{ row.command.transcript }} »</p>
                   }
                   @if (row.command.errorMessage) {
-                    <p class="mt-1 text-xs text-red-700">{{ row.command.errorMessage }}</p>
+                    <p class="mt-1 text-xs text-critical-700">{{ row.command.errorMessage }}</p>
                   }
                 </li>
               }
@@ -233,9 +233,9 @@ export class ConsultationLogComponent {
 
   verdictClass(verdict: string): string {
     switch (verdict) {
-      case 'acted': return 'bg-green-100 text-green-800';
-      case 'proposed': return 'bg-sky-100 text-sky-900';
-      case 'unsure': return 'bg-amber-100 text-amber-900';
+      case 'acted': return 'bg-positive-100 text-positive-800';
+      case 'proposed': return 'bg-petrol-100 text-petrol-900';
+      case 'unsure': return 'bg-caution-100 text-caution-900';
       default: return 'bg-ink-100 text-ink-700';
     }
   }
@@ -266,8 +266,8 @@ export class ConsultationLogComponent {
 
   outcomeClass(outcome: string): string {
     switch (outcome) {
-      case 'EXECUTED': return 'bg-green-100 text-green-800';
-      case 'FAILED': return 'bg-red-100 text-red-800';
+      case 'EXECUTED': return 'bg-positive-100 text-positive-800';
+      case 'FAILED': return 'bg-critical-100 text-critical-800';
       default: return 'bg-ink-100 text-ink-700';
     }
   }

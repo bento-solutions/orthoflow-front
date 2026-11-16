@@ -1,3 +1,4 @@
+import { StockNavComponent } from '../../stock-nav.component';
 import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
@@ -16,7 +17,7 @@ import {
   DNStatus
 } from '../../../../core/models/stock.model';
 
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLinkActive } from '@angular/router';
 import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { DialogDirective } from '../../../../shared/ui/dialog.directive';
@@ -24,14 +25,14 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 @Component({
   selector: 'app-purchase-orders',
   standalone: true,
-  imports: [AppDatePipe, MoneyPipe, RouterLinkActive, DialogDirective, CommonModule, FormsModule, TranslateModule, RouterLink],
+  imports: [StockNavComponent, AppDatePipe, MoneyPipe, DialogDirective, CommonModule, FormsModule, TranslateModule],
   template: `
     <div class="space-y-6">
       
       <!-- Top Title Bar -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-          <button type="button" (click)="openCreatePOModal()" class="flex items-center gap-2 px-4 py-2.5 bg-petrol-600 text-white font-medium rounded-xl hover:bg-petrol-700 transition shadow-sm">
+          <button type="button" (click)="openCreatePOModal()" class="btn btn-primary">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             {{ "STOCK.NEW_PURCHASE_ORDER" | translate }}
           </button>
@@ -39,37 +40,18 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
       </div>
 
       <!-- Module Navigation Pills -->
-      <div class="flex flex-wrap gap-2 bg-ortho-navy/[0.03] p-1.5 rounded-xl border border-ortho-navy/5 max-w-max font-semibold text-xs">
-        <a routerLink="/stock" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
-          {{ "STOCK.STOCK_CATALOG" | translate }}
-        </a>
-        <a routerLink="/stock/procurement" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
-          {{ "STOCK.PROCUREMENT" | translate }}
-        </a>
-        <a routerLink="/stock/direct-sales" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
-          {{ "STOCK.PATIENT_OTC_SALES" | translate }}
-        </a>
-        <a routerLink="/stock/treatment-sessions" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
-          {{ "STOCK.TREATMENT_SESSIONS" | translate }}
-        </a>
-        <a routerLink="/stock/leakage" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
-          {{ "STOCK.LEAKAGE" | translate }}
-        </a>
-        <a routerLink="/stock/forecast" routerLinkActive="bg-white text-ink-900 shadow-sm" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" class="px-4 py-2 rounded-lg transition text-ink-600 hover:text-ink-900 hover:bg-white/50">
-          {{ "STOCK.FORECAST" | translate }}
-        </a>
-      </div>
+      <app-stock-nav />
 
 
       <!-- Navigation Tabs -->
-      <div class="border-b border-ortho-navy/10 flex gap-6">
-        <button type="button" (click)="activeTab.set('orders')" class="pb-3 text-sm font-semibold transition" [class.text-ink-900]="activeTab() === 'orders'" [class.border-b-2]="activeTab() === 'orders'" [class.border-petrol-600]="activeTab() === 'orders'" [class.text-ink-500]="activeTab() !== 'orders'">
+      <div class="seg" role="group" [attr.aria-label]="'COMMON.VIEW' | translate">
+        <button type="button" (click)="activeTab.set('orders')" class="seg-item" [class.is-active]="activeTab() === 'orders'" [attr.aria-pressed]="activeTab() === 'orders'">
           {{ "STOCK.PURCHASE_ORDERS" | translate }}
         </button>
-        <button type="button" (click)="activeTab.set('deliveries')" class="pb-3 text-sm font-semibold transition" [class.text-ink-900]="activeTab() === 'deliveries'" [class.border-b-2]="activeTab() === 'deliveries'" [class.border-petrol-600]="activeTab() === 'deliveries'" [class.text-ink-500]="activeTab() !== 'deliveries'">
+        <button type="button" (click)="activeTab.set('deliveries')" class="seg-item" [class.is-active]="activeTab() === 'deliveries'" [attr.aria-pressed]="activeTab() === 'deliveries'">
           {{ "STOCK.DELIVERY_RECEIPTS_DN" | translate }}
         </button>
-        <button type="button" (click)="activeTab.set('invoices')" class="pb-3 text-sm font-semibold transition" [class.text-ink-900]="activeTab() === 'invoices'" [class.border-b-2]="activeTab() === 'invoices'" [class.border-petrol-600]="activeTab() === 'invoices'" [class.text-ink-500]="activeTab() !== 'invoices'">
+        <button type="button" (click)="activeTab.set('invoices')" class="seg-item" [class.is-active]="activeTab() === 'invoices'" [attr.aria-pressed]="activeTab() === 'invoices'">
           {{ "STOCK.VENDOR_INVOICES_GRNI" | translate }}
         </button>
       </div>
@@ -78,9 +60,9 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
       @if (activeTab() === 'orders') {
         
         <!-- PO Catalog List -->
-        <div class="bg-white rounded-2xl border border-ortho-navy/5 shadow-sm overflow-hidden">
+        <div class="card overflow-hidden">
           
-          <div class="p-4 border-b border-ortho-navy/5 bg-ortho-navy/[0.01] flex items-center justify-between">
+          <div class="p-4 border-b border-petrol-900/5 bg-petrol-900/[0.01] flex items-center justify-between">
             <h2 class="text-base font-bold text-ink-900">{{ "STOCK.PURCHASE_ORDERS_REGISTRY" | translate }}</h2>
             <span class="text-xs text-ink-500 font-medium">{{ "STOCK.PURCHASE_ORDERS_REGISTRY_DESC" | translate }}</span>
           </div>
@@ -88,7 +70,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
           <div class="overflow-x-auto">
             <table class="w-full text-start border-collapse text-sm">
               <thead>
-                <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
+                <tr class="bg-petrol-900/[0.02] text-ink-500 font-semibold border-b border-petrol-900/5">
                   <th scope="col" class="p-4">{{ "STOCK.PURCHASE_ORDER_NUMBER" | translate }}</th>
                   <th scope="col" class="p-4">{{ "STOCK.SUPPLIER" | translate }}</th>
                   <th scope="col" class="p-4">{{ "STOCK.ORDER_DATE" | translate }}</th>
@@ -98,9 +80,9 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   <th scope="col" class="p-4 text-end">{{ "STOCK.ACTIONS" | translate }}</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-ortho-navy/5">
+              <tbody class="divide-y divide-petrol-900/5">
                 @for (po of purchaseOrders(); track po.id) {
-                  <tr class="hover:bg-ortho-navy/[0.01] transition">
+                  <tr class="hover:bg-petrol-900/[0.01] transition">
                     <td class="p-4 font-mono text-xs font-bold text-ink-900">{{ po.poNumber }}</td>
                     <td class="p-4 font-semibold text-ink-700">{{ po.supplier?.name }}</td>
                     <td class="p-4 text-ink-500 font-medium">{{ po.orderDate | appDate }}</td>
@@ -114,15 +96,15 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     <td class="p-4 text-end">
                       <div class="flex items-center justify-end gap-2">
                         @if (po.status === 'DRAFT') {
-                          <button type="button" (click)="markAsSent(po)" class="px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg border border-blue-200 transition">
+                          <button type="button" (click)="markAsSent(po)" class="btn btn-secondary btn-sm">
                             {{ "STOCK.MARK_AS_SENT" | translate }}
                           </button>
                         } @else if (po.status === 'SENT' || po.status === 'PARTIAL') {
-                          <button type="button" (click)="openReceiveModal(po)" class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition">
+                          <button type="button" (click)="openReceiveModal(po)" class="btn btn-secondary btn-sm">
                             {{ "STOCK.RECORD_RECEIPT_DN" | translate }}
                           </button>
                         }
-                        <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="deletePO(po)" class="p-1 hover:bg-red-50 text-red-700/60 hover:text-red-700 rounded-lg transition" [disabled]="po.status === 'RECEIVED'">
+                        <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="deletePO(po)" class="btn btn-ghost btn-icon text-critical-700" [disabled]="po.status === 'RECEIVED'">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
                       </div>
@@ -141,9 +123,9 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
       } @else if (activeTab() === 'deliveries') {
 
         <!-- Delivery Receipts History Tab -->
-        <div class="bg-white rounded-2xl border border-ortho-navy/5 shadow-sm overflow-hidden">
+        <div class="card overflow-hidden">
 
-          <div class="p-4 border-b border-ortho-navy/5 bg-ortho-navy/[0.01] flex items-center justify-between">
+          <div class="p-4 border-b border-petrol-900/5 bg-petrol-900/[0.01] flex items-center justify-between">
             <h2 class="text-base font-bold text-ink-900">{{ "STOCK.DELIVERY_RECEIPTS_JOURNAL" | translate }}</h2>
             <span class="text-xs text-ink-500 font-medium">{{ "STOCK.DELIVERY_RECEIPTS_JOURNAL_DESC" | translate }}</span>
           </div>
@@ -151,7 +133,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
           <div class="overflow-x-auto">
             <table class="w-full text-start border-collapse text-sm">
               <thead>
-                <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
+                <tr class="bg-petrol-900/[0.02] text-ink-500 font-semibold border-b border-petrol-900/5">
                   <th scope="col" class="p-4">{{ "STOCK.DELIVERY_NOTE_NUMBER" | translate }}</th>
                   <th scope="col" class="p-4">{{ "STOCK.PO_REF" | translate }}</th>
                   <th scope="col" class="p-4">{{ "STOCK.SUPPLIER" | translate }}</th>
@@ -161,15 +143,15 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   <th scope="col" class="p-4">{{ "STOCK.RECEIVED_ITEMS" | translate }}</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-ortho-navy/5">
+              <tbody class="divide-y divide-petrol-900/5">
                 @for (dn of deliveryNotes(); track dn.id) {
-                  <tr class="hover:bg-ortho-navy/[0.01] transition">
+                  <tr class="hover:bg-petrol-900/[0.01] transition">
                     <td class="p-4 font-mono text-xs font-bold text-ink-900">{{ dn.dnNumber }}</td>
                     <td class="p-4 font-mono text-xs font-semibold text-ink-500">{{ dn.purchaseOrder?.poNumber }}</td>
                     <td class="p-4 font-semibold text-ink-700">{{ dn.supplier?.name }}</td>
                     <td class="p-4 text-ink-500 font-medium">{{ dn.receivedDate | appDate }}</td>
                     <td class="p-4 text-center">
-                      <span class="px-2.5 py-1 text-xs font-bold rounded-full border uppercase bg-emerald-50 text-emerald-700 border-emerald-200">
+                      <span class="px-2.5 py-1 text-xs font-bold rounded-full border uppercase bg-positive-50 text-positive-700 border-positive-200">
                         {{ ('STATUS.' + dn.status) | translate }}
                       </span>
                     </td>
@@ -178,7 +160,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       <div class="flex flex-col gap-1">
                         @for (line of dn.lines; track line.id) {
                           <div class="text-xs text-ink-600">
-                            • {{ line.stockItem?.name }}: <span class="font-bold text-emerald-700">{{ line.quantityReceived }}</span> {{ "STOCK.UNITS" | translate }} @if (line.batchNumber) { <span class="text-ink-500">({{ "STOCK.BATCH" | translate }}: {{ line.batchNumber }})</span> }
+                            • {{ line.stockItem?.name }}: <span class="font-bold text-positive-700">{{ line.quantityReceived }}</span> {{ "STOCK.UNITS" | translate }} @if (line.batchNumber) { <span class="text-ink-500">({{ "STOCK.BATCH" | translate }}: {{ line.batchNumber }})</span> }
                           </div>
                         }
                       </div>
@@ -202,7 +184,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             <!-- Register Invoice Form Panel -->
-            <div class="bg-white p-6 rounded-2xl border border-ortho-navy/5 shadow-sm space-y-4">
+            <div class="card p-6 space-y-4">
               <div>
                 <h2 class="text-base font-bold text-ink-900">{{ "STOCK.REGISTER_SUPPLIER_INVOICE" | translate }}</h2>
                 <p class="text-xs text-ink-500">{{ "STOCK.REGISTER_SUPPLIER_INVOICE_DESC" | translate }}</p>
@@ -211,7 +193,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
               <!-- Select GRNI -->
               <div class="space-y-1">
                 <label for="purchase-orders-selectedGrniId" class="block text-xs font-bold text-ink-500 uppercase">{{ "STOCK.SELECT_OPEN_GRNI" | translate }} <span aria-hidden="true">*</span></label>
-                <select id="purchase-orders-selectedGrniId" [(ngModel)]="selectedGrniId" (change)="onGrniSelectChange()" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs focus:outline-none focus:border-petrol-600 bg-white">
+                <select id="purchase-orders-selectedGrniId" [(ngModel)]="selectedGrniId" (change)="onGrniSelectChange()" class="select w-full">
                   <option [value]="null">{{ "STOCK.SELECT_PENDING_RECEIPT" | translate }}</option>
                   @for (grni of openGrnis(); track grni.id) {
                     <option [value]="grni.id">
@@ -225,11 +207,11 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1">
                   <label for="purchase-orders-vendorInvoiceNumber" class="block text-xs font-bold text-ink-500 uppercase">{{ "STOCK.INVOICE_NUMBER" | translate }} <span aria-hidden="true">*</span></label>
-                  <input id="purchase-orders-vendorInvoiceNumber" type="text" [(ngModel)]="vendorInvoiceNumber" placeholder="INV-2026-XXXX" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs bg-white focus:outline-none focus:border-petrol-600" />
+                  <input id="purchase-orders-vendorInvoiceNumber" type="text" [(ngModel)]="vendorInvoiceNumber" placeholder="INV-2026-XXXX" class="input w-full" />
                 </div>
                 <div class="space-y-1">
                   <label for="purchase-orders-vendorInvoiceDate" class="block text-xs font-bold text-ink-500 uppercase">{{ "STOCK.INVOICE_DATE" | translate }} <span aria-hidden="true">*</span></label>
-                  <input id="purchase-orders-vendorInvoiceDate" type="date" [(ngModel)]="vendorInvoiceDate" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs bg-white focus:outline-none focus:border-petrol-600" />
+                  <input id="purchase-orders-vendorInvoiceDate" type="date" [(ngModel)]="vendorInvoiceDate" class="input w-full" />
                 </div>
               </div>
 
@@ -237,11 +219,11 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1">
                   <label for="purchase-orders-vendorInvoiceAmount" class="block text-xs font-bold text-ink-500 uppercase">{{ "STOCK.INVOICE_AMOUNT_FIELD" | translate }} <span aria-hidden="true">*</span></label>
-                  <input id="purchase-orders-vendorInvoiceAmount" type="number" [(ngModel)]="vendorInvoiceAmount" min="0.01" step="any" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs bg-white focus:outline-none focus:border-petrol-600 font-mono" />
+                  <input id="purchase-orders-vendorInvoiceAmount" type="number" [(ngModel)]="vendorInvoiceAmount" min="0.01" step="any" class="input w-full font-mono" />
                 </div>
                 <div class="space-y-1">
                   <label for="purchase-orders-vendorInvoicePaymentTerms" class="block text-xs font-bold text-ink-500 uppercase">{{ "STOCK.PAYMENT_TERMS" | translate }}</label>
-                  <select id="purchase-orders-vendorInvoicePaymentTerms" [(ngModel)]="vendorInvoicePaymentTerms" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs focus:outline-none focus:border-petrol-600 bg-white">
+                  <select id="purchase-orders-vendorInvoicePaymentTerms" [(ngModel)]="vendorInvoicePaymentTerms" class="select w-full">
                     <option value="IMMEDIATE">{{ "STOCK.IMMEDIATE_CASH" | translate }}</option>
                     <option value="15_DAYS">{{ "STOCK.DAYS_NET_15" | translate }}</option>
                     <option value="30_DAYS">{{ "STOCK.DAYS_NET_30" | translate }}</option>
@@ -253,18 +235,18 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
               <!-- Invoice Memo -->
               <div class="space-y-1">
                 <label for="purchase-orders-vendorInvoiceNotes" class="block text-xs font-bold text-ink-500 uppercase">{{ "STOCK.NOTES_REMARKS" | translate }}</label>
-                <textarea id="purchase-orders-vendorInvoiceNotes" [(ngModel)]="vendorInvoiceNotes" [placeholder]="'STOCK.NOTES_REMARKS_PLACEHOLDER' | translate" rows="2" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-xs bg-white focus:outline-none focus:border-petrol-600"></textarea>
+                <textarea id="purchase-orders-vendorInvoiceNotes" [(ngModel)]="vendorInvoiceNotes" [placeholder]="'STOCK.NOTES_REMARKS_PLACEHOLDER' | translate" rows="2" class="textarea w-full"></textarea>
               </div>
 
-              <button type="button" (click)="registerVendorInvoice()" class="w-full py-2.5 bg-petrol-600 text-white hover:bg-petrol-700 font-semibold rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-2">
+              <button type="button" (click)="registerVendorInvoice()" class="btn btn-primary btn-sm w-full justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
                 {{ "STOCK.POST_INVOICE_CLEAR_GRNI" | translate }}
               </button>
             </div>
 
             <!-- Receipt Details Summary Panel -->
-            <div class="lg:col-span-2 bg-white rounded-2xl border border-ortho-navy/5 shadow-sm overflow-hidden flex flex-col min-h-[300px]">
-              <div class="p-4 border-b border-ortho-navy/5 bg-ortho-navy/[0.01]">
+            <div class="card lg:col-span-2 overflow-hidden flex flex-col min-h-[300px]">
+              <div class="p-4 border-b border-petrol-900/5 bg-petrol-900/[0.01]">
                 <h2 class="text-base font-bold text-ink-900">{{ "STOCK.SELECTED_RECEIPT_BREAKDOWN" | translate }}</h2>
                 <p class="text-xs text-ink-500">{{ "STOCK.SELECTED_RECEIPT_BREAKDOWN_DESC" | translate }}</p>
               </div>
@@ -272,7 +254,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
               @if (selectedGrni) {
                 <div class="p-4 space-y-4 flex-1">
                   <!-- Vendor / PO Summary -->
-                  <div class="grid grid-cols-3 gap-4 bg-gray-50 p-3 rounded-xl border border-ortho-navy/5 text-xs">
+                  <div class="grid grid-cols-3 gap-4 bg-ink-50 p-3 rounded-xl border border-petrol-900/5 text-xs">
                     <div>
                       <span class="text-ink-500 block font-semibold uppercase text-xs">{{ "STOCK.SUPPLIER_VENDOR" | translate }}</span>
                       <span class="font-bold text-ink-900">{{ selectedGrni.supplier?.name }}</span>
@@ -288,10 +270,10 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                   </div>
 
                   <!-- Lines Table -->
-                  <div class="overflow-x-auto border border-ortho-navy/5 rounded-xl">
+                  <div class="overflow-x-auto border border-petrol-900/5 rounded-xl">
                     <table class="w-full text-start border-collapse text-xs">
                       <thead>
-                        <tr class="bg-ortho-navy/[0.01] text-ink-500 font-bold border-b border-ortho-navy/5">
+                        <tr class="bg-petrol-900/[0.01] text-ink-500 font-bold border-b border-petrol-900/5">
                           <th scope="col" class="p-3">{{ "STOCK.SKU" | translate }}</th>
                           <th scope="col" class="p-3">{{ "STOCK.PRODUCT_NAME" | translate }}</th>
                           <th scope="col" class="p-3 text-center">{{ "STOCK.QTY_RECEIVED" | translate }}</th>
@@ -301,7 +283,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       </thead>
                       <tbody>
                         @for (line of selectedGrni.lines; track line.id) {
-                          <tr class="font-semibold border-b border-ortho-navy/5 text-ink-700">
+                          <tr class="font-semibold border-b border-petrol-900/5 text-ink-700">
                             <td class="p-3 font-mono text-xs text-ink-500">{{ line.stockItem?.sku }}</td>
                             <td class="p-3 font-bold">{{ line.stockItem?.name }}</td>
                             <td class="p-3 text-center font-mono">{{ line.quantityReceived }}</td>
@@ -326,8 +308,8 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
           </div>
 
           <!-- Posted Invoices Ledger -->
-          <div class="bg-white rounded-2xl border border-ortho-navy/5 shadow-sm overflow-hidden">
-            <div class="p-4 border-b border-ortho-navy/5 bg-ortho-navy/[0.01]">
+          <div class="card overflow-hidden">
+            <div class="p-4 border-b border-petrol-900/5 bg-petrol-900/[0.01]">
               <h2 class="text-base font-bold text-ink-900">{{ "STOCK.POSTED_SUPPLIER_INVOICES_JOURNAL" | translate }}</h2>
               <p class="text-xs text-ink-500">{{ "STOCK.POSTED_SUPPLIER_INVOICES_JOURNAL_DESC" | translate }}</p>
             </div>
@@ -335,7 +317,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
             <div class="overflow-x-auto">
               <table class="w-full text-start border-collapse text-sm">
                 <thead>
-                  <tr class="bg-ortho-navy/[0.02] text-ink-500 font-semibold border-b border-ortho-navy/5">
+                  <tr class="bg-petrol-900/[0.02] text-ink-500 font-semibold border-b border-petrol-900/5">
                     <th scope="col" class="p-4">{{ "STOCK.INVOICE_NUMBER" | translate }}</th>
                     <th scope="col" class="p-4">{{ "STOCK.VENDOR" | translate }}</th>
                     <th scope="col" class="p-4">{{ "STOCK.INVOICE_DATE" | translate }}</th>
@@ -345,16 +327,16 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     <th scope="col" class="p-4">{{ "STOCK.RECEIPT_CLEARED" | translate }}</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-ortho-navy/5">
+                <tbody class="divide-y divide-petrol-900/5">
                   @for (inv of vendorInvoices(); track inv.id) {
-                    <tr class="hover:bg-ortho-navy/[0.01] transition font-semibold text-xs text-ink-700">
+                    <tr class="hover:bg-petrol-900/[0.01] transition font-semibold text-xs text-ink-700">
                       <td class="p-4 font-mono font-bold text-ink-900"><span class="ltr-data">{{ inv.invoiceNumber }}</span></td>
                       <td class="p-4 font-bold">{{ inv.supplierName }}</td>
                       <td class="p-4 text-ink-500">{{ inv.invoiceDate | appDate }}</td>
-                      <td class="p-4"><span class="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded text-xs">{{ inv.paymentTerms }}</span></td>
-                      <td class="p-4 text-end font-mono text-emerald-700 font-bold">{{ inv.invoiceAmount | money }}</td>
+                      <td class="p-4"><span class="px-2 py-0.5 bg-ink-50 border border-ink-100 rounded text-xs">{{ inv.paymentTerms }}</span></td>
+                      <td class="p-4 text-end font-mono text-ink-900 font-bold">{{ inv.invoiceAmount | money }}</td>
                       <td class="p-4 text-center">
-                        <span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase">
+                        <span class="px-2 py-0.5 rounded text-xs font-bold bg-positive-50 text-positive-700 border border-positive-100 uppercase">
                           {{ "STOCK.POSTED_AND_CLEARED" | translate }}
                         </span>
                       </td>
@@ -376,11 +358,11 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
       <!-- Create PO Modal -->
       @if (showPOCreationModal()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ortho-navy/60 backdrop-blur-sm">
-          <div appDialog="po-create-title" (dialogClosed)="closeCreatePOModal()" class="bg-white rounded-2xl max-w-2xl w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in flex flex-col max-h-[85vh]">
-            <div class="px-6 py-4 border-b border-ortho-navy/5 flex items-center justify-between bg-ortho-navy/[0.01] shrink-0">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-petrol-900/60 backdrop-blur-sm">
+          <div appDialog="po-create-title" (dialogClosed)="closeCreatePOModal()" class="card max-w-2xl w-full overflow-hidden shadow-2xl animate-fade-in flex flex-col max-h-[85vh]">
+            <div class="px-6 py-4 border-b border-petrol-900/5 flex items-center justify-between bg-petrol-900/[0.01] shrink-0">
               <h2 id="po-create-title" class="text-lg font-bold text-ink-900">{{ "STOCK.NEW_PURCHASE_ORDER" | translate }}</h2>
-              <button [attr.aria-label]="'COMMON.CLOSE' | translate" type="button" (click)="closeCreatePOModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
+              <button [attr.aria-label]="'COMMON.CLOSE' | translate" type="button" (click)="closeCreatePOModal()" class="btn btn-ghost btn-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -389,7 +371,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
               <!-- Select Supplier -->
               <div>
                 <label for="purchase-orders-newPOSupplierId" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "STOCK.SELECT_SUPPLIER" | translate }} <span aria-hidden="true">*</span></label>
-                <select id="purchase-orders-newPOSupplierId" [(ngModel)]="newPOSupplierId" (change)="onSupplierChange()" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white">
+                <select id="purchase-orders-newPOSupplierId" [(ngModel)]="newPOSupplierId" (change)="onSupplierChange()" class="select w-full">
                   <option [value]="null">{{ "STOCK.SELECT_SUPPLIER_PLACEHOLDER" | translate }}</option>
                   @for (sup of suppliers(); track sup.id) {
                     <option [value]="sup.id">{{ sup.name }}</option>
@@ -400,19 +382,19 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
               <!-- Lines Editor -->
               @if (newPOSupplierId) {
                 <div class="space-y-3">
-                  <div class="flex items-center justify-between border-b border-ortho-navy/5 pb-2">
+                  <div class="flex items-center justify-between border-b border-petrol-900/5 pb-2">
                     <span class="text-xs font-bold text-ink-500 uppercase tracking-wide">{{ "STOCK.ORDER_LINES" | translate }}</span>
-                    <button type="button" (click)="addPOLine()" class="px-2.5 py-1 text-xs font-semibold bg-petrol-600 text-white hover:bg-petrol-700 transition rounded-lg">
+                    <button type="button" (click)="addPOLine()" class="btn btn-primary btn-sm">
                       + {{ "STOCK.ADD_ITEM" | translate }}
                     </button>
                   </div>
 
                   <div class="space-y-3">
                     @for (line of newPOLines; track $index; let idx = $index) {
-                      <div class="grid grid-cols-12 gap-3 items-end bg-gray-50/50 p-3 rounded-xl border border-gray-100">
+                      <div class="grid grid-cols-12 gap-3 items-end bg-ink-50/50 p-3 rounded-xl border border-ink-100">
                         <div class="col-span-5">
                           <label [attr.for]="'purchase-orders-line-stockItem-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.STOCK_ITEM" | translate }}</label>
-                          <select [id]="'purchase-orders-line-stockItem-' + $index" [(ngModel)]="line.stockItem" (change)="onPOItemChange(idx)" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none">
+                          <select [id]="'purchase-orders-line-stockItem-' + $index" [(ngModel)]="line.stockItem" (change)="onPOItemChange(idx)" class="select w-full">
                             <option [value]="null">{{ "STOCK.SELECT_ITEM_PLACEHOLDER" | translate }}</option>
                             @for (item of catalogItems(); track item.id) {
                               <option [ngValue]="item">{{ item.name }} ({{ "STOCK.SKU" | translate }}: {{ item.sku }})</option>
@@ -421,18 +403,18 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                         </div>
                         <div class="col-span-2">
                           <label [attr.for]="'purchase-orders-line-quantityOrdered-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.QUANTITY" | translate }}</label>
-                          <input [id]="'purchase-orders-line-quantityOrdered-' + $index" type="number" [(ngModel)]="line.quantityOrdered" (change)="calculatePOTotal()" min="1" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none" />
+                          <input [id]="'purchase-orders-line-quantityOrdered-' + $index" type="number" [(ngModel)]="line.quantityOrdered" (change)="calculatePOTotal()" min="1" class="input w-full text-center" />
                         </div>
                         <div class="col-span-2">
                           <label [attr.for]="'purchase-orders-line-unitPrice-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.UNIT_COST_DH" | translate }}</label>
-                          <input [id]="'purchase-orders-line-unitPrice-' + $index" type="number" [(ngModel)]="line.unitPrice" (change)="calculatePOTotal()" min="0" step="0.01" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-end focus:outline-none" />
+                          <input [id]="'purchase-orders-line-unitPrice-' + $index" type="number" [(ngModel)]="line.unitPrice" (change)="calculatePOTotal()" min="0" step="0.01" class="input w-full text-end" />
                         </div>
                         <div class="col-span-2 text-end">
                           <span class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.TOTAL_DH" | translate }}</span>
                           <span class="font-bold text-xs text-ink-900 block py-1.5">{{ (line.quantityOrdered * line.unitPrice) | money }}</span>
                         </div>
                         <div class="col-span-1 text-center">
-                          <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="removePOLine(idx)" class="p-1.5 hover:bg-red-50 text-red-700 rounded-lg transition mb-1">
+                          <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="removePOLine(idx)" class="btn btn-ghost btn-icon text-critical-700 mb-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                           </button>
                         </div>
@@ -440,7 +422,7 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                     }
                   </div>
 
-                  <div class="flex justify-end pt-3 border-t border-ortho-navy/5">
+                  <div class="flex justify-end pt-3 border-t border-petrol-900/5">
                     <div class="text-end">
                       <span class="text-xs font-bold text-ink-500 uppercase tracking-wider block">{{ "STOCK.ESTIMATED_TOTAL" | translate }}</span>
                       <span class="text-xl font-bold text-ink-900">{{ newPOTotal | money }}</span>
@@ -450,9 +432,9 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
               }
             </div>
 
-            <div class="px-6 py-4 border-t border-ortho-navy/5 flex items-center justify-end gap-3 bg-ortho-navy/[0.01] shrink-0">
-              <button type="button" (click)="closeCreatePOModal()" class="px-4 py-2 border border-ortho-navy/10 rounded-xl text-sm font-semibold hover:bg-gray-50 transition text-ink-600">{{ "STOCK.CANCEL" | translate }}</button>
-              <button type="button" (click)="savePO()" [disabled]="!newPOSupplierId || newPOLines.length === 0" class="px-5 py-2 bg-petrol-600 text-white rounded-xl text-sm font-semibold hover:bg-petrol-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">{{ "STOCK.SAVE_DRAFT_PO" | translate }}</button>
+            <div class="px-6 py-4 border-t border-petrol-900/5 flex items-center justify-end gap-3 bg-petrol-900/[0.01] shrink-0">
+              <button type="button" (click)="closeCreatePOModal()" class="btn btn-secondary">{{ "STOCK.CANCEL" | translate }}</button>
+              <button type="button" (click)="savePO()" [disabled]="!newPOSupplierId || newPOLines.length === 0" class="btn btn-primary">{{ "STOCK.SAVE_DRAFT_PO" | translate }}</button>
             </div>
           </div>
         </div>
@@ -460,14 +442,14 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
       <!-- Record Delivery Note Modal -->
       @if (showReceiveModal()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ortho-navy/60 backdrop-blur-sm">
-          <div appDialog="po-receive-title" (dialogClosed)="closeReceiveModal()" class="bg-white rounded-2xl max-w-3xl w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in flex flex-col max-h-[85vh]">
-            <div class="px-6 py-4 border-b border-ortho-navy/5 flex items-center justify-between bg-ortho-navy/[0.01] shrink-0">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-petrol-900/60 backdrop-blur-sm">
+          <div appDialog="po-receive-title" (dialogClosed)="closeReceiveModal()" class="card max-w-3xl w-full overflow-hidden shadow-2xl animate-fade-in flex flex-col max-h-[85vh]">
+            <div class="px-6 py-4 border-b border-petrol-900/5 flex items-center justify-between bg-petrol-900/[0.01] shrink-0">
               <div>
                 <h2 id="po-receive-title" class="text-lg font-bold text-ink-900">{{ "STOCK.RECORD_DELIVERY_NOTE" | translate }}</h2>
                 <p class="text-xs text-ink-500">{{ "STOCK.VERIFYING_ORDER_RECEIPT_FOR_PO" | translate }} <span class="font-bold text-ink-900 font-mono">{{ activePO()?.poNumber }}</span></p>
               </div>
-              <button [attr.aria-label]="'COMMON.CLOSE' | translate" type="button" (click)="closeReceiveModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
+              <button [attr.aria-label]="'COMMON.CLOSE' | translate" type="button" (click)="closeReceiveModal()" class="btn btn-ghost btn-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -476,21 +458,21 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label for="purchase-orders-dnNumber" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "STOCK.SUPPLIER_DELIVERY_NOTE_NUMBER" | translate }} <span aria-hidden="true">*</span></label>
-                  <input id="purchase-orders-dnNumber" type="text" [(ngModel)]="dnNumber" [placeholder]="'STOCK.SUPPLIER_DN_PLACEHOLDER' | translate" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white font-mono uppercase" />
+                  <input id="purchase-orders-dnNumber" type="text" [(ngModel)]="dnNumber" [placeholder]="'STOCK.SUPPLIER_DN_PLACEHOLDER' | translate" class="input w-full font-mono" />
                 </div>
                 <div>
                   <label for="purchase-orders-receivedByClinician" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "STOCK.RECEIVING_AGENT_CLINICIAN" | translate }} <span aria-hidden="true">*</span></label>
-                  <input id="purchase-orders-receivedByClinician" type="text" [(ngModel)]="receivedByClinician" [placeholder]="'STOCK.RECEIVING_AGENT_PLACEHOLDER' | translate" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                  <input id="purchase-orders-receivedByClinician" type="text" [(ngModel)]="receivedByClinician" [placeholder]="'STOCK.RECEIVING_AGENT_PLACEHOLDER' | translate" class="input w-full" />
                 </div>
               </div>
 
               <!-- Lines checklist -->
               <div class="space-y-3">
-                <span class="text-xs font-bold text-ink-500 uppercase tracking-wide block border-b border-ortho-navy/5 pb-2">{{ "STOCK.RECEIVE_ITEMS_VERIFICATION" | translate }}</span>
+                <span class="text-xs font-bold text-ink-500 uppercase tracking-wide block border-b border-petrol-900/5 pb-2">{{ "STOCK.RECEIVE_ITEMS_VERIFICATION" | translate }}</span>
 
                 <div class="space-y-3">
                   @for (line of dnLines; track $index; let idx = $index) {
-                    <div class="bg-gray-50/50 p-4 rounded-2xl border border-gray-100 space-y-3">
+                    <div class="bg-ink-50/50 p-4 rounded-2xl border border-ink-100 space-y-3">
                       <div class="flex justify-between items-start">
                         <div>
                           <span class="font-bold text-ink-900 block text-sm">{{ line.stockItem?.name }}</span>
@@ -505,19 +487,19 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
                       <div class="grid grid-cols-4 gap-3 items-end">
                         <div>
                           <label class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.PREV_RECEIVED" | translate }}</label>
-                          <span class="font-semibold text-xs text-ink-700 block py-1.5 px-3 bg-gray-100 rounded-lg text-center font-mono">{{ line.poLine.quantityReceived || 0 }}</span>
+                          <span class="font-semibold text-xs text-ink-700 block py-1.5 px-3 bg-ink-100 rounded-lg text-center font-mono">{{ line.poLine.quantityReceived || 0 }}</span>
                         </div>
                         <div>
                           <label [attr.for]="'purchase-orders-line-quantityReceived-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.RECEIVED_NOW" | translate }} <span aria-hidden="true">*</span></label>
-                          <input [id]="'purchase-orders-line-quantityReceived-' + $index" type="number" [(ngModel)]="line.quantityReceived" min="0" class="w-full px-3 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center font-bold focus:outline-none" />
+                          <input [id]="'purchase-orders-line-quantityReceived-' + $index" type="number" [(ngModel)]="line.quantityReceived" min="0" class="input w-full text-center" />
                         </div>
                         <div>
                           <label [attr.for]="'purchase-orders-line-batchNumber-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.BATCH_NUMBER" | translate }}</label>
-                          <input [id]="'purchase-orders-line-batchNumber-' + $index" type="text" [(ngModel)]="line.batchNumber" [placeholder]="'STOCK.BATCH_NUMBER_PLACEHOLDER' | translate" class="w-full px-3 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none font-mono uppercase" />
+                          <input [id]="'purchase-orders-line-batchNumber-' + $index" type="text" [(ngModel)]="line.batchNumber" [placeholder]="'STOCK.BATCH_NUMBER_PLACEHOLDER' | translate" class="input w-full font-mono" />
                         </div>
                         <div>
                           <label [attr.for]="'purchase-orders-line-expiryDate-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "STOCK.EXPIRY_DATE" | translate }}</label>
-                          <input [id]="'purchase-orders-line-expiryDate-' + $index" type="date" [(ngModel)]="line.expiryDate" class="w-full px-3 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none" />
+                          <input [id]="'purchase-orders-line-expiryDate-' + $index" type="date" [(ngModel)]="line.expiryDate" class="input w-full" />
                         </div>
                       </div>
                     </div>
@@ -527,13 +509,13 @@ import { DialogDirective } from '../../../../shared/ui/dialog.directive';
 
               <div>
                 <label for="purchase-orders-dnNotes" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "STOCK.NOTES_DISCREPANCY_REMARKS" | translate }}</label>
-                <textarea id="purchase-orders-dnNotes" [(ngModel)]="dnNotes" rows="2" [placeholder]="'STOCK.DISCREPANCY_REMARKS_PLACEHOLDER' | translate" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white placeholder-ortho-navy/30"></textarea>
+                <textarea id="purchase-orders-dnNotes" [(ngModel)]="dnNotes" rows="2" [placeholder]="'STOCK.DISCREPANCY_REMARKS_PLACEHOLDER' | translate" class="textarea w-full"></textarea>
               </div>
             </div>
 
-            <div class="px-6 py-4 border-t border-ortho-navy/5 flex items-center justify-end gap-3 bg-ortho-navy/[0.01] shrink-0">
-              <button type="button" (click)="closeReceiveModal()" class="px-4 py-2 border border-ortho-navy/10 rounded-xl text-sm font-semibold hover:bg-gray-50 transition text-ink-600">{{ "STOCK.CANCEL" | translate }}</button>
-              <button type="button" (click)="confirmReceipt()" [disabled]="!dnNumber || !receivedByClinician" class="px-5 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">{{ "STOCK.CONFIRM_RECEIPT_ADD_TO_STOCK" | translate }}</button>
+            <div class="px-6 py-4 border-t border-petrol-900/5 flex items-center justify-end gap-3 bg-petrol-900/[0.01] shrink-0">
+              <button type="button" (click)="closeReceiveModal()" class="btn btn-secondary">{{ "STOCK.CANCEL" | translate }}</button>
+              <button type="button" (click)="confirmReceipt()" [disabled]="!dnNumber || !receivedByClinician" class="btn btn-primary">{{ "STOCK.CONFIRM_RECEIPT_ADD_TO_STOCK" | translate }}</button>
             </div>
           </div>
         </div>
@@ -848,17 +830,17 @@ export class PurchaseOrdersComponent implements OnInit {
   getPOStatusClasses(status: POStatus): string {
     switch (status) {
       case 'DRAFT':
-        return 'bg-gray-50 text-gray-600 border-gray-200';
+        return 'bg-ink-50 text-ink-600 border-ink-200';
       case 'SENT':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-petrol-50 text-petrol-700 border-petrol-200';
       case 'PARTIAL':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
+        return 'bg-caution-50 text-caution-700 border-caution-200';
       case 'RECEIVED':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        return 'bg-positive-50 text-positive-700 border-positive-200';
       case 'CANCELLED':
-        return 'bg-red-50 text-red-700 border-red-200';
+        return 'bg-critical-50 text-critical-700 border-critical-200';
       default:
-        return 'bg-gray-50 text-gray-600 border-gray-200';
+        return 'bg-ink-50 text-ink-600 border-ink-200';
     }
   }
 }

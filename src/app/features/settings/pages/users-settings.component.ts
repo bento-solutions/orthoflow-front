@@ -55,7 +55,7 @@ const GROUPS: ReadonlyArray<{ key: string; permissions: string[] }> = [
       <div class="table-wrap"><div class="table-scroll">
         <table class="data-table">
           <thead><tr>
-            <th scope="col">{{ 'COMMON.NAME' | translate }}</th><th scope="col">Email</th><th scope="col">{{ 'SET.USERS.ROLE' | translate }}</th>
+            <th scope="col">{{ 'COMMON.NAME' | translate }}</th><th scope="col">{{ 'COMMON.EMAIL' | translate }}</th><th scope="col">{{ 'SET.USERS.ROLE' | translate }}</th>
             <th scope="col">{{ 'SET.USERS.LAST_LOGIN' | translate }}</th><th scope="col">{{ 'COMMON.STATUS' | translate }}</th><th scope="col" class="cell-actions">{{ 'COMMON.ACTIONS' | translate }}</th>
           </tr></thead>
           <tbody>
@@ -137,7 +137,7 @@ const GROUPS: ReadonlyArray<{ key: string; permissions: string[] }> = [
         <label class="field"><span class="label label-required">{{ 'SET.USERS.LAST_NAME' | translate }}</span>
           <input class="input" name="lastName" required [ngModel]="form.value().lastName" (ngModelChange)="form.set('lastName', $event)" /></label>
         @if (editing() === 'new') {
-          <label class="field sm:col-span-2"><span class="label label-required">Email</span>
+          <label class="field sm:col-span-2"><span class="label label-required">{{ 'COMMON.EMAIL' | translate }}</span>
             <input class="input" type="email" name="email" required [ngModel]="form.value().email" (ngModelChange)="form.set('email', $event)" /></label>
         }
         <label class="field"><span class="label">{{ 'SET.USERS.ROLE' | translate }}</span>

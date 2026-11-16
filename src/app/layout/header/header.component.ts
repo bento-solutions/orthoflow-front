@@ -108,7 +108,8 @@ import { NavCounts } from '../../core/services/nav-counts.service';
           <div class="hidden min-w-0 leading-tight sm:block">
             <p class="truncate text-sm font-bold text-ink-900">{{ displayName() }}</p>
             @if (roleLabel(); as role) {
-              <p class="truncate text-2xs font-semibold uppercase tracking-wider text-ink-500">{{ role }}</p>
+              <!-- The role in the person's language, not the server's code (UI V2 audit M5). -->
+              <p class="truncate text-2xs font-semibold uppercase tracking-wider text-ink-500">{{ ('SET.USERS.ROLES.' + role) | translate }}</p>
             }
           </div>
         </a>

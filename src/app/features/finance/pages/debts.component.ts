@@ -48,7 +48,7 @@ import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
         <div class="tile p-4"><p class="kpi-label">{{ 'FIN.DEBT.FEES' | translate }}</p><p class="kpi-value">{{ s.totalFees | money }}</p></div>
         <div class="tile p-4"><p class="kpi-label">{{ 'FIN.DEBT.PAID' | translate }}</p><p class="kpi-value">{{ s.totalPaid | money }}</p></div>
         <div class="tile p-4"><p class="kpi-label">{{ 'FIN.DEBT.OWED' | translate }}</p><p class="kpi-value text-critical-700">{{ s.totalOwed | money }}</p><p class="kpi-hint">{{ 'FIN.DEBT.PATIENTS_OWING' | translate: { count: s.patientsOwing } }}</p></div>
-        <div class="tile p-4"><p class="kpi-label">{{ 'FIN.DEBT.CREDIT' | translate }}</p><p class="kpi-value text-positive-700">{{ s.totalCredit | money }}</p></div>
+        <div class="tile p-4"><p class="kpi-label">{{ 'FIN.DEBT.CREDIT' | translate }}</p><p class="kpi-value text-ink-900">{{ s.totalCredit | money }}</p></div>
       </section>
 
       <div class="table-wrap"><div class="table-scroll">
@@ -67,7 +67,7 @@ import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
                 <td class="cell-num">{{ r.fees | money }}</td>
                 <td class="cell-num">{{ r.paid | money }}</td>
                 <td class="cell-num" [class.font-bold]="r.balance > 0" [class.text-critical-700]="r.balance > 0">{{ r.balance > 0 ? (r.balance | money) : '—' }}</td>
-                <td class="cell-num text-positive-700">{{ r.credit > 0 ? (r.credit | money) : '—' }}</td>
+                <td class="cell-num text-ink-900">{{ r.credit > 0 ? (r.credit | money) : '—' }}</td>
                 <td>{{ r.lastInvoice ? (r.lastInvoice | appDate) : '—' }}</td>
                 <td>{{ r.lastPayment ? (r.lastPayment | appDate) : '—' }}</td>
               </tr>

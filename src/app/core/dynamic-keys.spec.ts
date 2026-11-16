@@ -49,6 +49,9 @@ const has = (key: string): boolean => {
 };
 
 const FAMILIES: Record<string, readonly string[]> = {
+  'SET.USERS.ROLES': ['ADMIN', 'DOCTOR', 'ASSISTANT'],
+  'STOCK.MOVEMENT_TYPES': ['IN', 'OUT', 'ADJUSTMENT', 'RETURN', 'WRITE_OFF'],
+  'STOCK.CATEGORIES': ['ANESTHESIA', 'CONSUMABLES', 'ORTHODONTIC_PARTS', 'HYGIENE', 'INSTRUMENTS', 'MEDICATION'],
   'PATIENTS.DOSSIER.VISITS.KIND': ['all', 'appointment', 'consultation', 'note', 'work'],
   'ALERTS.KIND': ['ALLERGY', 'CONDITION', 'MEDICATION'],
   'PATIENTS.DOSSIER.TAB': ['SUMMARY', 'CHART', 'VISITS', 'IMAGING', 'BILLING', 'DOCUMENTS'],

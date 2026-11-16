@@ -20,7 +20,7 @@ import { TranslateModule } from '@ngx-translate/core';
           class="relative hidden overflow-hidden lg:flex items-end bg-cover bg-center p-12"
           style="background-image: url('/banner.jpeg');"
         >
-          <div class="absolute inset-0 bg-gradient-to-t from-ortho-navy/90 via-ortho-navy/40 to-ortho-navy/10"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-petrol-900/90 via-petrol-900/40 to-petrol-900/10"></div>
 
           <div class="relative z-10 w-full max-w-lg">
             <h2 class="text-3xl font-bold text-white tracking-tight">{{ 'AUTH.VISUAL_TITLE' | translate }}</h2>

@@ -16,7 +16,7 @@
     "ADD": "إضافة",
     "SEARCH": "بحث",
     "FILTER": "تصفية",
-    "VIEW": "عرض",
+    "VIEW": "العرض",
     "EDIT": "تعديل",
     "DELETE": "حذف",
     "BACK": "رجوع",
@@ -1060,6 +1060,15 @@
       "IN_STOCK": "في المخزون: {{count}}",
       "UNITS": "وحدات",
       "AVAILABLE_COUNT": "المتاح: {{count}} {{unit}}"
+    },
+    "ITEMS": "الأصناف",
+    "ALL_CATEGORIES": "جميع الفئات",
+    "MOVEMENT_TYPES": {
+      "IN": "دخول — استلام المخزون",
+      "OUT": "خروج — استهلاك",
+      "ADJUSTMENT": "تعديل",
+      "RETURN": "إرجاع",
+      "WRITE_OFF": "شطب"
     }
   },
   "TREATMENTS": {

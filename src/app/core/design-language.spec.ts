@@ -56,6 +56,11 @@ describe('one design language', () => {
     expect(offending(physicalCss, path => /svg-data/.test(path))).toEqual([]);
   });
 
+  it('names the token ramps, not Tailwind palettes or ortho-* (UI V2 audit M4)', () => {
+    const legacy = /(?<![\w-])(?:[a-z-]+:)*(?:bg|text|border|ring|from|to|via|divide|placeholder|outline|fill|stroke|shadow|accent)-(?:slate|gray|zinc|neutral|stone|green|emerald|lime|amber|yellow|orange|red|rose|pink|blue|sky|cyan|teal|indigo|violet|purple|ortho-[a-z]+)\b/;
+    expect(offending(legacy)).toEqual([]);
+  });
+
   it('draws icons with app-icon only', () => {
     expect(offending(/class="[^"]*\bmaterial-icons\b/)).toEqual([]);
   });

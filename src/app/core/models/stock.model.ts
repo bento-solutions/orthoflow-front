@@ -127,26 +127,27 @@ export interface StockMovementQuery {
 // stops returning (or starts returning) cannot silently linger in — or go
 // missing from — a filter dropdown.
 
+/** Translation keys, so a category reads in the person's language (UI V2 audit M5). */
 const CATEGORY_LABELS: Record<StockCategory, string> = {
-  ANESTHESIA: 'Anesthesia',
-  CONSUMABLES: 'Consumables',
-  ORTHODONTIC_PARTS: 'Orthodontic Parts',
-  HYGIENE: 'Hygiene',
-  INSTRUMENTS: 'Instruments',
-  MEDICATION: 'Medication',
+  ANESTHESIA: 'STOCK.CATEGORIES.ANESTHESIA',
+  CONSUMABLES: 'STOCK.CATEGORIES.CONSUMABLES',
+  ORTHODONTIC_PARTS: 'STOCK.CATEGORIES.ORTHODONTIC_PARTS',
+  HYGIENE: 'STOCK.CATEGORIES.HYGIENE',
+  INSTRUMENTS: 'STOCK.CATEGORIES.INSTRUMENTS',
+  MEDICATION: 'STOCK.CATEGORIES.MEDICATION',
 };
 
 const MOVEMENT_TYPE_LABELS: Record<MovementType, string> = {
-  IN: 'IN — Stock Receipt',
-  OUT: 'OUT — Consumption',
-  ADJUSTMENT: 'Adjustment',
-  RETURN: 'Return',
-  WRITE_OFF: 'Write-Off',
+  IN: 'STOCK.MOVEMENT_TYPES.IN',
+  OUT: 'STOCK.MOVEMENT_TYPES.OUT',
+  ADJUSTMENT: 'STOCK.MOVEMENT_TYPES.ADJUSTMENT',
+  RETURN: 'STOCK.MOVEMENT_TYPES.RETURN',
+  WRITE_OFF: 'STOCK.MOVEMENT_TYPES.WRITE_OFF',
 };
 
-/** All backend StockCategory values as an ordered array for use in selects. */
+/** All backend StockCategory values as an ordered array for use in selects. `label` is a translation key. */
 export const STOCK_CATEGORIES: { value: string; label: string }[] = [
-  { value: 'ALL', label: 'All Categories' },
+  { value: 'ALL', label: 'STOCK.ALL_CATEGORIES' },
   ...(Object.entries(CATEGORY_LABELS) as [StockCategory, string][])
     .map(([value, label]) => ({ value, label })),
 ];

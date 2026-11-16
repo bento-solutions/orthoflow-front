@@ -28,16 +28,16 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
       <!-- Treatments Grid / Catalog -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @for (t of treatments(); track t.id) {
-          <div class="bg-white rounded-2xl border border-ortho-navy/5 shadow-sm p-6 hover:shadow-md transition duration-300 flex flex-col justify-between space-y-4">
+          <div class="card p-6 flex flex-col justify-between space-y-4">
             
             <div class="space-y-2">
               <div class="flex items-center justify-between">
-                <span class="px-2.5 py-0.5 bg-ortho-navy/5 text-ink-900 font-mono text-xs font-bold rounded-lg border border-ortho-navy/10 uppercase">{{ t.code }}</span>
+                <span class="px-2.5 py-0.5 bg-petrol-900/5 text-ink-900 font-mono text-xs font-bold rounded-lg border border-petrol-900/10 uppercase">{{ t.code }}</span>
                 <div class="flex items-center gap-1.5">
-                  <button [attr.aria-label]="'COMMON.EDIT' | translate" type="button" (click)="openEditModal(t)" class="p-1 hover:bg-ortho-navy/5 text-ink-600 hover:text-ink-900 rounded transition">
+                  <button [attr.aria-label]="'COMMON.EDIT' | translate" type="button" (click)="openEditModal(t)" class="btn btn-ghost btn-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
                   </button>
-                  <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="deleteTreatment(t)" class="p-1 hover:bg-red-50 text-red-700/60 hover:text-red-700 rounded transition">
+                  <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="deleteTreatment(t)" class="btn btn-ghost btn-icon text-critical-700">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                   </button>
                 </div>
@@ -62,19 +62,19 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
             </div>
 
             <!-- Consumables list summary -->
-            <div class="border-t border-ortho-navy/5 pt-4 space-y-2 flex-1">
+            <div class="border-t border-petrol-900/5 pt-4 space-y-2 flex-1">
               <span class="text-xs font-bold text-ink-500 uppercase tracking-wider block">{{ "TREATMENTS.CONSUMABLES" | translate }} ({{ t.consumables?.length || 0 }})</span>
 
               <!-- The first three, then how many more: no scroll area inside a card (P2-10). -->
               <div class="space-y-1.5">
                 @for (c of (expanded().has(t.id!) ? t.consumables : t.consumables?.slice(0, 3)); track $index) {
-                  <div class="flex items-center justify-between text-xs font-semibold text-ink-700 bg-gray-50 border border-gray-100 rounded-lg p-2">
+                  <div class="flex items-center justify-between text-xs font-semibold text-ink-700 bg-ink-50 border border-ink-100 rounded-lg p-2">
                     <span class="truncate max-w-[150px]">{{ c.stockItem?.name }}</span>
                     <div class="flex items-center gap-2 shrink-0">
                       <!-- The unit is the whole point: "x8" never said whether that was
                            pieces, grams or millilitres. -->
                       <span class="font-bold text-ink-500">{{ c.quantityUsed }} {{ c.stockItem?.unitSymbol || '' }}</span>
-                      <span class="text-emerald-700 font-extrabold">{{ (c.quantityUsed * c.stockItem.pricePerUse) | money }}</span>
+                      <span class="text-ink-900 font-extrabold">{{ (c.quantityUsed * c.stockItem.pricePerUse) | money }}</span>
                     </div>
                   </div>
                 } @empty {
@@ -89,14 +89,14 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
             </div>
 
             <!-- Cumulative cost summary -->
-            <div class="border-t border-ortho-navy/5 pt-3 flex justify-between items-center text-xs">
+            <div class="border-t border-petrol-900/5 pt-3 flex justify-between items-center text-xs">
               <span class="text-ink-500 font-bold uppercase tracking-wider">{{ "TREATMENTS.MATERIALS_COST" | translate }}</span>
-              <span class="font-bold text-emerald-700">{{ getConsumablesTotal(t) | money }}</span>
+              <span class="font-bold text-ink-900">{{ getConsumablesTotal(t) | money }}</span>
             </div>
 
           </div>
         } @empty {
-          <div class="col-span-full bg-white rounded-2xl border border-ortho-navy/5 shadow-sm p-12 text-center text-ink-500">
+          <div class="card col-span-full p-12 text-center text-ink-500">
             {{ "TREATMENTS.NO_TREATMENTS_CONFIGURED" | translate }}
           </div>
         }
@@ -104,11 +104,11 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 
       <!-- Add/Edit Modal -->
       @if (showModal()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ortho-navy/60 backdrop-blur-sm">
-          <div appDialog="treatment-dialog-title" (dialogClosed)="closeModal()" class="bg-white rounded-2xl max-w-xl w-full overflow-hidden border border-ortho-navy/5 shadow-2xl animate-fade-in flex flex-col max-h-[85vh]">
-            <div class="px-6 py-4 border-b border-ortho-navy/5 flex items-center justify-between bg-ortho-navy/[0.01] shrink-0">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-petrol-900/60 backdrop-blur-sm">
+          <div appDialog="treatment-dialog-title" (dialogClosed)="closeModal()" class="card max-w-xl w-full overflow-hidden shadow-2xl animate-fade-in flex flex-col max-h-[85vh]">
+            <div class="px-6 py-4 border-b border-petrol-900/5 flex items-center justify-between bg-petrol-900/[0.01] shrink-0">
               <h2 id="treatment-dialog-title" class="text-lg font-bold text-ink-900">{{ editMode() ? ("TREATMENTS.EDIT_TREATMENT_PROCEDURE" | translate) : ("TREATMENTS.ADD_TREATMENT_PROCEDURE" | translate) }}</h2>
-              <button [attr.aria-label]="'COMMON.CLOSE' | translate" type="button" (click)="closeModal()" class="p-1 text-ink-500 hover:text-ink-900 hover:bg-ortho-navy/5 rounded-lg transition">
+              <button [attr.aria-label]="'COMMON.CLOSE' | translate" type="button" (click)="closeModal()" class="btn btn-ghost btn-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -117,22 +117,22 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label for="treatments-list-form-code" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "TREATMENTS.PROCEDURE_CODE" | translate }} <span aria-hidden="true">*</span></label>
-                  <input id="treatments-list-form-code" type="text" [(ngModel)]="form.code" [placeholder]="'TREATMENTS.PROCEDURE_CODE_PLACEHOLDER' | translate" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition font-mono uppercase bg-white" />
+                  <input id="treatments-list-form-code" type="text" [(ngModel)]="form.code" [placeholder]="'TREATMENTS.PROCEDURE_CODE_PLACEHOLDER' | translate" required class="input w-full font-mono" />
                 </div>
                 <div>
                   <label for="treatments-list-form-basePrice" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "TREATMENTS.BASE_PRICE_DH" | translate }} <span aria-hidden="true">*</span></label>
-                  <input id="treatments-list-form-basePrice" type="number" [(ngModel)]="form.basePrice" required min="0" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                  <input id="treatments-list-form-basePrice" type="number" [(ngModel)]="form.basePrice" required min="0" class="input w-full" />
                 </div>
               </div>
 
-              <fieldset class="rounded-xl border border-ortho-navy/10 p-3">
+              <fieldset class="rounded-xl border border-petrol-900/10 p-3">
                 <legend class="px-1 text-xs font-bold text-ink-500 uppercase tracking-wide">{{ "TREATMENTS.FACE_TARIFF" | translate }}</legend>
                 <p class="text-xs text-ink-500 mb-2">{{ "TREATMENTS.FACE_TARIFF_HINT" | translate }}</p>
                 <div class="grid grid-cols-5 gap-2">
                   @for (n of faceCounts; track n) {
                     <label class="block text-xs font-semibold text-ink-600">
                       {{ "TREATMENTS.FACES_N" | translate: { n: n } }}
-                      <input type="number" min="0" step="any" [(ngModel)]="faceTariff[n]" [attr.aria-label]="('TREATMENTS.FACES_N' | translate: { n: n })" class="mt-1 w-full px-2 py-1.5 border border-ortho-navy/10 rounded-lg text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                      <input type="number" min="0" step="any" [(ngModel)]="faceTariff[n]" [attr.aria-label]="('TREATMENTS.FACES_N' | translate: { n: n })" class="input mt-1 w-full" />
                     </label>
                   }
                 </div>
@@ -140,7 +140,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 
               <div>
                 <label for="treatments-list-form-name" class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1">{{ "TREATMENTS.PROCEDURE_NAME" | translate }} <span aria-hidden="true">*</span></label>
-                <input id="treatments-list-form-name" type="text" [(ngModel)]="form.name" required class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                <input id="treatments-list-form-name" type="text" [(ngModel)]="form.name" required class="input w-full" />
               </div>
 
               <div>
@@ -148,17 +148,17 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
                   <div class="relative">
                     <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1" for="act-code">{{ "TREATMENTS.ACT_CODE" | translate }}</label>
                     @if (selectedAct(); as act) {
-                      <div class="flex items-center gap-2 px-3 py-2 border border-ortho-navy/10 rounded-xl bg-white">
+                      <div class="card flex items-center gap-2 px-3 py-2">
                         <span class="font-mono text-sm text-ink-900">{{ act.code }}</span>
-                        <button type="button" (click)="clearAct()" class="ms-auto text-xs font-semibold text-ink-500 hover:text-red-700" [attr.aria-label]="'TREATMENTS.NGAP_REMOVE' | translate">{{ "TREATMENTS.NGAP_REMOVE" | translate }}</button>
+                        <button type="button" (click)="clearAct()" class="ms-auto text-xs font-semibold text-ink-500 hover:text-critical-700" [attr.aria-label]="'TREATMENTS.NGAP_REMOVE' | translate">{{ "TREATMENTS.NGAP_REMOVE" | translate }}</button>
                       </div>
                     } @else {
                       <input id="act-code" type="search" autocomplete="off" [ngModel]="ngapQuery()" (ngModelChange)="ngapQuery.set($event)"
                         [placeholder]="'TREATMENTS.NGAP_SEARCH' | translate"
-                        class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                        class="input w-full" />
                       @if (ngapQuery().trim()) {
                         <!-- Plain buttons: Tab goes down the matches, Enter takes one. -->
-                        <ul id="ngap-matches" class="absolute z-20 mt-1 w-[min(32rem,calc(100vw-3rem))] max-h-64 overflow-y-auto bg-white border border-ortho-navy/10 rounded-xl shadow-lg">
+                        <ul id="ngap-matches" class="absolute z-20 mt-1 w-[min(32rem,calc(100vw-3rem))] max-h-64 overflow-y-auto bg-surface border border-petrol-900/10 rounded-xl shadow-lg">
                           @for (a of ngapMatches(); track a.code) {
                             <li>
                               <button type="button" (click)="pickAct(a)" class="w-full text-start px-3 py-2 hover:bg-petrol-50 transition">
@@ -176,16 +176,16 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
                   </div>
                   <div>
                     <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-1" for="act-coefficient">{{ "TREATMENTS.ACT_COEFFICIENT" | translate }}</label>
-                    <input id="act-coefficient" type="number" min="0" step="any" [(ngModel)]="form.actCoefficient" class="w-full px-3 py-2 border border-ortho-navy/10 rounded-xl text-sm focus:outline-none focus:border-petrol-600 transition bg-white" />
+                    <input id="act-coefficient" type="number" min="0" step="any" [(ngModel)]="form.actCoefficient" class="input w-full" />
                   </div>
                 </div>
                 @if (selectedAct(); as act) {
-                  <div class="mt-2 p-3 rounded-xl bg-petrol-50 border border-ortho-navy/10 space-y-1">
+                  <div class="mt-2 p-3 rounded-xl bg-petrol-50 border border-petrol-900/10 space-y-1">
                     <p class="text-xs text-ink-800 leading-snug">{{ act.label }}</p>
                     <p class="text-xs text-ink-500">
                       @if (cotationFor(act, form.actCoefficient); as c) { {{ "TREATMENTS.NGAP_COTATION" | translate }} <span class="font-mono text-ink-800">{{ c }}</span> }
                       @if (act.anesthesiaCoefficient != null) { · {{ "TREATMENTS.NGAP_ANESTHESIA" | translate }} {{ act.anesthesiaCoefficient }} }
-                      @if (act.priorAgreement) { · <span class="font-semibold text-amber-700">{{ "TREATMENTS.NGAP_PRIOR_AGREEMENT" | translate }}</span> }
+                      @if (act.priorAgreement) { · <span class="font-semibold text-caution-700">{{ "TREATMENTS.NGAP_PRIOR_AGREEMENT" | translate }}</span> }
                     </p>
                     @if (act.notes) { <p class="text-xs text-ink-500 leading-snug">{{ act.notes }}</p> }
                   </div>
@@ -195,19 +195,19 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 
               <!-- Consumables Configurator -->
               <div class="space-y-3">
-                <div class="flex items-center justify-between border-b border-ortho-navy/5 pb-2">
+                <div class="flex items-center justify-between border-b border-petrol-900/5 pb-2">
                   <span class="text-xs font-bold text-ink-500 uppercase tracking-wide">{{ "TREATMENTS.STANDARD_MATERIAL_TEMPLATE" | translate }}</span>
-                  <button type="button" (click)="addConsumableLine()" class="px-2.5 py-1 text-xs font-semibold bg-petrol-600 text-white hover:bg-petrol-700 transition rounded-lg">
+                  <button type="button" (click)="addConsumableLine()" class="btn btn-primary btn-sm">
                     + {{ "TREATMENTS.ADD_MATERIAL" | translate }}
                   </button>
                 </div>
 
                 <div class="space-y-3">
                   @for (c of formConsumables; track $index; let idx = $index) {
-                    <div class="grid grid-cols-12 gap-3 items-end bg-gray-50/50 p-3 rounded-xl border border-gray-100 font-semibold text-xs text-ink-900">
+                    <div class="grid grid-cols-12 gap-3 items-end bg-ink-50/50 p-3 rounded-xl border border-ink-100 font-semibold text-xs text-ink-900">
                       <div class="col-span-6">
                         <label [attr.for]="'treatments-list-c-stockItem-' + $index" class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.STOCK_ITEM" | translate }}</label>
-                        <select [id]="'treatments-list-c-stockItem-' + $index" [(ngModel)]="c.stockItem" (change)="onItemChange(idx)" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white focus:outline-none">
+                        <select [id]="'treatments-list-c-stockItem-' + $index" [(ngModel)]="c.stockItem" (change)="onItemChange(idx)" class="select w-full">
                           <option [value]="null">{{ "TREATMENTS.SELECT_ITEM" | translate }}</option>
                           @for (item of catalogItems(); track item.id) {
                             <option [ngValue]="item">{{ item.name }} ({{ "STOCK.SKU" | translate }}: {{ item.sku }})</option>
@@ -219,14 +219,14 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
                           {{ "TREATMENTS.QTY_USED" | translate }}
                           @if (c.stockItem?.unitSymbol) { <span class="text-petrol-700">({{ c.stockItem?.unitSymbol }})</span> }
                         </label>
-                        <input [id]="'treatments-list-c-quantityUsed-' + $index" type="number" [(ngModel)]="c.quantityUsed" min="0.0001" step="any" class="w-full px-2.5 py-1.5 border border-ortho-navy/10 rounded-lg text-xs bg-white text-center focus:outline-none font-mono" />
+                        <input [id]="'treatments-list-c-quantityUsed-' + $index" type="number" [(ngModel)]="c.quantityUsed" min="0.0001" step="any" class="input w-full text-center font-mono" />
                       </div>
                       <div class="col-span-3 text-end">
                         <span class="block text-xs font-bold text-ink-600 uppercase mb-1">{{ "TREATMENTS.MATERIALS_COST" | translate }}</span>
-                        <span class="font-bold text-emerald-700 block py-1.5 text-xs">{{ (c.quantityUsed * (c.stockItem?.pricePerUse || 0)) | money }}</span>
+                        <span class="font-bold text-ink-900 block py-1.5 text-xs">{{ (c.quantityUsed * (c.stockItem?.pricePerUse || 0)) | money }}</span>
                       </div>
                       <div class="col-span-1 text-center">
-                        <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="removeConsumableLine(idx)" class="p-1.5 hover:bg-red-50 text-red-700 rounded-lg transition mb-1">
+                        <button [attr.aria-label]="'COMMON.DELETE' | translate" type="button" (click)="removeConsumableLine(idx)" class="btn btn-ghost btn-icon text-critical-700 mb-1">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                       </div>
@@ -234,18 +234,18 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
                   }
                 </div>
 
-                <div class="flex justify-end pt-3 border-t border-ortho-navy/5">
+                <div class="flex justify-end pt-3 border-t border-petrol-900/5">
                   <div class="text-end">
                     <span class="text-xs font-bold text-ink-500 uppercase tracking-wider block">{{ "TREATMENTS.CUMULATIVE_MATERIAL_COST" | translate }}</span>
-                    <span class="text-lg font-bold text-emerald-700">{{ formCumulativeCost() | money }}</span>
+                    <span class="text-lg font-bold text-ink-900">{{ formCumulativeCost() | money }}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="px-6 py-4 border-t border-ortho-navy/5 flex items-center justify-end gap-3 bg-ortho-navy/[0.01] shrink-0">
-              <button type="button" (click)="closeModal()" class="px-4 py-2 border border-ortho-navy/10 rounded-xl text-sm font-semibold hover:bg-gray-50 transition text-ink-600">{{ "COMMON.CANCEL" | translate }}</button>
-              <button type="button" (click)="saveTreatment()" [disabled]="!form.code || !form.name || !form.basePrice" class="px-5 py-2 bg-petrol-600 text-white rounded-xl text-sm font-semibold hover:bg-petrol-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">{{ "TREATMENTS.SAVE_TREATMENT" | translate }}</button>
+            <div class="px-6 py-4 border-t border-petrol-900/5 flex items-center justify-end gap-3 bg-petrol-900/[0.01] shrink-0">
+              <button type="button" (click)="closeModal()" class="btn btn-secondary">{{ "COMMON.CANCEL" | translate }}</button>
+              <button type="button" (click)="saveTreatment()" [disabled]="!form.code || !form.name || !form.basePrice" class="btn btn-primary">{{ "TREATMENTS.SAVE_TREATMENT" | translate }}</button>
             </div>
           </div>
         </div>

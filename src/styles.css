@@ -800,6 +800,20 @@
   }
   .empty-title { font-size: var(--text-md); font-weight: 700; color: var(--text); }
   .empty-text  { font-size: var(--text-base); color: var(--text-muted); max-width: 42ch; }
+  .empty-compact { padding: var(--space-6) var(--space-4); gap: var(--space-2); }
+  .empty-compact .empty-icon { width: 2.25rem; height: 2.25rem; }
+  .empty-compact .empty-title { font-size: var(--text-base); }
+  .empty-compact .empty-text { font-size: var(--text-sm); }
+
+  /* ── Page frame (<app-page-header>) ─────────────────────────────────── */
+
+  .page-header { margin-bottom: var(--space-5); }
+  .page-header-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-3) var(--space-4); }
+  .page-title { font-size: var(--text-xl); font-weight: 700; color: var(--text); }
+  .page-subtitle { margin-top: var(--space-1); font-size: var(--text-base); color: var(--text-muted); max-width: 70ch; }
+  .page-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-inline-start: auto; }
+  .page-actions:empty, .page-filters:empty { display: none; }
+  .page-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: var(--space-4); }
 
   /* Skeletons mirror the shape of the content they stand in for, so the
      layout does not jump when real data lands. */

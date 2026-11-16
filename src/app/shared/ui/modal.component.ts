@@ -21,7 +21,9 @@ let nextId = 1;
   imports: [TranslateModule, IconComponent],
   template: `
     @if (open()) {
-      <div class="fixed inset-0 flex items-end justify-center p-0 sm:items-center sm:p-4" style="z-index: var(--z-modal)">
+      <div class="fixed inset-0 flex items-end p-0" style="z-index: var(--z-modal)"
+           [class.justify-center]="placement() === 'center'" [class.sm:items-center]="placement() === 'center'" [class.sm:p-4]="placement() === 'center'"
+           [class.justify-end]="placement() === 'side'" [class.sm:items-stretch]="placement() === 'side'">
         <div class="animate-fade absolute inset-0 bg-black/50" (click)="dismissable() && closed.emit()" aria-hidden="true"></div>
         <div
           #panel
@@ -29,7 +31,10 @@ let nextId = 1;
           aria-modal="true"
           tabindex="-1"
           [attr.aria-labelledby]="titleId"
-          class="relative flex max-h-[92vh] w-full flex-col rounded-t-xl border border-ink-200 bg-surface shadow-xl outline-none sm:rounded-xl"
+          class="relative flex max-h-[92vh] w-full flex-col rounded-t-xl border border-ink-200 bg-surface shadow-xl outline-none"
+          [class.sm:rounded-xl]="placement() === 'center'"
+          [class.sm:rounded-none]="placement() === 'side'" [class.sm:max-h-none]="placement() === 'side'" [class.sm:h-full]="placement() === 'side'"
+          [class.sm:border-y-0]="placement() === 'side'" [class.sm:border-e-0]="placement() === 'side'"
           [class.sm:max-w-md]="size() === 'sm'"
           [class.sm:max-w-xl]="size() === 'md'"
           [class.sm:max-w-3xl]="size() === 'lg'"
@@ -57,6 +62,8 @@ export class ModalComponent {
   readonly open = input(false);
   readonly title = input.required<string>();
   readonly size = input<'sm' | 'md' | 'lg' | 'xl'>('md');
+  /** Centred over the page, or a panel along the end edge that keeps the page beside it. */
+  readonly placement = input<'center' | 'side'>('center');
   readonly dismissable = input(true);
   readonly closed = output<void>();
 

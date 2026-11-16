@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, finalize } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -7,6 +7,66 @@ import {
   AddToothFindingRequest, CreateClinicalNoteRequest, AddAllergyRequest, AddMedicalHistoryRequest,
   FindingStatus, FindingCatalogResponse, PeriodontalStatus, RecordPeriodontalRequest, PeriodontalAssessment
 } from '../models/clinical-record.model';
+
+/** One thing to know before treating: an allergy, a condition or a current medication. */
+export interface MedicalAlert {
+  id: string;
+  kind: 'ALLERGY' | 'CONDITION' | 'MEDICATION';
+  label: string;
+  detail: string | null;
+  /** Allergies are critical (red); conditions and medications call for attention (amber). */
+  tone: 'critical' | 'attention';
+  /** An allergy's own severity, when it was recorded. */
+  severity: string | null;
+}
+
+/**
+ * Whether the patient was asked: there are alerts; they were asked and have none
+ * (a MEDICAL_HISTORY note says so); or nobody has asked yet.
+ */
+export type AlertsState = 'alerts' | 'none' | 'not-asked' | 'loading';
+
+/** The note "nothing to report" is filed under, so an empty list can say it was asked. */
+export const NOTHING_TO_REPORT_CATEGORY = 'MEDICAL_HISTORY' as const;
+
+/**
+ * The one list of medical alerts, everywhere the patient is shown: allergies first, then
+ * conditions and current medications. The banner, the summary, the medical history panel and
+ * the cockpit all read this, so the three facts can no longer live in three places (P0-2).
+ */
+export function medicalAlerts(record: PatientClinicalRecord | null): MedicalAlert[] {
+  if (!record) return [];
+  const allergies: MedicalAlert[] = (record.allergies ?? []).map(a => ({
+    id: a.id ?? a.substance ?? '',
+    kind: 'ALLERGY' as const,
+    label: a.substance ?? '',
+    detail: a.reaction?.trim() || null,
+    tone: 'critical' as const,
+    severity: a.severity ?? null,
+  }));
+  const rank = { CONDITION: 0, MEDICATION: 1 } as const;
+  const history: MedicalAlert[] = (record.medicalHistory ?? [])
+    .filter((h): h is typeof h & { category: 'CONDITION' | 'MEDICATION' } => h.category === 'CONDITION' || h.category === 'MEDICATION')
+    .sort((a, b) => rank[a.category] - rank[b.category])
+    .map(h => ({
+      id: h.id ?? h.label ?? '',
+      kind: h.category,
+      label: h.label ?? '',
+      detail: h.detail?.trim() || null,
+      tone: 'attention' as const,
+      severity: null,
+    }));
+  return [...allergies, ...history].filter(a => a.label.trim());
+}
+
+/** See AlertsState. Any allergy or history entry at all means the questions were asked. */
+export function alertsState(record: PatientClinicalRecord | null): AlertsState {
+  if (!record) return 'loading';
+  if (medicalAlerts(record).length) return 'alerts';
+  const asked = (record.allergies ?? []).length > 0 || (record.medicalHistory ?? []).length > 0
+    || (record.notes ?? []).some(n => n.category === NOTHING_TO_REPORT_CATEGORY && !n.sessionId);
+  return asked ? 'none' : 'not-asked';
+}
 
 /**
  * The structured clinical record — findings, notes, allergies, medical
@@ -41,13 +101,31 @@ export class ClinicalRecordService {
   notes = () => this.recordSignal()?.notes ?? [];
   allergies = () => this.recordSignal()?.allergies ?? [];
   medicalHistory = () => this.recordSignal()?.medicalHistory ?? [];
+  /** Allergies, conditions and current medications, in that order: the one alert source. */
+  readonly medicalAlerts = computed(() => medicalAlerts(this.recordSignal()));
+  readonly alertsState = computed(() => alertsState(this.recordSignal()));
+
+  /** Whose record is held (or being fetched). */
+  private recordFor: string | null = null;
+  /** The patient whose record `record()` is, once it has arrived. */
+  readonly recordPatientId = signal<string | null>(null);
 
   refresh(patientId: string): void {
+    // Another patient's allergies must never show under this one's name while the request runs.
+    if (this.recordFor !== patientId) {
+      this.recordSignal.set(null);
+      this.recordPatientId.set(null);
+    }
+    this.recordFor = patientId;
     this.loadingSignal.set(true);
     this.http.get<PatientClinicalRecord>(`${this.baseUrl}/${patientId}/clinical-record`)
       .pipe(finalize(() => this.loadingSignal.set(false)))
       .subscribe({
-        next: (record) => this.recordSignal.set(record),
+        next: (record) => {
+          if (this.recordFor !== patientId) return;
+          this.recordSignal.set(record);
+          this.recordPatientId.set(patientId);
+        },
         error: (err) => console.error('Failed to load clinical record', err),
       });
   }

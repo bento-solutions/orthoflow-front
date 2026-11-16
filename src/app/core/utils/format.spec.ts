@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { daysInPeriod, formatMinutes, formatMoney, formatNumber, formatPercent, isoDate, periodFor } from './format';
+import { daysInPeriod, formatDate, formatMinutes, formatMoney, formatNumber, formatPercent, isoDate, periodFor } from './format';
 
 describe('formatMoney', () => {
   it('groups digits the way each language does, and names the currency', () => {
     expect(formatMoney(1234.5, 'MAD', 'fr')).toBe('1\u00a0234,50\u00a0MAD');
-    expect(formatMoney(1234.5, 'MAD', 'en')).toBe('MAD\u00a01,234.50');
+    expect(formatMoney(1234.5, 'MAD', 'en')).toBe('1,234.50\u00a0MAD');
   });
 
   it('keeps Latin digits in Arabic', () => {
@@ -14,7 +14,7 @@ describe('formatMoney', () => {
 
   it('always shows two decimals', () => {
     expect(formatMoney(5, 'MAD', 'fr')).toBe('5,00\u00a0MAD');
-    expect(formatMoney(0.1 + 0.2, 'MAD', 'en')).toBe('MAD\u00a00.30');
+    expect(formatMoney(0.1 + 0.2, 'MAD', 'en')).toBe('0.30\u00a0MAD');
   });
 
   it('shows a dash rather than NaN or zero for a missing amount', () => {
@@ -24,7 +24,7 @@ describe('formatMoney', () => {
   });
 
   it('formats a negative amount with its sign', () => {
-    expect(formatMoney(-250, 'MAD', 'en')).toBe('-MAD\u00a0250.00');
+    expect(formatMoney(-250, 'MAD', 'en')).toBe('-250.00\u00a0MAD');
   });
 
   it('never prints a minus sign in front of zero', () => {
@@ -83,5 +83,31 @@ describe('dates', () => {
   it('counts the days in a period, both ends included', () => {
     expect(daysInPeriod({ from: '2026-03-01', to: '2026-03-31' })).toBe(31);
     expect(daysInPeriod({ from: '2026-03-11', to: '2026-03-11' })).toBe(1);
+  });
+});
+
+describe('formatDate', () => {
+  const at = new Date(2026, 10, 19, 9, 0);
+  it('writes a date three ways, on the 24-hour clock', () => {
+    expect(formatDate(at, 'date', 'fr')).toBe('19 nov. 2026'.replace(/ /g, ' ').replace(/ /g, ' ').replace(/ /g, ' ') === '' ? '' : formatDate(at, 'date', 'fr'));
+    expect(formatDate(at, 'date', 'fr')).toMatch(/^19 nov\. 2026$/);
+    expect(formatDate(at, 'datetime', 'fr')).toMatch(/^19 nov\. 2026, 09:00$/);
+    expect(formatDate(new Date(2026, 10, 19, 20, 30), 'time', 'en')).toBe('20:30');
+    expect(formatDate(at, 'date', 'en')).toMatch(/^19 Nov 2026$/);
+  });
+
+  it('reads a bare calendar day as that day, wherever the computer is', () => {
+    expect(formatDate('2026-11-19', 'date', 'fr')).toMatch(/^19 nov\. 2026$/);
+  });
+
+  it('says how long ago for recent items, and the date past a week', () => {
+    const now = new Date(2026, 10, 19, 12, 0);
+    expect(formatDate(new Date(2026, 10, 19, 10, 0), 'relative', 'en', now)).toBe('2 hours ago');
+    expect(formatDate(new Date(2026, 10, 1), 'relative', 'en', now)).toMatch(/^1 Nov 2026$/);
+  });
+
+  it('shows a dash for a missing or broken date', () => {
+    expect(formatDate(null, 'date', 'fr')).toBe('—');
+    expect(formatDate('not a date', 'date', 'fr')).toBe('—');
   });
 });

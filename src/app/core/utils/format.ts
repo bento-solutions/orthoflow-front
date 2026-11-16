@@ -26,14 +26,17 @@ function numberFormat(lang: string, options: Intl.NumberFormatOptions): Intl.Num
   return format;
 }
 
-/** `1 234,50 MAD` (non-breaking spaces) in French, `MAD 1,234.50` in English. A missing amount shows a dash. */
+/**
+ * `1 234,50 MAD` in French, `1,234.50 MAD` in English: the amount, then the currency code, in every
+ * language (UX audit P2-1), with the language's own separators. Non-breaking spaces throughout, so
+ * an amount never wraps. A missing amount shows a dash.
+ */
 export function formatMoney(amount: number | null | undefined, currency: string, lang: string): string {
   if (amount === null || amount === undefined || Number.isNaN(amount)) {
     return '—';
   }
-  return tidy(
-    numberFormat(lang, { style: 'currency', currency, currencyDisplay: 'code', minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'negative' as Intl.NumberFormatOptions['signDisplay'] }).format(amount),
-  );
+  const figure = numberFormat(lang, { minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'negative' as Intl.NumberFormatOptions['signDisplay'] }).format(amount);
+  return tidy(`${figure}\u00a0${currency}`);
 }
 
 /** A plain number with the language's grouping, for counts and quantities. */
@@ -110,4 +113,63 @@ export function periodFor(preset: PeriodPreset, today: Date = new Date()): Perio
 export function daysInPeriod(period: Period): number {
   const ms = new Date(`${period.to}T00:00:00`).getTime() - new Date(`${period.from}T00:00:00`).getTime();
   return Math.round(ms / 86_400_000) + 1;
+}
+
+/** The three ways a date is written (UX audit P2-2). */
+export type DateForm = 'date' | 'datetime' | 'time' | 'relative' | 'long';
+
+const dateFormats = new Map<string, Intl.DateTimeFormat>();
+
+/** French and Arabic as written in Morocco; English in the day-month-year order the clinics use. */
+const DATE_LOCALE: Record<string, string> = { fr: 'fr-FR', en: 'en-GB', ar: 'ar-MA' };
+
+function dateFormat(lang: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const locale = `${DATE_LOCALE[lang] ?? lang}-u-nu-latn`;
+  const key = `${locale}|${JSON.stringify(options)}`;
+  let format = dateFormats.get(key);
+  if (!format) {
+    format = new Intl.DateTimeFormat(locale, options);
+    dateFormats.set(key, format);
+  }
+  return format;
+}
+
+function toDate(value: Date | string | number | null | undefined): Date | null {
+  if (value === null || value === undefined || value === '') return null;
+  // A bare yyyy-MM-dd is a calendar day, not midnight UTC: read it as local so it never shifts a day.
+  const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00`) : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/**
+ * `19 nov. 2026` (date), `19 nov. 2026, 09:00` (datetime), `09:00` (time), `jeudi 19 novembre 2026`
+ * (long), or how long ago for recent items (relative). Always the 24-hour clock and Latin digits.
+ * A missing date shows a dash.
+ */
+export function formatDate(value: Date | string | number | null | undefined, form: DateForm, lang: string, now: Date = new Date()): string {
+  const date = toDate(value);
+  if (!date) return '—';
+  const day: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' };
+  const time: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
+  switch (form) {
+    case 'date':
+      return tidy(dateFormat(lang, day).format(date));
+    case 'time':
+      return tidy(dateFormat(lang, time).format(date));
+    case 'datetime':
+      return tidy(`${dateFormat(lang, day).format(date)}, ${dateFormat(lang, time).format(date)}`);
+    case 'long':
+      return tidy(dateFormat(lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date));
+    case 'relative': {
+      const seconds = Math.round((date.getTime() - now.getTime()) / 1000);
+      const abs = Math.abs(seconds);
+      // Past a week, "il y a 23 jours" is harder to place than the date itself.
+      if (abs >= 7 * 86_400) return formatDate(date, 'date', lang, now);
+      const rtf = new Intl.RelativeTimeFormat(`${DATE_LOCALE[lang] ?? lang}-u-nu-latn`, { numeric: 'auto' });
+      if (abs < 60) return rtf.format(0, 'second');
+      if (abs < 3600) return rtf.format(Math.round(seconds / 60), 'minute');
+      if (abs < 86_400) return rtf.format(Math.round(seconds / 3600), 'hour');
+      return rtf.format(Math.round(seconds / 86_400), 'day');
+    }
+  }
 }

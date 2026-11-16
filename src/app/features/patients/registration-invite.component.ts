@@ -16,9 +16,11 @@ import { ModalComponent } from '../../shared/ui/modal.component';
   standalone: true,
   imports: [TranslateModule, ModalComponent, CanDirective],
   template: `
-    <button *appCan="'PATIENT_WRITE'" type="button" class="btn btn-secondary btn-compact" [disabled]="busy()" (click)="create()">
-      <span class="btn-label">{{ 'PAT.INVITE.BUTTON' | translate }}</span>
-    </button>
+    @if (showButton()) {
+      <button *appCan="'PATIENT_WRITE'" type="button" class="btn btn-secondary btn-compact" [disabled]="busy()" (click)="create()">
+        <span class="btn-label">{{ 'PAT.INVITE.BUTTON' | translate }}</span>
+      </button>
+    }
     <app-modal [open]="url() !== null" [title]="'PAT.INVITE.TITLE' | translate" size="md" (closed)="url.set(null)">
       <p class="mb-3 text-sm text-ink-700">{{ 'PAT.INVITE.HINT' | translate: { name: name() } }}</p>
       <div class="flex gap-2">
@@ -33,6 +35,8 @@ import { ModalComponent } from '../../shared/ui/modal.component';
 export class RegistrationInviteComponent {
   readonly patientId = input.required<string>();
   readonly name = input('');
+  /** Off when another control (the patient banner's More menu) calls create(). */
+  readonly showButton = input(true);
 
   private readonly api = inject(IntakeApi);
   private readonly errors = inject(ApiErrors);
@@ -43,7 +47,7 @@ export class RegistrationInviteComponent {
   protected readonly url = signal<string | null>(null);
   protected readonly copied = signal(false);
 
-  protected async create(): Promise<void> {
+  async create(): Promise<void> {
     if (this.busy()) {
       return;
     }

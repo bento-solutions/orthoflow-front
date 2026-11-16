@@ -100,7 +100,8 @@
     "SAVED": "تم الحفظ.",
     "SCROLLABLE": "محتوى قابل للتمرير",
     "CHANGE_PATIENT": "تغيير المريض",
-    "RESULTS_COUNT": "{{count}} نتيجة"
+    "RESULTS_COUNT": "{{count}} نتيجة",
+    "SAVE_FAILED": "تعذر الحفظ. حاول مرة أخرى."
   },
   "DASHBOARD": {
     "TODAYS_VISITS": "زيارات اليوم",
@@ -4554,5 +4555,26 @@
       "INTRAORAL_3D": "داخل الفم ثلاثي الأبعاد",
       "IMAGE": "صورة"
     }
+  },
+  "ALERTS": {
+    "TITLE": "تنبيهات طبية",
+    "OPEN": "فتح السوابق الطبية",
+    "ALLERGY": "حساسية",
+    "NONE": "لا تنبيهات معروفة",
+    "NOT_ASKED": "لم تُسأل السوابق بعد",
+    "LOADING": "جارٍ تحميل التنبيهات…",
+    "ALLERGIES": "الحساسيات",
+    "ADD_ALLERGY": "إضافة حساسية",
+    "SUBSTANCE": "المادة",
+    "REACTION": "رد الفعل",
+    "NO_ALLERGIES": "لا توجد حساسية مسجلة.",
+    "HISTORY": "الأمراض والأدوية والسوابق",
+    "ADD_ENTRY": "إضافة",
+    "REVIEWED_ON": "سُئل في {{date}}: لا شيء يُذكر.",
+    "NOTHING_TO_REPORT": "تم السؤال: لا شيء يُذكر",
+    "NOTHING_TO_REPORT_HINT": "يسجل أن المريض سُئل وليس لديه حساسية أو مرض أو دواء.",
+    "NOTHING_TO_REPORT_NOTE": "تم السؤال عن السوابق: لا حساسية ولا مرض ولا دواء معروف.",
+    "ALLERGY_ADDED": "تمت إضافة الحساسية",
+    "ALLERGY_DELETE_CONFIRM": "حذف الحساسية «{{label}}»؟ لا يمكن التراجع عن ذلك."
   }
 }

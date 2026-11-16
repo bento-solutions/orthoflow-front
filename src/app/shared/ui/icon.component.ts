@@ -16,7 +16,12 @@ export type IconName =
   // added with the practice-management screens
   | 'moon' | 'sun' | 'bell' | 'help-circle' | 'qr-code' | 'shield' | 'wallet' | 'clipboard' | 'message'
   | 'flask' | 'percent' | 'user' | 'lock' | 'link' | 'phone' | 'camera' | 'sparkle' | 'copy' | 'list'
-  | 'x-circle' | 'eye' | 'arrow-left' | 'upload';
+  | 'x-circle' | 'eye' | 'arrow-left' | 'upload'
+  // added when the Material icon font was retired (UX audit P2-3)
+  | 'undo' | 'mic-off' | 'history' | 'wave' | 'cloud-off' | 'clipboard-check' | 'volume-x' | 'eye-off' | 'text'
+  | 'stop-circle' | 'rotate-ccw' | 'rotate-cw' | 'pin' | 'play' | 'pause-circle' | 'mail' | 'pill' | 'calendar-x'
+  | 'calendar-plus' | 'code' | 'columns' | 'focus' | 'zap' | 'plus-circle' | 'bank' | 'pointer' | 'hourglass'
+  | 'image' | 'archive' | 'heart';
 
 /* One icon set, one stroke weight, one optical size.
  *
@@ -158,6 +163,37 @@ export type IconName =
         @case ('eye') { <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /> }
         @case ('arrow-left') { <path d="M19 12H5M11 18l-6-6 6-6" /> }
         @case ('upload') { <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /> }
+
+        @case ('undo') { <path d="M3 7v6h6" /><path d="M21 17a9 9 0 0 0-15-6.7L3 13" /> }
+        @case ('mic-off') { <path d="m2 2 20 20" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-1M19 11v1a7 7 0 0 1-.11 1.23M12 19v3" /> }
+        @case ('history') { <path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5M12 7v5l4 2" /> }
+        @case ('wave') { <path d="M2 12h2M6 8v8M10 5v14M14 9v6M18 7v10M22 12h-2" /> }
+        @case ('cloud-off') { <path d="m2 2 20 20" /><path d="M5.8 5.8A7 7 0 0 0 7 19h11a4.5 4.5 0 0 0 1.5-.26M22 15.5A4.5 4.5 0 0 0 17.5 11h-1.79A7 7 0 0 0 9.5 5.2" /> }
+        @case ('clipboard-check') { <rect x="8" y="2" width="8" height="4" rx="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><path d="m9 14 2 2 4-4" /> }
+        @case ('volume-x') { <path d="M11 5 6 9H2v6h4l5 4z" /><path d="m23 9-6 6M17 9l6 6" /> }
+        @case ('eye-off') { <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24" /><path d="m1 1 22 22" /> }
+        @case ('text') { <path d="M17 10H3M21 6H3M21 14H3M17 18H3" /> }
+        @case ('stop-circle') { <circle cx="12" cy="12" r="9" /><rect x="9" y="9" width="6" height="6" rx="1" /> }
+        @case ('rotate-ccw') { <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /> }
+        @case ('rotate-cw') { <path d="M23 4v6h-6" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /> }
+        @case ('pin') { <path d="M12 17v5M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" /> }
+        @case ('play') { <path d="M6 3l14 9-14 9z" /> }
+        @case ('pause-circle') { <circle cx="12" cy="12" r="9" /><path d="M10 15V9M14 15V9" /> }
+        @case ('mail') { <rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-10 6L2 7" /> }
+        @case ('pill') { <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7z" /><path d="m8.5 8.5 7 7" /> }
+        @case ('calendar-x') { <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18M10 14l4 4M14 14l-4 4" /> }
+        @case ('calendar-plus') { <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4" /> }
+        @case ('code') { <path d="m16 18 6-6-6-6M8 6l-6 6 6 6" /> }
+        @case ('columns') { <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M12 3v18" /> }
+        @case ('focus') { <circle cx="12" cy="12" r="3" /><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /> }
+        @case ('zap') { <path d="M13 2 3 14h9l-1 8 10-12h-9z" /> }
+        @case ('plus-circle') { <circle cx="12" cy="12" r="9" /><path d="M12 8v8M8 12h8" /> }
+        @case ('bank') { <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" /> }
+        @case ('pointer') { <path d="M9 11V5a2 2 0 1 1 4 0v6" /><path d="M13 10.5V9a2 2 0 1 1 4 0v3" /><path d="M17 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-1.5a6 6 0 0 1-4.6-2.15L3.5 16a2 2 0 0 1 3-2.6L9 16" /> }
+        @case ('hourglass') { <path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2" /> }
+        @case ('image') { <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21" /> }
+        @case ('archive') { <rect x="2" y="3" width="20" height="5" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4" /> }
+        @case ('heart') { <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" /> }
       }
     </svg>
   `,

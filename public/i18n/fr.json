@@ -100,7 +100,8 @@
     "SAVED": "Enregistré.",
     "SCROLLABLE": "Contenu défilant",
     "CHANGE_PATIENT": "Changer de patient",
-    "RESULTS_COUNT": "{{count}} résultat(s)"
+    "RESULTS_COUNT": "{{count}} résultat(s)",
+    "SAVE_FAILED": "Enregistrement impossible. Réessayez."
   },
   "DASHBOARD": {
     "TODAYS_VISITS": "Visites du jour",
@@ -4554,5 +4555,26 @@
       "INTRAORAL_3D": "Intra-orale 3D",
       "IMAGE": "Image"
     }
+  },
+  "ALERTS": {
+    "TITLE": "Alertes médicales",
+    "OPEN": "Ouvrir les antécédents médicaux",
+    "ALLERGY": "Allergie",
+    "NONE": "Aucune alerte connue",
+    "NOT_ASKED": "Antécédents pas encore renseignés",
+    "LOADING": "Chargement des alertes…",
+    "ALLERGIES": "Allergies",
+    "ADD_ALLERGY": "Ajouter une allergie",
+    "SUBSTANCE": "Substance",
+    "REACTION": "Réaction",
+    "NO_ALLERGIES": "Aucune allergie enregistrée.",
+    "HISTORY": "Pathologies, traitements et antécédents",
+    "ADD_ENTRY": "Ajouter",
+    "REVIEWED_ON": "Renseigné le {{date}} : rien à signaler.",
+    "NOTHING_TO_REPORT": "Interrogé : rien à signaler",
+    "NOTHING_TO_REPORT_HINT": "Indique que le patient a été interrogé et n'a ni allergie, ni pathologie, ni traitement.",
+    "NOTHING_TO_REPORT_NOTE": "Antécédents interrogés : aucune allergie, pathologie ou traitement connu.",
+    "ALLERGY_ADDED": "Allergie ajoutée",
+    "ALLERGY_DELETE_CONFIRM": "Supprimer l'allergie « {{label}} » ? Cette action est définitive."
   }
 }

@@ -100,7 +100,8 @@
     "SAVED": "Saved.",
     "SCROLLABLE": "Scrollable content",
     "CHANGE_PATIENT": "Change patient",
-    "RESULTS_COUNT": "{{count}} result(s)"
+    "RESULTS_COUNT": "{{count}} result(s)",
+    "SAVE_FAILED": "Could not save. Try again."
   },
   "DASHBOARD": {
     "TODAYS_VISITS": "Today's Visits",
@@ -4554,5 +4555,26 @@
       "INTRAORAL_3D": "3D Intraoral",
       "IMAGE": "Image"
     }
+  },
+  "ALERTS": {
+    "TITLE": "Medical alerts",
+    "OPEN": "Open the medical history",
+    "ALLERGY": "Allergy",
+    "NONE": "No known alerts",
+    "NOT_ASKED": "Medical history not asked yet",
+    "LOADING": "Loading alerts…",
+    "ALLERGIES": "Allergies",
+    "ADD_ALLERGY": "Add allergy",
+    "SUBSTANCE": "Substance",
+    "REACTION": "Reaction",
+    "NO_ALLERGIES": "No allergy recorded.",
+    "HISTORY": "Conditions, medications and history",
+    "ADD_ENTRY": "Add entry",
+    "REVIEWED_ON": "Asked on {{date}}: nothing to report.",
+    "NOTHING_TO_REPORT": "Asked: nothing to report",
+    "NOTHING_TO_REPORT_HINT": "Records that the patient was asked and has no allergy, condition or medication.",
+    "NOTHING_TO_REPORT_NOTE": "Medical history asked: no known allergy, condition or medication.",
+    "ALLERGY_ADDED": "Allergy added",
+    "ALLERGY_DELETE_CONFIRM": "Delete the allergy “{{label}}”? This cannot be undone."
   }
 }

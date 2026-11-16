@@ -254,6 +254,17 @@ describe('keeping the review across a reload', () => {
     expect(back?.review.allergies[0].status).toBe('removed');
     expect(back?.report).toBe('Mon rapport');
     expect(back?.excluded).toEqual(['a-1']);
+    expect(back?.analysedThrough).toBeUndefined();
+    expect(back?.reportEdited).toBeUndefined();
+  });
+
+  it('remembers how far a continued consultation was analysed, and that the doctor wrote the report', () => {
+    const stored = toStoredReview(emptyReview(), 'Mes mots', new Set(), { analysedThrough: 12, reportEdited: true });
+
+    const back = fromStoredReview(JSON.parse(JSON.stringify(stored)));
+
+    expect(back?.analysedThrough).toBe(12);
+    expect(back?.reportEdited).toBe(true);
   });
 
   it('ignores a shape it did not write, rather than trusting it', () => {

@@ -1506,7 +1506,7 @@
       "V_PLAN": "Treatment plan",
       "V_APPOINTMENT": "Next appointment",
       "V_REPORT": "Report",
-      "COUNTS": "{{sentences}} sentences · {{acted}} actions · {{proposed}} proposed · {{unsure}} not understood",
+      "COUNTS": "{{sentences}} sentences · {{acted}} actions · {{proposed}} proposed · {{unsure}} to be confirmed",
       "MEDIAN": "median delay {{ms}} ms",
       "EXPORT_SCENARIO": "Export as a scenario",
       "EXPORT_HINT": "Replace names and numbers before adding it to the tests."
@@ -1637,7 +1637,21 @@
     "DOCS_LOAD_FAILED": "The audio could not be loaded.",
     "LOG_AUDIO": "Audio recording",
     "LOG_PLAY_FROM": "Listen from {{time}}",
-    "STATUS_DICTATED_TO_VALIDATE": "Dictated · to validate"
+    "STATUS_DICTATED_TO_VALIDATE": "Dictated · to validate",
+    "SUGGEST": {
+      "STATE": "Suggested state",
+      "TREATMENT": "Suggested treatment",
+      "BOTH": "Suggestion",
+      "NONE": "No suggestion: listen to this moment again",
+      "TO_CONFIRM": "to be confirmed",
+      "SUSPECTED": "(suspected)",
+      "TEETH": "Teeth",
+      "ADD_TO_CHART": "Add to the chart",
+      "NOT_ADDED": "This suggestion could not be placed on the chart. Add it by hand."
+    },
+    "CONTINUE": "Continue the consultation",
+    "CONTINUE_HINT": "Forgot something, or more to add to the dossier: recording starts again and nothing already caught is lost.",
+    "ERROR_CONTINUE": "The consultation could not be continued. Try again."
   },
   "SET": {
     "TABS": {
@@ -3653,7 +3667,7 @@
     "POST_AND_CROWN": "Post and crown",
     "DEFECTIVE_RESTORATION": "Defective restoration",
     "FRACTURED_RESTORATION": "Fractured restoration",
-    "LOST_RESTORATION": "Lost restoration",
+    "LOST_RESTORATION": "Debonded / lost restoration",
     "MARGINAL_DEFECT": "Marginal defect",
     "RESTORATION_OVERHANG": "Restoration overhang",
     "NORMAL_PULP": "Normal pulp",
@@ -3719,8 +3733,22 @@
     "INTRUSIVE_LUXATION": "Intrusive luxation",
     "ENAMEL_FRACTURE": "Enamel fracture",
     "SOFT_TISSUE_TRAUMA": "Soft tissue trauma",
-    "ANKYLOSIS": "Ankylosis",
-    "PERCUSSION_SENSITIVITY": "Percussion sensitivity"
+    "ANKYLOSIS": "Ankylosis / replacement resorption",
+    "PERCUSSION_SENSITIVITY": "Tender to percussion / palpation",
+    "DENTIN_HYPERSENSITIVITY": "Dentin hypersensitivity",
+    "INTACT_RESTORATION": "Intact / functional restoration",
+    "NORMAL_APICAL_TISSUES": "Normal apical tissues",
+    "SYMPTOMATIC_APICAL_PERIODONTITIS": "Symptomatic apical periodontitis",
+    "ASYMPTOMATIC_APICAL_PERIODONTITIS": "Asymptomatic apical periodontitis",
+    "ACUTE_APICAL_ABSCESS": "Acute apical abscess",
+    "CHRONIC_APICAL_ABSCESS": "Chronic apical abscess (sinus tract)",
+    "CONDENSING_OSTEITIS": "Condensing osteitis",
+    "PERIODONTAL_HEALTH": "Periodontal health",
+    "NECROTIZING_GINGIVITIS": "Necrotizing gingivitis",
+    "NECROTIZING_PERIODONTITIS": "Necrotizing periodontitis",
+    "ENDO_PERIO_LESION": "Endo-periodontal lesion",
+    "PERI_IMPLANT_HEALTH": "Peri-implant health",
+    "ALVEOLAR_FRACTURE": "Alveolar fracture"
   },
   "SURFACE": {
     "MESIAL": "Mesial",

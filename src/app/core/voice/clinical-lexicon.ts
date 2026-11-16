@@ -343,7 +343,7 @@ export const FINDINGS: FindingDefinition[] = [
  * question or a conversation; "vous avez une carie sur la 16" is the doctor
  * telling the chart. Only the second may open a sentence that needs no wake word.
  */
-export const SYMPTOM_CODES: ReadonlySet<string> = new Set(['pain', 'sensitivity', 'bleeding', 'gingival_bleeding', 'swelling']);
+export const SYMPTOM_CODES: ReadonlySet<string> = new Set(['pain', 'sensitivity', 'dentin_hypersensitivity', 'bleeding', 'gingival_bleeding', 'swelling']);
 
 const FINDING_BY_CODE = new Map(FINDINGS.map(f => [f.code, f]));
 
@@ -454,6 +454,14 @@ const SEVERITIES: Array<{ code: Severity; pattern: RegExp }> = [
  * also read as the crown's.
  */
 const ROOT_PHRASES: ReadonlyArray<{ pattern: RegExp; codes: readonly string[] }> = [
+  // The referential's letters for the roots: "racine MV", "racine DV", "racine P" (and "MB root").
+  { pattern: /\bracines?\s+M[VB]\b/iu, codes: ['mesialroot', 'buccalroot'] },
+  { pattern: /\bracines?\s+D[VB]\b/iu, codes: ['distalroot', 'buccalroot'] },
+  { pattern: /\bracines?\s+[PL]\b/iu, codes: ['lingualroot'] },
+  { pattern: /\bracines?\s+M\b/iu, codes: ['mesialroot'] },
+  { pattern: /\bracines?\s+D\b/iu, codes: ['distalroot'] },
+  { pattern: /\b(?:MB|MV)\s+roots?\b/iu, codes: ['mesialroot', 'buccalroot'] },
+  { pattern: /\b(?:DB|DV)\s+roots?\b/iu, codes: ['distalroot', 'buccalroot'] },
   { pattern: /\bracines?\s+m[ée]sio[- ]?(?:vestibulaire|buccale?)s?\b/iu, codes: ['mesialroot', 'buccalroot'] },
   { pattern: /\bracines?\s+disto[- ]?(?:vestibulaire|buccale?)s?\b/iu, codes: ['distalroot', 'buccalroot'] },
   { pattern: /\b(?:mesio|mesial)[- ]?buccal\s+roots?\b/iu, codes: ['mesialroot', 'buccalroot'] },
@@ -512,7 +520,9 @@ export function detectSurface(text: string): string | null {
     named.add('mesial');
     named.add('distal');
   }
-  for (const mention of letterMentions(text)) mention.codes.forEach(code => named.add(code));
+  for (const mention of letterMentions(text)) {
+    if (!insideRoot(mention.start)) mention.codes.forEach(code => named.add(code));
+  }
   const ordered = SURFACE_CODES.filter(code => named.has(code));
   return ordered.length ? ordered.slice(0, MAX_SURFACES).join('-') : null;
 }
@@ -536,6 +546,7 @@ function surfaceMentions(utterance: string): SurfaceMention[] {
   }
   // "MOD", "DO", "M.O.D.": each letter is a surface, all on the span of the abbreviation.
   for (const { codes, start, end } of letterMentions(utterance)) {
+    if (insideRoot(start)) continue;
     for (const code of codes) mentions.push({ code, start, end });
   }
   return mentions;
@@ -570,12 +581,19 @@ function surfaceClusters(utterance: string): Array<{ codes: string[]; start: num
   return clusters;
 }
 
+/**
+ * States said of a restoration, whose words may hold where it is: "composite mésial défectueux",
+ * "amalgame MO descellé". A surface inside them is the restoration's, so it stays the state's.
+ */
+const SURFACE_INSIDE_KEPT: ReadonlySet<string> = new Set(['defective_restoration', 'fractured_restoration', 'lost_restoration', 'intact_restoration']);
+
 function assignSurfaces(utterance: string, findings: ExtractedFinding[]): void {
   const owned = new Map<ExtractedFinding, Set<string>>();
   for (const mention of surfaceClusters(utterance)) {
     // "Déplacement vestibulaire", "migration mésiale", "lésion cervicale": the face is part of the state's
     // own name, not where it is, and a state named for it does not also get it as a surface.
-    if (findings.some(f => mention.start >= f.at && mention.end <= f.at + f.matchedText.length)) continue;
+    const inside = (f: ExtractedFinding) => mention.start >= f.at && mention.end <= f.at + f.matchedText.length;
+    if (findings.some(f => inside(f) && !SURFACE_INSIDE_KEPT.has(f.code))) continue;
     const clause = clauseBounds(utterance, mention.start);
     let best: ExtractedFinding | null = null;
     let bestGap = Infinity;
@@ -684,10 +702,69 @@ function applyMeasure(utterance: string, finding: ExtractedFinding, findings: re
 
   const match = unicodeBoundaries(MILLIMETRES).exec(after)
     ?? unicodeBoundaries(new RegExp(MILLIMETRES.source + BEFORE_STATE, 'iu')).exec(before);
-  if (!match) return;
-  const word = match[1].toLowerCase();
-  const value = word in NUMBER_WORDS ? String(NUMBER_WORDS[word]) : word.replace(/[,\u0001]/, '.');
-  finding.note = `${value} mm`;
+  const parts: string[] = [];
+  if (match) {
+    const word = match[1].toLowerCase();
+    const value = word in NUMBER_WORDS ? String(NUMBER_WORDS[word]) : word.replace(/[,\u0001]/, '.');
+    parts.push(`${value} mm`);
+  }
+  if (finding.code === 'gingival_recession') {
+    const cairo = unicodeBoundaries(CAIRO).exec(saidWith(utterance, finding, findings));
+    const type = cairo ? GRADE_NUMBER[(cairo[1] ?? cairo[2]).toLowerCase()] : undefined;
+    if (type) parts.push(`RT${type}`);
+  }
+  if (parts.length) finding.note = parts.join(', ');
+}
+
+/**
+ * The words said with a state, commas included, up to the next state or the end of the sentence:
+ * "récession de 3 mm, RT2", "parodontite stade III, grade B, généralisée".
+ */
+function saidWith(utterance: string, finding: ExtractedFinding, findings: readonly ExtractedFinding[]): string {
+  const from = finding.at + finding.matchedText.length;
+  const next = findings.filter(f => f.at >= from).map(f => f.at);
+  const rest = utterance.slice(from, Math.min(utterance.length, from + 80, ...next));
+  return `${finding.matchedText} ${rest.split(/[.;!?]/u)[0]}`;
+}
+
+/** The Cairo class of a recession: "RT2", "Cairo 2", "classe RT 3". */
+const CAIRO = /\b(?:classe\s+|class\s+|type\s+)?r\.?\s?t\.?\s*(1|2|3)\b|\bcairo\s*(?:classe\s*|class\s*|type\s*)?(?:r\.?\s?t\.?\s*)?(1|2|3|i{1,3}|un|deux|trois|one|two|three)\b/iu;
+
+/**
+ * The AAP / EFP diagnosis said in full: "parodontite stade III grade B généralisée", "gingivite localisée
+ * induite par le biofilm". The stage, the grade and the extent are the diagnosis, so they are kept as its
+ * note (and the stage as its severity) instead of being dropped with the words the lexicon has no slot for.
+ */
+const STAGED: ReadonlySet<string> = new Set(['periodontitis', 'necrotizing_periodontitis']);
+const WITH_EXTENT: ReadonlySet<string> = new Set([...STAGED, 'gingivitis', 'necrotizing_gingivitis']);
+const STAGE = /\b(stade|stage)\s*(?:n[°o]\s*)?(1|2|3|4|i{1,3}|iv|un|deux|trois|quatre|one|two|three|four)\b/iu;
+const STAGE_NUMBER: Readonly<Record<string, 1 | 2 | 3 | 4>> = {
+  '1': 1, i: 1, un: 1, one: 1, '2': 2, ii: 2, deux: 2, two: 2, '3': 3, iii: 3, trois: 3, three: 3, '4': 4, iv: 4, quatre: 4, four: 4,
+};
+const STAGE_ROMAN = ['', 'I', 'II', 'III', 'IV'];
+const PERIO_GRADE = /\bgrade\s*([abc])\b/iu;
+const EXTENT = /\b(?:localis[ée]e?s?|g[ée]n[ée]ralis[ée]e?s?|locali[sz]ed|generali[sz]ed)\b/iu;
+const BIOFILM = /\b(?:(non[- ]?)?induite?s?\s+par\s+(?:le\s+|la\s+)?(?:biofilm|plaque)|(non[- ]?)?(?:plaque|biofilm)[- ]induced|(not\s+)?induced\s+by\s+(?:dental\s+)?(?:plaque|biofilm))/iu;
+
+function applyDiagnosis(utterance: string, finding: ExtractedFinding, findings: readonly ExtractedFinding[]): void {
+  if (!WITH_EXTENT.has(finding.code)) return;
+  const said = saidWith(utterance, finding, findings);
+  const parts: string[] = [];
+  if (STAGED.has(finding.code)) {
+    const stage = unicodeBoundaries(STAGE).exec(said);
+    const number = stage ? STAGE_NUMBER[stage[2].toLowerCase()] : undefined;
+    if (stage && number) {
+      parts.push(`${stage[1].toLowerCase()} ${STAGE_ROMAN[number]}`);
+      finding.severity = number === 1 ? 'MILD' : number === 2 ? 'MODERATE' : 'SEVERE';
+    }
+    const grade = unicodeBoundaries(PERIO_GRADE).exec(said);
+    if (grade) parts.push(`grade ${grade[1].toUpperCase()}`);
+  }
+  const extent = unicodeBoundaries(EXTENT).exec(said);
+  if (extent) parts.push(extent[0].toLowerCase());
+  const biofilm = finding.code === 'gingivitis' ? unicodeBoundaries(BIOFILM).exec(said) : null;
+  if (biofilm) parts.push(biofilm[0].toLowerCase().replace(/\s+/g, ' '));
+  if (parts.length) finding.note = [finding.note, ...parts].filter(Boolean).join(', ');
 }
 
 // ── "Suspected" is not "found" ─────────────────────────────────────────
@@ -916,6 +993,7 @@ function scanFindings(utterance: string, every: boolean): ExtractedFinding[] {
   const ordered = found.sort((a, b) => a.at - b.at);
   assignSurfaces(utterance, ordered);
   for (const finding of ordered) applyMeasure(utterance, finding, ordered);
+  for (const finding of ordered) applyDiagnosis(utterance, finding, ordered);
   for (const finding of ordered) finding.certainty = suspicionAround(utterance, finding, ordered);
   return ordered;
 }
@@ -955,9 +1033,14 @@ const FINDING_FAMILIES: Readonly<Record<string, readonly string[]>> = {
   caries: ['caries', 'recurrent_caries', 'deep_caries', 'cavity', 'white_spot_lesion', 'demineralisation'],
   existing_crown: ['existing_crown', 'crown_defective', 'crown_replacement_required', 'crown_required', 'temporary_crown', 'post_and_crown', 'implant_crown'],
   existing_filling: ['existing_filling', 'existing_composite', 'existing_amalgam', 'filling_required', 'existing_glass_ionomer', 'existing_temporary_filling', 'existing_inlay', 'existing_onlay', 'existing_overlay'],
-  gingival_inflammation: ['gingival_inflammation', 'gingivitis', 'periodontal_pocket', 'periodontitis'],
-  fracture: ['fracture', 'cracked_tooth', 'cusp_fracture', 'crown_fracture', 'root_fracture', 'enamel_fracture', 'enamel_dentin_fracture', 'complicated_crown_fracture', 'crown_root_fracture'],
-  abscess: ['abscess', 'periapical_abscess', 'gingival_abscess', 'periodontal_abscess'],
+  gingival_inflammation: ['gingival_inflammation', 'gingivitis', 'periodontal_pocket', 'periodontitis', 'necrotizing_gingivitis', 'necrotizing_periodontitis'],
+  fracture: ['fracture', 'cracked_tooth', 'cusp_fracture', 'crown_fracture', 'root_fracture', 'enamel_fracture', 'enamel_dentin_fracture', 'complicated_crown_fracture', 'crown_root_fracture', 'alveolar_fracture'],
+  abscess: ['abscess', 'periapical_abscess', 'gingival_abscess', 'periodontal_abscess', 'acute_apical_abscess', 'chronic_apical_abscess'],
+  periapical_abscess: ['periapical_abscess', 'acute_apical_abscess', 'chronic_apical_abscess'],
+  apical_periodontitis: ['apical_periodontitis', 'symptomatic_apical_periodontitis', 'asymptomatic_apical_periodontitis'],
+  sensitivity: ['sensitivity', 'dentin_hypersensitivity', 'percussion_sensitivity'],
+  gingivitis: ['gingivitis', 'necrotizing_gingivitis'],
+  periodontitis: ['periodontitis', 'necrotizing_periodontitis'],
   tooth_wear: ['tooth_wear', 'attrition', 'abrasion', 'erosion', 'abfraction'],
   bleeding: ['bleeding', 'gingival_bleeding', 'bleeding_on_probing'],
   plaque_calculus: ['plaque_calculus', 'plaque', 'calculus'],

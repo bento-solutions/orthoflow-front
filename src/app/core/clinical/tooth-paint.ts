@@ -163,7 +163,7 @@ const RULES: Readonly<Record<string, Rule>> = { ...BASE_RULES, ...REFERENTIAL_PA
 const ABSENT = new Set(['extracted', 'missing', 'avulsion', ...REFERENTIAL_ABSENT]);
 const LESION = new Set(['abscess', 'periapical_lesion', 'necrosis', 'pulpitis', 'infection', ...REFERENTIAL_LESIONS]);
 /** Said of the tooth and the gum being as they should be: nothing to flag on the number. */
-const NEUTRAL = new Set(['normal', 'normal_pulp', 'healthy_gingiva', 'permanent_tooth']);
+const NEUTRAL = new Set(['normal', 'normal_pulp', 'healthy_gingiva', 'permanent_tooth', 'normal_apical_tissues', 'periodontal_health', 'peri_implant_health', 'intact_restoration']);
 const IMPLANT_THREADS: ZonePaint = { family: 'existing', pattern: 'bars' };
 const RETAINED_ROOT: ZonePaint = { family: 'condition', pattern: 'stipple' };
 const ROOT_POST: ZonePaint = { family: 'existing', pattern: 'endo' };

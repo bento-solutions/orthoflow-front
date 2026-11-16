@@ -28,6 +28,7 @@ import {
   InsuranceFormIssuedDto,
 } from './consultation.model';
 import { ConsultationRecorderService, ConsultationRecording } from './consultation-recorder.service';
+import { canChart, suggestFromSentence, suggestionGrammarText } from './consultation-suggestion';
 import { InputLanguageService } from '../voice/input-language.service';
 import { InputLanguage } from '../voice/language-filter';
 import { ReplayUnresolved } from '../voice/voice-orchestrator.service';
@@ -205,6 +206,8 @@ const SPOKEN = {
     ended: 'Consultation terminée. Relisez et validez à l’écran.',
     analysing: 'Consultation terminée. J’analyse la conversation.',
     analysed: 'Analyse terminée. Relisez et validez à l’écran.',
+    continued: 'Consultation reprise. Les commandes sont actives.',
+    continuedDeferred: 'Consultation reprise. J’écoute ; ce qui est ajouté sera analysé à la fin.',
     saved: 'Consultation enregistrée.',
   },
   en: {
@@ -215,6 +218,8 @@ const SPOKEN = {
     ended: 'Consultation ended. Please review and validate on screen.',
     analysing: 'Consultation ended. Analysing the conversation.',
     analysed: 'Analysis done. Please review and validate on screen.',
+    continued: 'Consultation resumed. Commands are active.',
+    continuedDeferred: 'Consultation resumed. I am listening; what you add will be analysed at the end.',
     saved: 'Consultation saved.',
   },
 } as const;
@@ -395,6 +400,14 @@ export class ConsultationService {
   private firstUnkeptAt = 0;
   /** The dictation language when recording began: a replay starts from it. */
   private languageAtStart: InputLanguage | null = null;
+  /**
+   * The last line the end-of-consultation analysis turned into commands. A consultation the doctor
+   * continued replays only what was said after it: what was replayed before is already staged, and
+   * the doctor may have decided on it.
+   */
+  private analysedThrough = 0;
+  /** The doctor wrote in the report since it was last written for them: ending again keeps their words. */
+  private reportEdited = false;
   /** The recording made, kept until the server has it so a failed upload can be sent again. */
   private pendingRecording: ConsultationRecording | null = null;
   /** Who {@link loadConfig}'s answer is for; undefined when it should be asked again. */
@@ -571,6 +584,71 @@ export class ConsultationService {
   }
 
   /**
+   * The doctor forgot something, or wants to add to the dossier before saving: recording starts
+   * again on the same consultation, from the review.
+   *
+   * Nothing is lost: the conversation goes on from its last line, what was staged stays staged and
+   * every decision taken in the review stands. Ending it again reads what was added — in the
+   * deferred mode only the sentences said since are replayed as commands — and the review comes
+   * back with the new findings beside the old. The audio already kept stays as it is; what is
+   * said after continuing is transcribed and timed but not added to the recording.
+   *
+   * Must be reached synchronously from a tap, for the same reason as {@link start}.
+   */
+  async continueConsultation(): Promise<boolean> {
+    const consultation = this.consultationSignal();
+    if (!consultation || this.phase() !== 'review' || this.busySignal() || this.savingSignal() || this.analysisSignal()) return false;
+    // Before anything is awaited: this is still inside the tap that asked for it.
+    const microphone = this.voice.openMicrophone();
+    this.feedback.unlock();
+    this.earcons.unlock();
+    this.busySignal.set(true);
+    try {
+      this.flushReviewSave();
+      const dto = await firstValueFrom(this.api.continue(consultation.id));
+      this.consultationSignal.set({ ...consultation, ...dto, lines: consultation.lines, reviewState: consultation.reviewState });
+      await this.sessions.reopen();
+      this.holdVoice();
+      this.languageAtStart = this.inputLanguage.language();
+      await microphone;
+      await this.voice.startExaminationMode({ announce: false });
+      // A recording already kept (or waiting to be sent) is the consultation's: a second one would replace it.
+      if (!dto.audio && !this.pendingRecording) this.startAudio();
+      this.say(this.deferred() ? 'continuedDeferred' : 'continued');
+      return true;
+    } catch (error) {
+      this.voice.stopListening();
+      this.toast.error(this.describe(error, 'CONSULTATION.ERROR_CONTINUE'));
+      return false;
+    } finally {
+      this.busySignal.set(false);
+    }
+  }
+
+  /**
+   * A sentence the analysis left "to be confirmed", put on the chart as its suggestion reads it —
+   * still to validate, like every finding the analysis found. False when it could not be placed
+   * (the words do not name a tooth and a finding the chart's grammar reads), and the doctor adds
+   * it by hand.
+   */
+  async chartSuggestion(quote: string): Promise<boolean> {
+    if (this.phase() !== 'review') return false;
+    const suggestion = suggestFromSentence(quote, this.context.dentition());
+    if (!canChart(suggestion)) return false;
+    const finding = suggestion.findings.map(suggestionGrammarText).join(' et ');
+    const result = await this.voice.stageRecovered?.(suggestion.teeth.join(','), finding, quote) ?? 'rejected';
+    if (result === 'rejected') {
+      this.toast.error(this.translate.instant('CONSULTATION.SUGGEST.NOT_ADDED'));
+      return false;
+    }
+    this.changeReview(state => ({
+      ...state,
+      chartMentions: state.chartMentions.filter(mention => !(mention.unresolved && mention.quote === quote)),
+    }));
+    return true;
+  }
+
+  /**
    * Lets go of the consultation in this tab without ending it — the doctor left
    * the dossier. The server keeps it, and offers it back when they return.
    */
@@ -592,6 +670,8 @@ export class ConsultationService {
     this.reviewSignal.set(emptyReview());
     this.reportSignal.set('');
     this.excludedSignal.set(new Set());
+    this.analysedThrough = 0;
+    this.reportEdited = false;
     this.failuresSignal.set([]);
     this.noteSignal.set(null);
     this.savedSignal.set(null);
@@ -620,6 +700,8 @@ export class ConsultationService {
     this.reviewSignal.set(stored ? stored.review : dto.draft ? mergeDraft(emptyReview(), dto.draft) : emptyReview());
     this.reportSignal.set(stored?.report ?? '');
     this.excludedSignal.set(new Set(stored?.excluded ?? []));
+    this.analysedThrough = stored?.analysedThrough ?? 0;
+    this.reportEdited = stored?.reportEdited === true;
     this.failuresSignal.set([]);
     this.noteSignal.set(null);
     this.savedSignal.set(null);
@@ -1133,7 +1215,7 @@ export class ConsultationService {
       // One last, complete reading of the finished conversation.
       this.dirty = true;
       await this.extractNow();
-      await this.regenerateReport();
+      await this.writeReportUnlessEdited();
       this.say('ended');
     } catch (error) {
       this.toast.error(this.describe(error, 'CONSULTATION.ERROR_END'));
@@ -1182,8 +1264,9 @@ export class ConsultationService {
       recording = await this.stopAudio();
       await this.keepLinesNow();
 
-      // Typed lines were never commands, live or not: they go to the reading only.
-      const spoken = this.linesSignal().filter(line => !line.typed);
+      // Typed lines were never commands, live or not: they go to the reading only. A consultation
+      // the doctor continued replays only what was added: the rest is already staged.
+      const spoken = this.linesSignal().filter(line => !line.typed && line.id > this.analysedThrough);
       this.analysisSignal.set({ step: 'commands', done: 0, total: spoken.length });
       const replay = await this.voice.replayConsultation(
         spoken.map(line => ({ id: line.id, text: line.text, at: line.at })),
@@ -1197,6 +1280,7 @@ export class ConsultationService {
       this.dirty = true;
       await this.extractNow('full', true);
       this.addUnresolved(replay.unresolved);
+      this.analysedThrough = Math.max(this.analysedThrough, ...this.linesSignal().map(line => line.id));
 
       await this.sessions.end({ waitForClips: false, direct: true });
       this.releaseVoice();
@@ -1207,7 +1291,7 @@ export class ConsultationService {
       recording = null;
 
       this.analysisSignal.set({ step: 'report', done: 0, total: 0 });
-      await this.regenerateReport();
+      await this.writeReportUnlessEdited();
       this.scheduleReviewSave();
       this.say('analysed');
     } catch (error) {
@@ -1409,7 +1493,14 @@ export class ConsultationService {
 
   setReport(text: string): void {
     this.reportSignal.set(text);
+    this.reportEdited = true;
     this.scheduleReviewSave();
+  }
+
+  /** At the end of a recording: a fresh report, unless the doctor has written in it (a continued consultation). */
+  private async writeReportUnlessEdited(): Promise<void> {
+    if (this.reportEdited && this.reportSignal().trim()) return;
+    await this.regenerateReport();
   }
 
   /**
@@ -1427,10 +1518,12 @@ export class ConsultationService {
     const kept = this.chartEntries().filter(row => row.included).map(row => row.entry.auditId);
     if (!sessionId || kept.length === 0) {
       this.reportSignal.set('');
+      this.reportEdited = false;
       return;
     }
     await this.sessions.generateNarrative(sessionId, kept);
     this.reportSignal.set(this.sessions.narrative() ?? '');
+    this.reportEdited = false;
     this.scheduleReviewSave();
   }
 
@@ -1474,7 +1567,8 @@ export class ConsultationService {
     this.reviewSaveTimer = null;
     const consultation = this.consultationSignal();
     if (!consultation || !this.isOpen()) return;
-    const state = toStoredReview(this.reviewSignal(), this.reportSignal(), this.excludedSignal());
+    const state = toStoredReview(this.reviewSignal(), this.reportSignal(), this.excludedSignal(),
+      { analysedThrough: this.analysedThrough, reportEdited: this.reportEdited });
     // Best effort: a lost save costs the decisions since the last one, never
     // the consultation, and the next change sends everything again.
     this.api.saveReviewState(consultation.id, state).subscribe({ error: () => undefined });

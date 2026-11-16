@@ -333,10 +333,24 @@ export interface StoredReview {
   report: string;
   /** Chart findings the doctor left out. */
   excluded: string[];
+  /**
+   * The last line the end-of-consultation analysis has turned into commands: a consultation the
+   * doctor continued replays only what was said after it. Absent before any analysis.
+   */
+  analysedThrough?: number;
+  /** The doctor wrote in the report: ending again does not write a fresh one over their words. */
+  reportEdited?: boolean;
 }
 
-export function toStoredReview(review: ReviewState, report: string, excluded: Set<string>): StoredReview {
-  return { v: 1, review, report, excluded: [...excluded] };
+export function toStoredReview(
+  review: ReviewState, report: string, excluded: Set<string>,
+  extra: { analysedThrough?: number; reportEdited?: boolean } = {},
+): StoredReview {
+  return {
+    v: 1, review, report, excluded: [...excluded],
+    ...(extra.analysedThrough ? { analysedThrough: extra.analysedThrough } : {}),
+    ...(extra.reportEdited ? { reportEdited: true } : {}),
+  };
 }
 
 /**
@@ -362,6 +376,8 @@ export function fromStoredReview(value: unknown): StoredReview | null {
     } as ReviewState,
     report: typeof stored.report === 'string' ? stored.report : '',
     excluded: Array.isArray(stored.excluded) ? stored.excluded.filter((id): id is string => typeof id === 'string') : [],
+    ...(typeof stored.analysedThrough === 'number' && stored.analysedThrough > 0 ? { analysedThrough: stored.analysedThrough } : {}),
+    ...(stored.reportEdited === true ? { reportEdited: true } : {}),
   };
 }
 

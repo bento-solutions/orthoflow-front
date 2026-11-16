@@ -68,6 +68,7 @@ describe('ConsultationService — the deferred mode', () => {
   let uploads: number;
   let nextDraft: ConsultationDraftDto;
   let recording: boolean;
+  let stagedRecovered: Array<[string | null, string, string]>;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -88,6 +89,7 @@ describe('ConsultationService — the deferred mode', () => {
     uploads = 0;
     nextDraft = draft();
     recording = false;
+    stagedRecovered = [];
 
     TestBed.configureTestingModule({
       providers: [
@@ -119,6 +121,10 @@ describe('ConsultationService — the deferred mode', () => {
               return of(dto('REVIEW', { audio: { fileId: 'f-1', contentType: 'audio/webm', sizeBytes: 10, startedAt: null, durationMs: 60_000 } }));
             },
             abandon: () => of(dto('ABANDONED')),
+            continue: () => {
+              calls.push('api.continue');
+              return of(dto('EXAMINATION', { audio: { fileId: 'f-1', contentType: 'audio/webm', sizeBytes: 10, startedAt: null, durationMs: 60_000 } }));
+            },
           },
         },
         { provide: VoiceApiService, useValue: { getSession: () => of({ id: 'vs-1', status: 'ACTIVE' }) } },
@@ -136,7 +142,10 @@ describe('ConsultationService — the deferred mode', () => {
             setHandledElsewhere: () => undefined,
             setUtteranceListener: () => undefined,
             setIntakeSink: (s: IntakeSink | null) => { sink = s; },
-            stageRecovered: async () => 'staged',
+            stageRecovered: async (teeth: string | null, finding: string, quote: string) => {
+              stagedRecovered.push([teeth, finding, quote]);
+              return 'staged';
+            },
             replayConsultation: async (lines: ReplayLine[], options: { language?: string; onProgress?: (d: number, t: number) => void }) => {
               calls.push('replay');
               replayed = lines;
@@ -169,12 +178,13 @@ describe('ConsultationService — the deferred mode', () => {
             generateNarrative: async () => { calls.push('narrative'); },
             narrative: () => 'Examen.',
             resumeIfAvailable: async () => null,
+            reopen: async () => { calls.push('session.reopen'); },
             touchSession: () => undefined,
             setRouting: () => undefined,
           },
         },
         { provide: InputLanguageService, useValue: { language: () => 'fr', set: () => undefined } },
-        { provide: VoiceContextService, useValue: { snapshot: () => ({ patientId: 'p-1', locale: 'fr-MA' }), locale: () => 'fr-MA' } },
+        { provide: VoiceContextService, useValue: { snapshot: () => ({ patientId: 'p-1', locale: 'fr-MA' }), locale: () => 'fr-MA', dentition: () => 'adult' } },
         { provide: SpeechFeedbackService, useValue: { speak: () => undefined, unlock: () => undefined } },
         { provide: VoiceFeedbackService, useValue: { deliver: (_c: string, lines: { full: { text: string } | null }) => { if (lines.full) calls.push(`say ${lines.full.text}`); } } },
         { provide: EarconService, useValue: { unlock: () => undefined, play: () => undefined } },
@@ -354,6 +364,72 @@ describe('ConsultationService — the deferred mode', () => {
       const steps = [...new Set(analyses.filter(Boolean).map(a => a!.step))];
       expect(steps).toEqual(['finishing', 'commands', 'reading']);
       expect(analyses.filter(a => a?.step === 'commands').map(a => `${a!.done}/${a!.total}`)).toEqual(['1/3', '2/3', '3/3']);
+    });
+
+    it('puts a sentence left to confirm on the chart as its suggestion reads it, still to validate', async () => {
+      replayUnresolved = [{ lineId: 9, text: 'la 36 a une fracture', question: null }];
+      await end();
+      expect(service.review().chartMentions.map(m => m.quote)).toEqual(['la 36 a une fracture']);
+
+      expect(await service.chartSuggestion('la 36 a une fracture')).toBe(true);
+
+      expect(stagedRecovered).toHaveLength(1);
+      expect(stagedRecovered[0][0]).toBe('36');
+      expect(stagedRecovered[0][2]).toBe('la 36 a une fracture');
+      expect(service.review().chartMentions).toEqual([]);
+    });
+
+    it('leaves a suggestion with no tooth for the doctor to place by hand', async () => {
+      replayUnresolved = [{ lineId: 9, text: 'Calypso, carie occlusale', question: 'Sur quelle dent ?' }];
+      await end();
+
+      expect(await service.chartSuggestion('Calypso, carie occlusale')).toBe(false);
+      expect(stagedRecovered).toEqual([]);
+      expect(service.review().chartMentions).toHaveLength(1);
+    });
+
+    describe('continuing it after the end', () => {
+      it('is only offered from the review', async () => {
+        expect(await service.continueConsultation()).toBe(false);
+        expect(calls).not.toContain('api.continue');
+      });
+
+      it('records again with nothing lost, keeps the audio already sent, and replays only what was added', async () => {
+        await end();
+        const linesBefore = service.lines().length;
+        calls.length = 0;
+
+        expect(await service.continueConsultation()).toBe(true);
+
+        expect(calls).toEqual(expect.arrayContaining(['api.continue', 'session.reopen', 'mic.start']));
+        expect(service.phase()).toBe('examination');
+        expect(service.lines()).toHaveLength(linesBefore);
+        expect(service.review().allergies.map(a => a.data.substance)).toEqual(['pénicilline']);
+        // The recording already kept would be replaced by a second one: none is made.
+        expect(calls).not.toContain('audio.start');
+        expect(service.audioState()).toBe('kept');
+        expect(calls).toContain('say Consultation reprise. J’écoute ; ce qui est ajouté sera analysé à la fin.');
+
+        listener?.('dent 26 fracture');
+        await end();
+
+        expect(replayed.map(line => line.text)).toEqual(['dent 26 fracture']);
+        expect(service.phase()).toBe('review');
+        expect(service.review().allergies.map(a => a.data.substance)).toEqual(['pénicilline']);
+      });
+
+      it('keeps the report the doctor wrote when it ends again', async () => {
+        await end();
+        service.setReport('Mes propres mots.');
+        await service.continueConsultation();
+        listener?.('dent 26 fracture');
+        calls.length = 0;
+
+        await end();
+
+        expect(service.report()).toBe('Mes propres mots.');
+        expect(calls).not.toContain('narrative');
+      });
     });
 
     it('keeps the recording when it cannot be sent, and sends it again on request', async () => {

@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ConsultationService } from '../../../../core/consultation/consultation.service';
 import { VoiceOrchestratorService } from '../../../../core/voice/voice-orchestrator.service';
+import { ConsultationSuggestionComponent } from '../consultation-suggestion.component';
 
 /**
  * The conversation as it is heard, each sentence with the time it was said and
@@ -19,7 +20,7 @@ import { VoiceOrchestratorService } from '../../../../core/voice/voice-orchestra
 @Component({
   selector: 'app-cockpit-conversation',
   standalone: true,
-  imports: [FormsModule, TranslateModule],
+  imports: [FormsModule, TranslateModule, ConsultationSuggestionComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="ck-conv" [attr.aria-label]="'COCKPIT.CONVERSATION' | translate">
@@ -33,7 +34,10 @@ import { VoiceOrchestratorService } from '../../../../core/voice/voice-orchestra
             <li class="ck-line" [attr.data-verdict]="line.verdict ?? 'pending'" [attr.data-line]="line.id">
               <span class="ck-line-time">{{ time(line.at) }}</span>
               <span class="ck-line-text" [class.typed]="line.typed">{{ line.text }}</span>
-              @if (line.verdict && line.verdict !== 'heard') {
+              @if (line.verdict === 'unsure' && c.deferred()) {
+                <!-- Read after the consultation and not settled: what it most likely meant, to be confirmed. -->
+                <span class="ck-verdict" data-verdict="to-confirm"><app-consultation-suggestion [sentence]="line.text" /></span>
+              } @else if (line.verdict && line.verdict !== 'heard') {
                 <span class="ck-verdict" [attr.data-verdict]="line.verdict">
                   <span class="ck-verdict-name">{{ 'COCKPIT.VERDICT.' + verdictKey(line.verdict) | translate }}</span>
                   @if (line.summary) { <span class="ck-verdict-summary">{{ line.summary }}</span> }

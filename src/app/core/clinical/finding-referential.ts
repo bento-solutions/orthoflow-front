@@ -49,6 +49,7 @@ export const REFERENTIAL_OPTIONS: readonly ReferentialOption[] = [
   o('fluorosis', 'CONDITION', true, 'structure'),
   o('post_trauma_pulpal_discoloration', 'CONDITION', true, 'trauma'),
   o('pulp_exposure', 'CONDITION', true, 'structure'),
+  o('dentin_hypersensitivity', 'CONDITION', true, 'structure'),
   o('existing_glass_ionomer', 'EXISTING', true, 'restoration'),
   o('existing_temporary_filling', 'EXISTING', true, 'restoration'),
   o('existing_overlay', 'EXISTING', false, 'restoration'),
@@ -63,6 +64,7 @@ export const REFERENTIAL_OPTIONS: readonly ReferentialOption[] = [
   o('lost_restoration', 'CONDITION', true, 'restoration'),
   o('marginal_defect', 'CONDITION', true, 'restoration'),
   o('restoration_overhang', 'CONDITION', true, 'restoration'),
+  o('intact_restoration', 'OBSERVATION', false, 'restoration'),
   o('normal_pulp', 'OBSERVATION', false, 'endo'),
   o('reversible_pulpitis', 'CONDITION', false, 'endo'),
   o('irreversible_pulpitis_symptomatic', 'CONDITION', false, 'endo'),
@@ -78,10 +80,17 @@ export const REFERENTIAL_OPTIONS: readonly ReferentialOption[] = [
   o('retreatment_required', 'TREATMENT_REQUIRED', false, 'plan'),
   o('perforation', 'CONDITION', false, 'endo'),
   o('separated_instrument', 'CONDITION', false, 'endo'),
+  o('normal_apical_tissues', 'OBSERVATION', false, 'endo'),
+  o('symptomatic_apical_periodontitis', 'CONDITION', false, 'endo'),
+  o('asymptomatic_apical_periodontitis', 'CONDITION', false, 'endo'),
   o('apical_periodontitis', 'CONDITION', false, 'endo'),
+  o('acute_apical_abscess', 'CONDITION', false, 'endo'),
+  o('chronic_apical_abscess', 'CONDITION', false, 'endo'),
   o('periapical_abscess', 'CONDITION', false, 'endo'),
+  o('condensing_osteitis', 'CONDITION', false, 'endo'),
   o('open_apex', 'CONDITION', false, 'endo'),
   o('hypercementosis', 'CONDITION', false, 'endo'),
+  o('periodontal_health', 'OBSERVATION', false, 'perio'),
   o('healthy_gingiva', 'OBSERVATION', false, 'perio'),
   o('gingivitis', 'CONDITION', false, 'perio'),
   o('gingival_bleeding', 'CONDITION', false, 'perio'),
@@ -90,6 +99,9 @@ export const REFERENTIAL_OPTIONS: readonly ReferentialOption[] = [
   o('gingival_hyperplasia', 'CONDITION', false, 'perio'),
   o('clinical_attachment_loss', 'CONDITION', false, 'perio'),
   o('periodontitis', 'CONDITION', false, 'perio'),
+  o('necrotizing_gingivitis', 'CONDITION', false, 'perio'),
+  o('necrotizing_periodontitis', 'CONDITION', false, 'perio'),
+  o('endo_perio_lesion', 'CONDITION', false, 'perio'),
   o('gingival_abscess', 'CONDITION', false, 'perio'),
   o('periodontal_abscess', 'CONDITION', false, 'perio'),
   o('gingival_ulceration', 'CONDITION', false, 'perio'),
@@ -98,6 +110,7 @@ export const REFERENTIAL_OPTIONS: readonly ReferentialOption[] = [
   o('furcation_involvement', 'CONDITION', false, 'perio'),
   o('suppuration', 'CONDITION', false, 'perio'),
   o('mucogingival_anomaly', 'CONDITION', false, 'perio'),
+  o('peri_implant_health', 'OBSERVATION', false, 'perio'),
   o('peri_implant_mucositis', 'CONDITION', false, 'perio'),
   o('peri_implantitis', 'CONDITION', false, 'perio'),
   o('calculus', 'CONDITION', true, 'perio'),
@@ -125,6 +138,7 @@ export const REFERENTIAL_OPTIONS: readonly ReferentialOption[] = [
   o('extrusive_luxation', 'CONDITION', false, 'trauma'),
   o('intrusive_luxation', 'CONDITION', false, 'trauma'),
   o('enamel_fracture', 'CONDITION', true, 'trauma'),
+  o('alveolar_fracture', 'CONDITION', false, 'trauma'),
   o('soft_tissue_trauma', 'CONDITION', false, 'trauma'),
   o('ankylosis', 'CONDITION', false, 'trauma'),
   o('percussion_sensitivity', 'CONDITION', false, 'trauma'),
@@ -161,6 +175,7 @@ export const REFERENTIAL_RULES: Readonly<Record<string, ReferentialRule>> = {
   fluorosis: rule('condition', 'stipple', 'CROWN', true),
   post_trauma_pulpal_discoloration: rule('condition', 'stipple', 'CROWN', true),
   pulp_exposure: rule('condition', 'stipple', 'CROWN', true),
+  dentin_hypersensitivity: rule('condition', 'stipple', ['cervical'], true),
   existing_glass_ionomer: rule('existing', 'solid', 'CROWN', true),
   existing_temporary_filling: rule('existing', 'solid', 'CROWN', true),
   existing_overlay: rule('existing', 'hatch', ['occlusal', 'mesial', 'distal', 'buccal', 'lingual'], false),
@@ -185,6 +200,9 @@ export const REFERENTIAL_RULES: Readonly<Record<string, ReferentialRule>> = {
   perforation: rule('condition', 'jag', ['root'], false),
   separated_instrument: rule('condition', 'jag', ['root'], false),
   gingivitis: rule('condition', 'stipple', ['cervical'], false),
+  necrotizing_gingivitis: rule('condition', 'stipple', ['cervical'], false),
+  necrotizing_periodontitis: rule('condition', 'stipple', ['cervical'], false),
+  endo_perio_lesion: rule('condition', 'stipple', ['root'], false),
   gingival_bleeding: rule('condition', 'stipple', ['cervical'], false),
   bleeding_on_probing: rule('condition', 'stipple', ['cervical'], false),
   gingival_enlargement: rule('condition', 'stipple', ['cervical'], false),
@@ -203,7 +221,7 @@ export const REFERENTIAL_RULES: Readonly<Record<string, ReferentialRule>> = {
 };
 
 /** A mark at the root's tip, like an abscess. */
-export const REFERENTIAL_LESIONS: readonly string[] = ['reversible_pulpitis', 'irreversible_pulpitis_symptomatic', 'irreversible_pulpitis_asymptomatic', 'apical_periodontitis', 'periapical_abscess'];
+export const REFERENTIAL_LESIONS: readonly string[] = ['reversible_pulpitis', 'irreversible_pulpitis_symptomatic', 'irreversible_pulpitis_asymptomatic', 'apical_periodontitis', 'periapical_abscess', 'symptomatic_apical_periodontitis', 'asymptomatic_apical_periodontitis', 'acute_apical_abscess', 'chronic_apical_abscess', 'condensing_osteitis', 'endo_perio_lesion'];
 /** The tooth is not in the mouth. */
 export const REFERENTIAL_ABSENT: readonly string[] = ['agenesis'];
 /** States that also put threads on the root (a crown on an implant) or a post in it. */
@@ -211,7 +229,7 @@ export const IMPLANT_THREAD_CODES: readonly string[] = ['implant_crown'];
 export const ROOT_POST_CODES: readonly string[] = ['post_and_crown'];
 
 /** Conditions that imply no single status, so the 2D chart's fill cannot show them: it marks them on the tooth instead. */
-export const REFERENTIAL_UNPAINTED_CONDITIONS: readonly string[] = ['partially_erupted', 'erupting', 'persistent_deciduous', 'supernumerary', 'ectopic_eruption', 'white_spot_lesion', 'demineralisation', 'craze_lines', 'attrition', 'abrasion', 'erosion', 'non_carious_cervical_lesion', 'abfraction', 'enamel_hypoplasia', 'fluorosis', 'post_trauma_pulpal_discoloration', 'pulp_exposure', 'defective_restoration', 'fractured_restoration', 'lost_restoration', 'marginal_defect', 'restoration_overhang', 'reversible_pulpitis', 'irreversible_pulpitis_symptomatic', 'irreversible_pulpitis_asymptomatic', 'endo_treatment_started', 'pulp_calcification', 'pulp_stone', 'internal_resorption', 'external_resorption', 'root_resorption', 'canal_obstruction', 'incomplete_root_filling', 'perforation', 'separated_instrument', 'apical_periodontitis', 'periapical_abscess', 'open_apex', 'hypercementosis', 'gingivitis', 'gingival_bleeding', 'bleeding_on_probing', 'gingival_enlargement', 'gingival_hyperplasia', 'clinical_attachment_loss', 'periodontitis', 'gingival_abscess', 'periodontal_abscess', 'gingival_ulceration', 'gingival_lesion', 'gingival_pigmentation', 'furcation_involvement', 'suppuration', 'mucogingival_anomaly', 'peri_implant_mucositis', 'peri_implantitis', 'calculus', 'plaque', 'crowding', 'spacing', 'rotation', 'tilting', 'buccal_displacement', 'lingual_displacement', 'displacement', 'intrusion', 'extrusion', 'mesial_migration', 'distal_migration', 'crossbite', 'open_bite', 'deep_bite', 'traumatic_occlusion', 'occlusal_interference', 'tooth_migration', 'concussion', 'subluxation', 'lateral_luxation', 'extrusive_luxation', 'intrusive_luxation', 'soft_tissue_trauma', 'ankylosis', 'percussion_sensitivity'];
+export const REFERENTIAL_UNPAINTED_CONDITIONS: readonly string[] = ['partially_erupted', 'erupting', 'persistent_deciduous', 'supernumerary', 'ectopic_eruption', 'white_spot_lesion', 'demineralisation', 'craze_lines', 'attrition', 'abrasion', 'erosion', 'non_carious_cervical_lesion', 'abfraction', 'enamel_hypoplasia', 'fluorosis', 'post_trauma_pulpal_discoloration', 'pulp_exposure', 'defective_restoration', 'fractured_restoration', 'lost_restoration', 'marginal_defect', 'restoration_overhang', 'reversible_pulpitis', 'irreversible_pulpitis_symptomatic', 'irreversible_pulpitis_asymptomatic', 'endo_treatment_started', 'pulp_calcification', 'pulp_stone', 'internal_resorption', 'external_resorption', 'root_resorption', 'canal_obstruction', 'incomplete_root_filling', 'perforation', 'separated_instrument', 'apical_periodontitis', 'periapical_abscess', 'open_apex', 'hypercementosis', 'gingivitis', 'gingival_bleeding', 'bleeding_on_probing', 'gingival_enlargement', 'gingival_hyperplasia', 'clinical_attachment_loss', 'periodontitis', 'gingival_abscess', 'periodontal_abscess', 'gingival_ulceration', 'gingival_lesion', 'gingival_pigmentation', 'furcation_involvement', 'suppuration', 'mucogingival_anomaly', 'peri_implant_mucositis', 'peri_implantitis', 'calculus', 'plaque', 'crowding', 'spacing', 'rotation', 'tilting', 'buccal_displacement', 'lingual_displacement', 'displacement', 'intrusion', 'extrusion', 'mesial_migration', 'distal_migration', 'crossbite', 'open_bite', 'deep_bite', 'traumatic_occlusion', 'occlusal_interference', 'tooth_migration', 'concussion', 'subluxation', 'lateral_luxation', 'extrusive_luxation', 'intrusive_luxation', 'soft_tissue_trauma', 'ankylosis', 'percussion_sensitivity', 'dentin_hypersensitivity', 'symptomatic_apical_periodontitis', 'asymptomatic_apical_periodontitis', 'acute_apical_abscess', 'chronic_apical_abscess', 'condensing_osteitis', 'necrotizing_gingivitis', 'necrotizing_periodontitis', 'endo_perio_lesion', 'alveolar_fracture'];
 
 /** What each gum state does to the gum (0 to 1; flags are 1). Read by the 3D mouth. */
 export interface GumEffect {
@@ -220,6 +238,13 @@ export interface GumEffect {
 }
 export const GUM_EFFECTS: Readonly<Record<string, GumEffect>> = {
   healthy_gingiva: {},
+  periodontal_health: {},
+  peri_implant_health: {},
+  necrotizing_gingivitis: {ulcer:1,inflamed:0.8,swollen:0.3,bleeding:1},
+  necrotizing_periodontitis: {perio:1,ulcer:1,recession:0.5,inflamed:0.7,bleeding:1},
+  endo_perio_lesion: {pocket:1,perio:0.6,inflamed:0.4},
+  chronic_apical_abscess: {pus:1},
+  alveolar_fracture: {lesion:1},
   gingivitis: {inflamed:0.75,swollen:0.4},
   gingival_bleeding: {inflamed:0.5,bleeding:1},
   bleeding_on_probing: {inflamed:0.35,bleeding:1},
@@ -252,7 +277,7 @@ export const DEPOSITS: Readonly<Record<string, Deposit>> = {
 };
 
 /** States about the roots: a root of a back tooth can be named ("racine mésiale"). */
-export const ROOT_CODES: ReadonlySet<string> = new Set(['root_fracture', 'endo_treatment_started', 'internal_resorption', 'external_resorption', 'root_resorption', 'canal_obstruction', 'incomplete_root_filling', 'retreatment_required', 'perforation', 'separated_instrument', 'apical_periodontitis', 'periapical_abscess', 'open_apex', 'hypercementosis', 'furcation_involvement', 'existing_root_canal', 'existing_post', 'periapical_lesion', 'abscess', 'necrosis', 'retained_root']);
+export const ROOT_CODES: ReadonlySet<string> = new Set(['root_fracture', 'endo_treatment_started', 'internal_resorption', 'external_resorption', 'root_resorption', 'canal_obstruction', 'incomplete_root_filling', 'retreatment_required', 'perforation', 'separated_instrument', 'apical_periodontitis', 'periapical_abscess', 'open_apex', 'hypercementosis', 'furcation_involvement', 'existing_root_canal', 'existing_post', 'periapical_lesion', 'abscess', 'necrosis', 'retained_root', 'symptomatic_apical_periodontitis', 'asymptomatic_apical_periodontitis', 'acute_apical_abscess', 'chronic_apical_abscess', 'condensing_osteitis', 'endo_perio_lesion']);
 
 /** What a number said with the state means: millimetres or a grade. */
 export type MeasureKind = 'mm' | 'grade';

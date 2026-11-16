@@ -8,6 +8,7 @@ import { ConsultationLogDto } from '../../../core/consultation/consultation.mode
 import { spokenLanguage } from '../../../core/voice/voice-vocabulary';
 import { ModalComponent } from '../../ui/modal.component';
 import { ConsultationAudioPlayerComponent } from './consultation-audio-player.component';
+import { ConsultationSuggestionComponent } from './consultation-suggestion.component';
 import { environment } from '../../../../environments/environment';
 
 /**
@@ -22,7 +23,7 @@ import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'app-consultation-log',
   standalone: true,
-  imports: [DatePipe, TranslateModule, ModalComponent, ConsultationAudioPlayerComponent],
+  imports: [DatePipe, TranslateModule, ModalComponent, ConsultationAudioPlayerComponent, ConsultationSuggestionComponent],
   template: `
     <app-modal [open]="!!consultationId()" [title]="'CONSULTATION.LOG.TITLE' | translate" size="lg" (closed)="closed.emit()">
       @if (loading()) {
@@ -58,7 +59,7 @@ import { environment } from '../../../../environments/environment';
               }
               @case ('line') {
                 <li class="flex gap-3 text-sm">
-                  @if (l.audio && row.at) {
+                  @if (l.audio && row.at && inRecording(row.at)) {
                     <button type="button" class="w-16 shrink-0 text-start tabular-nums text-petrol-700 underline decoration-dotted"
                             (click)="playFrom(row.at)" data-log-seek
                             [attr.aria-label]="'CONSULTATION.LOG_PLAY_FROM' | translate: { time: (row.at | date: 'HH:mm:ss') }">
@@ -72,7 +73,10 @@ import { environment } from '../../../../environments/environment';
                     @if (row.line.typed) {
                       <span class="ms-1 rounded bg-ink-100 px-1.5 text-xs text-ink-600">{{ 'CONSULTATION.LOG.TYPED' | translate }}</span>
                     }
-                    @if (row.line.verdict && row.line.verdict !== 'heard') {
+                    @if (row.line.verdict === 'unsure') {
+                      <!-- Not settled by the analysis: what it most likely meant, to be confirmed. -->
+                      <span class="ms-1 block"><app-consultation-suggestion [sentence]="row.line.text" /></span>
+                    } @else if (row.line.verdict && row.line.verdict !== 'heard') {
                       <span class="ms-1 rounded px-1.5 text-xs font-semibold" [class]="verdictClass(row.line.verdict)">{{ 'COCKPIT.VERDICT.' + verdictKey(row.line.verdict) | translate }}</span>
                     }
                   </span>
@@ -151,6 +155,18 @@ export class ConsultationLogComponent {
   readonly log = signal<ConsultationLogDto | null>(null);
   private readonly player = viewChild<ConsultationAudioPlayerComponent>('player');
 
+  /**
+   * Whether a line falls inside the recording. A consultation continued after its end keeps its
+   * first recording only: what was said after it has a time but nothing to play.
+   */
+  inRecording(at: Date | string | number): boolean {
+    const audio = this.log()?.audio;
+    const started = audio?.startedAt ? Date.parse(audio.startedAt) : NaN;
+    const ms = at instanceof Date ? at.getTime() : typeof at === 'number' ? at : Date.parse(at);
+    if (!audio?.durationMs || Number.isNaN(started) || Number.isNaN(ms)) return true;
+    return ms <= started + audio.durationMs + 5_000;
+  }
+
   /** Plays the recording from where this line was said. */
   playFrom(at: Date | string | number): void {
     const ms = at instanceof Date ? at.getTime() : typeof at === 'number' ? at : Date.parse(at);
@@ -196,7 +212,7 @@ export class ConsultationLogComponent {
   /** Development builds only: a bad session becomes a replay fixture. */
   readonly devBuild = isDevMode() && !environment.production;
 
-  /** The consultation in numbers: what was said, what was acted on, read, not understood, and how fast. */
+  /** The consultation in numbers: what was said, what was acted on, read, left to confirm, and how fast. */
   readonly counts = computed(() => {
     const lines = this.log()?.lines ?? [];
     if (!lines.some(line => line.verdict)) return null;

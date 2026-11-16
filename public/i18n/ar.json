@@ -1517,7 +1517,7 @@
       "V_PLAN": "خطة العلاج",
       "V_APPOINTMENT": "الموعد القادم",
       "V_REPORT": "التقرير",
-      "COUNTS": "{{sentences}} جملة · {{acted}} عملية · {{proposed}} مقترحة · {{unsure}} لم تُفهم",
+      "COUNTS": "{{sentences}} جملة · {{acted}} عملية · {{proposed}} مقترحة · {{unsure}} تحتاج إلى تأكيد",
       "MEDIAN": "التأخير الوسيط {{ms}} مللي ثانية",
       "EXPORT_SCENARIO": "تصدير كسيناريو",
       "EXPORT_HINT": "استبدل الأسماء والأرقام قبل إضافته إلى الاختبارات."
@@ -1653,7 +1653,21 @@
     "MENU_VOICE_HINT": "أملِ الملاحظات سنًّا بسن؛ لا يُحفظ شيء قبل مراجعتك",
     "MENU_OFF": "غير مفعّلة في هذه العيادة",
     "HIDE_INTRO": "لا تعرض هذا مجددًا: أُخبر كل مريض قبل بدء التسجيل",
-    "SHOW_INTRO_AGAIN": "إعادة عرض بطاقة الموافقة قبل كل استشارة"
+    "SHOW_INTRO_AGAIN": "إعادة عرض بطاقة الموافقة قبل كل استشارة",
+    "SUGGEST": {
+      "STATE": "حالة مقترحة",
+      "TREATMENT": "علاج مقترح",
+      "BOTH": "اقتراح",
+      "NONE": "لا يوجد اقتراح: أعد الاستماع إلى هذه اللحظة",
+      "TO_CONFIRM": "يحتاج إلى تأكيد",
+      "SUSPECTED": "(مشتبه به)",
+      "TEETH": "الأسنان",
+      "ADD_TO_CHART": "إضافة إلى المخطط",
+      "NOT_ADDED": "تعذر وضع هذا الاقتراح على المخطط. أضفه يدويًا."
+    },
+    "CONTINUE": "متابعة الاستشارة",
+    "CONTINUE_HINT": "نسيت شيئًا أو تريد إضافة المزيد إلى الملف: يُستأنف التسجيل دون فقدان أي شيء تم التقاطه.",
+    "ERROR_CONTINUE": "تعذرت متابعة الاستشارة. حاول مرة أخرى."
   },
   "SET": {
     "TABS": {
@@ -3669,7 +3683,7 @@
     "POST_AND_CROWN": "وتد وتاج",
     "DEFECTIVE_RESTORATION": "ترميم معيب",
     "FRACTURED_RESTORATION": "ترميم مكسور",
-    "LOST_RESTORATION": "ترميم مفقود",
+    "LOST_RESTORATION": "ترميم منفك / مفقود",
     "MARGINAL_DEFECT": "عيب حافّي",
     "RESTORATION_OVERHANG": "زيادة في حافة الترميم",
     "NORMAL_PULP": "لب سليم",
@@ -3736,7 +3750,21 @@
     "ENAMEL_FRACTURE": "كسر المينا",
     "SOFT_TISSUE_TRAUMA": "رضّ الأنسجة الرخوة",
     "ANKYLOSIS": "التحام السن بالعظم",
-    "PERCUSSION_SENSITIVITY": "حساسية للقرع"
+    "PERCUSSION_SENSITIVITY": "حساسية للقرع / الجس",
+    "DENTIN_HYPERSENSITIVITY": "فرط حساسية العاج",
+    "INTACT_RESTORATION": "ترميم سليم",
+    "NORMAL_APICAL_TISSUES": "أنسجة ذروية طبيعية",
+    "SYMPTOMATIC_APICAL_PERIODONTITIS": "التهاب دواعم الذروة العرضي",
+    "ASYMPTOMATIC_APICAL_PERIODONTITIS": "التهاب دواعم الذروة اللاعرضي",
+    "ACUTE_APICAL_ABSCESS": "خراج ذروي حاد",
+    "CHRONIC_APICAL_ABSCESS": "خراج ذروي مزمن",
+    "CONDENSING_OSTEITIS": "التهاب العظم المكثف",
+    "PERIODONTAL_HEALTH": "صحة دواعم السن",
+    "NECROTIZING_GINGIVITIS": "التهاب اللثة الناخر",
+    "NECROTIZING_PERIODONTITIS": "التهاب دواعم السن الناخر",
+    "ENDO_PERIO_LESION": "آفة لبية لثوية",
+    "PERI_IMPLANT_HEALTH": "صحة الأنسجة حول الزرعة",
+    "ALVEOLAR_FRACTURE": "كسر السنخ"
   },
   "SURFACE": {
     "MESIAL": "إنسية",

@@ -92,12 +92,12 @@ import { PERIO, modeKey } from './perio-palette';
     .mode { font-size: var(--text-xs); font-weight: 600; margin-bottom: .5rem; }
     .keys li { display: flex; align-items: center; gap: .5rem; }
     .combo { display: inline-flex; align-items: center; gap: .25rem; min-width: 5.5rem; }
-    .swatch { width: .5rem; height: .5rem; border-radius: 9999px; display: inline-block; margin-inline-start: .125rem; }
+    .swatch { width: .5rem; height: .5rem; border-radius: var(--radius-full); display: inline-block; margin-inline-start: .125rem; }
     .legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .5rem 1rem; }
     .legend li { display: flex; align-items: center; gap: .5rem; }
     .chip { display: inline-flex; width: 1.5rem; height: 1.25rem; align-items: center; justify-content: center; border: 1px solid; border-radius: 2px;
             font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; }
-    .dot { width: .625rem; height: .625rem; border-radius: 9999px; display: inline-block; }
+    .dot { width: .625rem; height: .625rem; border-radius: var(--radius-full); display: inline-block; }
     .dot.ring { border: 1.25px solid rgb(var(--critical-300)); }
     .note { margin-top: .5rem; font-size: var(--text-xs); color: var(--text-muted); }
     .saved { margin-top: 1rem; padding: .75rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-sunken);

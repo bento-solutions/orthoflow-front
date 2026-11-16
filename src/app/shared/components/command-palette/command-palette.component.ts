@@ -101,7 +101,7 @@ import { DialogDirective } from '../../ui/dialog.directive';
     }
     .palette-panel {
       background: var(--surface);
-      border-radius: 16px;
+      border-radius: var(--radius-xl);
       width: 100%;
       max-width: 34rem;
       box-shadow: var(--shadow-xl);
@@ -123,29 +123,29 @@ import { DialogDirective } from '../../ui/dialog.directive';
       flex: 1;
       border: none;
       outline: none;
-      font-size: 1rem;
+      font-size: var(--text-md);
       color: rgb(var(--ink-900));
       background: transparent;
     }
     .palette-esc {
-      font-size: 0.75rem;
+      font-size: var(--text-xs);
       color: rgb(var(--ink-500));
       border: 1px solid rgb(var(--ink-200));
-      border-radius: 4px;
+      border-radius: var(--radius-xs);
       padding: 0.1rem 0.4rem;
     }
     .palette-empty {
       padding: 2rem 1.25rem;
       text-align: center;
       color: rgb(var(--ink-500));
-      font-size: 0.875rem;
+      font-size: var(--text-base);
     }
     .palette-results {
       overflow-y: auto;
       padding: 0.5rem;
     }
     .palette-group-label {
-      font-size: 0.75rem;
+      font-size: var(--text-xs);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -161,7 +161,7 @@ import { DialogDirective } from '../../ui/dialog.directive';
       padding: 0.6rem 0.75rem;
       border: none;
       background: transparent;
-      border-radius: 8px;
+      border-radius: var(--radius-md);
       cursor: pointer;
       color: rgb(var(--ink-900));
     }
@@ -169,21 +169,21 @@ import { DialogDirective } from '../../ui/dialog.directive';
     .palette-item.active {
       background: rgb(var(--petrol-50));
     }
-    .item-icon { color: rgb(var(--petrol-800)); font-size: 20px; }
+    .item-icon { color: rgb(var(--petrol-800)); font-size: var(--text-lg); }
     .item-text { display: flex; flex-direction: column; min-width: 0; }
-    .item-label { font-size: 0.875rem; font-weight: 600; }
-    .item-desc { font-size: 0.75rem; color: rgb(var(--ink-500)); }
+    .item-label { font-size: var(--text-base); font-weight: 600; }
+    .item-desc { font-size: var(--text-xs); color: rgb(var(--ink-500)); }
     .palette-footer {
       display: flex;
       gap: 1rem;
       padding: 0.6rem 1.25rem;
       border-top: 1px solid rgb(var(--ink-200));
-      font-size: 0.75rem;
+      font-size: var(--text-xs);
       color: rgb(var(--ink-500));
     }
     .palette-footer kbd {
       border: 1px solid rgb(var(--ink-200));
-      border-radius: 4px;
+      border-radius: var(--radius-xs);
       padding: 0 0.3rem;
       margin-inline-end: 0.2rem;
     }

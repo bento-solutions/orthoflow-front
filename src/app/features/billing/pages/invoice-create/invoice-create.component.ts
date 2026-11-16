@@ -133,7 +133,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
     .back-btn {
       background: transparent;
       border: 1px solid rgb(var(--ink-200));
-      border-radius: 10px;
+      border-radius: var(--radius-lg);
       padding: 0.5rem;
       min-width: 44px;
       min-height: 44px;
@@ -151,7 +151,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
     }
 
     .header-content h1 {
-      font-size: 1.875rem;
+      font-size: var(--text-2xl);
       font-weight: 700;
       color: rgb(var(--ink-900));
       margin: 0;
@@ -165,7 +165,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 
     .form-section {
       background: var(--surface);
-      border-radius: 16px;
+      border-radius: var(--radius-xl);
       border: 1px solid rgb(var(--ink-200));
       padding: 1.5rem;
       margin-bottom: 1.5rem;
@@ -173,7 +173,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 
     .form-section h2 {
       margin: 0 0 1.25rem 0;
-      font-size: 1.125rem;
+      font-size: var(--text-lg);
       font-weight: 600;
       color: rgb(var(--ink-900));
     }
@@ -194,16 +194,16 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
     }
 
     label {
-      font-size: 0.875rem;
+      font-size: var(--text-base);
       font-weight: 500;
       color: rgb(var(--ink-700));
     }
 
     .form-control {
       border: 1px solid rgb(var(--ink-300));
-      border-radius: 10px;
+      border-radius: var(--radius-lg);
       padding: 0.75rem 1rem;
-      font-size: 0.875rem;
+      font-size: var(--text-base);
       outline: none;
       transition: border-color 0.2s;
     }
@@ -224,7 +224,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
       grid-template-columns: 110px 1fr 80px 120px 80px 100px 40px;
       gap: 1rem;
       padding: 0 0.5rem;
-      font-size: 0.75rem;
+      font-size: var(--text-xs);
       font-weight: 600;
       color: rgb(var(--ink-500));
       text-transform: uppercase;
@@ -265,14 +265,14 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
       min-width: 44px;
       min-height: 44px;
       padding: 0.5rem;
-      border-radius: 8px;
+      border-radius: var(--radius-md);
     }
 
     .icon-btn-danger:hover { background: rgb(var(--critical-50)); }
 
     .summary-card {
       background: var(--surface);
-      border-radius: 16px;
+      border-radius: var(--radius-xl);
       border: 1px solid rgb(var(--ink-200));
       padding: 1.5rem;
       position: sticky;
@@ -289,7 +289,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 
     .summary-row.total {
       margin-top: 1rem;
-      font-size: 1.25rem;
+      font-size: var(--text-lg);
       font-weight: 700;
       color: rgb(var(--ink-900));
     }

@@ -43,17 +43,17 @@ import { AuthService } from '../../../core/services/auth.service';
     .banner {
       position: fixed; inset-inline: var(--space-4); top: var(--space-4); z-index: var(--z-toast);
       display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem;
-      padding: 0.875rem 1rem; border-radius: 0.75rem;
+      padding: 0.875rem 1rem; border-radius: var(--radius-lg);
       background: var(--surface); color: var(--text);
       border: 1px solid rgb(var(--caution-700)); border-inline-start-width: 6px;
       box-shadow: var(--shadow-lg);
     }
     .text { flex: 1 1 18rem; min-width: 0; }
-    .title { margin: 0 0 0.125rem; font-size: 0.875rem; font-weight: 700; }
-    .text p { margin: 0; font-size: 0.875rem; }
+    .title { margin: 0 0 0.125rem; font-size: var(--text-base); font-weight: 700; }
+    .text p { margin: 0; font-size: var(--text-base); }
     .form { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
     .form .input { min-width: 12rem; }
-    .error { flex-basis: 100%; margin: 0; font-size: 0.8125rem; color: rgb(var(--critical-700)); }
+    .error { flex-basis: 100%; margin: 0; font-size: var(--text-sm); color: rgb(var(--critical-700)); }
   `],
 })
 export class SessionExpiryBannerComponent {

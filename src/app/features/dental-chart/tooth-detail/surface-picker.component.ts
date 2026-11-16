@@ -57,9 +57,9 @@ import {
     .zone:focus-visible { outline: none; stroke: var(--focus-ring); stroke-width: 1.8; }
     .letter { font: 700 5px var(--font-sans); fill: var(--text-muted); pointer-events: none; }
     .readout { display: flex; flex-direction: column; gap: .125rem; align-items: flex-start; }
-    .shorthand { font-size: 1.25rem; font-weight: 700; letter-spacing: .08em; color: var(--text); }
-    .hint { font-size: .75rem; color: var(--text-muted); }
-    .clear { font-size: .75rem; color: var(--action-text); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+    .shorthand { font-size: var(--text-lg); font-weight: 700; letter-spacing: .08em; color: var(--text); }
+    .hint { font-size: var(--text-xs); color: var(--text-muted); }
+    .clear { font-size: var(--text-xs); color: var(--action-text); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
   `],
 })
 export class SurfacePickerComponent {

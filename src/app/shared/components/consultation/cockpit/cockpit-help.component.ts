@@ -26,7 +26,7 @@ export const HELP_GROUPS = ['DICTATE', 'SEE', 'INSPECT', 'CALYPSO', 'LISTEN', 'E
   `,
   styles: [`
     .ck-help { padding: 1rem 1.25rem; }
-    .ck-help h2 { margin: 0 0 .25rem; font-size: 1.25rem; font-weight: 800; color: rgb(var(--ink-900)); }
+    .ck-help h2 { margin: 0 0 .25rem; font-size: var(--text-lg); font-weight: 800; color: rgb(var(--ink-900)); }
     .ck-help-lead { margin: 0 0 1rem; color: rgb(var(--ink-700)); }
     dl { margin: 0; display: flex; flex-direction: column; gap: .625rem; }
     .ck-help-row { display: grid; grid-template-columns: minmax(7rem, auto) 1fr; gap: .75rem; }

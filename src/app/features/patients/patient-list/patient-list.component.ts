@@ -243,12 +243,12 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
     .kpi-value { margin-top: 0.25rem; font-size: var(--text-2xl); font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
     .quick-add {
       display: flex; flex-direction: column; gap: var(--space-3, .75rem);
-      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
       padding: var(--space-4, 1rem); margin-bottom: var(--space-4, 1rem); max-width: 40rem;
     }
-    .quick-add-hint { margin: 0; font-size: .875rem; color: var(--text-muted); }
+    .quick-add-hint { margin: 0; font-size: var(--text-base); color: var(--text-muted); }
     .quick-add-fields { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
-    .quick-add-fields label { display: flex; flex-direction: column; gap: .25rem; font-size: .8125rem; font-weight: 600; color: rgb(var(--ink-700)); }
+    .quick-add-fields label { display: flex; flex-direction: column; gap: .25rem; font-size: var(--text-sm); font-weight: 600; color: rgb(var(--ink-700)); }
     .quick-add-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
     @media (max-width: 520px) { .quick-add-fields { grid-template-columns: 1fr; } }
     /* Below the table breakpoint each row becomes a card. Header cells are

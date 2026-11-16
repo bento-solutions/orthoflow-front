@@ -206,7 +206,7 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
         display: inline-block;
         width: 0.5rem;
         height: 0.5rem;
-        border-radius: 9999px;
+        border-radius: var(--radius-full);
         margin-inline-end: 0.375rem;
         vertical-align: middle;
         background: rgb(var(--ink-400));

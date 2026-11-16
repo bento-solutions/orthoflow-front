@@ -117,13 +117,13 @@ const ERROR_MS = 4000;
     :host { display: block; container-type: inline-size; }
     /* 16px of paper around the 968px chart; where the screen is a little short of 1000px the margin
        gives way (down to 8px) before the sheet has to scroll. */
-    .sheet { border-radius: 8px; background: rgb(var(--on-inverse)); padding: 16px max(8px, min(16px, calc((100cqw - 968px) / 2))); overflow-x: auto; outline: none; }
+    .sheet { border-radius: var(--radius-md); background: rgb(var(--on-inverse)); padding: 16px max(8px, min(16px, calc((100cqw - 968px) / 2))); overflow-x: auto; outline: none; }
     .sheet:focus-visible { box-shadow: 0 0 0 2px var(--perio-ring); }
     p { margin: 0; }
     .error-wrap { margin-bottom: 12px; display: flex; justify-content: center; }
-    .error { background: hsl(0 84.2% 60.2%); color: hsl(0 0% 98%); font-size: 12px; line-height: 16px; font-weight: 600; padding: 4px 12px;
-             border-radius: 6px; box-shadow: var(--shadow-lg); }
-    .tip { margin-bottom: 8px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: var(--perio-muted-fg); }
+    .error { background: hsl(0 84.2% 60.2%); color: hsl(0 0% 98%); font-size: var(--text-xs); line-height: 16px; font-weight: 600; padding: 4px 12px;
+             border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); }
+    .tip { margin-bottom: 8px; display: flex; align-items: center; gap: 6px; font-size: var(--text-xs); line-height: 16px; color: var(--perio-muted-fg); }
     .tip p { line-height: 1.375; }
     .tip app-perio-icon { flex-shrink: 0; }
     .chart { display: flex; flex-direction: column; width: 100%; min-width: max-content; }
@@ -133,16 +133,16 @@ const ERROR_MS = 4000;
     .rule { height: 1px; width: 100%; background: var(--perio-muted); margin: 12px 0; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     .tooltip { position: fixed; z-index: 60; transform: translate(-50%, -100%); min-width: 160px; box-sizing: content-box; pointer-events: none;
-               padding: 8px 12px; border: 1px solid rgba(228, 228, 231, 0.6); border-radius: 8px; background: rgba(255, 255, 255, 0.95);
-               backdrop-filter: blur(4px); font-size: 12px; line-height: 1.625; color: var(--perio-fg); display: flex; flex-direction: column; gap: 4px;
+               padding: 8px 12px; border: 1px solid rgba(228, 228, 231, 0.6); border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.95);
+               backdrop-filter: blur(4px); font-size: var(--text-xs); line-height: 1.625; color: var(--perio-fg); display: flex; flex-direction: column; gap: 4px;
                box-shadow: var(--shadow-md); }
     .line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
     .strong { font-weight: 600; } .muted { color: var(--perio-muted-fg); }
-    .tooth-no { font-size: 12px; line-height: 16px; text-transform: uppercase; letter-spacing: 0.025em; color: var(--perio-muted-fg); }
+    .tooth-no { font-size: var(--text-xs); line-height: 16px; text-transform: uppercase; letter-spacing: 0.025em; color: var(--perio-muted-fg); }
     .tt-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 500; }
     .tt-mono.plain { font-weight: 400; }
     .range { margin-top: 4px; padding-top: 6px; border-top: 1px solid rgba(228, 228, 231, 0.6); display: flex; flex-direction: column; gap: 2px; }
-    .tt-hint { font-size: 12px; line-height: 16px; color: var(--perio-muted-fg); }
+    .tt-hint { font-size: var(--text-xs); line-height: 16px; color: var(--perio-muted-fg); }
   `],
 })
 export class PerioGridComponent implements OnInit {

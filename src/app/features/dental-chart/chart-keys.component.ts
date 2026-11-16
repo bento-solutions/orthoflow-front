@@ -34,7 +34,7 @@ const ARROWS = ['←', '→', '↑', '↓'];
   `,
   styles: [`
     :host { display: block; }
-    .keys { display: flex; flex-wrap: wrap; gap: .25rem .875rem; margin: 0; font-size: .75rem; color: var(--text-muted-on-tint); }
+    .keys { display: flex; flex-wrap: wrap; gap: .25rem .875rem; margin: 0; font-size: var(--text-xs); color: var(--text-muted-on-tint); }
     .hint { display: inline-flex; align-items: center; gap: .3125rem; white-space: nowrap; }
     .caps { display: inline-flex; gap: .125rem; }
     @media (hover: none) { :host { display: none; } }

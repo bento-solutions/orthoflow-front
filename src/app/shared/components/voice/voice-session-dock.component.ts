@@ -59,7 +59,7 @@ import { sessionStatusKey } from './voice-session-panel.component';
       inset-inline: .5rem; bottom: calc(.5rem + env(safe-area-inset-bottom, 0px));
       margin-inline: auto; max-width: 44rem;
       display: flex; align-items: center; gap: .5rem;
-      padding: .5rem; border-radius: 18px;
+      padding: .5rem; border-radius: var(--radius-xl);
       background: var(--surface-inverse); color: var(--text-inverse);
       box-shadow: var(--shadow-lg);
     }
@@ -80,25 +80,25 @@ import { sessionStatusKey } from './voice-session-panel.component';
       background: none; border: none; color: inherit; cursor: pointer; text-align: start; padding: .25rem;
       min-height: 2.75rem; justify-content: center;
     }
-    .dock-line1 { font-weight: 700; font-size: .875rem; line-height: 1.25; }
+    .dock-line1 { font-weight: 700; font-size: var(--text-base); line-height: 1.25; }
     .dock-line2 {
-      font-size: .8125rem; color: rgb(var(--ink-300)); line-height: 1.3; max-width: 100%;
+      font-size: var(--text-sm); color: rgb(var(--ink-300)); line-height: 1.3; max-width: 100%;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
     .dock-count {
-      min-width: 1.75rem; height: 1.75rem; border-radius: 999px; padding: 0 .375rem; flex-shrink: 0;
+      min-width: 1.75rem; height: 1.75rem; border-radius: var(--radius-full); padding: 0 .375rem; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
-      background: var(--voice-staged); color: rgb(var(--on-inverse)); font-weight: 800; font-size: .8125rem; font-variant-numeric: tabular-nums;
+      background: var(--voice-staged); color: rgb(var(--on-inverse)); font-weight: 800; font-size: var(--text-sm); font-variant-numeric: tabular-nums;
     }
 
     .dock-end {
       display: inline-flex; align-items: center; gap: .25rem; flex-shrink: 0; cursor: pointer;
-      min-height: 2.75rem; padding: 0 .875rem; border-radius: 12px; border: none;
-      background: var(--surface); color: rgb(var(--ink-900)); font-weight: 700; font-size: .875rem;
+      min-height: 2.75rem; padding: 0 .875rem; border-radius: var(--radius-lg); border: none;
+      background: var(--surface); color: rgb(var(--ink-900)); font-weight: 700; font-size: var(--text-base);
     }
     .dock-end:disabled { opacity: .7; cursor: default; }
-    .dock-end app-icon.mi { font-size: 1.125rem; color: rgb(var(--critical-700)); }
+    .dock-end app-icon.mi { font-size: var(--text-lg); color: rgb(var(--critical-700)); }
 
     .dock button:focus-visible { outline: 2px solid rgb(var(--on-inverse)); outline-offset: 2px; }
 

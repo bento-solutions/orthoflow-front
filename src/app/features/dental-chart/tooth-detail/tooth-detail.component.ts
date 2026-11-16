@@ -230,42 +230,42 @@ import { SurfacePickerComponent } from './surface-picker.component';
     :host { display: block; }
     .block { padding: .75rem 0; border-top: 1px solid var(--border-subtle); }
     .block:first-child { border-top: 0; padding-top: 0; }
-    .block-title { margin: 0 0 .5rem; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
+    .block-title { margin: 0 0 .5rem; font-size: var(--text-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
     .summary { cursor: pointer; margin: 0; }
     .findings { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
-    .finding { display: flex; align-items: flex-start; gap: .625rem; padding: .5rem .625rem; border: 1px solid var(--border); border-radius: .5rem; background: var(--surface); }
+    .finding { display: flex; align-items: flex-start; gap: .625rem; padding: .5rem .625rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
     .finding.past { background: var(--status-idle-tint); border-color: transparent; }
-    .dot { flex: none; width: .625rem; height: .625rem; margin-top: .3rem; border-radius: 999px; background: var(--status-idle); }
+    .dot { flex: none; width: .625rem; height: .625rem; margin-top: .3rem; border-radius: var(--radius-full); background: var(--status-idle); }
     .dot[data-kind='CONDITION'] { background: var(--status-critical); }
     .dot[data-kind='EXISTING'] { background: var(--status-active); }
     .dot[data-kind='TREATMENT_REQUIRED'] { background: var(--status-attention); }
     .dot[data-kind='DONE'] { background: var(--status-done); }
     .finding-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .125rem; }
     .finding-label { font-weight: 600; color: var(--text); display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; }
-    .surface-badge { font-size: .75rem; font-weight: 700; letter-spacing: .06em; padding: .0625rem .375rem; border-radius: .25rem; background: var(--action-tint); color: var(--action-text); }
-    .suspect-badge { font-size: .75rem; font-weight: 700; padding: .0625rem .375rem; border-radius: .25rem; border: 1px dashed var(--suspected); background: var(--suspected-tint); color: var(--suspected-strong); }
+    .surface-badge { font-size: var(--text-xs); font-weight: 700; letter-spacing: .06em; padding: .0625rem .375rem; border-radius: var(--radius-xs); background: var(--action-tint); color: var(--action-text); }
+    .suspect-badge { font-size: var(--text-xs); font-weight: 700; padding: .0625rem .375rem; border-radius: var(--radius-xs); border: 1px dashed var(--suspected); background: var(--suspected-tint); color: var(--suspected-strong); }
     .seg-wrap { flex-wrap: wrap; }
-    .finding-meta { font-size: .75rem; color: var(--text-muted); }
+    .finding-meta { font-size: var(--text-xs); color: var(--text-muted); }
     .finding.past .finding-meta { color: var(--text-muted-on-tint); }
-    .finding-note { font-size: .8125rem; color: var(--text); white-space: pre-line; }
+    .finding-note { font-size: var(--text-sm); color: var(--text); white-space: pre-line; }
     .finding-actions { display: flex; flex-direction: column; gap: .25rem; flex: none; }
-    .act { display: inline-flex; align-items: center; gap: .25rem; font-size: .75rem; padding: .25rem .5rem; border: 1px solid var(--border); border-radius: .375rem; background: var(--surface); color: var(--action-text); cursor: pointer; }
-    .act app-icon.mi { font-size: 1rem; }
+    .act { display: inline-flex; align-items: center; gap: .25rem; font-size: var(--text-xs); padding: .25rem .5rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--action-text); cursor: pointer; }
+    .act app-icon.mi { font-size: var(--text-md); }
     .act:hover { background: var(--action-tint); }
     .act.danger { color: var(--status-critical-text); }
     .act.danger:hover { background: var(--danger-tint); }
     /* The page-wide .empty is a large centred state; here it is one quiet line. */
-    .empty { display: block; margin: 0; padding: 0; text-align: start; font-size: .8125rem; color: var(--text-muted); }
+    .empty { display: block; margin: 0; padding: 0; text-align: start; font-size: var(--text-sm); color: var(--text-muted); }
     .field { display: flex; flex-direction: column; gap: .25rem; margin-bottom: .625rem; }
-    .field-label { font-size: .75rem; font-weight: 600; color: var(--text); }
-    .field-hint { font-size: .75rem; color: var(--text-muted); }
-    .select, .input { width: 100%; padding: .4375rem .5rem; font: inherit; font-size: .875rem; border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface); color: var(--text); }
+    .field-label { font-size: var(--text-xs); font-weight: 600; color: var(--text); }
+    .field-hint { font-size: var(--text-xs); color: var(--text-muted); }
+    .select, .input { width: 100%; padding: .4375rem .5rem; font: inherit; font-size: var(--text-base); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); }
     .select:focus-visible, .input:focus-visible, .seg button:focus-visible, .act:focus-visible, .btn-add:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
-    .seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: .375rem; overflow: hidden; align-self: flex-start; }
-    .seg button { padding: .375rem .75rem; font: inherit; font-size: .8125rem; border: 0; background: var(--surface); color: var(--text); cursor: pointer; }
+    .seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); overflow: hidden; align-self: flex-start; }
+    .seg button { padding: .375rem .75rem; font: inherit; font-size: var(--text-sm); border: 0; background: var(--surface); color: var(--text); cursor: pointer; }
     .seg button + button { border-inline-start: 1px solid var(--border-strong); }
     .seg button.on { background: var(--action); color: var(--text-inverse); }
-    .btn-add { display: inline-flex; align-items: center; gap: .25rem; padding: .5rem .875rem; font: inherit; font-size: .875rem; font-weight: 600; border: 0; border-radius: .375rem; background: var(--action); color: var(--text-inverse); cursor: pointer; }
+    .btn-add { display: inline-flex; align-items: center; gap: .25rem; padding: .5rem .875rem; font: inherit; font-size: var(--text-base); font-weight: 600; border: 0; border-radius: var(--radius-sm); background: var(--action); color: var(--text-inverse); cursor: pointer; }
     .btn-add:hover:not(:disabled) { background: var(--action-hover); }
     .btn-add:disabled { opacity: .5; cursor: not-allowed; }
   `],

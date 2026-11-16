@@ -206,11 +206,11 @@ const remember = (key: string, value: string): void => {
     h2, h3, p { margin: 0; }
     .head { display: flex; flex-direction: column; gap: .5rem; }
     .titlebar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
-    .views { display: inline-flex; height: 2rem; align-items: center; gap: 2px; margin-inline-start: auto; padding: 2px; border-radius: 9999px; background: var(--surface-sunken); }
-    .views button { display: inline-flex; height: 1.75rem; align-items: center; padding: 0 .75rem; border: 0; border-radius: 9999px; background: transparent; color: var(--text-muted); font: inherit; font-size: var(--text-sm); font-weight: 500; white-space: nowrap; cursor: pointer; }
+    .views { display: inline-flex; height: 2rem; align-items: center; gap: 2px; margin-inline-start: auto; padding: 2px; border-radius: var(--radius-full); background: var(--surface-sunken); }
+    .views button { display: inline-flex; height: 1.75rem; align-items: center; padding: 0 .75rem; border: 0; border-radius: var(--radius-full); background: transparent; color: var(--text-muted); font: inherit; font-size: var(--text-sm); font-weight: 500; white-space: nowrap; cursor: pointer; }
     .views button:hover:not(.on) { color: var(--text); }
     .views button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
-    h2 { font-size: 1.125rem; line-height: 1.25; font-weight: 600; }
+    h2 { font-size: var(--text-lg); line-height: 1.25; font-weight: 600; }
     .save { display: inline-flex; align-items: center; gap: .375rem; min-height: 2rem; font-size: var(--text-xs); color: var(--text-muted); }
     .save[data-state='error'] { color: var(--status-critical-text); }
     .save[data-state='saved'] { color: var(--status-done-text); }
@@ -234,7 +234,7 @@ const remember = (key: string, value: string): void => {
     .pc-empty { display: flex; flex-direction: column; align-items: center; gap: .5rem; padding: 2.5rem 1rem; border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); text-align: center; color: var(--text-muted); }
     .pc-empty h3 { font-size: var(--text-md); color: var(--text); }
     .pc-empty p { max-width: 32rem; font-size: var(--text-sm); }
-    .paper { border-radius: 8px; background: rgb(var(--on-inverse)); font-family: 'Inter', var(--font-sans); font-size: 16px; line-height: 1.5; color: rgb(var(--ink-950)); box-shadow: 0 0 0 1px var(--border); }
+    .paper { border-radius: var(--radius-md); background: rgb(var(--on-inverse)); font-family: 'Inter', var(--font-sans); font-size: var(--text-md); line-height: 1.5; color: rgb(var(--ink-950)); box-shadow: 0 0 0 1px var(--border); }
     .visit { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
     .visit summary { padding: .625rem .875rem; font-size: var(--text-sm); font-weight: 600; cursor: pointer; }
     .visit-grid { display: grid; grid-template-columns: 12rem 1fr; gap: .75rem; padding: 0 .875rem .875rem; }

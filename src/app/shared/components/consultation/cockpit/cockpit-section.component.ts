@@ -139,26 +139,26 @@ import { MoneyPipe } from '../../../pipes/money.pipe';
   styles: [`
     :host { display: block; }
     .ck-sec { padding: 1rem 1.25rem; }
-    .ck-sec-title { margin: 0 0 .75rem; font-size: 1.25rem; font-weight: 800; color: rgb(var(--ink-900)); }
-    .ck-sub { margin: 1rem 0 .375rem; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: rgb(var(--ink-600)); }
+    .ck-sec-title { margin: 0 0 .75rem; font-size: var(--text-lg); font-weight: 800; color: rgb(var(--ink-900)); }
+    .ck-sub { margin: 1rem 0 .375rem; font-size: var(--text-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: rgb(var(--ink-600)); }
     .ck-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .375rem; }
-    .ck-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .5rem; padding: .5rem .625rem; border-radius: .5rem; background: rgb(var(--ink-50)); font-size: 1rem; color: rgb(var(--ink-900)); }
+    .ck-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .5rem; padding: .5rem .625rem; border-radius: var(--radius-md); background: rgb(var(--ink-50)); font-size: var(--text-md); color: rgb(var(--ink-900)); }
     .ck-row-main { font-weight: 600; }
     .ck-row-side { margin-inline-start: auto; font-variant-numeric: tabular-nums; font-weight: 700; }
     .ck-muted { color: rgb(var(--ink-600)); }
-    .ck-quote { flex-basis: 100%; font-size: .8125rem; font-style: italic; color: rgb(var(--ink-600)); }
-    .ck-chip-status { font-size: .75rem; font-weight: 700; padding: 0 .45rem; border-radius: 999px; background: rgb(var(--positive-100)); color: rgb(var(--positive-800)); }
+    .ck-quote { flex-basis: 100%; font-size: var(--text-sm); font-style: italic; color: rgb(var(--ink-600)); }
+    .ck-chip-status { font-size: var(--text-xs); font-weight: 700; padding: 0 .45rem; border-radius: var(--radius-full); background: rgb(var(--positive-100)); color: rgb(var(--positive-800)); }
     .ck-chip-status[data-status='proposed'] { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-800)); }
     .ck-chip-status[data-status='to-confirm'] { background: rgb(var(--caution-100)); color: rgb(var(--caution-800)); }
     .hl { outline: 3px solid rgb(var(--positive-500)); outline-offset: 1px; animation: ck-flash 4s ease-out; }
     @keyframes ck-flash { from { background: rgb(var(--positive-100)); } to { background: rgb(var(--ink-50)); } }
     @media (prefers-reduced-motion: reduce) { .hl { animation: none; } }
-    .ck-empty { color: rgb(var(--ink-600)); font-size: .875rem; margin: 0; }
-    .ck-total { margin: .75rem 0 0; font-size: 1rem; }
+    .ck-empty { color: rgb(var(--ink-600)); font-size: var(--text-base); margin: 0; }
+    .ck-total { margin: .75rem 0 0; font-size: var(--text-md); }
     .ck-big { font-size: 1.5rem; font-weight: 800; margin: 0 0 .25rem; }
     .ck-fields { display: grid; grid-template-columns: minmax(8rem, auto) 1fr; gap: .375rem 1rem; margin: 0; }
     .ck-field { display: contents; }
-    .ck-field dt { color: rgb(var(--ink-600)); font-size: .875rem; }
+    .ck-field dt { color: rgb(var(--ink-600)); font-size: var(--text-base); }
     .ck-field dd { margin: 0; display: flex; flex-wrap: wrap; gap: .375rem; align-items: baseline; font-weight: 600; }
     .ck-new-value { color: rgb(var(--petrol-800)); }
   `],

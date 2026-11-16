@@ -8,9 +8,9 @@
 .d3-main { min-width: 0; display: flex; flex-direction: column; gap: .5rem; }
 
 .d3-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
-.d3-views { display: inline-flex; border: 1px solid var(--border-strong); border-radius: .5rem; overflow: hidden; background: var(--surface); }
+.d3-views { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius-md); overflow: hidden; background: var(--surface); }
 .d3-views button {
-  padding: .375rem .75rem; font: inherit; font-size: .8125rem; font-weight: 600; border: 0; background: transparent;
+  padding: .375rem .75rem; font: inherit; font-size: var(--text-sm); font-weight: 600; border: 0; background: transparent;
   color: var(--text); cursor: pointer; min-height: 2.25rem;
 }
 .d3-views button + button { border-inline-start: 1px solid var(--border-strong); }
@@ -21,23 +21,23 @@
 .d3-tools { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .25rem; }
 .d3-tool {
   display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; flex: none;
-  border: 1px solid var(--border); border-radius: .5rem; background: var(--surface); color: var(--text); cursor: pointer;
+  border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); cursor: pointer;
 }
 .d3-tool:hover:not(:disabled) { background: var(--surface-hover); }
 .d3-tool:disabled { opacity: .4; cursor: default; }
 .d3-tool.on { background: var(--action-tint); color: var(--action-text); }
-.d3-tool app-icon.mi { font-size: 1.125rem; }
+.d3-tool app-icon.mi { font-size: var(--text-lg); }
 .d3-tool:focus-visible, .d3-back:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 .d3-back {
   position: absolute; inset: .5rem auto auto .5rem; z-index: 3;
-  display: inline-flex; align-items: center; gap: .25rem; height: 2.25rem; padding: 0 .75rem; font: inherit; font-size: .8125rem; font-weight: 600;
-  border: 1px solid var(--action); border-radius: .5rem; background: var(--surface); color: var(--action-text); cursor: pointer;
+  display: inline-flex; align-items: center; gap: .25rem; height: 2.25rem; padding: 0 .75rem; font: inherit; font-size: var(--text-sm); font-weight: 600;
+  border: 1px solid var(--action); border-radius: var(--radius-md); background: var(--surface); color: var(--action-text); cursor: pointer;
 }
-.d3-back app-icon.mi { font-size: 1.125rem; }
+.d3-back app-icon.mi { font-size: var(--text-lg); }
 
 /* As tall as the rows need at this width, and never taller than the window can show. */
 .d3-stage {
-  position: relative; aspect-ratio: 2 / 1; min-height: 20rem; max-height: 68vh; width: 100%; border: 1px solid var(--border); border-radius: .75rem; overflow: hidden;
+  position: relative; aspect-ratio: 2 / 1; min-height: 20rem; max-height: 68vh; width: 100%; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden;
   background: radial-gradient(ellipse at center, var(--surface) 0%, var(--surface) 55%, var(--surface-hover) 100%);
   container-type: inline-size;
 }
@@ -45,15 +45,15 @@
 
 .d3-sides {
   position: absolute; inset: .375rem .625rem auto; display: flex; justify-content: space-between; pointer-events: none;
-  font-size: .75rem; font-weight: 600; letter-spacing: .02em; color: var(--text-muted);
+  font-size: var(--text-xs); font-weight: 600; letter-spacing: .02em; color: var(--text-muted);
 }
 
 .d3-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .d3-label {
   position: absolute; left: 0; top: 0; transform: translate3d(-9999px, -9999px, 0); will-change: transform; pointer-events: auto;
   display: inline-flex; align-items: center; gap: .1875rem; height: 1.375rem; padding: 0 .3125rem; cursor: pointer;
-  font: inherit; font-size: .75rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1;
-  color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 999px;
+  font: inherit; font-size: var(--text-xs); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1;
+  color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-full);
 }
 .d3-label:hover { background: var(--action-tint); }
 .d3-label:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; z-index: 3; opacity: 1; }
@@ -70,7 +70,7 @@
 .d3-label[data-ring='PLANNED'] { box-shadow: 0 0 0 2px rgb(var(--caution-500)); }
 .d3-label.staged { box-shadow: 0 0 0 2px var(--voice-staged); }
 .d3-label.selected { background: var(--action); color: var(--text-inverse); border-color: var(--action); }
-.d3-label.focus { background: var(--voice-focus); color: rgb(var(--on-inverse)); border-color: var(--voice-focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voice-focus) calc(.3 * 100%), transparent); font-size: .8125rem; height: 1.625rem; z-index: 2; }
+.d3-label.focus { background: var(--voice-focus); color: rgb(var(--on-inverse)); border-color: var(--voice-focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voice-focus) calc(.3 * 100%), transparent); font-size: var(--text-sm); height: 1.625rem; z-index: 2; }
 .d3-marks { width: .875rem; height: .875rem; flex: none; }
 .d3-flag { width: .375rem; height: .375rem; border-radius: 50%; background: rgb(var(--critical-500)); flex: none; }
 
@@ -78,7 +78,7 @@
 @media (max-width: 640px) {
   .d3-stage { aspect-ratio: 5 / 8; max-height: none; }
   .d3-views { display: flex; width: 100%; }
-  .d3-views button { flex: 1 1 auto; padding: .375rem .25rem; font-size: .75rem; }
+  .d3-views button { flex: 1 1 auto; padding: .375rem .25rem; font-size: var(--text-xs); }
   /* Each row is one quadrant here, and its numbers already say which. */
   .d3-sides { display: none; }
   .d3-label { padding: 0 .125rem; gap: .0625rem; }
@@ -86,28 +86,28 @@
 }
 
 @container (max-width: 760px) {
-  .d3-label { height: 1.125rem; padding: 0 .1875rem; font-size: .75rem; gap: .125rem; }
+  .d3-label { height: 1.125rem; padding: 0 .1875rem; font-size: var(--text-xs); gap: .125rem; }
   .d3-marks { width: .625rem; height: .625rem; }
   .d3-flag { width: .3125rem; height: .3125rem; }
 }
 
 .d3-tip {
   position: absolute; left: 0; top: 0; z-index: 3; display: flex; flex-direction: column; gap: .125rem; max-width: 14rem;
-  padding: .375rem .5rem; pointer-events: none; font-size: .75rem; line-height: 1.3;
-  background: var(--surface-inverse); color: var(--text-inverse); border-radius: .375rem; box-shadow: var(--shadow-md);
+  padding: .375rem .5rem; pointer-events: none; font-size: var(--text-xs); line-height: 1.3;
+  background: var(--surface-inverse); color: var(--text-inverse); border-radius: var(--radius-sm); box-shadow: var(--shadow-md);
 }
 .d3-tip-zone { font-weight: 700; opacity: .85; }
 
 .d3-focus {
   flex: 1 1 14rem; min-width: 0; display: flex; flex-direction: column; gap: .0625rem; padding: .25rem .75rem; min-height: 2.25rem; justify-content: center;
-  font-size: .875rem; line-height: 1.2; background: var(--voice-focus); color: rgb(var(--on-inverse)); border-radius: .5rem;
+  font-size: var(--text-base); line-height: 1.2; background: var(--voice-focus); color: rgb(var(--on-inverse)); border-radius: var(--radius-md);
 }
-.d3-focus span { font-size: .75rem; opacity: .95; }
+.d3-focus span { font-size: var(--text-xs); opacity: .95; }
 
 .d3-face {
   position: absolute; left: 0; top: 0; transform: translate3d(-9999px, -9999px, 0); will-change: transform; pointer-events: auto;
   width: 1.75rem; height: 1.75rem; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
-  font: inherit; font-size: .8125rem; font-weight: 800; color: var(--action-text); background: var(--surface); border: 1.5px solid var(--action); border-radius: 50%;
+  font: inherit; font-size: var(--text-sm); font-weight: 800; color: var(--action-text); background: var(--surface); border: 1.5px solid var(--action); border-radius: 50%;
 }
 .d3-face:hover { background: var(--action-tint); }
 .d3-face.on { background: var(--action); color: var(--text-inverse); }
@@ -116,15 +116,15 @@
 
 .d3-overlay {
   position: absolute; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: center; gap: .5rem;
-  font-size: .875rem; color: var(--text-muted); background: var(--surface);
+  font-size: var(--text-base); color: var(--text-muted); background: var(--surface);
 }
 .d3-spinner { width: 1.125rem; height: 1.125rem; border: 2px solid var(--border-strong); border-top-color: var(--action); border-radius: 50%; animation: d3-spin .9s linear infinite; }
 @keyframes d3-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .d3-spinner { animation: none; } }
 
-.d3-legend { display: flex; flex-wrap: wrap; gap: .25rem .875rem; font-size: .75rem; color: var(--text-muted-on-tint); }
+.d3-legend { display: flex; flex-wrap: wrap; gap: .25rem .875rem; font-size: var(--text-xs); color: var(--text-muted-on-tint); }
 .d3-key { display: inline-flex; align-items: center; gap: .3125rem; }
-.sw { display: inline-block; width: .875rem; height: .875rem; border-radius: .1875rem; border: 1px solid transparent; flex: none; }
+.sw { display: inline-block; width: .875rem; height: .875rem; border-radius: 3px; border: 1px solid transparent; flex: none; }
 .sw-existing { background: repeating-linear-gradient(135deg, rgb(var(--petrol-500)) 0 2px, rgb(var(--petrol-50)) 2px 4px); border-color: rgb(var(--petrol-500)); }
 .sw-condition { background: radial-gradient(rgb(var(--critical-500)) 1.2px, rgb(var(--critical-50)) 1.4px) 0 0 / 4px 4px; border-color: rgb(var(--critical-500)); }
 .sw-planned { background: repeating-linear-gradient(135deg, rgb(var(--caution-500)) 0 2px, rgb(var(--caution-50)) 2px 5px); border-color: rgb(var(--caution-500)); }
@@ -139,57 +139,57 @@
 .sw-suspected { background: radial-gradient(var(--suspected-dot) 1.2px, var(--suspected-tint) 1.4px) 0 0 / 4px 4px; border: 1px dashed var(--suspected); }
 .sw-ring { background: var(--surface); border: 2px solid; border-radius: 50%; }
 
-.d3-credit { margin: 0; font-size: .75rem; line-height: 1.4; color: var(--text-muted); }
+.d3-credit { margin: 0; font-size: var(--text-xs); line-height: 1.4; color: var(--text-muted); }
 .d3-credit a { color: inherit; text-decoration: underline; }
 
-.d3-note { margin: 0 0 .5rem; font-size: .8125rem; color: var(--text-muted); }
+.d3-note { margin: 0 0 .5rem; font-size: var(--text-sm); color: var(--text-muted); }
 
 .d3-panel {
-  min-width: 0; padding: .875rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--surface);
+  min-width: 0; padding: .875rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface);
   display: flex; flex-direction: column; gap: .625rem;
 }
 @media (min-width: 1100px) { .d3-panel { max-height: 76vh; overflow-y: auto; } }
 .d3-panel-head { display: flex; align-items: center; gap: .625rem; }
 .d3-panel-fdi {
-  display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; flex: none; border-radius: .625rem;
-  font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; background: var(--action); color: var(--text-inverse);
+  display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; flex: none; border-radius: var(--radius-md);
+  font-size: var(--text-md); font-weight: 800; font-variant-numeric: tabular-nums; background: var(--action); color: var(--text-inverse);
 }
 .d3-panel-title { flex: 1; min-width: 0; }
-.d3-panel-title h3 { margin: 0; font-size: .875rem; font-weight: 700; line-height: 1.25; }
-.d3-panel-title p { margin: 0; font-size: .75rem; color: var(--text-muted); }
-.d3-panel-idle { margin: 0; font-size: .875rem; font-weight: 700; }
-.d3-hint { margin: 0; font-size: .75rem; line-height: 1.4; color: var(--text-muted); }
-.d3-block h4 { margin: 0 0 .375rem; font-size: .75rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--text-muted); }
+.d3-panel-title h3 { margin: 0; font-size: var(--text-base); font-weight: 700; line-height: 1.25; }
+.d3-panel-title p { margin: 0; font-size: var(--text-xs); color: var(--text-muted); }
+.d3-panel-idle { margin: 0; font-size: var(--text-base); font-weight: 700; }
+.d3-hint { margin: 0; font-size: var(--text-xs); line-height: 1.4; color: var(--text-muted); }
+.d3-block h4 { margin: 0 0 .375rem; font-size: var(--text-xs); font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--text-muted); }
 .d3-block h4[data-kind='condition'] { color: rgb(var(--critical-700)); }
 .d3-block h4[data-kind='planned'] { color: rgb(var(--caution-700)); }
 .d3-block h4[data-kind='existing'] { color: rgb(var(--petrol-700)); }
 .d3-chips { display: flex; flex-wrap: wrap; gap: .25rem; }
 .d3-chip {
-  min-width: 2.25rem; height: 2rem; padding: 0 .375rem; font: inherit; font-size: .8125rem; font-weight: 700; font-variant-numeric: tabular-nums;
-  border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface); color: var(--text); cursor: pointer;
+  min-width: 2.25rem; height: 2rem; padding: 0 .375rem; font: inherit; font-size: var(--text-sm); font-weight: 700; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); cursor: pointer;
 }
 .d3-chip:hover { background: var(--action-tint); }
 .d3-chip:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
-.d3-gums { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .125rem; font-size: .8125rem; }
+.d3-gums { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .125rem; font-size: var(--text-sm); }
 .d3-gums li[data-state='GINGIVITIS'] b { color: var(--status-attention-text); }
 .d3-gums li[data-state='PERIODONTITIS'] b { color: var(--status-critical-text); }
 .d3-gums li[data-state='HEALTHY'] b { color: var(--status-done-text); }
-.d3-treatments { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .25rem; font-size: .8125rem; }
+.d3-treatments { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .25rem; font-size: var(--text-sm); }
 .d3-treatments li { display: flex; align-items: center; gap: .375rem; }
 .d3-dot { width: .5rem; height: .5rem; border-radius: 50%; flex: none; }
-.d3-muted { margin-inline-start: auto; font-size: .75rem; color: var(--text-muted); }
-.d3-field { display: flex; flex-direction: column; gap: .25rem; font-size: .75rem; font-weight: 600; }
+.d3-muted { margin-inline-start: auto; font-size: var(--text-xs); color: var(--text-muted); }
+.d3-field { display: flex; flex-direction: column; gap: .25rem; font-size: var(--text-xs); font-weight: 600; }
 .d3-field textarea {
-  width: 100%; padding: .4375rem .5rem; font: inherit; font-size: .875rem; font-weight: 400; resize: vertical;
-  border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface); color: var(--text);
+  width: 100%; padding: .4375rem .5rem; font: inherit; font-size: var(--text-base); font-weight: 400; resize: vertical;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);
 }
 .d3-field textarea:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 .d3-assign {
-  display: inline-flex; align-items: center; justify-content: center; gap: .25rem; padding: .5rem .75rem; font: inherit; font-size: .8125rem; font-weight: 600;
-  border: 1px solid var(--action); border-radius: .375rem; background: var(--surface); color: var(--action-text); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: .25rem; padding: .5rem .75rem; font: inherit; font-size: var(--text-sm); font-weight: 600;
+  border: 1px solid var(--action); border-radius: var(--radius-sm); background: var(--surface); color: var(--action-text); cursor: pointer;
 }
 .d3-assign:hover { background: var(--action-tint); }
-.d3-assign app-icon.mi { font-size: 1.125rem; }
+.d3-assign app-icon.mi { font-size: var(--text-lg); }
 
 @media print {
   .d3-toolbar, .d3-tools, .d3-credit { display: none; }
@@ -202,8 +202,8 @@
 :host(.d3-compact) .d3 { height: 100%; gap: 0; }
 :host(.d3-compact) .d3-main { height: 100%; padding: .375rem; gap: .25rem; }
 :host(.d3-compact) .d3-stage { aspect-ratio: auto; flex: 1 1 auto; min-height: 10rem; max-height: none; }
-:host(.d3-compact) .d3-legend--compact { font-size: .75rem; gap: .25rem .75rem; }
-:host(.d3-compact) .d3-credit { margin: 0; font-size: .75rem; }
+:host(.d3-compact) .d3-legend--compact { font-size: var(--text-xs); gap: .25rem .75rem; }
+:host(.d3-compact) .d3-credit { margin: 0; font-size: var(--text-xs); }
 
 /* One-view patient file (overlayPanel): frameless, filling the row it is given; a picked
    tooth opens over the pane beside the chart. The host and .d3 stay unpositioned on
@@ -214,7 +214,7 @@
 :host(.d3-overlay) .d3-stage { aspect-ratio: auto; flex: 1 1 auto; min-height: 16rem; max-height: none; border: 0; border-radius: 0; background: transparent; }
 :host(.d3-overlay) .d3-panel {
   position: absolute; inset-block: 0; inset-inline-end: 0; z-index: 6; width: var(--d3-overlay-width, 50%);
-  max-height: none; overflow-y: auto; border-radius: .75rem; box-shadow: var(--shadow-lg);
+  max-height: none; overflow-y: auto; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
 }
 @media (max-width: 1099px) { :host(.d3-overlay) .d3-panel { width: 100%; } }
 
@@ -223,17 +223,17 @@
 /* Picking a tooth adds and removes nothing in the toolbar now, so however it wraps at this width,
    it stays put while the doctor works. */
 .d3-tools { margin-inline-start: auto; }
-.d3-q { font-size: 1rem; font-weight: 800; line-height: 1; }
+.d3-q { font-size: var(--text-md); font-weight: 800; line-height: 1; }
 
 /* The last voice command, over the stage's top corner rather than in the toolbar. */
 .d3-stage .d3-focus { position: absolute; inset: .5rem .5rem auto auto; z-index: 3; max-width: min(22rem, 60%); flex: none; }
 
-.d3-help { display: flex; flex-direction: column; gap: .5rem; padding: .75rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--surface); }
+.d3-help { display: flex; flex-direction: column; gap: .5rem; padding: .75rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
 
 /* Tooth numbers people can read and hit (P1-7): 28 px and 12 px text; 24 px on a narrow stage. */
-.d3-label { height: 1.75rem; min-width: 1.75rem; justify-content: center; padding: 0 .375rem; font-size: .75rem; }
+.d3-label { height: 1.75rem; min-width: 1.75rem; justify-content: center; padding: 0 .375rem; font-size: var(--text-xs); }
 @container (max-width: 760px) {
-  .d3-label { height: 1.5rem; min-width: 1.5rem; padding: 0 .25rem; font-size: .75rem; }
+  .d3-label { height: 1.5rem; min-width: 1.5rem; padding: 0 .25rem; font-size: var(--text-xs); }
 }
 /* A finger needs about 44 px: the hit area grows past the chip on a touch screen. */
 @media (pointer: coarse) {

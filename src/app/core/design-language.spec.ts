@@ -65,6 +65,16 @@ describe('one design language', () => {
     expect(offending(/class="[^"]*\bmaterial-icons\b/)).toEqual([]);
   });
 
+  it('sizes text and corners from the scale tokens (UI V2 audit L6)', () => {
+    // --text-xs … --text-2xl and --radius-xs … --radius-full. Literal sizes stay for what is not
+    // body text (icons and KPI figures, 1.5rem and up) and for the print windows, which have no tokens.
+    const skip = (path: string) => /svg-data|perio-print|consultation-documents|invoice-pdf/.test(path);
+    const literalText = /font-size:\s*(0?\.\d+|1(\.[0-4]\d*)?)rem(?![\w.])|font-size:\s*(1[2-9]|2[0-9])px/;
+    const literalRadius = /border-radius:\s*(0?\.\d+|1(\.\d+)?)rem\s*[;}]|border-radius:\s*([4-9]|1\d|2\d|999|9999)px\s*[;}]/;
+    expect(offending(literalText, skip)).toEqual([]);
+    expect(offending(literalRadius, skip)).toEqual([]);
+  });
+
   it('never sets text under 12 px', () => {
     const small = /font-size:\s*(0?\.(?:[0-6]\d*|7[0-4]\d*)rem|(?:[0-9]|1[01])(?:\.\d+)?px)\b|text-\[(?:[0-9]|1[01])px\]/;
     expect(offending(small, path => /svg-data|generated/.test(path))).toEqual([]);

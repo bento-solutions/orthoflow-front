@@ -80,7 +80,7 @@ const POPOVER_WIDTH = 224;
     .numbers { display: flex; flex-direction: row; height: 24px; }
     .cell { display: flex; align-items: center; justify-content: center; height: 24px; flex-shrink: 0; }
     .chip { display: flex; align-items: center; justify-content: center; gap: 2px; height: 22px; min-width: 26px; padding: 0 4px;
-            border: 0; border-radius: 6px; cursor: pointer; font: inherit; font-size: 14px; line-height: 20px; font-weight: 500;
+            border: 0; border-radius: var(--radius-sm); cursor: pointer; font: inherit; font-size: var(--text-base); line-height: 20px; font-weight: 500;
             font-variant-numeric: tabular-nums; transition: background-color .15s, color .15s;
             background: rgba(9, 9, 11, 0.15); color: var(--perio-fg); }
     .chip:hover, .chip.open { background: rgba(9, 9, 11, 0.25); }
@@ -92,10 +92,10 @@ const POPOVER_WIDTH = 224;
     .chip.implant:hover, .chip.implant.open { background: rgb(var(--petrol-300)); }
     .chip:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--perio-ring); }
     .i-missing { color: rgb(var(--critical-700)); } .i-implant { color: rgb(var(--petrol-700)); } .i-pontic { color: rgb(var(--caution-700)); }
-    .popover { position: fixed; z-index: 50; width: 224px; padding: 4px; border: 1px solid var(--perio-border); border-radius: 6px;
-               background: rgb(var(--on-inverse)); color: var(--perio-fg); font-size: 14px; line-height: 20px;
+    .popover { position: fixed; z-index: 50; width: 224px; padding: 4px; border: 1px solid var(--perio-border); border-radius: var(--radius-sm);
+               background: rgb(var(--on-inverse)); color: var(--perio-fg); font-size: var(--text-base); line-height: 20px;
                box-shadow: var(--shadow-md); }
-    .option { display: flex; width: 100%; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 6px; background: transparent;
+    .option { display: flex; width: 100%; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: var(--radius-sm); background: transparent;
               color: inherit; font: inherit; text-align: start; cursor: pointer; transition: background-color .15s; }
     .option:hover, .option:focus-visible { background: var(--perio-muted); outline: none; }
     .option.selected { font-weight: 500; }
@@ -104,10 +104,10 @@ const POPOVER_WIDTH = 224;
     .option.selected.pontic { background: rgb(var(--caution-50)); color: rgb(var(--caution-700)); }
     .option.selected.implant { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-700)); }
     .glyph { display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; flex-shrink: 0; }
-    .dot { width: 8px; height: 8px; border-radius: 9999px; background: rgba(9, 9, 11, 0.4); }
+    .dot { width: 8px; height: 8px; border-radius: var(--radius-full); background: rgba(9, 9, 11, 0.4); }
     .name { flex: 1; }
     .tick { color: rgba(9, 9, 11, 0.6); }
-    .warn { margin: 4px 0 0; padding: 6px 8px; border-top: 1px solid var(--perio-border); font-size: 12px; line-height: 16.5px; color: rgb(var(--caution-700)); }
+    .warn { margin: 4px 0 0; padding: 6px 8px; border-top: 1px solid var(--perio-border); font-size: var(--text-xs); line-height: 16.5px; color: rgb(var(--caution-700)); }
   `],
 })
 export class PerioNumbersComponent {

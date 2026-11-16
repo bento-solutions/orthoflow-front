@@ -139,13 +139,13 @@ const MOUTH_ROWS: readonly (readonly PerioRegion[])[] = [
   styles: [`
     :host { display: block; }
     .areas { max-width: 44rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
-    .head h2 { margin: 0; font-size: 1.125rem; }
-    .sub { margin: .25rem 0 1rem; color: var(--text-muted); font-size: .875rem; }
+    .head h2 { margin: 0; font-size: var(--text-lg); }
+    .sub { margin: .25rem 0 1rem; color: var(--text-muted); font-size: var(--text-base); }
     .map { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1.25rem; }
     /* The mouth is laid out as the dentist faces the patient, in every language: the patient's right on the left, like the chart. */
     .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; direction: ltr; }
     :host-context([dir='rtl']) .tile { direction: rtl; }
-    .tile { display: flex; flex-direction: column; gap: .125rem; align-items: flex-start; text-align: start; padding: .625rem .75rem; border: 1px solid var(--border); border-inline-start-width: 4px; border-radius: .5rem; background: var(--surface); color: var(--text); cursor: pointer; font: inherit; }
+    .tile { display: flex; flex-direction: column; gap: .125rem; align-items: flex-start; text-align: start; padding: .625rem .75rem; border: 1px solid var(--border); border-inline-start-width: 4px; border-radius: var(--radius-md); background: var(--surface); color: var(--text); cursor: pointer; font: inherit; }
     .tile.whole { width: 100%; }
     .tile.sel { box-shadow: 0 0 0 2px var(--focus-ring); }
     .tile:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
@@ -153,30 +153,30 @@ const MOUTH_ROWS: readonly (readonly PerioRegion[])[] = [
     .tile[data-state='GINGIVITIS'] { border-inline-start-color: var(--status-attention); }
     .tile[data-state='PERIODONTITIS'] { border-inline-start-color: var(--status-critical); }
     .tile[data-state='NONE'] { border-inline-start-color: var(--border-strong); }
-    .tile-region { font-size: .75rem; font-weight: 700; color: var(--text-muted); }
-    .tile-state { font-size: .875rem; font-weight: 600; }
+    .tile-region { font-size: var(--text-xs); font-weight: 700; color: var(--text-muted); }
+    .tile-state { font-size: var(--text-base); font-weight: 600; }
     .tile[data-state='HEALTHY'] .tile-state { color: var(--status-done-text); }
     .tile[data-state='GINGIVITIS'] .tile-state { color: var(--status-attention-text); }
     .tile[data-state='PERIODONTITIS'] .tile-state { color: var(--status-critical-text); }
-    .tile-date { font-size: .75rem; color: var(--text-muted); }
+    .tile-date { font-size: var(--text-xs); color: var(--text-muted); }
     .muted { color: var(--text-muted); font-weight: 400; }
-    .form { display: grid; gap: .75rem; padding: 1rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--surface); }
-    .form h3, .history h3 { margin: 0; font-size: .875rem; }
-    .field { display: flex; flex-direction: column; gap: .25rem; font-size: .8125rem; font-weight: 600; border: 0; padding: 0; margin: 0; }
+    .form { display: grid; gap: .75rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+    .form h3, .history h3 { margin: 0; font-size: var(--text-base); }
+    .field { display: flex; flex-direction: column; gap: .25rem; font-size: var(--text-sm); font-weight: 600; border: 0; padding: 0; margin: 0; }
     .field legend { padding: 0; margin-bottom: .25rem; }
-    .control { padding: .4375rem .5rem; font: inherit; font-weight: 400; border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface); color: var(--text); }
+    .control { padding: .4375rem .5rem; font: inherit; font-weight: 400; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); }
     .control:focus-visible, .seg button:focus-visible, .save:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
-    .seg { display: flex; flex-wrap: wrap; border: 1px solid var(--border-strong); border-radius: .375rem; overflow: hidden; align-self: flex-start; }
-    .seg button { padding: .4375rem .875rem; font: inherit; font-size: .8125rem; font-weight: 500; border: 0; background: var(--surface); color: var(--text); cursor: pointer; }
+    .seg { display: flex; flex-wrap: wrap; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); overflow: hidden; align-self: flex-start; }
+    .seg button { padding: .4375rem .875rem; font: inherit; font-size: var(--text-sm); font-weight: 500; border: 0; background: var(--surface); color: var(--text); cursor: pointer; }
     .seg button + button { border-inline-start: 1px solid var(--border-strong); }
     .seg button.on[data-state='HEALTHY'] { background: var(--status-done-tint); color: var(--status-done-text); font-weight: 700; }
     .seg button.on[data-state='GINGIVITIS'] { background: var(--status-attention-tint); color: var(--status-attention-text); font-weight: 700; }
     .seg button.on[data-state='PERIODONTITIS'] { background: var(--status-critical-tint); color: var(--status-critical-text); font-weight: 700; }
-    .save { justify-self: start; padding: .5rem 1rem; font: inherit; font-weight: 600; border: 0; border-radius: .375rem; background: var(--action); color: var(--text-inverse); cursor: pointer; }
+    .save { justify-self: start; padding: .5rem 1rem; font: inherit; font-weight: 600; border: 0; border-radius: var(--radius-sm); background: var(--action); color: var(--text-inverse); cursor: pointer; }
     .save:disabled { opacity: .5; cursor: not-allowed; }
     .history { margin-top: 1.25rem; }
     .history ul { list-style: none; margin: .5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .375rem; }
-    .history li { display: grid; grid-template-columns: 7rem 1fr 1fr; gap: .5rem; padding: .375rem .625rem; border-inline-start: 3px solid var(--border-strong); background: var(--status-idle-tint); border-radius: .25rem; font-size: .8125rem; }
+    .history li { display: grid; grid-template-columns: 7rem 1fr 1fr; gap: .5rem; padding: .375rem .625rem; border-inline-start: 3px solid var(--border-strong); background: var(--status-idle-tint); border-radius: var(--radius-xs); font-size: var(--text-sm); }
     .history li[data-state='HEALTHY'] { border-inline-start-color: var(--status-done); }
     .history li[data-state='GINGIVITIS'] { border-inline-start-color: var(--status-attention); }
     .history li[data-state='PERIODONTITIS'] { border-inline-start-color: var(--status-critical); }

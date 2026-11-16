@@ -157,40 +157,40 @@ const LANGUAGES: readonly PassportLanguage[] = ['fr', 'en', 'ar'];
   `,
   styles: [`
     :host { display: block; max-width: 64rem; }
-    .head h2 { margin: 0; font-size: 1.125rem; }
-    .sub { margin: .25rem 0 1rem; color: var(--text-muted); font-size: .875rem; }
-    h3 { margin: 0 0 .5rem; font-size: .875rem; }
-    .share { padding: 1rem; border: 1px solid var(--action-border); border-radius: .75rem; background: var(--action-tint); margin-bottom: 1.25rem; }
-    .consent { display: flex; gap: .5rem; align-items: flex-start; font-size: .875rem; margin-bottom: .75rem; }
+    .head h2 { margin: 0; font-size: var(--text-lg); }
+    .sub { margin: .25rem 0 1rem; color: var(--text-muted); font-size: var(--text-base); }
+    h3 { margin: 0 0 .5rem; font-size: var(--text-base); }
+    .share { padding: 1rem; border: 1px solid var(--action-border); border-radius: var(--radius-lg); background: var(--action-tint); margin-bottom: 1.25rem; }
+    .consent { display: flex; gap: .5rem; align-items: flex-start; font-size: var(--text-base); margin-bottom: .75rem; }
     .consent input { margin-top: .2rem; }
     .share-row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-end; }
-    .lang { display: flex; flex-direction: column; gap: .25rem; font-size: .75rem; font-weight: 600; }
-    .lang select { padding: .4375rem .5rem; font: inherit; font-weight: 400; border: 1px solid var(--border-strong); border-radius: .375rem; background: var(--surface); color: var(--text); }
+    .lang { display: flex; flex-direction: column; gap: .25rem; font-size: var(--text-xs); font-weight: 600; }
+    .lang select { padding: .4375rem .5rem; font: inherit; font-weight: 400; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); }
     .lang select:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-    .hint { margin: .625rem 0 0; font-size: .75rem; color: var(--text-muted-on-tint); }
+    .hint { margin: .625rem 0 0; font-size: var(--text-xs); color: var(--text-muted-on-tint); }
     .error { color: var(--status-critical-text); }
     .block { margin-bottom: 1.5rem; }
-    .muted { color: var(--text-muted); font-size: .875rem; margin: 0; }
+    .muted { color: var(--text-muted); font-size: var(--text-base); margin: 0; }
     .chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem; }
-    .chip { display: inline-flex; align-items: center; gap: .25rem; padding: .25rem .625rem; border-radius: 999px; background: var(--status-idle-tint); color: var(--status-idle-text); font-size: .8125rem; }
+    .chip { display: inline-flex; align-items: center; gap: .25rem; padding: .25rem .625rem; border-radius: var(--radius-full); background: var(--status-idle-tint); color: var(--status-idle-text); font-size: var(--text-sm); }
     .chip.alert { background: var(--status-critical-tint); color: var(--status-critical-text); font-weight: 600; }
-    .chip.alert app-icon.mi { font-size: 1rem; }
+    .chip.alert app-icon.mi { font-size: var(--text-md); }
     .chip[data-state='HEALTHY'] { background: var(--status-done-tint); color: var(--status-done-text); }
     .chip[data-state='GINGIVITIS'] { background: var(--status-attention-tint); color: var(--status-attention-text); }
     .chip[data-state='PERIODONTITIS'] { background: var(--status-critical-tint); color: var(--status-critical-text); }
     .timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
-    .entry { display: grid; grid-template-columns: 7.5rem 1fr auto; gap: .75rem; align-items: start; padding: .625rem .75rem; border: 1px solid var(--border); border-inline-start: 4px solid var(--border-strong); border-radius: .5rem; background: var(--surface); }
+    .entry { display: grid; grid-template-columns: 7.5rem 1fr auto; gap: .75rem; align-items: start; padding: .625rem .75rem; border: 1px solid var(--border); border-inline-start: 4px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface); }
     .entry[data-outcome='IN_PLACE'] { border-inline-start-color: var(--status-active); }
     .entry[data-outcome='TREATED'], .entry[data-outcome='COMPLETED'] { border-inline-start-color: var(--status-done); }
     .entry[data-outcome='REQUIRED'], .entry[data-outcome='PLANNED'], .entry[data-outcome='IN_PROGRESS'] { border-inline-start-color: var(--status-attention); }
-    .when { font-size: .8125rem; font-weight: 600; color: var(--text); }
+    .when { font-size: var(--text-sm); font-weight: 600; color: var(--text); }
     .what { display: flex; flex-direction: column; gap: .125rem; min-width: 0; }
     .title { font-weight: 600; display: flex; flex-wrap: wrap; gap: .375rem; align-items: center; }
-    .surface-badge { font-size: .75rem; font-weight: 700; letter-spacing: .06em; padding: .0625rem .375rem; border-radius: .25rem; background: var(--action-tint); color: var(--action-text); }
-    .meta { display: flex; flex-wrap: wrap; gap: .625rem; font-size: .75rem; color: var(--text-muted); }
+    .surface-badge { font-size: var(--text-xs); font-weight: 700; letter-spacing: .06em; padding: .0625rem .375rem; border-radius: var(--radius-xs); background: var(--action-tint); color: var(--action-text); }
+    .meta { display: flex; flex-wrap: wrap; gap: .625rem; font-size: var(--text-xs); color: var(--text-muted); }
     .origin { font-weight: 600; }
-    .note { font-size: .8125rem; white-space: pre-line; }
-    .pill { font-size: .75rem; font-weight: 700; padding: .125rem .5rem; border-radius: 999px; background: var(--status-idle-tint); color: var(--status-idle-text); white-space: nowrap; }
+    .note { font-size: var(--text-sm); white-space: pre-line; }
+    .pill { font-size: var(--text-xs); font-weight: 700; padding: .125rem .5rem; border-radius: var(--radius-full); background: var(--status-idle-tint); color: var(--status-idle-text); white-space: nowrap; }
     .pill[data-outcome='IN_PLACE'] { background: var(--status-active-tint); color: var(--status-active-text); }
     .pill[data-outcome='TREATED'], .pill[data-outcome='COMPLETED'] { background: var(--status-done-tint); color: var(--status-done-text); }
     .pill[data-outcome='REQUIRED'], .pill[data-outcome='PLANNED'], .pill[data-outcome='IN_PROGRESS'] { background: var(--status-attention-tint); color: var(--status-attention-text); }

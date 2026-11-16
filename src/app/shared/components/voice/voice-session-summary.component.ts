@@ -172,7 +172,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       display: flex; align-items: center; justify-content: center; padding: 1rem;
     }
     .summary-panel {
-      background: var(--surface); border-radius: 16px; width: 100%; max-width: 40rem;
+      background: var(--surface); border-radius: var(--radius-xl); width: 100%; max-width: 40rem;
       max-height: 88vh; display: flex; flex-direction: column;
       box-shadow: var(--shadow-xl); color: rgb(var(--ink-900));
     }
@@ -180,53 +180,53 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       display: flex; align-items: flex-start; justify-content: space-between;
       padding: 1.25rem 1.5rem 0.875rem; border-bottom: 1px solid rgb(var(--ink-200));
     }
-    .summary-header h2 { margin: 0; font-size: 1.125rem; font-weight: 700; }
-    .summary-sub { margin: 0.125rem 0 0; font-size: 0.8125rem; color: rgb(var(--ink-500)); }
+    .summary-header h2 { margin: 0; font-size: var(--text-lg); font-weight: 700; }
+    .summary-sub { margin: 0.125rem 0 0; font-size: var(--text-sm); color: rgb(var(--ink-500)); }
 
     .summary-body { overflow-y: auto; padding: 1rem 1.5rem; flex: 1; }
     section { margin-bottom: 1.25rem; }
     section h3 {
-      margin: 0 0 0.5rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      margin: 0 0 0.5rem; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.06em; color: rgb(var(--ink-500));
     }
 
     .tooth-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.625rem; }
     .tooth-list li { display: flex; gap: 0.75rem; align-items: flex-start; }
     .fdi {
-      flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 8px;
+      flex-shrink: 0; width: 2rem; height: 2rem; border-radius: var(--radius-md);
       background: var(--surface-inverse); color: var(--text-inverse); display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 0.8125rem;
+      font-weight: 700; font-size: var(--text-sm);
     }
-    .tooth-name { margin: 0; font-size: 0.8125rem; color: rgb(var(--ink-500)); }
+    .tooth-name { margin: 0; font-size: var(--text-sm); color: rgb(var(--ink-500)); }
     .tooth-findings { margin: 0.25rem 0 0; display: flex; flex-wrap: wrap; gap: 0.25rem; }
     .finding {
-      font-size: 0.75rem; font-weight: 600; border-radius: 999px; padding: 0.125rem 0.5rem;
+      font-size: var(--text-xs); font-weight: 600; border-radius: var(--radius-full); padding: 0.125rem 0.5rem;
       background: rgb(var(--ink-100)); color: rgb(var(--ink-700));
     }
     .finding[data-kind='CONDITION'] { background: rgb(var(--critical-100)); color: rgb(var(--critical-700)); }
     .finding[data-kind='TREATMENT_REQUIRED'] { background: rgb(var(--caution-100)); color: rgb(var(--caution-700)); }
     .finding[data-kind='EXISTING'] { background: rgb(var(--petrol-100)); color: rgb(var(--petrol-700)); }
     .finding[data-kind='OBSERVATION'] { background: rgb(var(--ink-100)); color: rgb(var(--ink-600)); }
-    .tooth-note { margin: 0.25rem 0 0; font-size: 0.8125rem; color: rgb(var(--ink-600)); font-style: italic; }
+    .tooth-note { margin: 0.25rem 0 0; font-size: var(--text-sm); color: rgb(var(--ink-600)); font-style: italic; }
 
     .plain { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.375rem; }
-    .plain li { font-size: 0.875rem; line-height: 1.45; }
+    .plain li { font-size: var(--text-base); line-height: 1.45; }
     .cat {
-      display: inline-block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      display: inline-block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.04em; background: rgb(var(--ink-100)); color: rgb(var(--ink-600));
-      border-radius: 4px; padding: 0.0625rem 0.3125rem; margin-inline-end: 0.375rem;
+      border-radius: var(--radius-xs); padding: 0.0625rem 0.3125rem; margin-inline-end: 0.375rem;
     }
     .cat.tooth { background: rgb(var(--petrol-100)); color: rgb(var(--petrol-800)); }
     .allergy { display: flex; align-items: center; gap: 0.375rem; color: rgb(var(--critical-700)); font-weight: 600; }
-    .allergy app-icon.mi { font-size: 1rem; }
-    .empty { color: rgb(var(--ink-500)); font-size: 0.875rem; text-align: center; padding: 1.5rem 0; }
+    .allergy app-icon.mi { font-size: var(--text-md); }
+    .empty { color: rgb(var(--ink-500)); font-size: var(--text-base); text-align: center; padding: 1.5rem 0; }
 
     .notes-section { margin-top: 0.25rem; padding-top: 1rem; border-top: 1px solid rgb(var(--ink-200)); }
-    .notes-hint { margin: 0 0 0.5rem; font-size: 0.75rem; color: rgb(var(--ink-500)); line-height: 1.45; }
+    .notes-hint { margin: 0 0 0.5rem; font-size: var(--text-xs); color: rgb(var(--ink-500)); line-height: 1.45; }
     .notes-input {
       width: 100%; box-sizing: border-box;
-      border: 1px solid rgb(var(--ink-300)); border-radius: 8px;
-      padding: 0.5rem 0.625rem; font-size: 0.875rem; font-family: inherit;
+      border: 1px solid rgb(var(--ink-300)); border-radius: var(--radius-md);
+      padding: 0.5rem 0.625rem; font-size: var(--text-base); font-family: inherit;
       color: rgb(var(--ink-900)); line-height: 1.5; resize: vertical;
     }
     .notes-input:focus {
@@ -236,7 +236,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     .notes-input::placeholder { color: rgb(var(--ink-500)); }
 
     .summary-footer { border-top: 1px solid rgb(var(--ink-200)); padding: 0.875rem 1.5rem 1.25rem; }
-    .footer-note { margin: 0 0 0.75rem; font-size: 0.75rem; color: rgb(var(--ink-500)); line-height: 1.45; }
+    .footer-note { margin: 0 0 0.75rem; font-size: var(--text-xs); color: rgb(var(--ink-500)); line-height: 1.45; }
     .footer-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
   `],
 })

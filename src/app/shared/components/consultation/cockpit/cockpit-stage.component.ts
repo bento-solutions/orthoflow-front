@@ -54,7 +54,7 @@ import { CockpitSectionComponent } from './cockpit-section.component';
   `,
   styles: [`
     :host { display: block; min-height: 0; }
-    .ck-stage { height: 100%; min-height: 0; overflow: auto; background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: .75rem; }
+    .ck-stage { height: 100%; min-height: 0; overflow: auto; background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: var(--radius-lg); }
     .ck-stage[data-view='chart'] { overflow: hidden; display: flex; flex-direction: column; }
     .ck-chart { display: block; flex: 1; min-height: 0; }
     .ck-chart-placeholder { height: 100%; background: rgb(var(--ink-50)); }

@@ -220,7 +220,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
       padding: 0.5rem;
       min-width: 44px;
       min-height: 44px;
-      border-radius: 10px;
+      border-radius: var(--radius-lg);
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -239,7 +239,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
     }
 
     .header-content h1 {
-      font-size: 1.75rem;
+      font-size: var(--text-2xl);
       font-weight: 700;
       color: rgb(var(--ink-900));
       margin: 0;
@@ -259,13 +259,13 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
     .form-section {
       background: var(--surface);
       padding: 2rem;
-      border-radius: 16px;
+      border-radius: var(--radius-xl);
       border: 1px solid rgb(var(--ink-200));
       box-shadow: var(--shadow-xs);
     }
 
     .section-title {
-      font-size: 1.125rem;
+      font-size: var(--text-lg);
       font-weight: 600;
       color: rgb(var(--ink-700));
       margin-bottom: 1.5rem;
@@ -293,7 +293,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
 
     .field-error {
       margin: 0;
-      font-size: 0.8125rem;
+      font-size: var(--text-sm);
       color: rgb(var(--critical-700));
     }
 
@@ -301,7 +301,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
       display: flex;
       align-items: flex-start;
       gap: 0.6rem;
-      font-size: 0.875rem;
+      font-size: var(--text-base);
       color: rgb(var(--ink-700));
       cursor: pointer;
     }
@@ -310,12 +310,12 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
     }
     .consent-hint {
       margin: 0.5rem 0 0 1.7rem;
-      font-size: 0.8125rem;
+      font-size: var(--text-sm);
       color: rgb(var(--ink-500));
     }
 
     .form-group label {
-      font-size: 0.875rem;
+      font-size: var(--text-base);
       font-weight: 500;
       color: rgb(var(--ink-600));
     }
@@ -327,8 +327,8 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
       background: var(--surface);
       color: var(--text);
       border: 1px solid rgb(var(--ink-300));
-      border-radius: 8px;
-      font-size: 0.875rem;
+      border-radius: var(--radius-md);
+      font-size: var(--text-base);
       transition: all 0.2s ease;
       outline: none;
     }
@@ -356,7 +356,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
       border: 1px solid rgb(var(--ink-200));
       color: rgb(var(--ink-500));
       padding: 0.75rem 2rem;
-      border-radius: 10px;
+      border-radius: var(--radius-lg);
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -403,7 +403,7 @@ function notInFutureValidator(control: AbstractControl): ValidationErrors | null
       }
 
       .header-content h1 {
-        font-size: 1.5rem;
+        font-size: var(--text-xl);
       }
 
       .form-section {

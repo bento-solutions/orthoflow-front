@@ -28,12 +28,12 @@ import { SentenceSuggestion, suggestFromSentence } from '../../../core/consultat
   styles: [`
     :host { display: inline; }
     .cs { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .4rem; }
-    .cs-kind { font-size: .75rem; font-weight: 600; color: rgb(var(--ink-600)); }
+    .cs-kind { font-size: var(--text-xs); font-weight: 600; color: rgb(var(--ink-600)); }
     .cs-text { font-weight: 600; color: rgb(var(--ink-900)); }
     .cs-none { font-weight: 400; font-style: italic; color: rgb(var(--ink-600)); }
     /* The colour asked for: "to be confirmed" never reads as done (green) or as an error (red). */
-    .cs-badge { padding: 0 .45rem; border-radius: 999px; background: var(--suggestion); color: var(--suggestion-text); font-size: .75rem; font-weight: 700; white-space: nowrap; }
-    .cs-question { flex-basis: 100%; font-size: .75rem; color: rgb(var(--ink-600)); }
+    .cs-badge { padding: 0 .45rem; border-radius: var(--radius-full); background: var(--suggestion); color: var(--suggestion-text); font-size: var(--text-xs); font-weight: 700; white-space: nowrap; }
+    .cs-question { flex-basis: 100%; font-size: var(--text-xs); color: rgb(var(--ink-600)); }
   `],
 })
 export class ConsultationSuggestionComponent {

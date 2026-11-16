@@ -110,25 +110,25 @@ const GROUP_ORDER = ['DONE', 'CONDITION', 'PLANNED', 'WATCH', 'ABSENT'];
       .drawing { position: sticky; top: 15rem; }
     }
     .drawing { min-width: 0; }
-    .sides { display: flex; justify-content: space-between; font-size: .75rem; font-weight: 600; color: var(--text-muted); direction: ltr; }
+    .sides { display: flex; justify-content: space-between; font-size: var(--text-xs); font-weight: 600; color: var(--text-muted); direction: ltr; }
     .defs { position: absolute; }
-    h3 { margin: 0 0 .5rem; font-size: .875rem; }
-    h4 { margin: 0 0 .25rem; font-size: .75rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--text-muted); }
+    h3 { margin: 0 0 .5rem; font-size: var(--text-base); }
+    h4 { margin: 0 0 .25rem; font-size: var(--text-xs); font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--text-muted); }
     h4[data-group='DONE'] { color: rgb(var(--petrol-700)); }
     h4[data-group='CONDITION'] { color: rgb(var(--critical-700)); }
     h4[data-group='PLANNED'] { color: rgb(var(--caution-700)); }
     .group { margin-bottom: .875rem; }
     ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-    li { display: grid; grid-template-columns: 1.5rem 1.125rem minmax(0, 1fr); gap: .5rem; align-items: start; padding: .3125rem .375rem; border-radius: .375rem; }
+    li { display: grid; grid-template-columns: 1.5rem 1.125rem minmax(0, 1fr); gap: .5rem; align-items: start; padding: .3125rem .375rem; border-radius: var(--radius-sm); }
     li:hover, li:focus-visible { background: var(--surface-hover); outline: none; }
     li:focus-visible { box-shadow: 0 0 0 2px var(--focus-ring); }
-    .key { display: inline-flex; align-items: center; justify-content: center; height: 1.125rem; font-size: .75rem; font-weight: 800; color: var(--text); }
+    .key { display: inline-flex; align-items: center; justify-content: center; height: 1.125rem; font-size: var(--text-xs); font-weight: 800; color: var(--text); }
     .swatch { width: 1.125rem; height: 1.125rem; }
     .text { display: flex; flex-direction: column; gap: .0625rem; min-width: 0; }
-    .what { font-size: .875rem; font-weight: 600; color: var(--text); }
-    .where { font-size: .75rem; color: var(--text-muted); }
+    .what { font-size: var(--text-base); font-weight: 600; color: var(--text); }
+    .where { font-size: var(--text-xs); color: var(--text-muted); }
     .where b { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
-    .muted { margin: 0; font-size: .875rem; color: var(--text-muted); }
+    .muted { margin: 0; font-size: var(--text-base); color: var(--text-muted); }
   `],
 })
 export class TreatmentChartComponent {

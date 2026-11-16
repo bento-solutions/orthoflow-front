@@ -104,26 +104,26 @@ export function reportVisits(notes: readonly ClinicalNote[]): ReportVisit[] {
     </section>
   `,
   styles: [`
-    .cr { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: .75rem; border: 1px solid rgb(var(--ink-200)); background: var(--surface); }
+    .cr { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: var(--radius-lg); border: 1px solid rgb(var(--ink-200)); background: var(--surface); }
     .cr-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; margin-bottom: .75rem; }
     .cr-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .625rem; min-width: 0; }
-    .cr-title app-icon.mi { align-self: center; font-size: 1.25rem; color: rgb(var(--petrol-700)); }
-    .cr-title h2 { margin: 0; font-size: 1rem; font-weight: 700; color: rgb(var(--ink-900)); }
-    .cr-date { font-size: .8125rem; color: rgb(var(--ink-500)); }
-    .cr-pick { display: inline-flex; align-items: center; gap: .5rem; font-size: .8125rem; color: rgb(var(--ink-600)); }
+    .cr-title app-icon.mi { align-self: center; font-size: var(--text-lg); color: rgb(var(--petrol-700)); }
+    .cr-title h2 { margin: 0; font-size: var(--text-md); font-weight: 700; color: rgb(var(--ink-900)); }
+    .cr-date { font-size: var(--text-sm); color: rgb(var(--ink-500)); }
+    .cr-pick { display: inline-flex; align-items: center; gap: .5rem; font-size: var(--text-sm); color: rgb(var(--ink-600)); }
     .cr-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
     @media (min-width: 1100px) {
       .cr-body { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
       .cr-main { grid-row: 1 / span 2; grid-column: 1; }
       .cr-block:not(.cr-main) { grid-column: 2; }
     }
-    .cr-block h3 { margin: 0 0 .375rem; font-size: .75rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: rgb(var(--ink-500)); }
+    .cr-block h3 { margin: 0 0 .375rem; font-size: var(--text-xs); font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: rgb(var(--ink-500)); }
     /* A report has line breaks and lists; run together it is unreadable. */
-    .cr-block p { margin: 0; white-space: pre-line; font-size: .875rem; line-height: 1.6; color: rgb(var(--ink-800)); }
-    .cr-block:not(.cr-main) { padding: .75rem .875rem; border-radius: .625rem; background: rgb(var(--ink-50)); }
-    .cr-block:not(.cr-main) p { font-size: .875rem; }
+    .cr-block p { margin: 0; white-space: pre-line; font-size: var(--text-base); line-height: 1.6; color: rgb(var(--ink-800)); }
+    .cr-block:not(.cr-main) { padding: .75rem .875rem; border-radius: var(--radius-md); background: rgb(var(--ink-50)); }
+    .cr-block:not(.cr-main) p { font-size: var(--text-base); }
     .cr-foot { margin-top: .75rem; padding-top: .5rem; border-top: 1px solid rgb(var(--ink-100)); }
-    .cr-empty { margin: 0; font-size: .875rem; color: rgb(var(--ink-500)); }
+    .cr-empty { margin: 0; font-size: var(--text-base); color: rgb(var(--ink-500)); }
   `],
 })
 export class ConsultationReportComponent {

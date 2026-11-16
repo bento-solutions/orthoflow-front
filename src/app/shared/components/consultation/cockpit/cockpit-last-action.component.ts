@@ -40,20 +40,20 @@ import { VoiceOrchestratorService } from '../../../../core/voice/voice-orchestra
   `,
   styles: [`
     :host { display: block; }
-    .ck-last { padding: .75rem .875rem; border-radius: .75rem; background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-inline-start: 4px solid rgb(var(--positive-600)); }
+    .ck-last { padding: .75rem .875rem; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-inline-start: 4px solid rgb(var(--positive-600)); }
     .ck-last[data-kind='unsure'] { border-inline-start-color: rgb(var(--caution-500)); }
     .ck-last[data-kind='view'], .ck-last[data-kind='control'] { border-inline-start-color: rgb(var(--petrol-500)); }
     .ck-last[data-kind='none'] { border-inline-start-color: rgb(var(--ink-300)); }
-    .ck-last-head { margin: 0 0 .25rem; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: rgb(var(--ink-600)); }
-    .ck-last-title { display: flex; align-items: flex-start; gap: .375rem; margin: 0; font-size: 1rem; font-weight: 700; color: rgb(var(--ink-900)); overflow-wrap: anywhere; }
-    .ck-last-title app-icon.mi { font-size: 1.25rem; color: rgb(var(--positive-700)); }
+    .ck-last-head { margin: 0 0 .25rem; font-size: var(--text-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: rgb(var(--ink-600)); }
+    .ck-last-title { display: flex; align-items: flex-start; gap: .375rem; margin: 0; font-size: var(--text-md); font-weight: 700; color: rgb(var(--ink-900)); overflow-wrap: anywhere; }
+    .ck-last-title app-icon.mi { font-size: var(--text-lg); color: rgb(var(--positive-700)); }
     .ck-last[data-kind='unsure'] .ck-last-title app-icon.mi { color: rgb(var(--caution-700)); }
     .ck-last-detail { margin: .125rem 0 0; color: rgb(var(--ink-700)); }
-    .ck-last-heard { margin: .25rem 0 0; font-size: .8125rem; color: rgb(var(--ink-600)); font-style: italic; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .ck-last-undo { margin: .375rem 0 0; font-size: .8125rem; color: rgb(var(--ink-700)); }
+    .ck-last-heard { margin: .25rem 0 0; font-size: var(--text-sm); color: rgb(var(--ink-600)); font-style: italic; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .ck-last-undo { margin: .375rem 0 0; font-size: var(--text-sm); color: rgb(var(--ink-700)); }
     .ck-undo { margin-inline-start: .375rem; font-weight: 700; text-decoration: underline; color: rgb(var(--petrol-800)); }
-    .ck-last-empty { margin: 0; color: rgb(var(--ink-600)); font-size: .875rem; }
-    .ck-status { display: inline-block; margin-top: .25rem; font-size: .75rem; font-weight: 700; padding: .05rem .45rem; border-radius: 999px; background: rgb(var(--ink-100)); color: rgb(var(--ink-800)); }
+    .ck-last-empty { margin: 0; color: rgb(var(--ink-600)); font-size: var(--text-base); }
+    .ck-status { display: inline-block; margin-top: .25rem; font-size: var(--text-xs); font-weight: 700; padding: .05rem .45rem; border-radius: var(--radius-full); background: rgb(var(--ink-100)); color: rgb(var(--ink-800)); }
     .ck-status[data-status='to-confirm'], .ck-status[data-status='not-understood'] { background: rgb(var(--caution-100)); color: rgb(var(--caution-800)); }
     .ck-status[data-status='proposed'] { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-800)); }
   `],

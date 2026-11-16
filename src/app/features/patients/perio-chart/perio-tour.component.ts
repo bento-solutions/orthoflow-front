@@ -52,10 +52,10 @@ const STEPS = ['PICK', 'TYPE', 'TEETH', 'SAVE'] as const;
     p { margin: 0; color: var(--text-muted); font-size: var(--text-sm); line-height: 1.5; }
     .keys { margin-top: .75rem; display: flex; align-items: center; gap: .375rem; }
     .status { margin-top: .75rem; display: flex; gap: .5rem; }
-    .s { display: inline-flex; align-items: center; gap: .125rem; height: 22px; padding: 0 .375rem; border-radius: 6px; font-size: 14px; font-weight: 500; }
+    .s { display: inline-flex; align-items: center; gap: .125rem; height: 22px; padding: 0 .375rem; border-radius: var(--radius-sm); font-size: var(--text-base); font-weight: 500; }
     .s.missing { background: rgb(var(--critical-200)); color: rgb(var(--critical-900)); } .s.pontic { background: rgb(var(--caution-200)); color: rgb(var(--caution-900)); } .s.implant { background: rgb(var(--petrol-200)); color: rgb(var(--petrol-900)); }
     .dots { margin-top: 1rem; display: flex; gap: .25rem; }
-    .dots i { width: .375rem; height: .375rem; border-radius: 9999px; background: var(--border-strong); }
+    .dots i { width: .375rem; height: .375rem; border-radius: var(--radius-full); background: var(--border-strong); }
     .dots i.on { width: 1rem; background: var(--text); }
   `],
 })

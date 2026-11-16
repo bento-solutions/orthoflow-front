@@ -275,7 +275,7 @@
 
   .btn > svg,
   .btn > app-icon.mi { flex-shrink: 0; }
-  .btn > app-icon.mi { font-size: 18px; }
+  .btn > app-icon.mi { font-size: var(--text-lg); }
 
   .btn-primary {
     background: var(--action);
@@ -584,7 +584,7 @@
     inset-inline-start: 0.6875rem;
     color: var(--text-subtle);
     pointer-events: none;
-    font-size: 18px;
+    font-size: var(--text-lg);
     width: 18px; height: 18px;
   }
 
@@ -1047,7 +1047,7 @@
   }
   .icon-btn:hover { background: var(--surface-hover); color: var(--text); }
   .icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .icon-btn app-icon.mi { font-size: 18px; }
+  .icon-btn app-icon.mi { font-size: var(--text-lg); }
 
   /* Sidebar geometry. The width transition is the reason the collapse
      toggle previously animated a chevron while the rail never moved:

@@ -441,16 +441,16 @@ interface ToothGroup {
     .vs { display: flex; flex-direction: column; gap: .75rem; }
 
     .card {
-      background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: 14px;
+      background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: var(--radius-lg);
       padding: .875rem 1rem; min-width: 0;
     }
 
     .vs-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
     .vs-title { display: flex; align-items: center; gap: .5rem; min-width: 0; }
-    .vs-title h2 { margin: 0; font-size: 1.125rem; font-weight: 700; color: rgb(var(--ink-900)); }
+    .vs-title h2 { margin: 0; font-size: var(--text-lg); font-weight: 700; color: rgb(var(--ink-900)); }
     .vs-elapsed {
-      font-variant-numeric: tabular-nums; font-size: .8125rem; font-weight: 600;
-      color: rgb(var(--ink-600)); background: rgb(var(--ink-100)); border-radius: 999px; padding: .125rem .5rem;
+      font-variant-numeric: tabular-nums; font-size: var(--text-sm); font-weight: 600;
+      color: rgb(var(--ink-600)); background: rgb(var(--ink-100)); border-radius: var(--radius-full); padding: .125rem .5rem;
     }
     .vs-dot { width: .625rem; height: .625rem; border-radius: 50%; background: rgb(var(--ink-300)); flex-shrink: 0; }
     .vs-dot.live { background: rgb(var(--critical-600)); animation: vs-pulse 1.6s ease-in-out infinite; }
@@ -458,7 +458,7 @@ interface ToothGroup {
 
     .icon-btn {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 2.75rem; height: 2.75rem; border-radius: 10px; border: none; background: transparent;
+      width: 2.75rem; height: 2.75rem; border-radius: var(--radius-lg); border: none; background: transparent;
       color: rgb(var(--ink-600)); cursor: pointer; flex-shrink: 0;
     }
     .icon-btn:hover, .icon-btn.active { background: rgb(var(--ink-100)); color: rgb(var(--ink-900)); }
@@ -470,39 +470,39 @@ interface ToothGroup {
 
     .link-btn {
       background: none; border: none; padding: .5rem 0; cursor: pointer;
-      color: rgb(var(--ink-600)); font-size: .8125rem; text-decoration: underline; align-self: flex-start;
+      color: rgb(var(--ink-600)); font-size: var(--text-sm); text-decoration: underline; align-self: flex-start;
     }
     .link-btn.danger { color: rgb(var(--critical-700)); }
 
     .btn-big {
       display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-      min-height: 3rem; padding: .625rem 1.125rem; border-radius: 12px; font-size: .875rem; font-weight: 600;
+      min-height: 3rem; padding: .625rem 1.125rem; border-radius: var(--radius-lg); font-size: var(--text-base); font-weight: 600;
       border: 1px solid rgb(var(--ink-300)); background: var(--surface); color: rgb(var(--ink-800)); cursor: pointer;
     }
     .btn-big:disabled { opacity: .6; cursor: default; }
     .btn-big.primary { background: rgb(var(--petrol-600)); border-color: transparent; color: rgb(var(--on-inverse)); }
     .btn-big.primary:hover:not(:disabled) { background: rgb(var(--petrol-700)); }
     .btn-big.positive { background: rgb(var(--positive-600)); border-color: transparent; color: rgb(var(--on-inverse)); }
-    .btn-big app-icon.mi { font-size: 1.25rem; }
+    .btn-big app-icon.mi { font-size: var(--text-lg); }
 
     .vs-intro { display: flex; flex-direction: column; align-items: flex-start; gap: .625rem; }
-    .vs-intro h3 { margin: 0; font-size: 1rem; }
-    .vs-intro p { margin: 0; color: rgb(var(--ink-700)); line-height: 1.5; font-size: .875rem; }
+    .vs-intro h3 { margin: 0; font-size: var(--text-md); }
+    .vs-intro p { margin: 0; color: rgb(var(--ink-700)); line-height: 1.5; font-size: var(--text-base); }
     .vs-intro-icon {
-      font-size: 1.75rem; color: rgb(var(--petrol-700)); background: rgb(var(--petrol-50));
-      border-radius: 12px; padding: .5rem;
+      font-size: var(--text-2xl); color: rgb(var(--petrol-700)); background: rgb(var(--petrol-50));
+      border-radius: var(--radius-lg); padding: .5rem;
     }
     .vs-intro.warn .vs-intro-icon { color: rgb(var(--caution-700)); background: rgb(var(--caution-50)); }
     .vs-intro.done .vs-intro-icon { color: rgb(var(--positive-700)); background: rgb(var(--positive-50)); }
-    .vs-how { margin: 0; padding-inline-start: 1.125rem; color: rgb(var(--ink-600)); font-size: .8125rem; line-height: 1.55; }
+    .vs-how { margin: 0; padding-inline-start: 1.125rem; color: rgb(var(--ink-600)); font-size: var(--text-sm); line-height: 1.55; }
     .vs-actions { display: flex; flex-wrap: wrap; gap: .5rem; width: 100%; }
     .vs-actions .btn-big { flex: 1 1 12rem; }
 
     .vs-alert {
       display: flex; align-items: flex-start; gap: .5rem; margin: 0; padding: .75rem .875rem;
-      border-radius: 12px; font-size: .875rem; line-height: 1.45; text-align: start; width: 100%;
+      border-radius: var(--radius-lg); font-size: var(--text-base); line-height: 1.45; text-align: start; width: 100%;
     }
-    .vs-alert app-icon.mi { font-size: 1.125rem; flex-shrink: 0; }
+    .vs-alert app-icon.mi { font-size: var(--text-lg); flex-shrink: 0; }
     .vs-alert.caution { background: rgb(var(--caution-50)); border: 1px solid rgb(var(--caution-200)); color: rgb(var(--caution-800)); }
     .vs-alert.critical { background: rgb(var(--critical-50)); border: 1px solid rgb(var(--critical-200)); color: rgb(var(--critical-700)); }
     .vs-alert.action {
@@ -513,17 +513,17 @@ interface ToothGroup {
     .vs-prompt { display: flex; flex-direction: column; gap: .625rem; }
     .vs-prompt.confirm { border-color: rgb(var(--caution-300)); background: rgb(var(--caution-50)); }
     .vs-prompt.question { border-color: rgb(var(--petrol-300)); background: rgb(var(--petrol-50)); }
-    .vs-prompt-text { margin: 0; font-size: 1rem; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+    .vs-prompt-text { margin: 0; font-size: var(--text-md); font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
     .vs-options { display: flex; flex-wrap: wrap; gap: .5rem; }
     .vs-option {
-      min-height: 2.75rem; padding: .5rem .875rem; border-radius: 999px; cursor: pointer;
+      min-height: 2.75rem; padding: .5rem .875rem; border-radius: var(--radius-full); cursor: pointer;
       border: 1px solid rgb(var(--petrol-300)); background: var(--surface); color: rgb(var(--petrol-800)); font-weight: 600;
     }
 
     .vs-live { display: flex; flex-direction: column; gap: .375rem; }
     .vs-live-top { display: flex; align-items: center; gap: .75rem; }
     .vs-meter {
-      width: 4.5rem; height: .5rem; border-radius: 999px; background: rgb(var(--ink-100));
+      width: 4.5rem; height: .5rem; border-radius: var(--radius-full); background: rgb(var(--ink-100));
       overflow: hidden; flex-shrink: 0;
     }
     .vs-meter span {
@@ -531,29 +531,29 @@ interface ToothGroup {
       transform-origin: left center; transition: transform 80ms linear;
     }
     :host-context([dir='rtl']) .vs-meter span { transform-origin: right center; }
-    .vs-status { margin: 0; font-weight: 600; color: rgb(var(--ink-800)); font-size: .875rem; }
-    .vs-line { margin: 0; font-size: .875rem; line-height: 1.45; color: rgb(var(--ink-800)); overflow-wrap: anywhere; }
+    .vs-status { margin: 0; font-weight: 600; color: rgb(var(--ink-800)); font-size: var(--text-base); }
+    .vs-line { margin: 0; font-size: var(--text-base); line-height: 1.45; color: rgb(var(--ink-800)); overflow-wrap: anywhere; }
     .vs-line.outcome { color: rgb(var(--positive-700)); font-weight: 600; }
     .vs-line.outcome.bad { color: rgb(var(--caution-800)); }
     .vs-lang { border: 0; margin: .75rem 0 0; padding: 0; }
-    .vs-lang legend { padding: 0; margin-bottom: .375rem; font-size: .8125rem; font-weight: 700; color: var(--text); }
-    .vs-lang-options { display: inline-flex; border: 1px solid var(--border-strong); border-radius: .5rem; overflow: hidden; }
-    .vs-lang-options button { padding: .4375rem .875rem; font: inherit; font-size: .875rem; border: 0; background: var(--surface); color: var(--text); cursor: pointer; }
+    .vs-lang legend { padding: 0; margin-bottom: .375rem; font-size: var(--text-sm); font-weight: 700; color: var(--text); }
+    .vs-lang-options { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius-md); overflow: hidden; }
+    .vs-lang-options button { padding: .4375rem .875rem; font: inherit; font-size: var(--text-base); border: 0; background: var(--surface); color: var(--text); cursor: pointer; }
     .vs-lang-options button + button { border-inline-start: 1px solid var(--border-strong); }
     .vs-lang-options button.on { background: var(--action); color: var(--text-inverse); font-weight: 700; }
     .vs-lang-options button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
-    .vs-lang-hint { margin: .375rem 0 0; font-size: .75rem; color: var(--text-muted); }
-    .vs-line.ignored { color: rgb(var(--ink-500)); font-size: .8125rem; font-style: italic; }
+    .vs-lang-hint { margin: .375rem 0 0; font-size: var(--text-xs); color: var(--text-muted); }
+    .vs-line.ignored { color: rgb(var(--ink-500)); font-size: var(--text-sm); font-style: italic; }
     .vs-label {
-      display: inline-block; margin-inline-end: .375rem; font-size: .75rem; font-weight: 700;
+      display: inline-block; margin-inline-end: .375rem; font-size: var(--text-xs); font-weight: 700;
       text-transform: uppercase; letter-spacing: .05em; color: rgb(var(--ink-500));
     }
     .vs-undo {
       display: inline-flex; align-items: center; gap: .375rem; align-self: flex-start; min-height: 2.5rem;
-      padding: .375rem .75rem; border-radius: 10px; border: 1px dashed rgb(var(--ink-300));
+      padding: .375rem .75rem; border-radius: var(--radius-lg); border: 1px dashed rgb(var(--ink-300));
       background: rgb(var(--ink-50)); color: rgb(var(--ink-700)); font-weight: 600; cursor: pointer;
     }
-    .vs-undo app-icon.mi { font-size: 1.125rem; }
+    .vs-undo app-icon.mi { font-size: var(--text-lg); }
 
     .vs-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; }
     @media (min-width: 1024px) {
@@ -561,17 +561,17 @@ interface ToothGroup {
     }
 
     .vs-card-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; margin-bottom: .25rem; }
-    .vs-card-head h3 { margin: 0; font-size: .875rem; font-weight: 700; }
-    .vs-count { font-size: .75rem; font-weight: 700; color: rgb(var(--ink-600)); background: rgb(var(--ink-100)); border-radius: 999px; padding: .125rem .5rem; }
-    .vs-legend { display: flex; flex-wrap: wrap; gap: .375rem .75rem; font-size: .75rem; color: rgb(var(--ink-600)); }
+    .vs-card-head h3 { margin: 0; font-size: var(--text-base); font-weight: 700; }
+    .vs-count { font-size: var(--text-xs); font-weight: 700; color: rgb(var(--ink-600)); background: rgb(var(--ink-100)); border-radius: var(--radius-full); padding: .125rem .5rem; }
+    .vs-legend { display: flex; flex-wrap: wrap; gap: .375rem .75rem; font-size: var(--text-xs); color: rgb(var(--ink-600)); }
     .vs-legend span { display: inline-flex; align-items: center; gap: .25rem; }
     .swatch { display: inline-block; width: .75rem; height: .75rem; border-radius: 3px; border: 2px solid; }
     .swatch.staged { border-color: var(--voice-staged); }
     .swatch.focus { border-color: var(--voice-focus); box-shadow: var(--shadow-md); }
-    .vs-hint { margin: .25rem 0 0; font-size: .8125rem; color: rgb(var(--ink-500)); line-height: 1.4; }
-    .vs-chart-placeholder { height: clamp(22rem, 58vh, 40rem); border-radius: .75rem; background: var(--surface-hover); }
-    .vs-empty { margin: .5rem 0 0; font-size: .875rem; color: rgb(var(--ink-600)); }
-    .vs-subtitle { margin: .75rem 0 .25rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: rgb(var(--ink-500)); }
+    .vs-hint { margin: .25rem 0 0; font-size: var(--text-sm); color: rgb(var(--ink-500)); line-height: 1.4; }
+    .vs-chart-placeholder { height: clamp(22rem, 58vh, 40rem); border-radius: var(--radius-lg); background: var(--surface-hover); }
+    .vs-empty { margin: .5rem 0 0; font-size: var(--text-base); color: rgb(var(--ink-600)); }
+    .vs-subtitle { margin: .75rem 0 .25rem; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: rgb(var(--ink-500)); }
 
     .vs-teeth, .vs-entries { list-style: none; margin: 0; padding: 0; }
     .vs-tooth {
@@ -580,18 +580,18 @@ interface ToothGroup {
     }
     .vs-tooth:last-child { border-bottom: none; }
     .vs-fdi {
-      min-width: 2.75rem; height: 2.75rem; border-radius: 10px; border: 2px solid var(--voice-staged);
-      background: var(--surface)eb; color: rgb(var(--ink-900)); font-weight: 800; font-size: 1rem; cursor: pointer;
+      min-width: 2.75rem; height: 2.75rem; border-radius: var(--radius-lg); border: 2px solid var(--voice-staged);
+      background: var(--surface)eb; color: rgb(var(--ink-900)); font-weight: 800; font-size: var(--text-md); cursor: pointer;
       font-variant-numeric: tabular-nums; flex-shrink: 0;
     }
     .vs-tooth.focus .vs-fdi { border-color: var(--voice-focus); background: rgb(var(--petrol-50)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voice-focus) calc(.18 * 100%), transparent); }
     .vs-entries { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .25rem; }
     .vs-entry { display: flex; align-items: flex-start; gap: .25rem; }
     .vs-entry-body { flex: 1; min-width: 0; padding-top: .25rem; }
-    .vs-entry-text { margin: 0; font-size: .875rem; font-weight: 600; overflow-wrap: anywhere; }
+    .vs-entry-text { margin: 0; font-size: var(--text-base); font-weight: 600; overflow-wrap: anywhere; }
     .vs-chips { display: flex; flex-wrap: wrap; gap: .25rem; }
     .vs-chip {
-      font-size: .8125rem; font-weight: 600; padding: .1875rem .5rem; border-radius: 6px;
+      font-size: var(--text-sm); font-weight: 600; padding: .1875rem .5rem; border-radius: var(--radius-sm);
       background: rgb(var(--ink-100)); color: rgb(var(--ink-800));
     }
     .vs-chip[data-kind='CONDITION'] { background: rgb(var(--critical-50)); color: rgb(var(--critical-700)); }
@@ -599,23 +599,23 @@ interface ToothGroup {
     .vs-chip[data-kind='EXISTING'] { background: rgb(var(--petrol-50)); color: rgb(var(--petrol-800)); }
     /* Said with a doubt: not a fact yet, so it does not look like one. */
     .vs-chip.suspected { background: transparent; color: rgb(var(--ink-700)); outline: 1.5px dashed currentColor; outline-offset: -1.5px; }
-    .vs-heard { margin: .125rem 0 0; font-size: .75rem; color: rgb(var(--ink-500)); font-style: italic; overflow-wrap: anywhere; }
+    .vs-heard { margin: .125rem 0 0; font-size: var(--text-xs); color: rgb(var(--ink-500)); font-style: italic; overflow-wrap: anywhere; }
 
     .vs-help { display: flex; flex-direction: column; gap: .375rem; }
-    .vs-help-title { margin: 0; font-weight: 700; font-size: .8125rem; color: rgb(var(--ink-700)); }
+    .vs-help-title { margin: 0; font-weight: 700; font-size: var(--text-sm); color: rgb(var(--ink-700)); }
     .vs-examples { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: .375rem; }
     .vs-examples li {
-      font-size: .8125rem; background: rgb(var(--ink-50)); border: 1px solid rgb(var(--ink-200));
-      border-radius: 8px; padding: .25rem .5rem; color: rgb(var(--ink-800));
+      font-size: var(--text-sm); background: rgb(var(--ink-50)); border: 1px solid rgb(var(--ink-200));
+      border-radius: var(--radius-md); padding: .25rem .5rem; color: rgb(var(--ink-800));
     }
-    .vs-note { display: flex; gap: .375rem; margin: 0; font-size: .8125rem; color: rgb(var(--ink-600)); line-height: 1.45; }
-    .vs-note app-icon.mi { font-size: 1rem; color: rgb(var(--petrol-700)); flex-shrink: 0; }
+    .vs-note { display: flex; gap: .375rem; margin: 0; font-size: var(--text-sm); color: rgb(var(--ink-600)); line-height: 1.45; }
+    .vs-note app-icon.mi { font-size: var(--text-md); color: rgb(var(--petrol-700)); flex-shrink: 0; }
     .vs-notice { font-weight: 500; color: rgb(var(--ink-700)); }
 
     .vs-typed { display: flex; gap: .5rem; }
     .vs-typed input {
-      flex: 1; min-width: 0; min-height: 2.75rem; border: 1px solid rgb(var(--ink-300)); border-radius: 12px;
-      padding: .5rem .75rem; font: inherit; font-size: 1rem; color: rgb(var(--ink-900)); background: var(--surface);
+      flex: 1; min-width: 0; min-height: 2.75rem; border: 1px solid rgb(var(--ink-300)); border-radius: var(--radius-lg);
+      padding: .5rem .75rem; font: inherit; font-size: var(--text-md); color: rgb(var(--ink-900)); background: var(--surface);
     }
     .vs-typed input:focus { outline: 2px solid rgb(var(--petrol-300)); outline-offset: -1px; border-color: rgb(var(--petrol-400)); }
 

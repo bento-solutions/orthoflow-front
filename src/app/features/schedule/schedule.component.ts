@@ -355,7 +355,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       flex-direction: column;
       height: calc(100vh - 120px);
       background: var(--surface);
-      border-radius: 20px;
+      border-radius: var(--radius-xl);
       border: 1px solid var(--border);
       box-shadow: var(--shadow-lg);
       overflow: hidden;
@@ -375,22 +375,22 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
 
     .header-left h1 {
       margin: 0 0 1rem 0;
-      font-size: 1.5rem;
+      font-size: var(--text-xl);
     }
 
     .view-switcher {
       display: flex;
       background: rgb(var(--ink-100));
       padding: 0.25rem;
-      border-radius: 10px;
+      border-radius: var(--radius-lg);
     }
 
     .view-switcher button {
       border: none;
       background: transparent;
       padding: 0.5rem 1rem;
-      border-radius: 8px;
-      font-size: 0.8125rem;
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
       font-weight: 600;
       /* Sits on a tinted track, where --text-muted would be 4.17:1. */
       color: var(--text-muted-on-tint);
@@ -419,7 +419,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
 
     .current-date {
       font-weight: 700;
-      font-size: 1.125rem;
+      font-size: var(--text-lg);
       min-width: 150px;
       text-align: center;
     }
@@ -432,9 +432,9 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .filter-select {
       background: rgb(var(--ink-50));
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-lg);
       padding: 0.5rem 0.75rem;
-      font-size: 0.875rem;
+      font-size: var(--text-base);
       color: var(--text);
       max-width: 12rem;
     }
@@ -443,7 +443,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       position: relative;
       background: rgb(var(--ink-50));
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-lg);
       display: flex;
       align-items: center;
       padding: 0 0.75rem;
@@ -454,10 +454,10 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       background: transparent;
       padding: 0.5rem;
       outline: none;
-      font-size: 0.875rem;
+      font-size: var(--text-base);
     }
 
-    .search-box app-icon.mi { font-size: 1.125rem; color: rgb(var(--ink-500)); }
+    .search-box app-icon.mi { font-size: var(--text-lg); color: rgb(var(--ink-500)); }
 
     .calendar-body {
       flex: 1;
@@ -481,7 +481,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .weekday {
       padding: 0.75rem;
       text-align: center;
-      font-size: 0.75rem;
+      font-size: var(--text-xs);
       font-weight: 700;
       color: rgb(var(--ink-500));
       text-transform: uppercase;
@@ -520,7 +520,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
     }
 
     .day-number {
@@ -529,7 +529,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       padding: 0;
       cursor: pointer;
       font-family: inherit;
-      font-size: 0.8125rem;
+      font-size: var(--text-sm);
       font-weight: 600;
       color: rgb(var(--ink-800));
       margin-bottom: 0.5rem;
@@ -549,9 +549,9 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       font-family: inherit;
       text-align: start;
       width: 100%;
-      font-size: 0.75rem;
+      font-size: var(--text-xs);
       padding: 0.25rem 0.5rem;
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -585,7 +585,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .time-slot {
       height: 60px;
       padding: 0.5rem;
-      font-size: 0.75rem;
+      font-size: var(--text-xs);
       color: rgb(var(--ink-500));
       text-align: end;
     }
@@ -609,7 +609,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       inset-inline-end: 10px;
       background: var(--surface);
       border-inline-start: 4px solid var(--action);
-      border-radius: 8px;
+      border-radius: var(--radius-md);
       padding: 0.5rem 1rem;
       box-shadow: var(--shadow-md);
       display: flex;
@@ -624,16 +624,16 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .day-event-card.emergency { border-inline-start-color: rgb(var(--critical-500)); background: rgb(var(--critical-50)); }
     .day-event-card.dragging { opacity: 0.4; }
 
-    .card-time { font-weight: 700; color: rgb(var(--petrol-800)); font-size: 0.875rem; }
+    .card-time { font-weight: 700; color: rgb(var(--petrol-800)); font-size: var(--text-base); }
     .card-content .patient { display: block; font-weight: 700; color: rgb(var(--ink-900)); }
-    .card-content .type { font-size: 0.75rem; color: rgb(var(--ink-500)); }
-    .card-content .notes { font-size: 0.75rem; color: rgb(var(--ink-500)); margin: 0.25rem 0 0 0; }
+    .card-content .type { font-size: var(--text-xs); color: rgb(var(--ink-500)); }
+    .card-content .notes { font-size: var(--text-xs); color: rgb(var(--ink-500)); margin: 0.25rem 0 0 0; }
     .chair-tag {
       display: inline-block;
-      font-size: 0.75rem;
+      font-size: var(--text-xs);
       font-weight: 600;
       padding: 0.05rem 0.4rem;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       background: rgb(var(--petrol-100));
       color: rgb(var(--petrol-800));
       margin-inline-start: 0.35rem;
@@ -664,8 +664,8 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       border-inline-end: 1px solid rgb(var(--ink-100));
     }
     .week-day-header.today { background: rgb(var(--petrol-50)); }
-    .week-day-name { font-size: 0.75rem; font-weight: 600; color: rgb(var(--ink-500)); text-transform: uppercase; }
-    .week-day-number { font-size: 1.125rem; font-weight: 700; color: rgb(var(--ink-900)); }
+    .week-day-name { font-size: var(--text-xs); font-weight: 600; color: rgb(var(--ink-500)); text-transform: uppercase; }
+    .week-day-number { font-size: var(--text-lg); font-weight: 700; color: rgb(var(--ink-900)); }
     .week-day-header.today .week-day-number { color: rgb(var(--petrol-800)); }
     .week-body {
       display: grid;
@@ -690,10 +690,10 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       padding: 0.35rem 0.5rem;
       flex-direction: column;
       gap: 0.1rem;
-      font-size: 0.75rem;
+      font-size: var(--text-xs);
     }
-    .week-day-column .card-time { font-size: 0.75rem; }
-    .week-day-column .patient { font-weight: 700; color: rgb(var(--ink-900)); font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .week-day-column .card-time { font-size: var(--text-xs); }
+    .week-day-column .patient { font-weight: 700; color: rgb(var(--ink-900)); font-size: var(--text-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* Modal */
     .modal-overlay {
@@ -711,7 +711,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       background: var(--surface);
       width: 100%;
       max-width: 500px;
-      border-radius: 20px;
+      border-radius: var(--radius-xl);
       padding: 2rem;
       box-shadow: var(--shadow-xl);
     }
@@ -723,17 +723,17 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       margin-bottom: 2rem;
     }
 
-    .modal-header h2 { margin: 0; font-size: 1.25rem; }
+    .modal-header h2 { margin: 0; font-size: var(--text-lg); }
 
     .form-group { margin-bottom: 1.5rem; }
-    .form-group label, .form-group .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.875rem; color: rgb(var(--ink-500)); }
+    .form-group label, .form-group .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: var(--text-base); color: rgb(var(--ink-500)); }
     .form-group input, .form-group select, .form-group textarea {
       width: 100%;
       padding: 0.75rem;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-lg);
       outline: none;
-      font-size: 0.875rem;
+      font-size: var(--text-base);
     }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 
@@ -756,14 +756,14 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       gap: 2rem;
     }
 
-    .year-month-card h3 { font-size: 1rem; margin-bottom: 1rem; }
+    .year-month-card h3 { font-size: var(--text-md); margin-bottom: 1rem; }
     .mini-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 2px;
     }
     .mini-day {
-      font-size: 0.75rem;
+      font-size: var(--text-xs);
       padding: 2px;
       text-align: center;
       color: rgb(var(--ink-500));
@@ -791,8 +791,8 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
       background: transparent;
       border: 1px solid var(--border);
       padding: 0.5rem 1rem;
-      border-radius: 10px;
-      font-size: 0.8125rem;
+      border-radius: var(--radius-lg);
+      font-size: var(--text-sm);
       font-weight: 600;
       color: rgb(var(--ink-500));
       cursor: pointer;

@@ -236,7 +236,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
     .back-btn {
       background: var(--surface);
       border: 1px solid rgb(var(--ink-200));
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
       padding: 0.5rem;
       min-width: 44px;
       min-height: 44px;
@@ -259,12 +259,12 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 
     .print-name { display: none; margin: 0; }
     @media print {
-      .print-name { display: block; font-size: 1.5rem; font-weight: 800; }
+      .print-name { display: block; font-size: var(--text-xl); font-weight: 800; }
     }
 
     .title-with-status h1 {
       margin: 0;
-      font-size: 1.875rem;
+      font-size: var(--text-2xl);
       font-weight: 700;
       color: rgb(var(--ink-900));
     }
@@ -285,7 +285,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
        shadow the canonical class. */
     .invoice-card {
       background: var(--surface);
-      border-radius: 16px;
+      border-radius: var(--radius-xl);
       border: 1px solid rgb(var(--ink-200));
       margin-bottom: 1.5rem;
       overflow: hidden;
@@ -301,7 +301,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 
     .card-header h3 {
       margin: 0;
-      font-size: 1rem;
+      font-size: var(--text-md);
       font-weight: 600;
       color: rgb(var(--ink-900));
     }
@@ -323,7 +323,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
     }
 
     .info-group label {
-      font-size: 0.75rem;
+      font-size: var(--text-xs);
       font-weight: 600;
       color: rgb(var(--ink-500));
       text-transform: uppercase;
@@ -336,7 +336,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
     }
 
     .info-sub {
-      font-size: 0.875rem;
+      font-size: var(--text-base);
       color: rgb(var(--ink-500));
     }
 
@@ -348,7 +348,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
     .items-table th {
       background: rgb(var(--ink-50));
       padding: 0.75rem 1.5rem;
-      font-size: 0.75rem;
+      font-size: var(--text-xs);
       font-weight: 600;
       color: rgb(var(--ink-500));
       text-transform: uppercase;
@@ -375,7 +375,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
       display: flex;
       justify-content: space-between;
       width: 250px;
-      font-size: 0.875rem;
+      font-size: var(--text-base);
       color: rgb(var(--ink-600));
     }
 
@@ -383,7 +383,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
       margin-top: 0.5rem;
       padding-top: 1rem;
       border-top: 2px solid rgb(var(--ink-100));
-      font-size: 1.25rem;
+      font-size: var(--text-lg);
       font-weight: 700;
       color: rgb(var(--ink-900));
     }
@@ -405,7 +405,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
     .payment-icon {
       width: 36px;
       height: 36px;
-      border-radius: 10px;
+      border-radius: var(--radius-lg);
       background: rgb(var(--ink-100));
       color: rgb(var(--ink-600));
       display: flex;
@@ -424,8 +424,8 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
     }
 
     .payment-amount { font-weight: 600; color: rgb(var(--ink-900)); }
-    .payment-method { font-size: 0.75rem; font-weight: 600; color: rgb(var(--ink-500)); text-transform: uppercase; }
-    .payment-meta { font-size: 0.8125rem; color: rgb(var(--ink-500)); display: flex; gap: 0.5rem; }
+    .payment-method { font-size: var(--text-xs); font-weight: 600; color: rgb(var(--ink-500)); text-transform: uppercase; }
+    .payment-meta { font-size: var(--text-sm); color: rgb(var(--ink-500)); display: flex; gap: 0.5rem; }
 
     .balance-card {
       padding: 1.5rem;
@@ -441,15 +441,15 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
       margin-bottom: 1.5rem;
     }
 
-    .balance-label { font-size: 0.875rem; opacity: 0.8; }
+    .balance-label { font-size: var(--text-base); opacity: 0.8; }
     .balance-value { font-size: 2rem; font-weight: 700; }
     .balance-value.paid { color: rgb(var(--positive-700)); }
 
     .full-width { width: 100%; justify-content: center; }
 
     .form-group { margin-bottom: 1rem; }
-    .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; }
-    .form-control { width: 100%; padding: 0.75rem; border: 1px solid rgb(var(--ink-300)); border-radius: 8px; outline: none; }
+    .form-group label { display: block; margin-bottom: 0.5rem; font-size: var(--text-base); font-weight: 500; }
+    .form-control { width: 100%; padding: 0.75rem; border: 1px solid rgb(var(--ink-300)); border-radius: var(--radius-md); outline: none; }
 
     .mt-4 { margin-top: 1rem; }
 

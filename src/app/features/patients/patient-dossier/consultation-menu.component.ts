@@ -70,21 +70,21 @@ import { TranslateModule } from '@ngx-translate/core';
       .cm-item { min-height: 3rem; }
     }
     .cm-item {
-      display: flex; align-items: flex-start; gap: .625rem; width: 100%; padding: .5rem .625rem; border: 0; border-radius: .5rem;
+      display: flex; align-items: flex-start; gap: .625rem; width: 100%; padding: .5rem .625rem; border: 0; border-radius: var(--radius-md);
       background: transparent; color: rgb(var(--ink-900)); text-align: start; cursor: pointer; font: inherit;
     }
     .cm-item:hover:not(:disabled), .cm-item:focus-visible { background: rgb(var(--ink-50)); outline: none; }
     .cm-item:focus-visible { box-shadow: inset 0 0 0 2px var(--focus-ring); }
     .cm-item:disabled { cursor: not-allowed; color: rgb(var(--ink-500)); }
-    .cm-item > app-icon.mi { font-size: 1.25rem; margin-top: .0625rem; color: rgb(var(--petrol-700)); }
+    .cm-item > app-icon.mi { font-size: var(--text-lg); margin-top: .0625rem; color: rgb(var(--petrol-700)); }
     .cm-item:disabled > app-icon.mi { color: rgb(var(--ink-400)); }
-    .cm-text { display: flex; flex-direction: column; gap: .125rem; min-width: 0; font-size: .875rem; }
+    .cm-text { display: flex; flex-direction: column; gap: .125rem; min-width: 0; font-size: var(--text-base); }
     .cm-text strong { font-weight: 600; }
-    .cm-text small { font-size: .75rem; line-height: 1.35; color: rgb(var(--ink-500)); white-space: normal; }
+    .cm-text small { font-size: var(--text-xs); line-height: 1.35; color: rgb(var(--ink-500)); white-space: normal; }
     .cm-off { color: rgb(var(--caution-700)) !important; }
     .cm-minor { border-top: 1px solid rgb(var(--ink-100)); border-radius: 0 0 .5rem .5rem; margin-top: .25rem; padding-top: .625rem; }
-    .cm-minor .cm-text { font-size: .8125rem; color: rgb(var(--ink-600)); }
-    .cm-minor > app-icon.mi { font-size: 1rem; color: rgb(var(--ink-500)); }
+    .cm-minor .cm-text { font-size: var(--text-sm); color: rgb(var(--ink-600)); }
+    .cm-minor > app-icon.mi { font-size: var(--text-md); color: rgb(var(--ink-500)); }
   `],
 })
 export class ConsultationMenuComponent {

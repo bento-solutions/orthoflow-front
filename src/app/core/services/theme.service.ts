@@ -40,9 +40,18 @@ export class ThemeService {
     return preference === 'system' ? (this.systemDark() ? 'dark' : 'light') : preference;
   });
 
+  /**
+   * A screen that is always dark, whatever the person chose: the 3D chart's own window, where
+   * the model and the X-rays read best on a dark ground. It holds only in the window that sets
+   * it and is never saved.
+   */
+  private readonly forced = signal<Theme | null>(null);
+  /** What the page shows: the forced theme where a screen asks for one, else the person's. */
+  readonly shown = computed<Theme>(() => this.forced() ?? this.effective());
+
   constructor() {
     this.media()?.addEventListener?.('change', event => this.systemDark.set(event.matches));
-    effect(() => this.apply(this.effective()));
+    effect(() => this.apply(this.shown()));
     effect(() => {
       if (this.auth.token()) {
         untracked(() => void this.adoptServerChoice());
@@ -62,6 +71,11 @@ export class ThemeService {
     if (this.auth.token()) {
       this.preferences.patch({ theme: preference }).catch(() => undefined);
     }
+  }
+
+  /** Shows this window in one theme until released with null; the person's choice is untouched. */
+  force(theme: Theme | null): void {
+    this.forced.set(theme);
   }
 
   /** Light to dark and back; the first press leaves "follow the system". */

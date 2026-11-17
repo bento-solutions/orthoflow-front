@@ -4289,7 +4289,10 @@
     "GUMS": "Gencives et palais",
     "GUMS_HIDE": "Masquer les gencives et le palais",
     "GUMS_SHOW": "Afficher les gencives et le palais",
-    "GUM": "Gencive"
+    "GUM": "Gencive",
+    "FULL_SCREEN": "Plein écran",
+    "FULL_SCREEN_HINT": "Ouvrir le schéma 3D dans sa propre fenêtre, à placer sur un second écran",
+    "NO_TOOTH": "Aucune dent choisie"
   },
   "TOOTH_NAME": {
     "11": "Incisive centrale supérieure droite",
@@ -4563,6 +4566,57 @@
       "XRAY": "Radio",
       "INTRAORAL_3D": "Intra-orale 3D",
       "IMAGE": "Image"
+    }
+  },
+  "IMAGING": {
+    "TOOLS": "Outils de l’image",
+    "ZOOM_IN": "Zoomer",
+    "ZOOM_OUT": "Dézoomer",
+    "FIT": "Ajusté",
+    "BRIGHTNESS": "Luminosité",
+    "CONTRAST": "Contraste",
+    "INVERT": "Négatif",
+    "ROTATE": "Tourner d’un quart",
+    "RESET": "Revenir à l’image d’origine",
+    "COMPARE": "Comparer",
+    "COMPARE_HINT": "Côte à côte avec une plus ancienne. En comparaison, une vignette va à droite.",
+    "CHART": "Schéma 3D",
+    "DOWNLOAD": "Télécharger l’original",
+    "CLOSE": "Quitter le plein écran",
+    "STAGE": "L’image. Molette ou + et − pour zoomer, glisser pour déplacer, flèches pour la plus ancienne ou la plus récente.",
+    "HINT": "Molette pour zoomer · glisser pour déplacer · double-clic pour zoomer ou ajuster",
+    "ALL": "Toutes les images du patient",
+    "POSITION": "{{at}} sur {{of}}",
+    "OPEN": "Plein écran",
+    "OPEN_HINT": "Afficher l’image en plein écran"
+  },
+  "CHART_WINDOW": {
+    "TITLE": "Schéma 3D",
+    "ACTIVE_TREATMENT": "Traitement en cours",
+    "XRAY_BESIDE": "Radio à côté",
+    "XRAY_BESIDE_HINT": "Afficher la radio ou l’empreinte intra-orale à côté du modèle",
+    "PRINT": "Imprimer le schéma",
+    "CLOSE": "Fermer cette fenêtre",
+    "STATE": "État de la bouche",
+    "TILE": {
+      "CONDITION": "Pathologies",
+      "PLANNED": "À faire",
+      "EXISTING": "Travaux en place",
+      "ABSENT": "Absentes"
+    },
+    "TO_DO": "À faire",
+    "NOTHING_TO_DO": "Rien à faire.",
+    "TREATMENTS": "Traitements",
+    "NO_TREATMENTS": "Aucun traitement assigné.",
+    "DONE": "Terminé",
+    "LOAD_FAILED": "Le patient n’a pas pu être chargé.",
+    "ASSIGN_MATERIALS": "Les matériaux prévus au catalogue pour ce traitement sont ajoutés avec lui. Modifiez-les dans l’onglet Traitements du dossier.",
+    "ASSIGN_FAILED": "Le traitement n’a pas pu être assigné.",
+    "STATUS": {
+      "PLANNED": "Prévu",
+      "ACTIVE": "En cours",
+      "COMPLETED": "Terminé",
+      "CANCELLED": "Annulé"
     }
   }
 }

@@ -4289,7 +4289,10 @@
     "GUMS": "Gums and palate",
     "GUMS_HIDE": "Hide the gums and the palate",
     "GUMS_SHOW": "Show the gums and the palate",
-    "GUM": "Gum"
+    "GUM": "Gum",
+    "FULL_SCREEN": "Full screen",
+    "FULL_SCREEN_HINT": "Open the 3D chart in a window of its own, which can go on a second screen",
+    "NO_TOOTH": "No tooth picked"
   },
   "TOOTH_NAME": {
     "11": "Upper right central incisor",
@@ -4563,6 +4566,57 @@
       "XRAY": "X-Ray",
       "INTRAORAL_3D": "3D Intraoral",
       "IMAGE": "Image"
+    }
+  },
+  "IMAGING": {
+    "TOOLS": "Image tools",
+    "ZOOM_IN": "Zoom in",
+    "ZOOM_OUT": "Zoom out",
+    "FIT": "Fit",
+    "BRIGHTNESS": "Brightness",
+    "CONTRAST": "Contrast",
+    "INVERT": "Negative",
+    "ROTATE": "Turn a quarter",
+    "RESET": "Back to the original image",
+    "COMPARE": "Compare",
+    "COMPARE_HINT": "Side by side with an earlier one. While comparing, a thumbnail goes on the right.",
+    "CHART": "3D chart",
+    "DOWNLOAD": "Download the original",
+    "CLOSE": "Leave full screen",
+    "STAGE": "The image. Scroll or + and − to zoom, drag to move, arrows for older and newer.",
+    "HINT": "Scroll to zoom · drag to move · double-click to zoom or fit",
+    "ALL": "All of this patient’s images",
+    "POSITION": "{{at}} of {{of}}",
+    "OPEN": "Full screen",
+    "OPEN_HINT": "Show the image full screen"
+  },
+  "CHART_WINDOW": {
+    "TITLE": "3D chart",
+    "ACTIVE_TREATMENT": "Active treatment",
+    "XRAY_BESIDE": "X-ray beside",
+    "XRAY_BESIDE_HINT": "Show the X-ray or the intraoral scan beside the model",
+    "PRINT": "Print the chart",
+    "CLOSE": "Close this window",
+    "STATE": "State of the mouth",
+    "TILE": {
+      "CONDITION": "Conditions",
+      "PLANNED": "To be done",
+      "EXISTING": "Work in place",
+      "ABSENT": "Absent"
+    },
+    "TO_DO": "To be done",
+    "NOTHING_TO_DO": "Nothing to be done.",
+    "TREATMENTS": "Treatments",
+    "NO_TREATMENTS": "No treatment assigned.",
+    "DONE": "Done",
+    "LOAD_FAILED": "The patient could not be loaded.",
+    "ASSIGN_MATERIALS": "The materials the catalogue lists for this treatment are added with it. Change them in the patient file’s Treatments tab.",
+    "ASSIGN_FAILED": "The treatment could not be assigned.",
+    "STATUS": {
+      "PLANNED": "Planned",
+      "ACTIVE": "In progress",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
     }
   }
 }

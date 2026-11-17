@@ -26,10 +26,12 @@ type View = 'occlusal' | 'front';
     <div class="tools">
       <button type="button" class="view" [attr.aria-pressed]="view() === 'occlusal'" (click)="setView('occlusal')">{{ 'PFILES.VIEW_OCCLUSAL' | translate }}</button>
       <button type="button" class="view" [attr.aria-pressed]="view() === 'front'" (click)="setView('front')">{{ 'PFILES.VIEW_FRONT' | translate }}</button>
-      <button type="button" (click)="expanded.set(!expanded())"
-        [title]="(expanded() ? 'PFILES.SHRINK' : 'PFILES.EXPAND') | translate" [attr.aria-label]="(expanded() ? 'PFILES.SHRINK' : 'PFILES.EXPAND') | translate">
-        <span class="material-icons" aria-hidden="true">{{ expanded() ? 'close_fullscreen' : 'open_in_full' }}</span>
-      </button>
+      @if (expandable()) {
+        <button type="button" (click)="expanded.set(!expanded())"
+          [title]="(expanded() ? 'PFILES.SHRINK' : 'PFILES.EXPAND') | translate" [attr.aria-label]="(expanded() ? 'PFILES.SHRINK' : 'PFILES.EXPAND') | translate">
+          <span class="material-icons" aria-hidden="true">{{ expanded() ? 'close_fullscreen' : 'open_in_full' }}</span>
+        </button>
+      }
     </div>
     <p class="hint">{{ label() }} · {{ 'PFILES.MODEL_HINT' | translate }}</p>
   `,
@@ -55,6 +57,8 @@ type View = 'occlusal' | 'front';
 export class ScanViewerComponent {
   readonly blob = input.required<Blob>();
   readonly type = input.required<ModelType>();
+  /** Its own full-screen button; off where it already fills the screen. */
+  readonly expandable = input(true);
 
   protected readonly state = signal<'loading' | 'ready' | 'failed' | 'no-webgl'>('loading');
   protected readonly expanded = signal(false);

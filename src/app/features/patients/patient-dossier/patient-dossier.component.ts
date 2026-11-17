@@ -48,6 +48,8 @@ import { PatientImagingPaneComponent } from './patient-imaging-pane.component';
 import { PatientPhotosComponent } from '../patient-photos/patient-photos.component';
 import { DialogDirective } from '../../../shared/ui/dialog.directive';
 import { findingLabel } from '../../../core/clinical/finding-options';
+import { followChartChanges } from '../../../core/services/follow-chart-changes';
+import { openChartWindow } from '../../dental-3d/chart-window/open-chart-window';
 
 @Component({
   selector: 'app-patient-dossier',
@@ -244,15 +246,18 @@ import { findingLabel } from '../../../core/clinical/finding-options';
                         [focusFdi]="voiceFocusFdi()"
                         [selected]="selectedToothForTreatments()"
                         [overlayPanel]="true"
+                        [fullScreenButton]="true"
                         (selectedChange)="onToothSelected3D($event)"
                         (assignTreatment)="openAssignModalFrom3D($event)"
+                        (openFullScreen)="openChartWindow(patient.id)"
                       />
                     } @placeholder {
                       <div class="chart-placeholder" aria-hidden="true"></div>
                     }
                   }
                 </div>
-                <app-patient-imaging-pane class="one-view-image" [patientId]="patient.id" (openDocuments)="activeTab.set('documents')" />
+                <app-patient-imaging-pane class="one-view-image" [patientId]="patient.id" [patientName]="patient.firstName + ' ' + patient.lastName"
+                  (openDocuments)="activeTab.set('documents')" (openChart)="openChartWindow(patient.id)" />
               </div>
 
               <!-- Whatever else the doctor pins under the scans: pictures or 3D files. -->
@@ -2356,6 +2361,14 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     // Selecting by hand is also how the doctor tells the assistant what "that tooth"
     // refers to, so the next dictated finding needs no tooth name.
     this.voiceContext.selectTooth(toothId);
+  }
+
+  /** What the 3D chart's own window saves shows here too, and the other way round. */
+  private readonly followsChartWindow = followChartChanges(() => this.patientService.currentPatient()?.id, (id) => this.loadPatientTreatments(id));
+
+  /** The 3D chart in a window of its own, which can go on a second screen. */
+  openChartWindow(patientId: string): void {
+    openChartWindow(patientId, this.router);
   }
 
   /** While a session runs, what it has heard is drawn on the chart wherever the doctor is looking. */

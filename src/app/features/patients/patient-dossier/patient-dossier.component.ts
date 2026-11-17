@@ -265,13 +265,14 @@ export function patientState(status: string | null | undefined, treatments: read
     .dossier-container { min-height: 100vh; }
     .dossier-container.is-cockpit { min-height: 0; }
 
-    /* The banner and the tabs stick under the app bar (h-16 from md up; it scrolls on a phone). */
+    /* The banner and the tabs stick to the top edge. The app bar scrolls away (its host is only as tall as
+       the bar, so it has nowhere to stick); an offset for it would leave a strip of page showing above. */
     .dossier-top {
       position: sticky; top: 0; z-index: var(--z-sticky);
       background: var(--surface); border-bottom: 1px solid var(--border);
       margin-inline: -1rem; margin-top: -1rem;
     }
-    @media (min-width: 768px) { .dossier-top { top: 4rem; margin-inline: -1.5rem; margin-top: -1.5rem; } }
+    @media (min-width: 768px) { .dossier-top { margin-inline: -1.5rem; margin-top: -1.5rem; } }
     @media (min-width: 1024px) { .dossier-top { margin-inline: -2rem; margin-top: -2rem; } }
     .dossier-top.is-compact { box-shadow: var(--shadow-sm); }
 
@@ -307,7 +308,7 @@ export function patientState(status: string | null | undefined, treatments: read
       .dossier-container.has-consultation > .dossier-top { grid-column: 1; grid-row: 1; }
       .dossier-container.has-consultation > .dossier-content { grid-column: 1; grid-row: 2; }
       .dossier-container.has-consultation > .dossier-consultation {
-        grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 4rem; height: calc(100vh - 6rem); align-self: start;
+        grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 1rem; height: calc(100vh - 2rem); align-self: start;
       }
     }
     .loading { display: flex; justify-content: center; padding: 4rem; color: var(--text-muted); }

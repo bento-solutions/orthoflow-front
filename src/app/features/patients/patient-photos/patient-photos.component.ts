@@ -1,12 +1,13 @@
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
-import { ChangeDetectionStrategy, Component, OnDestroy, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
   ClinicalPhotoApi, PHOTO_STAGES, PhotoSeries, PhotoStage, PhotoView,
 } from '../../../core/services/clinical-photo-api.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
+import { PatientFile, PatientFilesApi } from '../../../core/services/patient-files-api.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { DialogDirective } from '../../../shared/ui/dialog.directive';
@@ -58,10 +59,15 @@ export const VIEW_GROUPS: readonly ViewGroup[] = [
 const ALL_SLOTS = VIEW_GROUPS.flatMap(g => g.slots);
 const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
 
+const RADIOGRAPH_VIEWS: readonly PhotoView[] = ['PANORAMIC_XRAY', 'LATERAL_CEPHALOGRAM'];
+
 /**
  * The patient's photo record in the dossier: a series per sitting (initial records, progress,
  * end of treatment), each with the eight standard photos and the two radiographs, and a
  * side-by-side view to set one sitting against another.
+ *
+ * Pictures uploaded in Documents (X-rays, images) are a separate store. They are shown here too,
+ * above the sittings, and any of them can be put into a sitting's slot without choosing the file again.
  */
 @Component({
   selector: 'app-patient-photos',
@@ -95,6 +101,33 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
         }
       </header>
 
+      @if (docs().length) {
+        <section class="docs" aria-labelledby="photos-docs-title">
+          <div class="docs-head">
+            <h3 id="photos-docs-title" class="group-title">{{ 'PATIENTS.PHOTOS.DOCS_TITLE' | translate }} · {{ docs().length }}</h3>
+            <span class="docs-hint">{{ 'PATIENTS.PHOTOS.DOCS_HINT' | translate }}</span>
+          </div>
+          <ul class="docs-strip">
+            @for (d of docs(); track d.id) {
+              <li class="doc-tile">
+                <button type="button" class="doc-img" (click)="openDocLightbox(d)"
+                        [attr.aria-label]="('PATIENTS.PHOTOS.ENLARGE' | translate) + ' ' + d.name">
+                  @if (docUrls().get(d.id); as url) {
+                    <img [src]="url" [alt]="d.name" loading="lazy" />
+                  } @else {
+                    <span class="frame-loading" aria-hidden="true"></span>
+                  }
+                </button>
+                <span class="doc-meta">
+                  <span class="doc-type">{{ 'PFILES.CAT.' + (d.category ?? 'IMAGE') | translate }}</span>
+                  <span class="doc-date">{{ d.createdAt | appDate }}</span>
+                </span>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
       @if (formOpen()) {
         <form class="series-form card card-pad" (ngSubmit)="saveSeries()">
           <div class="field">
@@ -126,8 +159,8 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
       } @else if (!series().length) {
         <div class="empty">
           <app-icon class="mi empty-icon" name="photo_camera" size="1em" />
-          <p class="empty-title">{{ 'PATIENTS.PHOTOS.EMPTY_TITLE' | translate }}</p>
-          <p class="empty-text">{{ 'PATIENTS.PHOTOS.EMPTY_TEXT' | translate }}</p>
+          <p class="empty-title">{{ (docs().length ? 'PATIENTS.PHOTOS.NO_SERIES_TITLE' : 'PATIENTS.PHOTOS.EMPTY_TITLE') | translate }}</p>
+          <p class="empty-text">{{ (docs().length ? 'PATIENTS.PHOTOS.NO_SERIES_TEXT' : 'PATIENTS.PHOTOS.EMPTY_TEXT') | translate }}</p>
           @if (canWrite()) {
             <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="startInitial()">
               <app-icon class="mi" name="add_a_photo" size="1em" />
@@ -233,6 +266,11 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
                           <input type="file" class="sr-only" [accept]="accept" [disabled]="busy().has(slot.view)"
                                  (change)="onPick($event, slot.view)" />
                         </label>
+                        @if (docs().length) {
+                          <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy().has(slot.view)" (click)="picking.set(slot.view)">
+                            <app-icon class="mi" name="perm_media" size="1em" />{{ 'PATIENTS.PHOTOS.FROM_DOCS' | translate }}
+                          </button>
+                        }
                         @if (hasPhoto(current, slot.view)) {
                           <button type="button" class="btn btn-ghost btn-sm btn-icon" (click)="removePhoto(current, slot.view)"
                                   [attr.aria-label]="('PATIENTS.PHOTOS.REMOVE' | translate) + ' ' + ('PATIENTS.PHOTOS.VIEWS.' + slot.view | translate)"
@@ -264,6 +302,32 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
                 [attr.aria-label]="'COMMON.CLOSE' | translate">
           <app-icon class="mi" name="close" size="1em" />
         </button>
+      </div>
+    }
+
+    @if (picking(); as view) {
+      <div class="picker-backdrop" (click)="picking.set(null)">
+        <div class="picker" appDialog="photos-pick-title" (dialogClosed)="picking.set(null)" (click)="$event.stopPropagation()">
+          <h3 id="photos-pick-title" class="picker-title">
+            {{ 'PATIENTS.PHOTOS.PICK_TITLE' | translate: { view: ('PATIENTS.PHOTOS.VIEWS.' + view | translate) } }}
+          </h3>
+          <ul class="picker-grid">
+            @for (d of pickable(view); track d.id) {
+              <li>
+                <button type="button" class="picker-item" (click)="useDocument(view, d)">
+                  <span class="picker-img">
+                    @if (docUrls().get(d.id); as url) { <img [src]="url" alt="" /> }
+                  </span>
+                  <span class="picker-name" [title]="d.name">{{ d.name }}</span>
+                  <span class="picker-sub">{{ 'PFILES.CAT.' + (d.category ?? 'IMAGE') | translate }} · {{ d.createdAt | appDate }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+          <div class="picker-actions">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="picking.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
+          </div>
+        </div>
       </div>
     }
   `,
@@ -364,6 +428,36 @@ const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
     .lightbox img { max-width: min(92vw, 1400px); max-height: 82vh; object-fit: contain; border-radius: var(--radius-md); }
     .lightbox figcaption { color: rgb(var(--on-inverse)); font-size: var(--text-base); }
     .lightbox-close { position: absolute; top: 1rem; inset-inline-end: 1rem; }
+
+    .docs { display: flex; flex-direction: column; gap: 0.5rem; }
+    .docs-head { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
+    .docs-head .group-title { margin: 0; }
+    .docs-hint { font-size: var(--text-sm); color: var(--text-muted); }
+    .docs-strip { display: flex; gap: 0.75rem; overflow-x: auto; margin: 0; padding: 0 0 0.25rem; list-style: none; }
+    .doc-tile { flex: 0 0 11rem; display: flex; flex-direction: column; gap: 0.375rem; }
+    .doc-img { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; padding: 0; overflow: hidden; cursor: zoom-in;
+      border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-sunken); }
+    .doc-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .doc-img:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+    .doc-meta { display: flex; justify-content: space-between; gap: 0.5rem; font-size: var(--text-xs); color: var(--text-muted); }
+    .doc-type { font-weight: 600; color: var(--text); }
+
+    .slot-actions { flex-wrap: wrap; }
+    .picker-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgb(0 0 0 / 0.45); display: grid; place-items: center; padding: 1rem; }
+    .picker { width: min(44rem, 100%); max-height: 85vh; overflow: auto; display: flex; flex-direction: column; gap: 0.75rem;
+      padding: 1.25rem; border-radius: var(--radius-lg); background: var(--surface); box-shadow: 0 12px 32px rgb(0 0 0 / 0.2); }
+    .picker:focus { outline: none; }
+    .picker-title { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--text); }
+    .picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
+    .picker-item { display: flex; flex-direction: column; gap: 0.25rem; width: 100%; padding: 0.375rem; text-align: start; cursor: pointer;
+      border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font: inherit; }
+    .picker-item:hover { background: var(--surface-hover); }
+    .picker-item:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+    .picker-img { display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--radius-sm); background: var(--surface-sunken); }
+    .picker-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .picker-name { font-size: var(--text-sm); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .picker-sub { font-size: var(--text-xs); color: var(--text-muted); }
+    .picker-actions { display: flex; justify-content: flex-end; }
   `],
 })
 export class PatientPhotosComponent implements OnDestroy {
@@ -374,6 +468,7 @@ export class PatientPhotosComponent implements OnDestroy {
   private readonly confirm = inject(ConfirmDialogService);
   private readonly translate = inject(TranslateService);
   private readonly permissions = inject(PermissionService);
+  private readonly files = inject(PatientFilesApi);
 
   readonly groups = VIEW_GROUPS;
   readonly totalViews = ALL_SLOTS.length;
@@ -390,6 +485,12 @@ export class PatientPhotosComponent implements OnDestroy {
   readonly compareId = signal<string | null>(null);
   readonly lightbox = signal<{ url: string; label: string; caption: string } | null>(null);
   readonly formOpen = signal(false);
+  /** The patient's pictures uploaded in Documents, newest first. */
+  readonly docs = signal<PatientFile[]>([]);
+  /** Object URLs of those pictures, by file id. */
+  readonly docUrls = signal<ReadonlyMap<string, string>>(new Map());
+  /** The slot a picture from Documents is being chosen for. */
+  readonly picking = signal<PhotoView | null>(null);
   /** The series being edited, or null when the form creates one. */
   private editing: PhotoSeries | null = null;
   form: { stage: PhotoStage; takenOn: string; note: string } = { stage: 'INITIAL', takenOn: today(), note: '' };
@@ -413,6 +514,12 @@ export class PatientPhotosComponent implements OnDestroy {
       const id = this.patientId();
       void this.load(id);
     });
+    // Documents moves its version on every upload and delete, so this list follows it.
+    effect(() => {
+      const id = this.patientId();
+      this.files.version();
+      untracked(() => void this.loadDocs(id));
+    });
     // Fetch the pictures of whatever is on screen: the selected series, and the one it is compared with.
     effect(() => {
       const shown = [this.selected(), this.comparing() ? this.compared() : null];
@@ -424,6 +531,35 @@ export class PatientPhotosComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.urls().forEach(url => URL.revokeObjectURL(url));
+    this.docUrls().forEach(url => URL.revokeObjectURL(url));
+  }
+
+  /** The pictures offered for a slot: X-rays first for a radiograph, other pictures first for a photo. */
+  pickable(view: PhotoView): PatientFile[] {
+    const wantsXray = RADIOGRAPH_VIEWS.includes(view);
+    const rank = (f: PatientFile) => ((f.category === 'XRAY') === wantsXray ? 0 : 1);
+    return [...this.docs()].sort((a, b) => rank(a) - rank(b));
+  }
+
+  /** Puts a picture from Documents into a slot of the open sitting, as if the file had been chosen. */
+  async useDocument(view: PhotoView, doc: PatientFile): Promise<void> {
+    this.picking.set(null);
+    try {
+      const blob = await this.files.blob(doc.id);
+      await this.upload(view, new File([blob], doc.name, { type: doc.contentType }));
+    } catch {
+      this.toast.error(this.translate.instant('PATIENTS.PHOTOS.UPLOAD_FAILED'));
+    }
+  }
+
+  openDocLightbox(doc: PatientFile): void {
+    const url = this.docUrls().get(doc.id);
+    if (!url) return;
+    const type = this.translate.instant('PFILES.CAT.' + (doc.category ?? 'IMAGE'));
+    const lang = this.translate.currentLang || this.translate.getDefaultLang() || 'fr';
+    let date = doc.createdAt;
+    try { date = new Intl.DateTimeFormat(lang, { dateStyle: 'medium' }).format(new Date(doc.createdAt)); } catch { /* keep the raw date */ }
+    this.lightbox.set({ url, label: doc.name, caption: `${type} · ${date}` });
   }
 
   hasPhoto(series: PhotoSeries, view: PhotoView): boolean {
@@ -578,6 +714,26 @@ export class PatientPhotosComponent implements OnDestroy {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private async loadDocs(patientId: string): Promise<void> {
+    try {
+      const list = (await this.files.list(patientId))
+        .filter(f => f.contentType.startsWith('image/'))
+        .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
+      this.docs.set(list);
+      for (const f of list) void this.fetchDoc(f.id);
+    } catch {
+      this.docs.set([]);
+    }
+  }
+
+  private async fetchDoc(fileId: string): Promise<void> {
+    if (this.docUrls().has(fileId)) return;
+    try {
+      const url = URL.createObjectURL(await this.files.blob(fileId));
+      this.docUrls.update(m => new Map(m).set(fileId, url));
+    } catch { /* the tile keeps its placeholder */ }
   }
 
   private async fetchImage(fileId: string): Promise<void> {

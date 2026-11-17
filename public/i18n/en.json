@@ -101,6 +101,8 @@
     "SCROLLABLE": "Scrollable content",
     "CHANGE_PATIENT": "Change patient",
     "RESULTS_COUNT": "{{count}} result(s)",
+    "ERROR_PROFILE_INCOMPLETE": "Complete the clinic profile before printing this document. Missing: {{fields}}.",
+    "OPEN_CLINIC_PROFILE": "Open the clinic profile",
     "SAVE_FAILED": "Could not save. Try again.",
     "FILTERS": "Filters",
     "SAVE_CHANGES": "Save changes",
@@ -432,7 +434,13 @@
       "LOAD_FAILED": "Could not load the patient's photos.",
       "COMPARE": "Compare",
       "COMPARE_WITH": "Compare with",
-      "NO_PICTURE": "No photo"
+      "NO_PICTURE": "No photo",
+      "DOCS_TITLE": "Uploaded in Documents",
+      "DOCS_HINT": "The patient's X-rays and images from the Documents tab.",
+      "NO_SERIES_TITLE": "No photo sitting yet",
+      "NO_SERIES_TEXT": "The pictures above were uploaded in Documents. Start the initial records to lay out the standard views; an uploaded X-ray can go into a sitting without choosing the file again.",
+      "FROM_DOCS": "From Documents",
+      "PICK_TITLE": "Choose a picture for: {{view}}"
     },
     "FORM": {
       "BACK_TO_FILE": "Back to the patient file",
@@ -1894,7 +1902,7 @@
     },
     "PROFILE": {
       "IDENTITY": "Practice identity",
-      "IDENTITY_HINT": "Printed on invoices, fee notes, statements and labels, from any workstation.",
+      "IDENTITY_HINT": "Printed in the header of every document, from any workstation.",
       "NO_LOGO": "No logo",
       "CHOOSE_LOGO": "Choose a logo",
       "LOGO_HINT": "PNG or JPG, 500 KB at most.",
@@ -1905,13 +1913,18 @@
       "PHONE": "Phone",
       "WEBSITE": "Website",
       "LEGAL": "Legal details",
-      "LEGAL_HINT": "Shown at the foot of official documents.",
+      "LEGAL_HINT": "Printed in the footer of every document. The RIB only goes on invoices and fee notes.",
       "PATENTE": "Business licence",
       "REGIONAL": "Regional",
       "CURRENCY": "Currency",
       "TIMEZONE": "Time zone",
       "DEFAULT_LANGUAGE": "Default language",
-      "DEFAULT_LANGUAGE_HINT": "Language of messages to patients who have no preferred language."
+      "DEFAULT_LANGUAGE_HINT": "Language of messages to patients who have no preferred language.",
+      "RC": "Trade register (RC)",
+      "DOCS_TITLE": "Some documents can't be printed yet",
+      "DOCS_FINANCIAL": "Invoices, fee notes and care forms need: {{fields}}.",
+      "DOCS_PRESCRIPTION": "Prescriptions need: {{fields}}.",
+      "DOCS_HINT": "These details go in the header and legal footer of every document."
     },
     "HOURS": {
       "TITLE": "Opening hours",

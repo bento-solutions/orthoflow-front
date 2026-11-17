@@ -1,5 +1,5 @@
 import { IconComponent } from '../../../../shared/ui/icon.component';
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { InvoiceService } from '../../services/invoice.service';
@@ -8,6 +8,8 @@ import { Invoice, Payment } from '../../models/billing.model';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastService } from '../../../../core/services/toast.service';
+import { ApiErrors } from '../../../../core/services/api-error.service';
+import { PracticeProfileService } from '../../../../core/services/practice-profile.service';
 import { downloadInvoicePdf } from '../../../../core/utils/invoice-pdf';
 import { DownloadService } from '../../../../core/services/download.service';
 import { LanguageService } from '../../../../core/services/language.service';
@@ -63,8 +65,8 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
                 </div>
                 <div class="info-group">
                   <label>{{ 'BILLING.FORM.PRACTICE' | translate }}</label>
-                  <span class="info-value">OrthoFlow Clinic</span>
-                  <span class="info-sub">Casablanca, Morocco</span>
+                  <span class="info-value">{{ practice.name() || '—' }}</span>
+                  @if (practiceAddress(); as address) { <span class="info-sub">{{ address }}</span> }
                 </div>
                 <div class="info-group">
                   <label>{{ 'BILLING.ISSUE_DATE' | translate }}</label>
@@ -465,6 +467,13 @@ export class InvoiceDetailComponent implements OnInit {
   /** Read by the template to resolve the patient name off `patientId`. */
   protected patients = inject(PatientService);
   private toast = inject(ToastService);
+  private errors = inject(ApiErrors);
+  /** The clinic as its profile names it; this used to read "OrthoFlow Clinic, Casablanca" whatever the clinic. */
+  protected practice = inject(PracticeProfileService);
+  protected practiceAddress = computed(() => {
+    const p = this.practice.profile();
+    return [p?.address, p?.city].filter(Boolean).join(', ');
+  });
 
   private downloads = inject(DownloadService);
   private language = inject(LanguageService);
@@ -472,7 +481,7 @@ export class InvoiceDetailComponent implements OnInit {
 
   downloadPdf(invoice: Invoice): void {
     downloadInvoicePdf(this.downloads, invoice, this.language.currentLang())
-      .catch(() => this.toast.error(this.translate.instant('COMMON.EXPORT_FAILED')));
+      .catch(error => this.errors.report(error, 'COMMON.EXPORT_FAILED'));
   }
 
   invoice = signal<Invoice | null>(null);

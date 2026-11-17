@@ -1,5 +1,6 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { describe, expect, it } from 'vitest';
-import { filenameFromDisposition, toParams } from './download.service';
+import { filenameFromDisposition, readableError, toParams } from './download.service';
 
 describe('filenameFromDisposition', () => {
   it('reads the encoded form the backend sends for names with accents', () => {
@@ -35,5 +36,28 @@ describe('toParams', () => {
 
   it('copes with no query at all', () => {
     expect(toParams(undefined).keys()).toEqual([]);
+  });
+});
+
+describe('readableError', () => {
+  it('turns a problem document sent as a blob back into JSON the error toast can read', async () => {
+    const problem = { detail: 'Complete the clinic profile', code: 'CLINIC_PROFILE_INCOMPLETE', missing: ['ice'] };
+    const failed = new HttpErrorResponse({
+      status: 409, error: new Blob([JSON.stringify(problem)], { type: 'application/problem+json' }),
+    });
+
+    const readable = await readableError(failed) as HttpErrorResponse;
+
+    expect(readable).toBeInstanceOf(HttpErrorResponse);
+    expect(readable.status).toBe(409);
+    expect(readable.error).toEqual(problem);
+  });
+
+  it('leaves alone what is not a JSON blob', async () => {
+    const pdf = new HttpErrorResponse({ status: 500, error: new Blob(['%PDF'], { type: 'application/pdf' }) });
+    const other = new Error('boom');
+
+    expect(await readableError(pdf)).toBe(pdf);
+    expect(await readableError(other)).toBe(other);
   });
 });

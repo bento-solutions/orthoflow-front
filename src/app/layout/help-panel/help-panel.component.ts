@@ -1,11 +1,13 @@
-import { Component, ElementRef, HostListener, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, Injector, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { filter, map, startWith } from 'rxjs';
 import { Block, helpPageKey, noteBlocks } from '../../core/help/help-pages';
+import { FirstRunService } from '../../core/help/first-run';
 import { TOURS, TourService, tourFor } from '../../core/help/tours';
+import { PermissionService } from '../../core/services/permission.service';
 import { ApiErrors } from '../../core/services/api-error.service';
 import { HelpAnswer, HelpApi, HelpNote } from '../../core/services/help-api.service';
 import { HelpPanelService } from '../../core/services/help-panel.service';
@@ -44,6 +46,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
             <div class="mt-3 flex flex-wrap gap-2">
               @if (pageTour()) { <button type="button" class="btn btn-secondary btn-sm" (click)="startTour('page')">{{ 'HELP.PAGE_TOUR' | translate }}</button> }
               <button type="button" class="btn btn-ghost btn-sm" (click)="startTour('welcome')">{{ 'HELP.WELCOME_TOUR' | translate }}</button>
+              @if (canReplay()) { <button type="button" class="btn btn-ghost btn-sm" (click)="startTour('first-run')">{{ 'FIRST_RUN.REPLAY' | translate }}</button> }
             </div>
           </section>
 
@@ -91,6 +94,10 @@ export class HelpPanelComponent {
   private readonly language = inject(LanguageService);
   private readonly router = inject(Router);
   private readonly tours = inject(TourService);
+  private readonly injector = inject(Injector);
+  private readonly permissions = inject(PermissionService);
+  /** The getting-started guide is about the clinical screens, so it is offered to those who write in them. */
+  protected readonly canReplay = computed(() => this.permissions.can('CLINICAL_WRITE'));
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
   private opener: HTMLElement | null = null;
 
@@ -187,7 +194,14 @@ export class HelpPanelComponent {
     }
   }
 
-  protected async startTour(which: 'page' | 'welcome'): Promise<void> {
+  protected async startTour(which: 'page' | 'welcome' | 'first-run'): Promise<void> {
+    if (which === 'first-run') {
+      this.help.hide();
+      await new Promise(resolve => setTimeout(resolve, 150));
+      // Fetched when asked for: the guide brings the voice and consultation services with it.
+      await this.injector.get(FirstRunService).replay();
+      return;
+    }
     const tour = which === 'welcome' ? TOURS.find(t => t.id === 'welcome') : this.pageTour();
     if (!tour) {
       return;

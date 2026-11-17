@@ -5,6 +5,7 @@ import { ApiErrors } from '../../../core/services/api-error.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { LanguageService } from '../../../core/services/language.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { FirstRunService } from '../../../core/help/first-run';
 import { ThemePreference, ThemeService } from '../../../core/services/theme.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { SessionRow, UserAdminService } from '../../../core/services/user-admin.service';
@@ -61,6 +62,13 @@ export function describeDevice(userAgent: string | null | undefined): string {
             }
           </div>
         </div>
+        @if (permissions.can('CLINICAL_WRITE')) {
+          <div class="field">
+            <span class="label">{{ 'FIRST_RUN.ACCOUNT_LABEL' | translate }}</span>
+            <p class="text-sm text-ink-600">{{ 'FIRST_RUN.ACCOUNT_HINT' | translate }}</p>
+            <div><button type="button" class="btn btn-secondary btn-sm" (click)="firstRun.replay()">{{ 'FIRST_RUN.REPLAY' | translate }}</button></div>
+          </div>
+        }
       </section>
 
       <section class="card card-pad">
@@ -121,6 +129,7 @@ export class AccountComponent {
   protected readonly language = inject(LanguageService);
   protected readonly theme = inject(ThemeService);
   protected readonly permissions = inject(PermissionService);
+  protected readonly firstRun = inject(FirstRunService);
 
   protected readonly user = this.auth.currentUser;
   protected readonly languages = [{ code: 'fr', label: 'Français' }, { code: 'en', label: 'English' }, { code: 'ar', label: 'العربية' }];

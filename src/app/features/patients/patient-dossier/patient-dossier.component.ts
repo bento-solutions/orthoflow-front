@@ -132,7 +132,7 @@ export function patientState(status: string | null | undefined, treatments: read
           (archive)="onArchive()"
         />
 
-        <nav class="dossier-tabs no-print" role="tablist" [attr.aria-label]="'PATIENTS.DOSSIER.TITLE' | translate"
+        <nav class="dossier-tabs no-print" role="tablist" data-tour="dossier-tabs" [attr.aria-label]="'PATIENTS.DOSSIER.TITLE' | translate"
              (keydown)="onTabKeydown($event)">
           @for (tab of navTabs(); track tab.id) {
             <button type="button"

@@ -68,7 +68,7 @@ export type ChartOptions = {
            The first tile is the primary one and is weighted accordingly:
            equal-weight tiles make the user decide what matters, which is
            the screen's job, not theirs. -->
-      <section class="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section class="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-tour="dash-kpis">
         @for (kpi of kpis(); track kpi.key) {
           <a
             class="card card-interactive group flex flex-col gap-3 p-4"
@@ -109,7 +109,7 @@ export type ChartOptions = {
         <!-- ── Today ─────────────────────────────────────────────────────
              The single most-asked question of the day, so it gets the
              widest column and sits above the fold. -->
-        <section class="card lg:col-span-2">
+        <section class="card lg:col-span-2" data-tour="dash-today">
           <header class="card-head">
             <div>
               <h2 class="text-lg font-bold text-ink-900">{{ 'DASHBOARD.TODAY_TITLE' | translate }}</h2>
@@ -132,7 +132,7 @@ export type ChartOptions = {
                   </span>
                   <span class="h-8 w-px shrink-0 bg-ink-200" aria-hidden="true"></span>
                   <span class="flex min-w-0 flex-1 flex-col leading-tight">
-                    <span class="truncate font-semibold text-ink-900">{{ nameFor(appt) }}</span>
+                    <a class="truncate font-semibold text-ink-900 hover:text-petrol-700 hover:underline" [routerLink]="['/patients', appt.patientId]">{{ nameFor(appt) }}</a>
                     <span class="truncate text-xs text-ink-500">
                       {{ appt.type }} · {{ appt.durationMinutes }} {{ 'DASHBOARD.MIN' | translate }}
                     </span>
@@ -154,7 +154,7 @@ export type ChartOptions = {
              The only place on the dashboard permitted to use amber and red.
              It stays empty when nothing is wrong — an alert panel that
              always has something in it stops being read. -->
-        <section class="card">
+        <section class="card" data-tour="dash-attention">
           <header class="card-head">
             <h2 class="text-lg font-bold text-ink-900">{{ 'DASHBOARD.ATTENTION_TITLE' | translate }}</h2>
             @if (attentionItems().length) {

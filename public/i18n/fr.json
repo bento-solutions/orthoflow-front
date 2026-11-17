@@ -3491,6 +3491,63 @@
         "TITLE": "La stérilisation",
         "TEXT": "Scannez une étiquette pour utiliser, nettoyer ou mettre en cycle un instrument. Chaque cycle garde son contrôle et la liste des patients concernés."
       }
+    },
+    "FIRST_RUN": {
+      "TRY_NOW": "Essayer maintenant",
+      "DASHBOARD": {
+        "KPIS": {
+          "TITLE": "Les chiffres du cabinet",
+          "TEXT": "Patients actifs, visites du jour, nouveaux patients et traitements en pause. Cliquez sur une carte pour ouvrir la liste."
+        },
+        "TODAY": {
+          "TITLE": "Le programme du jour",
+          "TEXT": "Vos rendez-vous d’aujourd’hui, dans l’ordre. Cliquez sur le nom d’un patient pour ouvrir son dossier."
+        },
+        "ATTENTION": {
+          "TITLE": "À traiter",
+          "TEXT": "Rendez-vous manqués, traitements en pause, patients sans prochain rendez-vous. Vide quand tout va bien."
+        },
+        "SEARCH": {
+          "TITLE": "Trouver un patient",
+          "TEXT": "Tapez un nom, un téléphone ou une page pour y aller directement. Raccourci : ⌘K (ou Ctrl K)."
+        }
+      },
+      "DOSSIER": {
+        "BANNER": {
+          "TITLE": "Le bandeau du patient",
+          "TEXT": "Il reste visible sur chaque onglet : âge, prochain rendez-vous, solde. Les alertes médicales y sont toujours affichées ; cliquez dessus pour les antécédents."
+        },
+        "TABS": {
+          "TITLE": "Les onglets",
+          "TEXT": "Synthèse, schéma et plan, visites, imagerie, facturation, documents : dans l’ordre d’une visite."
+        },
+        "CHART": {
+          "TITLE": "Le schéma dentaire",
+          "TEXT": "La bouche du patient en 3D, avec les constats et les soins. Cliquez sur une dent pour l’ouvrir dans « Schéma et plan »."
+        },
+        "CONSULT": {
+          "TITLE": "Le bouton Consultation",
+          "TEXT": "Chaque séance commence ici. Il propose deux façons d’enregistrer, présentées juste après."
+        }
+      },
+      "VOICE": {
+        "MODES": {
+          "TITLE": "Dictée ou consultation",
+          "TEXT": "La dictée note vos constats dent par dent pendant l’examen. La consultation enregistre tout l’échange et en tire le dossier, le plan et le rendez-vous."
+        },
+        "SPEAK": {
+          "TITLE": "Parlez normalement, mains libres",
+          "TEXT": "Le micro écoute toute la séance : vous n’avez pas à toucher le PC. Parlez comme d’habitude, en français ou en anglais."
+        },
+        "PHRASES": {
+          "TITLE": "Trois phrases pour commencer",
+          "TEXT": "« Dent 16, carie » · « Montre les allergies » · « Fin de la consultation »."
+        },
+        "REVIEW": {
+          "TITLE": "Relire et valider",
+          "TEXT": "À la fin, vous relisez ce qui a été compris, corrigez si besoin et validez. Rien n’entre dans le dossier sans votre accord."
+        }
+      }
     }
   },
   "CMD": {
@@ -4685,5 +4742,22 @@
     },
     "NOT_ASKED_TEXT": "Interrogez sur les allergies, pathologies et traitements avant de soigner.",
     "ASK_NOW": "Renseigner les antécédents"
+  },
+  "FIRST_RUN": {
+    "TITLE": "Bienvenue dans OrthoFlow",
+    "TEXT": "Trois choses à connaître, en deux minutes. Le guide ouvre le dossier d’un de vos patients pour vous le montrer, sans rien y modifier.",
+    "RESUME_TITLE": "Reprendre la prise en main",
+    "RESUME_TEXT": "Il vous reste la suite du guide : le dossier patient et la voix. Une minute suffit.",
+    "CHAPTER_DASHBOARD": "Le tableau de bord : votre journée d’un coup d’œil",
+    "CHAPTER_DOSSIER": "Le dossier patient : bandeau, onglets, schéma dentaire",
+    "CHAPTER_VOICE": "La voix : dicter et consulter sans toucher le PC",
+    "REPLAY_HINT": "Vous pourrez le revoir à tout moment depuis l’aide (?) ou votre compte.",
+    "START": "Commencer",
+    "CONTINUE": "Continuer",
+    "LATER": "Plus tard",
+    "NEVER": "Ne plus afficher",
+    "REPLAY": "Revoir la prise en main",
+    "ACCOUNT_LABEL": "Prise en main",
+    "ACCOUNT_HINT": "Le tour guidé du tableau de bord, du dossier patient et de la voix."
   }
 }

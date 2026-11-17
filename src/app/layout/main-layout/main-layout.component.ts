@@ -7,11 +7,13 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
 import { HeaderComponent } from '../header/header.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { HelpPanelComponent } from '../help-panel/help-panel.component';
+import { FirstRunService } from '../../core/help/first-run';
+import { FirstRunDialogComponent } from '../first-run-dialog/first-run-dialog.component';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, HeaderComponent, HelpPanelComponent, TranslateModule],
+  imports: [RouterOutlet, SidebarComponent, HeaderComponent, HelpPanelComponent, FirstRunDialogComponent, TranslateModule],
   template: `
     <!-- A real link would leave the app: the address has a <base>, so #main-content would resolve against it. -->
     <a href="#main-content" class="skip-link" (click)="skipToContent($event)">{{ 'COMMON.SKIP_TO_CONTENT' | translate }}</a>
@@ -38,6 +40,10 @@ import { HelpPanelComponent } from '../help-panel/help-panel.component';
       </div>
     </div>
     <app-help-panel class="no-print" />
+    <!-- The first-login guide's welcome card: its code is only fetched for someone it is offered to. -->
+    @defer (when firstRun.offer()) {
+      <app-first-run-dialog class="no-print" />
+    }
   `,
   styles: [`
     :host ::ng-deep .mobile-open {
@@ -76,6 +82,7 @@ export class MainLayoutComponent {
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
   private readonly sidebar = viewChild.required('sidebar', { read: ElementRef<HTMLElement> });
   private readonly announcer = inject(AnnouncerService);
+  protected readonly firstRun = inject(FirstRunService);
   private currentPath = '';
 
   constructor() {
@@ -95,6 +102,10 @@ export class MainLayoutComponent {
     const path = event.urlAfterRedirects.split(/[?#]/)[0];
     const samePage = path === this.currentPath;
     this.currentPath = path;
+    if (!samePage) {
+      // Once the screen has drawn, so the welcome card does not arrive before the page it talks about.
+      setTimeout(() => void this.firstRun.consider(event.urlAfterRedirects), 800);
+    }
     if (samePage || event.id === 1) return;
     this.isMobileMenuOpen.set(false);
     this.main().nativeElement.focus({ preventScroll: true });

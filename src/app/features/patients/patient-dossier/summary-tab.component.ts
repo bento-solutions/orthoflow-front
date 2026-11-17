@@ -27,7 +27,7 @@ import { PatientImagingPaneComponent } from './patient-imaging-pane.component';
   template: `
     <h2 class="sr-only">{{ 'PATIENTS.DOSSIER.TAB.SUMMARY' | translate }}</h2>
     <div class="sm-row" [class.no-image]="imagingEmpty()">
-      <div class="sm-chart">
+      <div class="sm-chart" data-tour="dossier-chart">
         @if (chart(); as c) {
           @defer (on viewport; prefetch on idle) {
             <app-dental-3d-chart

@@ -34,7 +34,7 @@ export interface PatientState {
   imports: [RouterLink, TranslateModule, AlertStripComponent, AppDatePipe, MoneyPipe, IconComponent, RegistrationInviteComponent, ConsultationMenuComponent],
   host: { '[class.is-compact]': 'compact()' },
   template: `
-    <header class="pb">
+    <header class="pb" data-tour="dossier-banner">
       <div class="pb-row">
         <div class="pb-who">
           <h2 class="pb-name" [title]="fullName()">{{ fullName() }}</h2>
@@ -67,6 +67,7 @@ export interface PatientState {
             </button>
           } @else {
             <app-consultation-menu
+              data-tour="dossier-consult"
               [consultationAvailable]="consultation.available()"
               [introHidden]="consultation.introHidden()"
               [starting]="starting()"

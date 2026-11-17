@@ -1356,9 +1356,9 @@ export interface paths {
             cookie?: never;
         };
         get: operations["note"];
-        put: operations["save_2"];
+        put: operations["save_3"];
         post?: never;
-        delete: operations["reset"];
+        delete: operations["reset_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1727,6 +1727,38 @@ export interface paths {
         put?: never;
         post: operations["changePassword"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/guides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mine_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/guides/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["save_2"];
+        post?: never;
+        delete: operations["reset"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4797,7 +4829,7 @@ export interface paths {
         };
         get: operations["getAll_1"];
         put?: never;
-        post: operations["save_3"];
+        post: operations["save_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6978,6 +7010,19 @@ export interface components {
             /** Format: int64 */
             sessions?: number;
         };
+        GuideProgress: {
+            /** @enum {string} */
+            key?: "FIRST_RUN_DASHBOARD" | "FIRST_RUN_DOSSIER" | "FIRST_RUN_VOICE";
+            lastStep?: string;
+            /** Format: int32 */
+            snoozeCount?: number;
+            /** @enum {string} */
+            status?: "SNOOZED" | "DISMISSED" | "COMPLETED";
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: int32 */
+            version?: number;
+        };
         HistoryEntry: {
             category?: string;
             detail?: string;
@@ -9069,6 +9114,13 @@ export interface components {
         SaveGoal: {
             basis?: string;
             inputs?: components["schemas"]["GoalInputs"];
+        };
+        SaveGuideProgress: {
+            lastStep?: string;
+            /** @enum {string} */
+            status: "SNOOZED" | "DISMISSED" | "COMPLETED";
+            /** Format: int32 */
+            version: number;
         };
         SaveNote: {
             body: string;
@@ -12770,7 +12822,7 @@ export interface operations {
             };
         };
     };
-    save_2: {
+    save_3: {
         parameters: {
             query: {
                 lang: string;
@@ -12798,7 +12850,7 @@ export interface operations {
             };
         };
     };
-    reset: {
+    reset_1: {
         parameters: {
             query: {
                 lang: string;
@@ -13440,6 +13492,72 @@ export interface operations {
                 "application/json": components["schemas"]["ChangePasswordRequest"];
             };
         };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    mine_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GuideProgress"][];
+                };
+            };
+        };
+    };
+    save_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveGuideProgress"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GuideProgress"];
+                };
+            };
+        };
+    };
+    reset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description No Content */
             204: {
@@ -19499,7 +19617,7 @@ export interface operations {
             };
         };
     };
-    save_3: {
+    save_4: {
         parameters: {
             query?: never;
             header?: never;

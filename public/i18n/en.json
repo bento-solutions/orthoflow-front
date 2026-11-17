@@ -3491,6 +3491,63 @@
         "TITLE": "Sterilization",
         "TEXT": "Scan a label to use, clean or load an item. Each cycle keeps its control and the list of patients involved."
       }
+    },
+    "FIRST_RUN": {
+      "TRY_NOW": "Try it now",
+      "DASHBOARD": {
+        "KPIS": {
+          "TITLE": "The practice in numbers",
+          "TEXT": "Active patients, today’s visits, new patients and treatments on hold. Click a card to open the list."
+        },
+        "TODAY": {
+          "TITLE": "Today’s schedule",
+          "TEXT": "Today’s appointments, in order. Click a patient’s name to open their file."
+        },
+        "ATTENTION": {
+          "TITLE": "Needs attention",
+          "TEXT": "Missed appointments, treatments on hold, patients with no next appointment. Empty when all is well."
+        },
+        "SEARCH": {
+          "TITLE": "Find a patient",
+          "TEXT": "Type a name, a phone number or a page to go straight there. Shortcut: ⌘K (or Ctrl K)."
+        }
+      },
+      "DOSSIER": {
+        "BANNER": {
+          "TITLE": "The patient banner",
+          "TEXT": "It stays in view on every tab: age, next appointment, balance. Medical alerts are always shown here; click them for the history."
+        },
+        "TABS": {
+          "TITLE": "The tabs",
+          "TEXT": "Summary, chart & plan, visits, imaging, billing, documents: in the order of a visit."
+        },
+        "CHART": {
+          "TITLE": "The dental chart",
+          "TEXT": "The patient’s mouth in 3D, with findings and treatments. Click a tooth to open it in “Chart & plan”."
+        },
+        "CONSULT": {
+          "TITLE": "The Consultation button",
+          "TEXT": "Every session starts here. It offers two ways to record, shown next."
+        }
+      },
+      "VOICE": {
+        "MODES": {
+          "TITLE": "Dictation or consultation",
+          "TEXT": "Dictation records your findings tooth by tooth during the exam. A consultation records the whole conversation and fills in the file, the plan and the appointment from it."
+        },
+        "SPEAK": {
+          "TITLE": "Speak normally, hands free",
+          "TEXT": "The microphone listens for the whole session: you never need to touch the PC. Speak as usual, in French or in English."
+        },
+        "PHRASES": {
+          "TITLE": "Three phrases to start with",
+          "TEXT": "“Tooth 16, caries” · “Show the allergies” · “End the consultation”."
+        },
+        "REVIEW": {
+          "TITLE": "Review and validate",
+          "TEXT": "At the end you review what was understood, correct it if needed and validate. Nothing goes into the file without your approval."
+        }
+      }
     }
   },
   "CMD": {
@@ -4685,5 +4742,22 @@
     },
     "NOT_ASKED_TEXT": "Ask about allergies, conditions and medications before treating.",
     "ASK_NOW": "Fill in the medical history"
+  },
+  "FIRST_RUN": {
+    "TITLE": "Welcome to OrthoFlow",
+    "TEXT": "Three things to know, in two minutes. The guide opens one of your patients’ files to show it to you, without changing anything.",
+    "RESUME_TITLE": "Pick up the guide",
+    "RESUME_TEXT": "The rest of the guide is left: the patient file and voice. It takes a minute.",
+    "CHAPTER_DASHBOARD": "The dashboard: your day at a glance",
+    "CHAPTER_DOSSIER": "The patient file: banner, tabs, dental chart",
+    "CHAPTER_VOICE": "Voice: dictate and consult without touching the PC",
+    "REPLAY_HINT": "You can see it again at any time from Help (?) or your account.",
+    "START": "Start",
+    "CONTINUE": "Continue",
+    "LATER": "Later",
+    "NEVER": "Don’t show again",
+    "REPLAY": "Replay getting started",
+    "ACCOUNT_LABEL": "Getting started",
+    "ACCOUNT_HINT": "The guided tour of the dashboard, the patient file and voice."
   }
 }

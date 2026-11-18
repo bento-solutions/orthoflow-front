@@ -51,6 +51,22 @@ describe('ThemeService', () => {
     expect(document.documentElement.classList.contains('dark')).toBe(false);
   });
 
+  it('shows a forced theme in this window without saving it, and gives the person theirs back after', () => {
+    const service = create();
+    service.set('light');
+    patch.mockClear();
+    service.force('dark');
+    TestBed.tick();
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(service.preference()).toBe('light');
+    expect(localStorage.getItem('orthoflow_theme')).toBe('light');
+    expect(patch).not.toHaveBeenCalled();
+
+    service.force(null);
+    TestBed.tick();
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+  });
+
   it('toggles between light and dark, leaving "system" on the first press', () => {
     const service = create();
     service.set('light');

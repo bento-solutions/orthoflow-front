@@ -56,6 +56,8 @@ type View = 'occlusal' | 'front';
 export class ScanViewerComponent {
   readonly blob = input.required<Blob>();
   readonly type = input.required<ModelType>();
+  /** Its own full-screen button; off where it already fills the screen. */
+  readonly expandable = input(true);
 
   protected readonly state = signal<'loading' | 'ready' | 'failed' | 'no-webgl'>('loading');
   protected readonly expanded = signal(false);

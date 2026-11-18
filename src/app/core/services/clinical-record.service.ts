@@ -7,6 +7,7 @@ import {
   AddToothFindingRequest, CreateClinicalNoteRequest, AddAllergyRequest, AddMedicalHistoryRequest,
   FindingStatus, FindingCatalogResponse, PeriodontalStatus, RecordPeriodontalRequest, PeriodontalAssessment
 } from '../models/clinical-record.model';
+import { ChartSyncService } from './chart-sync.service';
 
 /** One thing to know before treating: an allergy, a condition or a current medication. */
 export interface MedicalAlert {
@@ -81,6 +82,7 @@ export function alertsState(record: PatientClinicalRecord | null): AlertsState {
 })
 export class ClinicalRecordService {
   private http = inject(HttpClient);
+  private sync = inject(ChartSyncService);
   private baseUrl = `${environment.apiUrl}/api/v1/patients`;
 
   private recordSignal = signal<PatientClinicalRecord | null>(null);
@@ -149,7 +151,7 @@ export class ClinicalRecordService {
   recordPeriodontal(patientId: string, request: RecordPeriodontalRequest): Observable<PeriodontalAssessment> {
     return this.http.post<PeriodontalAssessment>(
       `${this.baseUrl}/${patientId}/clinical-record/periodontal`, request
-    ).pipe(tap(() => this.loadPeriodontal(patientId)));
+    ).pipe(tap(() => { this.loadPeriodontal(patientId); this.sync.announce(patientId, 'gums'); }));
   }
 
   loadCatalogOnce(): void {
@@ -176,13 +178,13 @@ export class ClinicalRecordService {
 
   addFinding(patientId: string, fdi: string, request: AddToothFindingRequest): Observable<ToothFinding> {
     return this.http.post<ToothFinding>(`${this.baseUrl}/${patientId}/clinical-record/teeth/${fdi}/findings`, request)
-      .pipe(tap(() => { this.refresh(patientId); this.refreshHistoryIfLoaded(patientId); }));
+      .pipe(tap(() => { this.refresh(patientId); this.refreshHistoryIfLoaded(patientId); this.sync.announce(patientId, 'findings'); }));
   }
 
   changeFindingStatus(patientId: string, findingId: string, status: FindingStatus): Observable<ToothFinding> {
     return this.http.patch<ToothFinding>(
       `${this.baseUrl}/${patientId}/clinical-record/findings/${findingId}?status=${status}`, {}
-    ).pipe(tap(() => { this.refresh(patientId); this.refreshHistoryIfLoaded(patientId); }));
+    ).pipe(tap(() => { this.refresh(patientId); this.refreshHistoryIfLoaded(patientId); this.sync.announce(patientId, 'findings'); }));
   }
 
   /** The log is only kept in step once something has asked for it. */

@@ -14,6 +14,7 @@ import { SURFACE_LETTER, SURFACE_ZONES, SURFACE_ZONE_PATH, SurfaceZone, ToothSur
 import { FAMILY_PAINT, PLANNED_PAINT, TREATMENT_PLAN_INK, toothStatusLabelKey } from '../../core/clinical/tooth-status';
 import { ToothNumberTyping, stepInGrid, toothGrid } from '../../core/clinical/tooth-grid';
 import { gumPaints } from '../../core/clinical/gum-regions';
+import { MouthGroup, summarizeMouth } from '../../core/clinical/mouth-summary';
 import { AnnouncerService } from '../../core/services/announcer.service';
 import { DENTITION_VIEWS, Dental3dViewService, DentitionView } from '../../core/services/dental-3d-view.service';
 import { ClinicalRecordService } from '../../core/services/clinical-record.service';
@@ -35,12 +36,6 @@ interface HoverCard {
   readonly title: string;
   readonly zone: string | null;
   readonly lines: readonly string[];
-}
-
-interface SummaryGroup {
-  readonly key: string;
-  readonly kind: string;
-  readonly teeth: readonly string[];
 }
 
 /**
@@ -296,6 +291,9 @@ interface SummaryGroup {
               <button type="button" class="d3-assign" (click)="assignTreatment.emit(fdi)">
                 <app-icon class="mi" name="add" size="1em" />{{ 'DENTAL_3D.ASSIGN' | translate: { fdi: fdi } }}
               </button>
+            } @else if (!summaryInPanel()) {
+              <h3 class="d3-panel-idle">{{ 'DENTAL_3D.NO_TOOTH' | translate }}</h3>
+              <p class="d3-hint">{{ 'DENTAL_3D.HOW_TO' | translate }}</p>
             } @else {
               <h3 class="d3-panel-idle">{{ 'DENTAL_3D.SUMMARY' | translate }}</h3>
               @for (group of summary(); track group.key) {
@@ -367,6 +365,19 @@ export class Dental3dChartComponent {
    * pinned the view.
    */
   readonly cameraFollows = input(false);
+  /**
+   * The 3D chart's own window: the chart fills the height it is given, its panel a column
+   * beside it that scrolls on its own, on a dark stage.
+   */
+  readonly fill = input(false);
+  /**
+   * The state of the mouth in the panel while no tooth is picked. The chart's own window
+   * shows it in a column of its own, so its panel only says how to pick a tooth.
+   */
+  readonly summaryInPanel = input(true);
+  /** A button that opens the chart in a window of its own, said with {@link openFullScreen}. */
+  readonly fullScreenButton = input(false);
+  readonly openFullScreen = output<void>();
 
   readonly assignTreatment = output<string>();
 
@@ -451,23 +462,7 @@ export class Dental3dChartComponent {
     return this.treatments().filter((t) => (t.teeth ?? '').split(',').map((x) => x.trim()).includes(fdi));
   });
 
-  protected readonly summary = computed<SummaryGroup[]>(() => {
-    const groups: Record<'condition' | 'planned' | 'existing' | 'absent' | 'suspected', string[]> = { condition: [], planned: [], existing: [], absent: [], suspected: [] };
-    for (const fdi of this.allTeeth()) {
-      const paint = this.paintByFdi().get(fdi);
-      if (!paint) continue;
-      const families = new Set(PAINT_ZONES.map((zone) => paint.zones[zone]?.family));
-      if (paint.absent) groups.absent.push(fdi);
-      // Tartar and plaque are findings of the tooth even though nothing is painted on a part of it.
-      if (families.has('condition') || paint.lesion || paint.flagged || paint.deposit.calculus || paint.deposit.plaque) groups.condition.push(fdi);
-      if (paint.suspected) groups.suspected.push(fdi);
-      if (paint.planned || families.has('planned')) groups.planned.push(fdi);
-      if (families.has('existing')) groups.existing.push(fdi);
-    }
-    return (Object.entries(groups) as [keyof typeof groups, string[]][])
-      .filter(([, teeth]) => teeth.length)
-      .map(([kind, teeth]) => ({ kind, key: `DENTAL_3D.GROUP.${kind.toUpperCase()}`, teeth }));
-  });
+  protected readonly summary = computed<MouthGroup[]>(() => summarizeMouth(this.allTeeth(), this.paintByFdi()));
 
   protected readonly ringsInUse = computed(() => {
     const rings = new Set(this.paints().map((p) => p.treatment).filter((ring) => !!ring));

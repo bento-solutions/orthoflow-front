@@ -9,6 +9,7 @@ import {
 } from '../models/patient.model';
 import { DentalChartApiService, ToothUpdateSource, DentalChartResponse } from './dental-chart-api.service';
 import { AuthService } from './auth.service';
+import { ChartSyncService } from './chart-sync.service';
 
 /**
  * DentalChartService
@@ -24,6 +25,7 @@ import { AuthService } from './auth.service';
 })
 export class DentalChartService {
   private api = inject(DentalChartApiService);
+  private sync = inject(ChartSyncService);
 
   // In-memory store keyed by patientId
   /**
@@ -154,6 +156,7 @@ export class DentalChartService {
     this.currentChart.set({ ...chart });
 
     this.api.updateTooth(patientId, toothId, status, chart.teeth[toothId].notes, source).subscribe({
+      next: () => this.sync.announce(patientId, 'chart'),
       error: (err) => console.error(`Failed to persist tooth ${toothId} for patient ${patientId}`, err),
     });
   }

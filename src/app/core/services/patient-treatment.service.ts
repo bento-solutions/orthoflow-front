@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
+import { ChartSyncService } from './chart-sync.service';
 import { PatientTreatment, PatientTreatmentStatus } from '../models/patient-treatment.model';
 import { environment } from '../../../environments/environment';
 
@@ -34,6 +35,7 @@ export interface PatientTreatmentRequestPayload {
 })
 export class PatientTreatmentService {
   private http = inject(HttpClient);
+  private sync = inject(ChartSyncService);
   private baseUrl = `${environment.apiUrl}/api/v1/patients`;
 
   getPatientTreatments(patientId: string): Observable<PatientTreatment[]> {
@@ -49,14 +51,17 @@ export class PatientTreatmentService {
   }
 
   createPatientTreatment(patientId: string, pt: PatientTreatmentRequestPayload): Observable<PatientTreatment> {
-    return this.http.post<PatientTreatment>(`${this.baseUrl}/${patientId}/treatments`, pt);
+    return this.http.post<PatientTreatment>(`${this.baseUrl}/${patientId}/treatments`, pt)
+      .pipe(tap(() => this.sync.announce(patientId, 'treatments')));
   }
 
   updatePatientTreatment(patientId: string, id: string, pt: PatientTreatmentRequestPayload): Observable<PatientTreatment> {
-    return this.http.put<PatientTreatment>(`${this.baseUrl}/${patientId}/treatments/${id}`, pt);
+    return this.http.put<PatientTreatment>(`${this.baseUrl}/${patientId}/treatments/${id}`, pt)
+      .pipe(tap(() => this.sync.announce(patientId, 'treatments')));
   }
 
   deletePatientTreatment(patientId: string, id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${patientId}/treatments/${id}`);
+    return this.http.delete<void>(`${this.baseUrl}/${patientId}/treatments/${id}`)
+      .pipe(tap(() => this.sync.announce(patientId, 'treatments')));
   }
 }

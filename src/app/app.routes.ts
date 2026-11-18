@@ -42,6 +42,14 @@ export const routes: Routes = [
     ],
   },
   {
+    // The 3D chart in a window of its own, opened from the patient file for a second screen:
+    // signed in like the rest, without the app's frame around it.
+    path: 'chart-window/:id',
+    title: 'CHART_WINDOW.TITLE',
+    canActivate: [onboardingGuard, authGuard],
+    loadComponent: () => import('./features/dental-3d/chart-window/patient-chart-window.component').then(m => m.PatientChartWindowComponent),
+  },
+  {
     path: '',
     loadComponent: () => import('./layout/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
     // onboardingGuard must run before authGuard: a fresh install has no user

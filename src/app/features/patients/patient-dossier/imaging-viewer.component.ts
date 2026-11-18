@@ -1,10 +1,12 @@
 import {
   AfterViewInit, Component, DestroyRef, ElementRef, computed, effect, inject, input, output, signal, untracked, viewChild,
 } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { DocumentCategory, PatientFile, PatientFilesApi } from '../../../core/services/patient-files-api.service';
 import { keepTabInside } from '../../../shared/ui/dialog.directive';
+import { IconComponent } from '../../../shared/ui/icon.component';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 import { ModelType, isModel } from './scan-model';
 import { ScanViewerComponent } from './scan-viewer.component';
 
@@ -43,7 +45,7 @@ let nextId = 1;
 @Component({
   selector: 'app-imaging-viewer',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, TranslateModule, ScanViewerComponent],
+  imports: [AppDatePipe, DecimalPipe, IconComponent, TranslateModule, ScanViewerComponent],
   host: {
     class: 'imaging-viewer',
     role: 'dialog',
@@ -55,7 +57,7 @@ let nextId = 1;
     <header class="iv-bar">
       <div class="iv-title">
         <h2 [id]="titleId">
-          @if (current(); as f) { {{ ('PFILES.CAT.' + f.category) | translate }} · {{ f.createdAt | date:'mediumDate' }} }
+          @if (current(); as f) { {{ ('PFILES.CAT.' + f.category) | translate }} · {{ f.createdAt | appDate }} }
         </h2>
         <p>
           @if (patientName()) { {{ patientName() }} · }
@@ -67,52 +69,52 @@ let nextId = 1;
         @if (!model()) {
           <button type="button" class="iv-btn" (click)="zoomBy(1 / 1.25)" [disabled]="zoom() <= 1"
             [title]="'IMAGING.ZOOM_OUT' | translate" [attr.aria-label]="'IMAGING.ZOOM_OUT' | translate">
-            <span class="material-icons" aria-hidden="true">zoom_out</span>
+            <app-icon class="mi" name="minus" size="1em" />
           </button>
           <span class="iv-zoom" aria-live="polite">{{ zoom() === 1 ? ('IMAGING.FIT' | translate) : (zoom() * 100 | number:'1.0-0') + '%' }}</span>
           <button type="button" class="iv-btn" (click)="zoomBy(1.25)" [disabled]="zoom() >= maxZoom"
             [title]="'IMAGING.ZOOM_IN' | translate" [attr.aria-label]="'IMAGING.ZOOM_IN' | translate">
-            <span class="material-icons" aria-hidden="true">zoom_in</span>
+            <app-icon class="mi" name="plus" size="1em" />
           </button>
           <span class="iv-sep" aria-hidden="true"></span>
           <label class="iv-slider" [title]="'IMAGING.BRIGHTNESS' | translate">
-            <span class="material-icons" aria-hidden="true">light_mode</span>
+            <app-icon class="mi" name="sun" size="1em" />
             <span class="sr-only">{{ 'IMAGING.BRIGHTNESS' | translate }}</span>
             <input type="range" min="40" max="200" step="5" [value]="brightness()" (input)="brightness.set(+$any($event.target).value)" />
           </label>
           <label class="iv-slider" [title]="'IMAGING.CONTRAST' | translate">
-            <span class="material-icons" aria-hidden="true">contrast</span>
+            <app-icon class="mi" name="contrast" size="1em" />
             <span class="sr-only">{{ 'IMAGING.CONTRAST' | translate }}</span>
             <input type="range" min="40" max="250" step="5" [value]="contrast()" (input)="contrast.set(+$any($event.target).value)" />
           </label>
           <button type="button" class="iv-btn" [class.on]="invert()" [attr.aria-pressed]="invert()" (click)="invert.set(!invert())"
             [title]="'IMAGING.INVERT' | translate" [attr.aria-label]="'IMAGING.INVERT' | translate">
-            <span class="material-icons" aria-hidden="true">invert_colors</span>
+            <app-icon class="mi" name="invert" size="1em" />
           </button>
           <button type="button" class="iv-btn" (click)="rotate()" [title]="'IMAGING.ROTATE' | translate" [attr.aria-label]="'IMAGING.ROTATE' | translate">
-            <span class="material-icons" aria-hidden="true">rotate_right</span>
+            <app-icon class="mi" name="rotate-cw" size="1em" />
           </button>
           <button type="button" class="iv-btn" (click)="resetImage()" [disabled]="pristine()"
             [title]="'IMAGING.RESET' | translate" [attr.aria-label]="'IMAGING.RESET' | translate">
-            <span class="material-icons" aria-hidden="true">restart_alt</span>
+            <app-icon class="mi" name="rotate-ccw" size="1em" />
           </button>
           <span class="iv-sep" aria-hidden="true"></span>
           <button type="button" class="iv-btn iv-wide" [class.on]="comparing()" [attr.aria-pressed]="comparing()" [disabled]="pictures().length < 2"
             (click)="toggleCompare()" [title]="'IMAGING.COMPARE_HINT' | translate">
-            <span class="material-icons" aria-hidden="true">vertical_split</span>{{ 'IMAGING.COMPARE' | translate }}
+            <app-icon class="mi" name="columns" size="1em" />{{ 'IMAGING.COMPARE' | translate }}
           </button>
         }
         @if (chartLink()) {
           <button type="button" class="iv-btn iv-wide" (click)="openChart.emit()" [title]="'DENTAL_3D.FULL_SCREEN_HINT' | translate">
-            <span class="material-icons" aria-hidden="true">view_in_ar</span>{{ 'IMAGING.CHART' | translate }}
+            <app-icon class="mi" name="box" size="1em" />{{ 'IMAGING.CHART' | translate }}
           </button>
         }
         <button type="button" class="iv-btn" (click)="download()" [disabled]="!current()"
           [title]="'IMAGING.DOWNLOAD' | translate" [attr.aria-label]="'IMAGING.DOWNLOAD' | translate">
-          <span class="material-icons" aria-hidden="true">download</span>
+          <app-icon class="mi" name="download" size="1em" />
         </button>
         <button type="button" class="iv-btn iv-wide iv-close" (click)="close()" [attr.aria-label]="'IMAGING.CLOSE' | translate">
-          <span class="material-icons" aria-hidden="true">close</span>{{ 'COMMON.CLOSE' | translate }} <kbd>Esc</kbd>
+          <app-icon class="mi" name="close" size="1em" />{{ 'COMMON.CLOSE' | translate }} <kbd>Esc</kbd>
         </button>
       </div>
     </header>
@@ -136,7 +138,7 @@ let nextId = 1;
               } @else {
                 <p class="iv-wait" role="status">{{ 'COMMON.LOADING' | translate }}</p>
               }
-              @if (comparing() && compareWith()) { <figcaption>{{ f.createdAt | date:'mediumDate' }}</figcaption> }
+              @if (comparing() && compareWith()) { <figcaption>{{ f.createdAt | appDate }}</figcaption> }
             </figure>
             @if (comparing() && compareWith(); as other) {
               <figure class="iv-pane">
@@ -145,7 +147,7 @@ let nextId = 1;
                 } @else {
                   <p class="iv-wait" role="status">{{ 'COMMON.LOADING' | translate }}</p>
                 }
-                <figcaption>{{ other.createdAt | date:'mediumDate' }}</figcaption>
+                <figcaption>{{ other.createdAt | appDate }}</figcaption>
               </figure>
             }
           }
@@ -160,11 +162,11 @@ let nextId = 1;
       @if (list().length > 1) {
         <button type="button" class="iv-step iv-step--older" (click)="step(1)" [disabled]="index() >= list().length - 1"
           [attr.aria-label]="'PFILES.OLDER' | translate" [title]="'PFILES.OLDER' | translate">
-          <span class="material-icons rtl:rotate-180" aria-hidden="true">chevron_left</span>
+          <app-icon class="mi rtl:rotate-180" name="chevron-left" size="1em" />
         </button>
         <button type="button" class="iv-step iv-step--newer" (click)="step(-1)" [disabled]="index() <= 0"
           [attr.aria-label]="'PFILES.NEWER' | translate" [title]="'PFILES.NEWER' | translate">
-          <span class="material-icons rtl:rotate-180" aria-hidden="true">chevron_right</span>
+          <app-icon class="mi rtl:rotate-180" name="chevron-right" size="1em" />
         </button>
       }
     </div>
@@ -182,13 +184,13 @@ let nextId = 1;
           <li>
             <button type="button" class="iv-thumb" [class.on]="f.id === currentId()" [class.other]="comparing() && f.id === compareWith()?.id"
               [attr.aria-current]="f.id === currentId() ? 'true' : null" (click)="choose(f)"
-              [attr.aria-label]="(f.createdAt | date:'mediumDate') + ', ' + f.name">
+              [attr.aria-label]="(f.createdAt | appDate) + ', ' + f.name">
               @if (isModel(f.contentType)) {
-                <span class="material-icons iv-thumb-icon" aria-hidden="true">view_in_ar</span>
+                <app-icon class="mi iv-thumb-icon" name="box" size="1em" />
               } @else if (urls().get(f.id); as url) {
                 <img [src]="url" alt="" draggable="false" />
               }
-              <span class="iv-thumb-date">{{ f.createdAt | date:'mediumDate' }}</span>
+              <span class="iv-thumb-date">{{ f.createdAt | appDate }}</span>
               @if (comparing() && f.id === compareWith()?.id) { <span class="iv-thumb-tag">B</span> }
               @if (comparing() && f.id === currentId()) { <span class="iv-thumb-tag">A</span> }
             </button>
@@ -201,76 +203,98 @@ let nextId = 1;
     </footer>
   `,
   styles: [`
+    /* A reading room: dark in both themes, so its palette is its own. */
     :host {
+      --iv-accent: 79 179 201;
+      --iv-bar: 10 17 20;
+      --iv-border: 42 58 65;
+      --iv-btn: 17 25 29;
+      --iv-btn-hover: 27 39 44;
+      --iv-close: 47 108 125;
+      --iv-focus: 108 200 219;
+      --iv-hint: 195 209 213;
+      --iv-ink: 226 236 239;
+      --iv-kbd: 51 69 76;
+      --iv-line: 29 42 47;
+      --iv-muted: 169 188 194;
+      --iv-on: 35 116 137;
+      --iv-other: 229 154 63;
+      --iv-sides: 213 224 227;
+      --iv-soft: 201 214 218;
+      --iv-strong: 255 255 255;
+      --iv-text: 232 241 243;
+      --iv-thumb-icon: 143 211 226;
+      --iv-void: 0 0 0;
+      --iv-scrim: rgb(0 0 0 / .6); --iv-step-bg: rgb(17 25 29 / .85); --iv-shade: rgb(0 0 0 / .85);
       position: fixed; inset: 0; z-index: calc(var(--z-modal, 60) + 5); display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
-      background: #000; color: #e8f1f3; font-size: .875rem; outline: none;
+      background: rgb(var(--iv-void)); color: rgb(var(--iv-text)); font-size: var(--text-base); outline: none;
     }
-    .iv-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; padding: .625rem 1rem; background: #0a1114; border-bottom: 1px solid #1d2a2f; }
+    .iv-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; padding: .625rem 1rem; background: rgb(var(--iv-bar)); border-bottom: 1px solid rgb(var(--iv-line)); }
     .iv-title { min-width: 0; margin-inline-end: auto; }
-    .iv-title h2 { margin: 0; font-size: 1rem; font-weight: 700; color: #fff; }
-    .iv-title p { margin: .125rem 0 0; font-size: .75rem; color: #a9bcc2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .iv-title h2 { margin: 0; font-size: var(--text-md); font-weight: 700; color: rgb(var(--iv-strong)); }
+    .iv-title p { margin: .125rem 0 0; font-size: var(--text-xs); color: rgb(var(--iv-muted)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .iv-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; }
     .iv-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: .375rem; width: 2.25rem; height: 2.25rem; padding: 0;
-      border: 1px solid #2a3a41; border-radius: .5rem; background: #11191d; color: #e2ecef; font: inherit; font-size: .8125rem; font-weight: 600; cursor: pointer;
+      border: 1px solid rgb(var(--iv-border)); border-radius: var(--radius-md); background: rgb(var(--iv-btn)); color: rgb(var(--iv-ink)); font: inherit; font-size: var(--text-sm); font-weight: 600; cursor: pointer;
     }
-    .iv-btn:hover:not(:disabled) { background: #1b272c; }
+    .iv-btn:hover:not(:disabled) { background: rgb(var(--iv-btn-hover)); }
     .iv-btn:disabled { opacity: .4; cursor: default; }
-    .iv-btn.on, .iv-btn.on:hover:not(:disabled) { background: #237489; border-color: #4fb3c9; color: #fff; }
-    .iv-btn .material-icons { font-size: 1.125rem; }
+    .iv-btn.on, .iv-btn.on:hover:not(:disabled) { background: rgb(var(--iv-on)); border-color: rgb(var(--iv-accent)); color: rgb(var(--iv-strong)); }
+    .iv-btn app-icon.mi { font-size: var(--text-lg); }
     .iv-wide { width: auto; padding: 0 .75rem; }
-    .iv-close { border-color: #2f6c7d; background: transparent; }
-    .iv-close kbd { padding: .0625rem .3125rem; border: 1px solid #33454c; border-bottom-width: 2px; border-radius: .3125rem; font: inherit; font-size: .6875rem; color: #c9d6da; }
-    .iv-btn:focus-visible, .iv-thumb:focus-visible, .iv-kinds button:focus-visible, .iv-step:focus-visible, .iv-slider input:focus-visible { outline: 2px solid #6cc8db; outline-offset: 2px; }
-    .iv-zoom { min-width: 3.25rem; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; color: #e2ecef; }
-    .iv-sep { width: 1px; height: 1.625rem; margin: 0 .25rem; background: #2a3a41; }
-    .iv-slider { display: inline-flex; align-items: center; gap: .375rem; color: #c9d6da; }
-    .iv-slider .material-icons { font-size: 1.125rem; }
-    .iv-slider input { width: 6.5rem; accent-color: #4fb3c9; }
+    .iv-close { border-color: rgb(var(--iv-close)); background: transparent; }
+    .iv-close kbd { padding: .0625rem .3125rem; border: 1px solid rgb(var(--iv-kbd)); border-bottom-width: 2px; border-radius: var(--radius-xs); font: inherit; font-size: var(--text-xs); color: rgb(var(--iv-soft)); }
+    .iv-btn:focus-visible, .iv-thumb:focus-visible, .iv-kinds button:focus-visible, .iv-step:focus-visible, .iv-slider input:focus-visible { outline: 2px solid rgb(var(--iv-focus)); outline-offset: 2px; }
+    .iv-zoom { min-width: 3.25rem; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; color: rgb(var(--iv-ink)); }
+    .iv-sep { width: 1px; height: 1.625rem; margin: 0 .25rem; background: rgb(var(--iv-border)); }
+    .iv-slider { display: inline-flex; align-items: center; gap: .375rem; color: rgb(var(--iv-soft)); }
+    .iv-slider app-icon.mi { font-size: var(--text-lg); }
+    .iv-slider input { width: 6.5rem; accent-color: rgb(var(--iv-accent)); }
 
     .iv-body { position: relative; min-height: 0; }
     .iv-stage { position: absolute; inset: 0; display: grid; overflow: hidden; touch-action: none; cursor: grab; outline: none; }
     .iv-stage:active { cursor: grabbing; }
-    .iv-stage:focus-visible { box-shadow: inset 0 0 0 2px #6cc8db; }
-    .iv-split { grid-template-columns: 1fr 1fr; gap: 2px; background: #1d2a2f; }
-    .iv-pane { position: relative; margin: 0; min-width: 0; overflow: hidden; background: #000; display: grid; place-items: center; }
+    .iv-stage:focus-visible { box-shadow: inset 0 0 0 2px rgb(var(--iv-focus)); }
+    .iv-split { grid-template-columns: 1fr 1fr; gap: 2px; background: rgb(var(--iv-line)); }
+    .iv-pane { position: relative; margin: 0; min-width: 0; overflow: hidden; background: rgb(var(--iv-void)); display: grid; place-items: center; }
     .iv-pane img {
       position: absolute; inset: 1.5rem 4.5rem; width: calc(100% - 9rem); height: calc(100% - 3rem); object-fit: contain;
       transform-origin: center; user-select: none; -webkit-user-drag: none;
     }
     .iv-split .iv-pane img { inset: 2.5rem .75rem 1rem; width: calc(100% - 1.5rem); height: calc(100% - 3.5rem); }
-    .iv-pane figcaption { position: absolute; top: .5rem; inset-inline-start: .75rem; padding: .125rem .5rem; border-radius: .375rem; background: rgb(0 0 0 / .6); color: #e2ecef; font-size: .75rem; font-weight: 600; }
+    .iv-pane figcaption { position: absolute; top: .5rem; inset-inline-start: .75rem; padding: .125rem .5rem; border-radius: var(--radius-sm); background: var(--iv-scrim); color: rgb(var(--iv-ink)); font-size: var(--text-xs); font-weight: 600; }
     .iv-model { position: absolute; inset: 0; border-radius: 0; }
-    .iv-wait { margin: auto; color: #a9bcc2; }
-    .iv-sides { position: absolute; inset: .625rem 5rem auto; display: flex; justify-content: space-between; pointer-events: none; font-size: .75rem; color: #d5e0e3; }
-    .iv-sides span, .iv-hint { padding: .125rem .5rem; border-radius: .375rem; background: rgb(0 0 0 / .6); }
+    .iv-wait { margin: auto; color: rgb(var(--iv-muted)); }
+    .iv-sides { position: absolute; inset: .625rem 5rem auto; display: flex; justify-content: space-between; pointer-events: none; font-size: var(--text-xs); color: rgb(var(--iv-sides)); }
+    .iv-sides span, .iv-hint { padding: .125rem .5rem; border-radius: var(--radius-sm); background: var(--iv-scrim); }
     .iv-split ~ .iv-sides, .iv-split .iv-sides { display: none; }
-    .iv-hint { position: absolute; bottom: .625rem; inset-inline-start: 5rem; margin: 0; pointer-events: none; font-size: .75rem; color: #c3d1d5; }
+    .iv-hint { position: absolute; bottom: .625rem; inset-inline-start: 5rem; margin: 0; pointer-events: none; font-size: var(--text-xs); color: rgb(var(--iv-hint)); }
     .iv-split .iv-hint { display: none; }
     .iv-step {
       position: absolute; top: 50%; margin-top: -1.5rem; width: 2.75rem; height: 3rem; display: grid; place-items: center;
-      border: 1px solid #2a3a41; border-radius: .625rem; background: rgb(17 25 29 / .85); color: #e2ecef; cursor: pointer;
+      border: 1px solid rgb(var(--iv-border)); border-radius: var(--radius-md); background: var(--iv-step-bg); color: rgb(var(--iv-ink)); cursor: pointer;
     }
     .iv-step:disabled { opacity: .35; cursor: default; }
     .iv-step--older { inset-inline-start: 1rem; }
     .iv-step--newer { inset-inline-end: 1rem; }
 
-    .iv-strip { display: flex; align-items: center; gap: 1rem; padding: .625rem 1rem; background: #0a1114; border-top: 1px solid #1d2a2f; min-width: 0; }
-    .iv-kinds { display: inline-flex; flex: none; border: 1px solid #2a3a41; border-radius: .5rem; overflow: hidden; }
-    .iv-kinds button { padding: 0 .75rem; height: 2rem; border: 0; background: #11191d; color: #c9d6da; font: inherit; font-size: .8125rem; font-weight: 600; cursor: pointer; }
-    .iv-kinds button[aria-pressed='true'] { background: #237489; color: #fff; }
+    .iv-strip { display: flex; align-items: center; gap: 1rem; padding: .625rem 1rem; background: rgb(var(--iv-bar)); border-top: 1px solid rgb(var(--iv-line)); min-width: 0; }
+    .iv-kinds { display: inline-flex; flex: none; border: 1px solid rgb(var(--iv-border)); border-radius: var(--radius-md); overflow: hidden; }
+    .iv-kinds button { padding: 0 .75rem; height: 2rem; border: 0; background: rgb(var(--iv-btn)); color: rgb(var(--iv-soft)); font: inherit; font-size: var(--text-sm); font-weight: 600; cursor: pointer; }
+    .iv-kinds button[aria-pressed='true'] { background: rgb(var(--iv-on)); color: rgb(var(--iv-strong)); }
     .iv-thumbs { display: flex; gap: .625rem; margin: 0; padding: .125rem; list-style: none; overflow-x: auto; min-width: 0; }
     .iv-thumb {
       position: relative; display: block; width: 8.5rem; height: 4.75rem; padding: 0; overflow: hidden; flex: none;
-      border: 2px solid transparent; border-radius: .5rem; background: #11191d; cursor: pointer;
+      border: 2px solid transparent; border-radius: var(--radius-md); background: rgb(var(--iv-btn)); cursor: pointer;
     }
-    .iv-thumb.on { border-color: #4fb3c9; }
-    .iv-thumb.other { border-color: #e59a3f; }
+    .iv-thumb.on { border-color: rgb(var(--iv-accent)); }
+    .iv-thumb.other { border-color: rgb(var(--iv-other)); }
     .iv-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .iv-thumb-icon { position: absolute; inset: 0; display: grid; place-items: center; font-size: 1.75rem; color: #8fd3e2; }
-    .iv-thumb-date { position: absolute; inset: auto 0 0; padding: .1875rem .375rem; text-align: start; font-size: .6875rem; font-weight: 600; color: #fff; background: linear-gradient(transparent, rgb(0 0 0 / .85)); }
-    .iv-thumb-tag { position: absolute; top: .25rem; inset-inline-end: .25rem; padding: 0 .3125rem; border-radius: .25rem; font-size: .6875rem; font-weight: 800; background: #0a1114; color: #fff; }
-    .iv-count { margin: 0 0 0 auto; flex: none; font-size: .75rem; color: #a9bcc2; }
+    .iv-thumb-icon { position: absolute; inset: 0; display: grid; place-items: center; font-size: 1.75rem; color: rgb(var(--iv-thumb-icon)); }
+    .iv-thumb-date { position: absolute; inset: auto 0 0; padding: .1875rem .375rem; text-align: start; font-size: var(--text-xs); font-weight: 600; color: rgb(var(--iv-strong)); background: linear-gradient(transparent, var(--iv-shade)); }
+    .iv-thumb-tag { position: absolute; top: .25rem; inset-inline-end: .25rem; padding: 0 .3125rem; border-radius: var(--radius-xs); font-size: var(--text-xs); font-weight: 800; background: rgb(var(--iv-bar)); color: rgb(var(--iv-strong)); }
+    .iv-count { margin: 0 0 0 auto; flex: none; font-size: var(--text-xs); color: rgb(var(--iv-muted)); }
 
     @media (max-width: 720px) {
       .iv-slider input { width: 4.5rem; }

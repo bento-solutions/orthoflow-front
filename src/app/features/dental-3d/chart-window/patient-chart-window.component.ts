@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
@@ -26,6 +25,8 @@ import { ToastService } from '../../../core/services/toast.service';
 import { Dental3dViewService } from '../../../core/services/dental-3d-view.service';
 import { followChartChanges } from '../../../core/services/follow-chart-changes';
 import { ModalComponent } from '../../../shared/ui/modal.component';
+import { IconComponent } from '../../../shared/ui/icon.component';
+import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 import { Dental3dChartComponent } from '../dental-3d-chart.component';
 import { PatientImagingPaneComponent } from '../../patients/patient-dossier/patient-imaging-pane.component';
 
@@ -71,7 +72,7 @@ export function ageOn(dateOfBirth: string | null | undefined, today = new Date()
 @Component({
   selector: 'app-patient-chart-window',
   standalone: true,
-  imports: [DatePipe, FormsModule, TranslateModule, ModalComponent, Dental3dChartComponent, PatientImagingPaneComponent],
+  imports: [AppDatePipe, IconComponent, FormsModule, TranslateModule, ModalComponent, Dental3dChartComponent, PatientImagingPaneComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'chart-window', '(document:keydown.escape)': 'onEscape($event)' },
   template: `
@@ -95,13 +96,13 @@ export function ageOn(dateOfBirth: string | null | undefined, today = new Date()
       <div class="cw-actions">
         <button type="button" class="cw-btn" [class.on]="xrayBeside()" [attr.aria-pressed]="xrayBeside()" (click)="xrayBeside.set(!xrayBeside())"
           [title]="'CHART_WINDOW.XRAY_BESIDE_HINT' | translate">
-          <span class="material-icons" aria-hidden="true">vertical_split</span>{{ 'CHART_WINDOW.XRAY_BESIDE' | translate }}
+          <app-icon class="mi" name="columns" size="1em" />{{ 'CHART_WINDOW.XRAY_BESIDE' | translate }}
         </button>
         <button type="button" class="cw-btn cw-icon" (click)="print()" [title]="'CHART_WINDOW.PRINT' | translate" [attr.aria-label]="'CHART_WINDOW.PRINT' | translate">
-          <span class="material-icons" aria-hidden="true">print</span>
+          <app-icon class="mi" name="print" size="1em" />
         </button>
         <button type="button" class="cw-btn cw-close" (click)="close()" [attr.aria-label]="'CHART_WINDOW.CLOSE' | translate">
-          <span class="material-icons" aria-hidden="true">close</span>{{ 'COMMON.CLOSE' | translate }} <kbd>Esc</kbd>
+          <app-icon class="mi" name="close" size="1em" />{{ 'COMMON.CLOSE' | translate }} <kbd>Esc</kbd>
         </button>
       </div>
     </header>
@@ -153,7 +154,7 @@ export function ageOn(dateOfBirth: string | null | undefined, today = new Date()
                 <span class="cw-plan-sub">
                   @if (t.teeth) { <span dir="ltr">{{ teethOf(t) }}</span> · }
                   {{ 'CHART_WINDOW.STATUS.' + t.status | translate }}
-                  @if (t.status === 'COMPLETED' && t.endDate) { · {{ t.endDate | date:'mediumDate' }} }
+                  @if (t.status === 'COMPLETED' && t.endDate) { · {{ t.endDate | appDate }} }
                 </span>
                 <span class="cw-bar" aria-hidden="true"><i [style.width.%]="t.status === 'COMPLETED' ? 100 : (t.progress ?? 0)" [style.background]="ink(t.status)"></i></span>
               </button>
@@ -228,25 +229,25 @@ export function ageOn(dateOfBirth: string | null | undefined, today = new Date()
     .cw-who { display: flex; align-items: center; gap: .75rem; min-width: 0; margin-inline-end: auto; }
     .cw-avatar {
       display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; flex: none; border-radius: 50%;
-      background: rgb(var(--petrol-600)); color: #fff; font-weight: 700; font-size: .875rem;
+      background: rgb(var(--petrol-600)); color: var(--text-inverse); font-weight: 700; font-size: var(--text-base);
     }
     .cw-who-text { min-width: 0; }
-    .cw-who h1 { margin: 0; font-size: 1.0625rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cw-who p { display: flex; flex-wrap: wrap; align-items: center; gap: .125rem .5rem; margin: .125rem 0 0; font-size: .75rem; color: var(--text-muted); }
+    .cw-who h1 { margin: 0; font-size: var(--text-md); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cw-who p { display: flex; flex-wrap: wrap; align-items: center; gap: .125rem .5rem; margin: .125rem 0 0; font-size: var(--text-xs); color: var(--text-muted); }
     .cw-who p > span + span:not(.cw-pill)::before { content: '·'; margin-inline-end: .5rem; }
-    .cw-pill { padding: .0625rem .5rem; border-radius: 999px; background: rgb(var(--positive-100)); color: rgb(var(--positive-700)); font-weight: 600; }
+    .cw-pill { padding: .0625rem .5rem; border-radius: var(--radius-full); background: rgb(var(--positive-100)); color: rgb(var(--positive-700)); font-weight: 600; }
     .cw-loading { margin: 0 auto 0 0; color: var(--text-muted); }
     .cw-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; }
     .cw-btn {
-      display: inline-flex; align-items: center; gap: .375rem; height: 2.25rem; padding: 0 .75rem; font: inherit; font-size: .8125rem; font-weight: 600;
-      border: 1px solid var(--border-strong); border-radius: .5rem; background: var(--surface); color: var(--text); cursor: pointer;
+      display: inline-flex; align-items: center; gap: .375rem; height: 2.25rem; padding: 0 .75rem; font: inherit; font-size: var(--text-sm); font-weight: 600;
+      border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--text); cursor: pointer;
     }
     .cw-btn:hover { background: var(--surface-hover); }
     .cw-btn.on { background: var(--action); border-color: var(--action); color: var(--text-inverse); }
-    .cw-btn .material-icons { font-size: 1.125rem; }
+    .cw-btn app-icon.mi { font-size: var(--text-lg); }
     .cw-icon { width: 2.25rem; padding: 0; justify-content: center; }
     .cw-close { border-color: var(--action); background: transparent; }
-    .cw-close kbd { padding: .0625rem .3125rem; border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: .3125rem; font: inherit; font-size: .6875rem; color: var(--text-muted); }
+    .cw-close kbd { padding: .0625rem .3125rem; border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: var(--radius-xs); font: inherit; font-size: var(--text-xs); color: var(--text-muted); }
     .cw-btn:focus-visible, .cw-row:focus-visible, .cw-plan:focus-visible, .cw-tooth:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
     .cw-body { display: grid; grid-template-columns: 19rem minmax(0, 1fr); min-height: 0; }
@@ -257,25 +258,25 @@ export function ageOn(dateOfBirth: string | null | undefined, today = new Date()
     .cw-xray-pane { flex: 1; }
     .cw-chart { min-width: 0; min-height: 0; }
 
-    .cw-h { margin: 0 0 .625rem; font-size: .6875rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+    .cw-h { margin: 0 0 .625rem; font-size: var(--text-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
     .cw-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
-    .cw-tile { display: flex; flex-direction: column; gap: .25rem; padding: .625rem; border-radius: .625rem; border: 1px solid var(--border); background: rgb(var(--ink-50)); min-width: 0; }
+    .cw-tile { display: flex; flex-direction: column; gap: .25rem; padding: .625rem; border-radius: var(--radius-md); border: 1px solid var(--border); background: rgb(var(--ink-50)); min-width: 0; }
     .cw-tile[data-kind='condition'] { border-color: rgb(var(--critical-200)); background: rgb(var(--critical-50)); }
     .cw-tile[data-kind='planned'] { border-color: rgb(var(--caution-200)); background: rgb(var(--caution-50)); }
     .cw-tile[data-kind='existing'] { border-color: rgb(var(--petrol-200)); background: rgb(var(--petrol-50)); }
-    .cw-tile-name { display: inline-flex; align-items: center; gap: .375rem; font-size: .75rem; font-weight: 600; }
+    .cw-tile-name { display: inline-flex; align-items: center; gap: .375rem; font-size: var(--text-xs); font-weight: 600; }
     .cw-tile[data-kind='condition'] .cw-tile-name { color: rgb(var(--critical-700)); }
     .cw-tile[data-kind='planned'] .cw-tile-name { color: rgb(var(--caution-700)); }
     .cw-tile[data-kind='existing'] .cw-tile-name { color: rgb(var(--petrol-700)); }
     .cw-tile-count { font-size: 1.5rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
     .cw-tile-teeth { display: flex; flex-wrap: wrap; gap: .1875rem; }
     .cw-tooth {
-      min-width: 1.75rem; height: 1.375rem; padding: 0 .25rem; font: inherit; font-size: .6875rem; font-weight: 700; font-variant-numeric: tabular-nums;
-      border: 1px solid var(--border-strong); border-radius: .3125rem; background: var(--surface); color: var(--text); cursor: pointer;
+      min-width: 1.75rem; height: 1.375rem; padding: 0 .25rem; font: inherit; font-size: var(--text-xs); font-weight: 700; font-variant-numeric: tabular-nums;
+      border: 1px solid var(--border-strong); border-radius: var(--radius-xs); background: var(--surface); color: var(--text); cursor: pointer;
     }
     .cw-tooth:hover { background: var(--action-tint); }
     .cw-tooth.on { background: var(--action); border-color: var(--action); color: var(--text-inverse); }
-    .sw { display: inline-block; width: .75rem; height: .75rem; border-radius: .1875rem; border: 1px solid transparent; flex: none; }
+    .sw { display: inline-block; width: .75rem; height: .75rem; border-radius: var(--radius-xs); border: 1px solid transparent; flex: none; }
     .sw-existing { background: repeating-linear-gradient(135deg, rgb(var(--petrol-500)) 0 2px, rgb(var(--petrol-50)) 2px 4px); border-color: rgb(var(--petrol-500)); }
     .sw-condition { background: radial-gradient(rgb(var(--critical-500)) 1.2px, rgb(var(--critical-50)) 1.4px) 0 0 / 4px 4px; border-color: rgb(var(--critical-500)); }
     .sw-planned { background: repeating-linear-gradient(135deg, rgb(var(--caution-500)) 0 2px, rgb(var(--caution-50)) 2px 5px); border-color: rgb(var(--caution-500)); }
@@ -283,34 +284,34 @@ export function ageOn(dateOfBirth: string | null | undefined, today = new Date()
 
     .cw-row {
       display: flex; align-items: flex-start; gap: .625rem; width: 100%; padding: .5rem .625rem; margin-bottom: .25rem; text-align: start;
-      font: inherit; border: 1px solid transparent; border-radius: .5rem; background: transparent; color: inherit; cursor: pointer;
+      font: inherit; border: 1px solid transparent; border-radius: var(--radius-md); background: transparent; color: inherit; cursor: pointer;
     }
     .cw-row:hover { background: var(--surface-hover); }
     .cw-row.on { border-color: var(--action); background: var(--action-tint); }
     .cw-fdi {
-      display: inline-flex; align-items: center; justify-content: center; min-width: 1.875rem; height: 1.5rem; flex: none; border-radius: 999px;
-      font-size: .75rem; font-weight: 700; font-variant-numeric: tabular-nums; background: var(--text); color: var(--surface);
+      display: inline-flex; align-items: center; justify-content: center; min-width: 1.875rem; height: 1.5rem; flex: none; border-radius: var(--radius-full);
+      font-size: var(--text-xs); font-weight: 700; font-variant-numeric: tabular-nums; background: var(--text); color: var(--surface);
     }
     .cw-row.on .cw-fdi { background: var(--action); color: var(--text-inverse); }
-    .cw-row-text { display: flex; flex-direction: column; gap: .125rem; min-width: 0; font-size: .8125rem; }
-    .cw-row-text span { font-size: .75rem; color: var(--text-muted); }
+    .cw-row-text { display: flex; flex-direction: column; gap: .125rem; min-width: 0; font-size: var(--text-sm); }
+    .cw-row-text span { font-size: var(--text-xs); color: var(--text-muted); }
     .cw-plan {
       display: flex; flex-direction: column; gap: .25rem; width: 100%; padding: .5rem .625rem; margin-bottom: .375rem; text-align: start;
-      font: inherit; font-size: .8125rem; border: 1px solid transparent; border-radius: .5rem; background: transparent; color: inherit; cursor: pointer;
+      font: inherit; font-size: var(--text-sm); border: 1px solid transparent; border-radius: var(--radius-md); background: transparent; color: inherit; cursor: pointer;
     }
     .cw-plan:hover:not(:disabled) { background: var(--surface-hover); }
     .cw-plan:disabled { cursor: default; }
     .cw-plan-top { display: flex; justify-content: space-between; gap: .5rem; }
     .cw-plan-top span { font-weight: 700; flex: none; }
-    .cw-plan-sub { font-size: .75rem; color: var(--text-muted); }
-    .cw-bar { display: block; height: .375rem; border-radius: 999px; background: rgb(var(--ink-200)); overflow: hidden; }
-    .cw-bar i { display: block; height: 100%; min-width: .25rem; border-radius: 999px; }
-    .cw-empty { margin: 0; font-size: .8125rem; color: var(--text-muted); }
+    .cw-plan-sub { font-size: var(--text-xs); color: var(--text-muted); }
+    .cw-bar { display: block; height: .375rem; border-radius: var(--radius-full); background: rgb(var(--ink-200)); overflow: hidden; }
+    .cw-bar i { display: block; height: 100%; min-width: .25rem; border-radius: var(--radius-full); }
+    .cw-empty { margin: 0; font-size: var(--text-sm); color: var(--text-muted); }
 
     .cw-form { display: flex; flex-direction: column; gap: .875rem; }
-    .cw-form label { display: flex; flex-direction: column; gap: .25rem; font-size: .8125rem; font-weight: 600; min-width: 0; }
+    .cw-form label { display: flex; flex-direction: column; gap: .25rem; font-size: var(--text-sm); font-weight: 600; min-width: 0; }
     .cw-form-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
-    .cw-hint { margin: 0; font-size: .75rem; color: var(--text-muted); }
+    .cw-hint { margin: 0; font-size: var(--text-xs); color: var(--text-muted); }
     .cw-form-actions { display: flex; justify-content: flex-end; gap: .5rem; }
 
     @media (max-width: 900px) {
@@ -319,7 +320,7 @@ export function ageOn(dateOfBirth: string | null | undefined, today = new Date()
       .cw-form-row { grid-template-columns: minmax(0, 1fr); }
     }
     @media print {
-      :host { height: auto; display: block; background: #fff; }
+      :host { height: auto; display: block; background: white; }
       .cw-actions, .cw-side { display: none; }
     }
   `],

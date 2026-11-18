@@ -21,7 +21,9 @@ export type IconName =
   | 'undo' | 'mic-off' | 'history' | 'wave' | 'cloud-off' | 'clipboard-check' | 'volume-x' | 'eye-off' | 'text'
   | 'stop-circle' | 'rotate-ccw' | 'rotate-cw' | 'pin' | 'play' | 'pause-circle' | 'mail' | 'pill' | 'calendar-x'
   | 'calendar-plus' | 'code' | 'columns' | 'focus' | 'zap' | 'plus-circle' | 'bank' | 'pointer' | 'hourglass'
-  | 'image' | 'archive' | 'heart' | 'volume' | 'check-square' | 'square' | 'minimize' | 'maximize';
+  | 'image' | 'archive' | 'heart' | 'volume' | 'check-square' | 'square' | 'minimize' | 'maximize'
+  // added with the X-ray reading room
+  | 'contrast' | 'invert';
 
 /**
  * The names the retired Material icon font used, and the icon that now stands for each, so a
@@ -214,6 +216,8 @@ export function iconFor(name: string): IconName {
         @case ('calendar-x') { <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18M10 14l4 4M14 14l-4 4" /> }
         @case ('calendar-plus') { <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4" /> }
         @case ('code') { <path d="m16 18 6-6-6-6M8 6l-6 6 6 6" /> }
+        @case ('contrast') { <circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" /> }
+        @case ('invert') { <path d="M12 2.7 6.3 8.4a8 8 0 1 0 11.4 0z" /><path d="M12 2.7v18.6" /> }
         @case ('columns') { <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M12 3v18" /> }
         @case ('focus') { <circle cx="12" cy="12" r="3" /><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /> }
         @case ('zap') { <path d="M13 2 3 14h9l-1 8 10-12h-9z" /> }

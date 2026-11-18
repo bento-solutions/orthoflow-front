@@ -52,7 +52,7 @@ type PaneKind = Extract<DocumentCategory, 'XRAY' | 'INTRAORAL_3D'>;
       }
       @if (current()) {
         <button type="button" class="btn btn-secondary btn-sm" (click)="openViewer()" [title]="'IMAGING.OPEN_HINT' | translate">
-          <span class="material-icons text-[18px]" aria-hidden="true">open_in_full</span>{{ 'IMAGING.OPEN' | translate }}
+          <app-icon class="mi text-[18px]" name="maximize" size="1em" />{{ 'IMAGING.OPEN' | translate }}
         </button>
       }
       </div>

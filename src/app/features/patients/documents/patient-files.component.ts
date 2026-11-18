@@ -100,7 +100,7 @@ import { ScanViewerComponent } from '../patient-dossier/scan-viewer.component';
 
     @if (viewing(); as v) {
       <div class="fixed inset-0 z-[60] bg-black/90 p-4" role="dialog" aria-modal="true" [attr.aria-label]="v.name" (keydown.escape)="viewing.set(null)">
-        <app-scan-viewer class="!h-full" [blob]="v.blob" [type]="v.type" />
+        <app-scan-viewer class="!h-full" [blob]="v.blob" [type]="v.type" [expandable]="false" />
         <button type="button" class="btn btn-secondary btn-sm absolute start-6 top-6" (click)="viewing.set(null)">{{ 'COMMON.CLOSE' | translate }}</button>
       </div>
     }

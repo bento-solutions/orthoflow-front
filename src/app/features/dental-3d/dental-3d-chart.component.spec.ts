@@ -42,4 +42,12 @@ describe('Dental3dChartComponent without WebGL', () => {
     expect(element.querySelector('.d3-note')?.textContent).toContain('DENTAL_3D.UNAVAILABLE');
     expect(element.querySelector('.d3-stage')).toBeNull();
   });
+
+  it('takes the whole height in the chart\'s own window', () => {
+    const element: HTMLElement = fixture.nativeElement;
+    expect(element.classList.contains('d3-fill')).toBe(false);
+    ref.setInput('fill', true);
+    fixture.detectChanges();
+    expect(element.classList.contains('d3-fill')).toBe(true);
+  });
 });

@@ -3,6 +3,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { DocumentCategory, PatientFile, PatientFilesApi } from '../../../core/services/patient-files-api.service';
 import { ModelType, isModel } from './scan-model';
 import { ScanViewerComponent } from './scan-viewer.component';
+import { ImagingViewerComponent } from './imaging-viewer.component';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { AppDatePipe } from '../../../shared/pipes/app-date.pipe';
 
@@ -17,7 +18,7 @@ type PaneKind = Extract<DocumentCategory, 'XRAY' | 'INTRAORAL_3D'>;
 @Component({
   selector: 'app-patient-imaging-pane',
   standalone: true,
-  imports: [AppDatePipe, TranslateModule, ScanViewerComponent, IconComponent],
+  imports: [AppDatePipe, TranslateModule, ScanViewerComponent, ImagingViewerComponent, IconComponent],
   host: { class: 'flex min-h-0 min-w-0 flex-col' },
   template: `
     @if (nothing()) {
@@ -90,6 +91,11 @@ type PaneKind = Extract<DocumentCategory, 'XRAY' | 'INTRAORAL_3D'>;
       }
     </div>
     }
+
+    @if (viewing(); as start) {
+      <app-imaging-viewer [files]="files()" [startId]="start" [startKind]="kind()" [patientName]="patientName()" [chartLink]="chartLink()"
+        (closed)="viewing.set(null)" (openChart)="openChart.emit()" />
+    }
   `,
 })
 export class PatientImagingPaneComponent implements OnDestroy {
@@ -101,6 +107,7 @@ export class PatientImagingPaneComponent implements OnDestroy {
   /** The full-screen viewer's way to the 3D chart's own window; not there inside that window. */
   readonly chartLink = input(true);
   readonly openDocuments = output<void>();
+  readonly openChart = output<void>();
   /** True once loaded with neither an X-ray nor an intraoral scan. */
   readonly emptyChange = output<boolean>();
 

@@ -27,10 +27,12 @@ type View = 'occlusal' | 'front';
     <div class="tools">
       <button type="button" class="view" [attr.aria-pressed]="view() === 'occlusal'" (click)="setView('occlusal')">{{ 'PFILES.VIEW_OCCLUSAL' | translate }}</button>
       <button type="button" class="view" [attr.aria-pressed]="view() === 'front'" (click)="setView('front')">{{ 'PFILES.VIEW_FRONT' | translate }}</button>
+      @if (expandable()) {
       <button type="button" (click)="expanded.set(!expanded())"
         [title]="(expanded() ? 'PFILES.SHRINK' : 'PFILES.EXPAND') | translate" [attr.aria-label]="(expanded() ? 'PFILES.SHRINK' : 'PFILES.EXPAND') | translate">
         <app-icon class="mi" [name]="expanded() ? 'close_fullscreen' : 'open_in_full'" size="1em" />
       </button>
+      }
     </div>
     <p class="hint">{{ label() }} · {{ 'PFILES.MODEL_HINT' | translate }}</p>
   `,

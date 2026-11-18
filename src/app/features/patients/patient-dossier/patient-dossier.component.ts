@@ -40,6 +40,8 @@ import { MedicalHistoryPanelComponent } from './medical-history-panel.component'
 import { PatientBannerComponent, PatientState } from './patient-banner.component';
 import { SummaryTabComponent } from './summary-tab.component';
 import { VisitsTabComponent } from './visits-tab.component';
+import { followChartChanges } from '../../../core/services/follow-chart-changes';
+import { openChartWindow } from '../../dental-3d/chart-window/open-chart-window';
 
 export type DossierTab = 'voice' | 'summary' | 'chart' | 'visits' | 'imaging' | 'billing' | 'documents';
 
@@ -187,6 +189,7 @@ export function patientState(status: string | null | undefined, treatments: read
               (openHistory)="historyOpen.set(true)"
               (openLog)="openConsultationLog($event)"
               (book)="bookAppointment()"
+              (openChart)="openChartWindow(patient.id)"
             />
           }
           @case ('chart') {
@@ -548,6 +551,14 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   loadPatientBilling(patientId: string) {
     if (!this.canBilling()) return;
     this.invoiceService.getPatientInvoices(patientId).subscribe(invoices => this.patientInvoices.set(invoices));
+  }
+
+  /** What the 3D chart's own window saves shows here too, and the other way round. */
+  private readonly followsChartWindow = followChartChanges(() => this.patientService.currentPatient()?.id, (id) => this.loadPatientTreatments(id));
+
+  /** The 3D chart in a window of its own, which can go on a second screen. */
+  openChartWindow(patientId: string): void {
+    openChartWindow(patientId, this.router);
   }
 
   loadPatientTreatments(patientId: string) {

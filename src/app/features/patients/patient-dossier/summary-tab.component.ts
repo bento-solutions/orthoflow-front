@@ -39,6 +39,8 @@ import { PatientImagingPaneComponent } from './patient-imaging-pane.component';
               [selected]="null"
               [sidePanel]="false"
               [overlayPanel]="true"
+              [fullScreenButton]="true"
+              (openFullScreen)="openChart.emit()"
               (selectedChange)="$event && openTooth.emit($event)"
             />
           } @placeholder {
@@ -46,7 +48,8 @@ import { PatientImagingPaneComponent } from './patient-imaging-pane.component';
           }
         }
       </div>
-      <app-patient-imaging-pane class="sm-image" [patientId]="patient().id" (openDocuments)="openTab.emit('imaging')" (emptyChange)="imagingEmpty.set($event)" />
+      <app-patient-imaging-pane class="sm-image" [patientId]="patient().id" [patientName]="patient().firstName + ' ' + patient().lastName"
+        (openDocuments)="openTab.emit('imaging')" (openChart)="openChart.emit()" (emptyChange)="imagingEmpty.set($event)" />
     </div>
 
     <div class="sm-cards">
@@ -171,6 +174,8 @@ export class SummaryTabComponent {
   readonly openHistory = output<void>();
   readonly openLog = output<string>();
   readonly book = output<void>();
+  /** The 3D chart in a window of its own, from the chart's toolbar or the X-ray viewer. */
+  readonly openChart = output<void>();
 
   protected readonly records = inject(ClinicalRecordService);
   private readonly permissions = inject(PermissionService);

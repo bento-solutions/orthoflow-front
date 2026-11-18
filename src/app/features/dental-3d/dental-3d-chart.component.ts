@@ -50,7 +50,7 @@ interface HoverCard {
 @Component({
   selector: 'app-dental-3d-chart',
   standalone: true,
-  host: { '[class.d3-compact]': 'compact()', '[class.d3-overlay]': 'overlayPanel()' },
+  host: { '[class.d3-compact]': 'compact()', '[class.d3-overlay]': 'overlayPanel()', '[class.d3-fill]': 'fill()' },
   imports: [IconComponent, FormsModule, NgClass, TranslateModule, ChartKeysComponent, DentalChartComponent, ToothDetailComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -127,6 +127,11 @@ interface HoverCard {
                 <button type="button" class="d3-tool" [class.on]="helpOpen()" [attr.aria-pressed]="helpOpen()" aria-controls="d3-help-{{ keysId }}"
                   [title]="'DENTAL_3D.HELP' | translate" [attr.aria-label]="'DENTAL_3D.HELP' | translate" (click)="helpOpen.set(!helpOpen())">
                   <span class="d3-q" aria-hidden="true">?</span>
+                </button>
+              }
+              @if (fullScreenButton()) {
+                <button type="button" class="d3-tool d3-tool--wide" [title]="'DENTAL_3D.FULL_SCREEN_HINT' | translate" (click)="openFullScreen.emit()">
+                  <app-icon class="mi" name="external" size="1em" />{{ 'DENTAL_3D.FULL_SCREEN' | translate }}
                 </button>
               }
             </div>

@@ -128,14 +128,10 @@ interface ToothGroup {
         }
 
         @case ('idle') {
-          <div class="card vs-intro">
-            <app-icon class="mi vs-intro-icon" name="mic" size="1em" />
-            <p>{{ 'VOICE.IDLE_BODY' | translate }}</p>
+          <!-- The language, Start and the one thing to tell the patient. How to dictate is behind
+               "What can I say?" in the header, for whoever wants it. -->
+          <div class="card vs-intro" data-idle>
             <p class="vs-note vs-notice"><app-icon class="mi" name="info" size="1em" />{{ 'VOICE.PATIENT_NOTICE' | translate }}</p>
-            <ul class="vs-how">
-              <li>{{ 'VOICE.HOW_WAKE' | translate }}</li>
-              <li>{{ 'VOICE.HOW_DIRECT' | translate }}</li>
-            </ul>
             <fieldset class="vs-lang">
               <legend>{{ 'VOICE.LANG_TITLE' | translate }}</legend>
               <div class="vs-lang-options" role="radiogroup" [attr.aria-label]="'VOICE.LANG_TITLE' | translate">

@@ -306,7 +306,7 @@ export class ConsultationService {
   /** Bumped on every save, so the dossier knows to reload what the save changed. */
   savedVersion = this.savedVersionSignal.asReadonly();
 
-  /** The "before we start" card is showing: the attestation, then the first tap. */
+  /** The drawer's "ready" bar is showing: the mode, the language, the attestation, then the first tap. */
   intro = this.introSignal.asReadonly();
 
   available = computed(() => this.configSignal()?.enabled === true);
@@ -346,8 +346,11 @@ export class ConsultationService {
   /** The microphone is open for this consultation. */
   listening = computed(() => this.isRecording() && this.voice.examinationMode());
 
-  /** The side panel is showing: the intro, a consultation in progress, or the saved screen. */
-  visible = computed(() => this.introSignal() || this.phase() !== null);
+  /**
+   * The side panel is showing: a consultation in progress, its review, or the saved screen.
+   * Before the start the doctor sees only the drawer along the bottom, so the file keeps its width.
+   */
+  visible = computed(() => this.phase() !== null);
 
   transcript = computed(() => this.linesSignal().map(line => line.text).join('\n'));
 

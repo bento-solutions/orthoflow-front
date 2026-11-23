@@ -33,7 +33,6 @@ import { InputLanguageService } from '../../../core/voice/input-language.service
 import { PracticeProfileService } from '../../../core/services/practice-profile.service';
 import { LanguageService } from '../../../core/services/language.service';
 import { formatDate, formatMoney } from '../../../core/utils/format';
-import { INPUT_LANGUAGES } from '../../../core/voice/language-filter';
 import { VoiceContextService } from '../../../core/voice/voice-context.service';
 import { BufferedEntry } from '../../../core/voice/voice-orchestrator.service';
 import { TranslateService } from '@ngx-translate/core';
@@ -48,7 +47,7 @@ import { ConsultationLogComponent } from './consultation-log.component';
 import { ConsultationSuggestionComponent } from './consultation-suggestion.component';
 import { canChart, suggestFromSentence } from '../../../core/consultation/consultation-suggestion';
 
-type Mode = 'intro' | 'recording' | 'review' | 'saved';
+type Mode = 'recording' | 'review' | 'saved';
 
 interface FieldDef {
   name: PatientFieldName;
@@ -104,10 +103,12 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
  * corrected or removed by the doctor, and nothing is saved until none is left
  * undecided.
  *
- * While recording, the consultation cockpit (cockpit/) takes the whole screen
- * and this panel shows only the intro, the review and the saved screen; with the
- * cockpit switched off (CONSULTATION_COCKPIT_ENABLED=false) this panel's
- * recording view is back, read-only. Either way, deciding is screen-and-mouse
+ * Before the start nothing shows here: the drawer along the bottom
+ * (consultation-drawer) holds the mode, the language, the attestation and
+ * Start, and while recording the controls. With the cockpit on (the default)
+ * the recording view is the cockpit and this panel shows only the review and
+ * the saved screen; with it off (CONSULTATION_COCKPIT_ENABLED=false) this
+ * panel's recording view is back, read-only. Either way, deciding is screen-and-mouse
  * work, and it happens after, in the review.
  */
 @Component({
@@ -133,100 +134,15 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
         </header>
 
         @switch (mode()) {
-          <!-- ── Before we start ─────────────────────────────────────── -->
-          @case ('intro') {
-            <div class="cp-body">
-              <div class="cp-card">
-                <app-icon class="mi cp-hero" name="graphic_eq" size="1em" />
-                <p>{{ 'CONSULTATION.INTRO_BODY' | translate }}</p>
-                <!-- When what is said turns into commands: at the end (the default) or as it is said. -->
-                <fieldset class="cp-mode" data-mode-choice>
-                  <legend>{{ 'CONSULTATION.MODE_TITLE' | translate }}</legend>
-                  <label class="cp-mode-option" [class.on]="c.chosenMode() === 'DEFERRED'">
-                    <input type="radio" name="consultation-mode" value="DEFERRED" [checked]="c.chosenMode() === 'DEFERRED'"
-                           (change)="c.chooseMode('DEFERRED')" />
-                    <span><strong>{{ 'CONSULTATION.MODE_DEFERRED' | translate }}</strong>
-                      <small>{{ 'CONSULTATION.MODE_DEFERRED_HINT' | translate }}</small></span>
-                  </label>
-                  <label class="cp-mode-option" [class.on]="c.chosenMode() === 'LIVE'">
-                    <input type="radio" name="consultation-mode" value="LIVE" [checked]="c.chosenMode() === 'LIVE'"
-                           (change)="c.chooseMode('LIVE')" />
-                    <span><strong>{{ 'CONSULTATION.MODE_LIVE' | translate }}</strong>
-                      <small>{{ 'CONSULTATION.MODE_LIVE_HINT' | translate }}</small></span>
-                  </label>
-                </fieldset>
-                <ul class="cp-steps">
-                  <li>{{ 'CONSULTATION.STEP_1' | translate }}</li>
-                  <li>{{ (c.chosenMode() === 'DEFERRED' ? 'CONSULTATION.STEP_2_DEFERRED' : 'CONSULTATION.STEP_2') | translate }}</li>
-                  <li>{{ (c.chosenMode() === 'DEFERRED' ? 'CONSULTATION.STEP_3_DEFERRED' : 'CONSULTATION.STEP_3') | translate }}</li>
-                </ul>
-                <p class="cp-notice"><app-icon class="mi" name="info" size="1em" />{{ (c.retainTranscript() ? 'CONSULTATION.INTRO_NOTICE' : 'CONSULTATION.INTRO_NOTICE_NOT_KEPT') | translate }}
-                  @if (c.keepAudio()) { {{ 'CONSULTATION.INTRO_NOTICE_AUDIO' | translate }} }</p>
-                <label class="cp-ack">
-                  <input type="checkbox" [ngModel]="informed()" (ngModelChange)="informed.set($event)" />
-                  <span>{{ (!c.retainTranscript() ? 'CONSULTATION.INTRO_ACK_NOT_KEPT' : c.keepAudio() ? 'CONSULTATION.INTRO_ACK_AUDIO' : 'CONSULTATION.INTRO_ACK') | translate }}</span>
-                </label>
-                <!-- For a doctor who tells every patient anyway: the next consultations start at once. -->
-                <label class="cp-ack cp-ack-minor">
-                  <input type="checkbox" [ngModel]="dontShowAgain()" (ngModelChange)="dontShowAgain.set($event)" />
-                  <span>{{ 'CONSULTATION.HIDE_INTRO' | translate }}</span>
-                </label>
-                <ng-container *ngTemplateOutlet="languagePicker" />
-                @if (voice.error(); as error) {
-                  <p class="cp-alert critical" role="alert">{{ error }}</p>
-                }
-                <div class="cp-actions">
-                  <button type="button" class="cp-btn primary big" (click)="startRecording()"
-                          [disabled]="!informed() || c.starting()">
-                    <app-icon class="mi" name="mic" size="1em" />
-                    {{ (c.starting() ? 'CONSULTATION.STARTING' : voice.needsConsent() ? 'CONSULTATION.START_AND_ALLOW_MIC' : 'CONSULTATION.START') | translate }}
-                  </button>
-                  <button type="button" class="cp-btn" (click)="c.closeIntro()" [disabled]="c.starting()">
-                    {{ 'COMMON.CANCEL' | translate }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          }
-
           <!-- ── Recording ───────────────────────────────────────────── -->
           @case ('recording') {
+            <!-- The timer, the microphone, Pause, the language, End and the analysis are in the
+                 drawer along the bottom; this is what was heard and what was caught. -->
             <div class="cp-body">
-              @if (c.analysis(); as a) {
-                <ng-container *ngTemplateOutlet="analysisCard; context: { a: a }" />
-              } @else {
-              @if (!c.listening()) {
-                <div class="cp-alert caution" role="status">
-                  <app-icon class="mi" name="mic_off" size="1em" />
-                  <span>{{ 'CONSULTATION.MIC_OFF' | translate }}</span>
-                  <button type="button" class="cp-btn small" (click)="c.resumeRecording()">{{ 'CONSULTATION.MIC_RESUME' | translate }}</button>
-                </div>
-              } @else if (voice.microphoneSuspended()) {
-                <button type="button" class="cp-alert caution action" (click)="voice.resumeMicrophone()">
-                  <app-icon class="mi" name="touch_app" size="1em" />{{ 'VOICE.MIC_SUSPENDED' | translate }}
-                </button>
-              }
-              @if (voice.transcriptionIssue(); as issue) {
-                <p class="cp-alert caution" role="status"><app-icon class="mi" name="cloud_off" size="1em" />{{ issue }}</p>
-              }
-
-              <div class="cp-live" aria-live="polite">
-                <div class="cp-meter" aria-hidden="true"><span [style.transform]="'scaleX(' + (voice.paused() ? 0 : voice.inputLevel()) + ')'"></span></div>
-                <span class="cp-live-label">{{ (voice.userSpeaking() ? 'VOICE.STATUS_HEARING' : voice.pendingTranscriptions() > 0 ? 'VOICE.STATUS_TRANSCRIBING' : 'CONSULTATION.LISTENING') | translate }}</span>
-              </div>
-
-              <div class="cp-controls">
-                <button type="button" class="cp-btn danger" (click)="c.end()" [disabled]="c.busy()">
-                  <app-icon class="mi" name="stop_circle" size="1em" />
-                  {{ (c.busy() ? 'VOICE.ENDING' : c.deferred() ? 'CONSULTATION.END_DEFERRED' : 'CONSULTATION.END') | translate }}
-                </button>
-              </div>
               <p class="cp-hint">{{ (c.deferred() ? 'CONSULTATION.HINT_RECORDING_DEFERRED' : 'CONSULTATION.HINT_RECORDING') | translate }}</p>
               @if (c.audioState() === 'recording') {
                 <p class="cp-hint cp-audio"><app-icon class="mi" name="graphic_eq" size="1em" />{{ 'CONSULTATION.AUDIO_RECORDING' | translate }}</p>
               }
-
-              <ng-container *ngTemplateOutlet="languagePicker" />
               @if (voice.languageNoiseCount() > 0) {
                 <p class="cp-hint cp-ignored" role="status">
                   {{ 'VOICE.LANG_NOISE' | translate: { count: voice.languageNoiseCount(), language: ('VOICE.LANG.' + inputLanguage.language() | translate) } }}
@@ -269,7 +185,6 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
                   <p class="cp-hint note"><app-icon class="mi" name="info" size="1em" />{{ key | translate }}</p>
                 }
                 <ng-container *ngTemplateOutlet="items; context: { editable: false }" />
-              }
               }
             </div>
           }
@@ -498,26 +413,6 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
       </aside>
     }
 
-    <!-- ── The end-of-consultation analysis, while it runs ─────────────── -->
-    <ng-template #analysisCard let-a="a">
-      <div class="cp-card center cp-analysis" role="status" aria-live="polite" data-analysis [attr.data-step]="a.step">
-        <app-icon class="mi cp-hero spin" name="autorenew" size="1em" />
-        <h3>{{ 'CONSULTATION.ANALYSIS_TITLE' | translate }}</h3>
-        <p>
-          @switch (a.step) {
-            @case ('finishing') { {{ 'CONSULTATION.ANALYSIS_FINISHING' | translate }} }
-            @case ('commands') { {{ 'CONSULTATION.ANALYSIS_COMMANDS' | translate: { done: a.done, total: a.total } }} }
-            @case ('reading') { {{ 'CONSULTATION.ANALYSIS_READING' | translate }} }
-            @default { {{ 'CONSULTATION.ANALYSIS_REPORT' | translate }} }
-          }
-        </p>
-        @if (a.step === 'commands' && a.total > 0) {
-          <progress [value]="a.done" [max]="a.total" [attr.aria-label]="'CONSULTATION.ANALYSIS_TITLE' | translate"></progress>
-        }
-        <p class="cp-hint">{{ 'CONSULTATION.ANALYSIS_HINT' | translate }}</p>
-      </div>
-    </ng-template>
-
     <!-- ── What became of the recording ──────────────────────────────── -->
     <ng-template #audioStatus>
       @switch (c.audioState()) {
@@ -528,25 +423,6 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
             <button type="button" class="cp-btn small" (click)="c.retryAudio()">{{ 'CONSULTATION.AUDIO_RETRY' | translate }}</button></p>
         }
       }
-    </ng-template>
-
-    <!-- ── The language the doctor dictates in ───────────────────────────
-         Everything said in another language is kept in the conversation but
-         never acted on as a command, so it is shown, and can be changed here or
-         by voice ("Calypso, dictée en anglais"). -->
-    <ng-template #languagePicker>
-      <fieldset class="cp-lang">
-        <legend>{{ 'VOICE.LANG_TITLE' | translate }}</legend>
-        <div class="cp-lang-options" role="radiogroup" [attr.aria-label]="'VOICE.LANG_TITLE' | translate">
-          @for (lang of inputLanguages; track lang) {
-            <button type="button" role="radio" [attr.aria-checked]="inputLanguage.language() === lang"
-                    [class.on]="inputLanguage.language() === lang" (click)="inputLanguage.set(lang)">
-              {{ 'VOICE.LANG.' + lang | translate }}
-            </button>
-          }
-        </div>
-        <p class="cp-hint">{{ (inputLanguage.isPinned() ? 'VOICE.LANG_HINT_PINNED' : 'VOICE.LANG_HINT_DEFAULT') | translate }}</p>
-      </fieldset>
     </ng-template>
 
     <!-- ── What the system caught, as the doctor sees it ───────────────── -->
@@ -858,36 +734,17 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-done app-icon.mi { font-size: var(--text-base); }
     .cp-done.on { border-color: rgb(var(--positive-300)); background: var(--status-done-tint); color: var(--status-done-text); font-weight: 600; }
     .cp-check { display: flex; align-items: center; gap: .4rem; font-size: var(--text-sm); color: rgb(var(--ink-700)); }
-    .cp-steps { margin: 0; padding-inline-start: 1.1rem; color: rgb(var(--ink-700)); font-size: var(--text-base); display: grid; gap: .25rem; }
     .cp-notice { display: flex; gap: .5rem; font-size: var(--text-sm); color: rgb(var(--ink-700)); background: rgb(var(--caution-50)); border-radius: var(--radius-lg); padding: .625rem .75rem; }
     .cp-notice app-icon.mi { font-size: var(--text-lg); color: rgb(var(--caution-700)); flex-shrink: 0; }
-    .cp-ack { display: flex; gap: .625rem; align-items: flex-start; font-size: var(--text-base); font-weight: 600; color: rgb(var(--ink-900)); cursor: pointer; }
-    .cp-mode { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
-    .cp-mode legend { font-size: var(--text-sm); font-weight: 700; color: rgb(var(--ink-800)); margin-bottom: .25rem; }
-    .cp-mode-option { display: flex; gap: .625rem; align-items: flex-start; padding: .625rem .75rem; border-radius: var(--radius-lg);
-      border: 1px solid rgb(var(--ink-200)); background: var(--surface); cursor: pointer; }
-    .cp-mode-option.on { border-color: rgb(var(--petrol-600)); box-shadow: 0 0 0 1px rgb(var(--petrol-600)); }
-    .cp-mode-option input { margin-top: .2rem; flex-shrink: 0; }
-    .cp-mode-option span { display: flex; flex-direction: column; gap: .125rem; }
-    .cp-mode-option strong { font-size: var(--text-base); color: rgb(var(--ink-900)); }
-    .cp-mode-option small { font-size: var(--text-sm); color: rgb(var(--ink-700)); line-height: 1.35; }
-    .cp-analysis progress { width: 100%; height: .5rem; accent-color: rgb(var(--petrol-600)); }
-    .cp-analysis .spin { animation: cp-spin 1.4s linear infinite; }
-    @keyframes cp-spin { to { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { .cp-analysis .spin { animation: none; } }
     .cp-invoice { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .625rem; margin-top: .5rem; padding: .625rem .75rem;
       border-radius: var(--radius-lg); background: rgb(var(--caution-50)); color: rgb(var(--ink-800)); font-size: var(--text-sm); }
     .cp-invoice[data-decision='create'], .cp-invoice[data-decision='skip'] { background: rgb(var(--ink-100)); }
     .cp-invoice strong { width: 100%; }
     .cp-audio { display: flex; align-items: center; gap: .375rem; }
     .cp-audio app-icon.mi { font-size: var(--text-md); }
-    .cp-ack input { margin-top: .2rem; width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
-    .cp-ack-minor { font-weight: 500; font-size: var(--text-sm); color: rgb(var(--ink-600)); }
-    .cp-ack-minor input { width: 1rem; height: 1rem; }
 
     .cp-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
     .cp-actions.col { flex-direction: column; align-items: stretch; width: 100%; }
-    .cp-controls { display: flex; gap: .5rem; flex-wrap: wrap; }
 
     .cp-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: .375rem;
@@ -922,20 +779,9 @@ const TREATMENT_TYPES = ['MEDICATION', 'DENTAL', 'OTHER'];
     .cp-alert.action { border: none; width: 100%; text-align: start; cursor: pointer; }
     .cp-alert app-icon.mi { font-size: var(--text-lg); flex-shrink: 0; }
 
-    .cp-live { display: flex; align-items: center; gap: .625rem; background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: var(--radius-lg); padding: .625rem .75rem; }
-    .cp-meter { flex: 1; height: .375rem; background: rgb(var(--ink-100)); border-radius: var(--radius-full); overflow: hidden; }
-    .cp-meter span { display: block; height: 100%; background: rgb(var(--petrol-500)); transform-origin: left center; transition: transform 70ms linear; }
-    .cp-live-label { font-size: var(--text-sm); font-weight: 600; color: rgb(var(--ink-700)); white-space: nowrap; }
 
     .cp-hint { margin: 0; font-size: var(--text-xs); color: rgb(var(--ink-600)); }
     .cp-ignored { color: rgb(var(--caution-800)); }
-    .cp-lang { border: 0; margin: 0; padding: 0; display: grid; gap: .375rem; min-width: 0; }
-    .cp-lang legend { padding: 0; margin-bottom: .125rem; font-size: var(--text-sm); font-weight: 700; color: rgb(var(--ink-900)); }
-    .cp-lang-options { display: inline-flex; width: fit-content; max-width: 100%; border: 1px solid rgb(var(--ink-300)); border-radius: var(--radius-md); overflow: hidden; }
-    .cp-lang-options button { padding: .4375rem .875rem; min-height: 2.25rem; font: inherit; font-size: var(--text-base); border: 0; background: var(--surface); color: rgb(var(--ink-800)); cursor: pointer; }
-    .cp-lang-options button + button { border-inline-start: 1px solid rgb(var(--ink-300)); }
-    .cp-lang-options button.on { background: rgb(var(--petrol-600)); color: rgb(var(--on-inverse)); font-weight: 700; }
-    .cp-lang-options button:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
     .cp-hint.note { display: flex; gap: .375rem; align-items: center; background: rgb(var(--ink-100)); border-radius: var(--radius-md); padding: .375rem .625rem; }
     .cp-hint app-icon.mi { font-size: var(--text-md); }
     .cp-reading { margin: 0; font-size: var(--text-xs); font-weight: 600; color: rgb(var(--petrol-700)); }
@@ -1010,7 +856,6 @@ export class ConsultationPanelComponent {
   inputLanguage = inject(InputLanguageService);
   private readonly profile = inject(PracticeProfileService);
   private readonly appLanguage = inject(LanguageService);
-  inputLanguages = INPUT_LANGUAGES;
   private patients = inject(PatientService);
   private stock = inject(StockService);
   private confirmDialog = inject(ConfirmDialogService);
@@ -1039,9 +884,6 @@ export class ConsultationPanelComponent {
   /** Payments and invoices need the right to bill; without it they are listed, not saved. */
   readonly canBill = computed(() => this.permissions.can('BILLING_WRITE'));
 
-  informed = signal(false);
-  /** Remembered when the recording starts, never before: the box alone attests nothing. */
-  dontShowAgain = signal(false);
   showHeard = signal(true);
   editKey = signal<string | null>(null);
   edit: EditModel = { ...EMPTY_EDIT };
@@ -1068,8 +910,8 @@ export class ConsultationPanelComponent {
       case 'intake':
       case 'examination': return 'recording';
       case 'review': return 'review';
-      case 'saved': return 'saved';
-      default: return 'intro';
+      // Nothing shows without a phase (c.visible()); the saved screen stands for it.
+      default: return 'saved';
     }
   });
 
@@ -1102,15 +944,6 @@ export class ConsultationPanelComponent {
   chartWaiting = computed(() => this.c.chartEntries()
     .filter(row => row.entry.needsConfirmation && !this.c.decided().has(row.entry.auditId)).length);
   planSummary = computed(() => planTotal(this.planItems().map(item => item.data)));
-
-  // ── Starting ────────────────────────────────────────────────────────
-
-  /** Reached synchronously from the tap: the service opens the microphone before it awaits anything. */
-  startRecording(): void {
-    if (this.dontShowAgain() && this.informed()) this.c.setIntroHidden(true);
-    if (this.voice.needsConsent()) this.voice.grantMicrophoneConsent();
-    void this.c.start();
-  }
 
   submitTyped(event: Event): void {
     event.preventDefault();

@@ -1354,7 +1354,6 @@
     "PATIENT_NOTICE": "Tell the patient before you start: their voice and your words are transcribed by an external service. Do not dictate their name or identifiers.",
     "CONSENT_ACCEPT": "Enable the microphone and start",
     "REVOKE": "Turn the microphone off and ask for consent again",
-    "IDLE_BODY": "Dictate findings hands-free. Everything appears here, on the chart, and nothing is saved until you review it.",
     "HOW_WAKE": "Dictate directly: \"tooth 16, caries\". \"Calypso\" is for allergies, treatments, plan, appointment and notes; for 15 seconds after a command, a correction or \"and a fracture\" is enough.",
     "HOW_DIRECT": "A sentence that names a tooth and a finding — \"tooth 16, caries\", \"I see caries on tooth 16\", \"13 and 14 amalgam\" — needs no wake word.",
     "INTERRUPTED_TITLE": "Session interrupted",
@@ -1473,16 +1472,10 @@
     "BUTTON": "Consultation",
     "BUTTON_HINT": "Records the whole conversation with the patient and picks out what matters",
     "IN_PROGRESS": "Consultation in progress",
-    "INTRO_BODY": "The microphone records the whole conversation between you and the patient. What matters — identity, allergies, history, current treatments, the treatment plan — is picked out here and you validate it at the end.",
-    "STEP_1": "Talk with the patient: everything is transcribed, nothing is saved to the record before you validate it.",
-    "STEP_2": "Speak normally. Dictate \"tooth 16, caries\", say \"show the allergies\". \"Calypso\" is for dictated allergies, treatments, plan, appointment and notes.",
-    "STEP_3": "Say “end of the consultation”: you review, correct, validate, set the next appointment and print.",
     "INTRO_NOTICE": "The conversation is transcribed by an external service and kept, timestamped, in the patient's file: the doctor can read it again after the consultation. The patient must be told.",
     "INTRO_ACK": "I have told the patient that the conversation is recorded, transcribed, timestamped and kept in their file.",
     "INTRO_NOTICE_NOT_KEPT": "The conversation is transcribed by an external service. Only what you validate is saved to the file; the transcript is erased at the end. The patient must be told.",
     "INTRO_ACK_NOT_KEPT": "I have told the patient that the conversation is recorded and transcribed by an external service.",
-    "START": "Start recording",
-    "START_AND_ALLOW_MIC": "Allow the microphone and start",
     "STARTING": "Starting…",
     "PHASE_REVIEW": "To validate",
     "PHASE_RECORDING": "Recording",
@@ -1682,8 +1675,6 @@
     "MODE_LIVE_HINT": "Chart commands apply and are read back aloud while you speak.",
     "MODE_LABEL_DEFERRED": "Analysed at the end",
     "MODE_LABEL_LIVE": "Live",
-    "STEP_2_DEFERRED": "Speak normally: dictate “tooth 16, caries”, “Calypso, allergy to penicillin”. Nothing applies straight away.",
-    "STEP_3_DEFERRED": "Say “end the consultation”: everything is analysed, then you review, correct, validate and save.",
     "INTRO_NOTICE_AUDIO": "The audio recording is kept with the timestamped transcript, in the dossier’s Documents tab.",
     "INTRO_ACK_AUDIO": "I told the patient the conversation is recorded (audio included), transcribed, timestamped and kept in their file.",
     "PHASE_RECORDING_DEFERRED": "Recording — analysed at the end",
@@ -1761,9 +1752,18 @@
     "MENU_NEW": "New consultation",
     "MENU_VOICE_HINT": "Dictate findings tooth by tooth; nothing is saved until you review it",
     "MENU_OFF": "Not turned on for this clinic. Ask your clinic's administrator.",
-    "HIDE_INTRO": "Don't show this again: I tell every patient before I start recording",
-    "SHOW_INTRO_AGAIN": "Show the consent card again before each consultation",
-    "MENU_OFF_ADMIN": "Not turned on for this clinic. Ask OrthoFlow support to turn it on: it is set on the server."
+    "HIDE_INTRO": "Don't ask again: I tell every patient before I start recording",
+    "SHOW_INTRO_AGAIN": "Ask “Patient informed” again before each consultation",
+    "MENU_OFF_ADMIN": "Not turned on for this clinic. Ask OrthoFlow support to turn it on: it is set on the server.",
+    "REVIEW_BUTTON": "Review consultation",
+    "DRAWER": {
+      "MODE_DEFERRED": "Analyse at the end",
+      "MODE_LIVE": "Live",
+      "INFORMED": "Patient informed",
+      "INFO": "What is recorded",
+      "START": "Start",
+      "PAUSE": "Pause"
+    }
   },
   "SET": {
     "TABS": {
@@ -3533,7 +3533,7 @@
       "VOICE": {
         "MODES": {
           "TITLE": "Dictation or consultation",
-          "TEXT": "Dictation records your findings tooth by tooth during the exam. A consultation records the whole conversation and fills in the file, the plan and the appointment from it."
+          "TEXT": "Dictation records your findings tooth by tooth during the exam. A consultation records the whole conversation and fills in the file, the plan and the appointment from it; its controls fit in one bar along the bottom of the screen."
         },
         "SPEAK": {
           "TITLE": "Speak normally, hands free",
@@ -4583,7 +4583,6 @@
     "LEAVE": "Leave the dossier (the consultation stays open)",
     "RECORDING": "Recording",
     "ALLERGIES": "Allergies",
-    "MIC": "Microphone",
     "HELP": "What you can say",
     "PAUSED": "Paused. Say \"Calypso, resume\".",
     "RAIL": "Consultation sections",
@@ -4668,7 +4667,6 @@
       "END": "\"end the consultation\""
     },
     "MENTIONS": "Mentions not recorded",
-    "DEFERRED": "Analysed at the end",
     "DEFERRED_HINT": "Nothing applies now: everything is analysed at the end, for you to validate."
   },
   "PFILES": {

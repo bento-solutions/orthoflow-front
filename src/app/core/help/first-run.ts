@@ -322,7 +322,7 @@ export class FirstRunService {
   }
 
   private busy(): boolean {
-    return this.voice.isActive() || this.voice.reviewing() || this.consultation.visible();
+    return this.voice.isActive() || this.voice.reviewing() || this.consultation.visible() || this.consultation.intro();
   }
 
   private currentPath(): string {

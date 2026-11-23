@@ -21,6 +21,8 @@ const alerts: MedicalAlert[] = [
 
 describe('PatientBannerComponent', () => {
   let state: ReturnType<typeof signal<'alerts' | 'none' | 'not-asked' | 'loading'>>;
+  let phase: ReturnType<typeof signal<string | null>>;
+  let intro: ReturnType<typeof signal<boolean>>;
 
   const mount = async (compact = false, can: true | string[] = true) => {
     const mocks = screenMocks({ can: can as never });
@@ -30,7 +32,14 @@ describe('PatientBannerComponent', () => {
         provideTranslateService(), provideRouter([]), ...mocks.providers,
         { provide: ClinicalRecordService, useValue: { medicalAlerts: signal(alerts), alertsState: state } },
         { provide: VoiceSessionService, useValue: { isActive: signal(false), reviewing: signal(false), busy: signal(false) } },
-        { provide: ConsultationService, useValue: { isOpen: signal(false), intro: signal(false), available: signal(true), introHidden: signal(false), setIntroHidden: vi.fn() } },
+        {
+          provide: ConsultationService,
+          useValue: {
+            phase, intro, isOpen: () => ['intake', 'examination', 'review'].includes(phase() ?? ''),
+            isRecording: () => ['intake', 'examination'].includes(phase() ?? ''),
+            available: signal(true), introHidden: signal(false), setIntroHidden: vi.fn(), starting: signal(false),
+          },
+        },
         { provide: IntakeApi, useValue: { inviteToRegister: vi.fn() } },
       ],
     });
@@ -46,6 +55,27 @@ describe('PatientBannerComponent', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
     state = signal<'alerts' | 'none' | 'not-asked' | 'loading'>('alerts');
+    phase = signal<string | null>(null);
+    intro = signal(false);
+  });
+
+  it('keeps the Consultation menu while the drawer waits for Start: nothing is in progress yet', async () => {
+    intro.set(true);
+    const fixture = await mount();
+    expect(fixture.nativeElement.querySelector('app-consultation-menu')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('CONSULTATION.IN_PROGRESS');
+  });
+
+  it('says "review the consultation" once it has ended, and opens the review', async () => {
+    phase.set('review');
+    const fixture = await mount();
+    const opened = vi.fn();
+    fixture.componentInstance.openVoice.subscribe(opened);
+    const button = fixture.nativeElement.querySelector('[data-banner-review]') as HTMLButtonElement;
+    expect(button.textContent).toContain('CONSULTATION.REVIEW_BUTTON');
+    button.click();
+    expect(opened).toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('app-consultation-menu')).toBeNull();
   });
 
   it('shows the three medical alerts beside the name, allergy in red', async () => {

@@ -151,7 +151,7 @@ describe('FirstRunService', () => {
         { provide: Router, useValue: router },
         { provide: PermissionService, useValue: { ready: async () => undefined, can: () => can } },
         { provide: VoiceSessionService, useValue: { isActive: voiceActive, reviewing: signal(false) } },
-        { provide: ConsultationService, useValue: { visible: signal(false) } },
+        { provide: ConsultationService, useValue: { visible: signal(false), intro: signal(false) } },
         { provide: PatientService, useValue: { patients: signal([]) } },
         { provide: PatientApiService, useValue: { getPatients: () => of([{ id: 'old', updatedAt: '2026-01-01' }, { id: 'recent', updatedAt: '2026-11-01' }]) } },
         { provide: ScheduleService, useValue: { appointments: signal([]) } },

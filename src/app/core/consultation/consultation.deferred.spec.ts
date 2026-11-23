@@ -256,6 +256,16 @@ describe('ConsultationService — the deferred mode', () => {
     expect(startedWith).toBeUndefined();
   });
 
+  it('keeps the side panel shut while only the drawer waits for Start, and opens it once recording', async () => {
+    await service.loadConfig();
+    service.openIntro();
+    expect(service.intro()).toBe(true);
+    expect(service.visible()).toBe(false);
+    await service.start();
+    expect(service.intro()).toBe(false);
+    expect(service.visible()).toBe(true);
+  });
+
   it('lets the doctor pick live commands for the next one', async () => {
     await service.loadConfig();
     service.openIntro();

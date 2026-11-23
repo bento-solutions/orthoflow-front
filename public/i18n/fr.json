@@ -1354,7 +1354,6 @@
     "PATIENT_NOTICE": "Informez le patient avant de commencer : sa voix et vos propos sont transcrits par un service externe. Ne dictez ni son nom ni ses identifiants.",
     "CONSENT_ACCEPT": "Activer le micro et démarrer",
     "REVOKE": "Couper le micro et redemander le consentement",
-    "IDLE_BODY": "Dictez vos constatations sans les mains. Tout s'affiche ici, sur le schéma dentaire, et rien n'est enregistré avant votre relecture.",
     "HOW_WAKE": "Dictez directement « dent 16, carie ». « Calypso » sert aux allergies, traitements, plan, rendez-vous et notes ; pendant 15 secondes après une commande, une correction ou « et une fracture » suffit.",
     "HOW_DIRECT": "Une phrase qui nomme une dent et une constatation — « dent 16, carie », « sur la 16 je vois des caries », « la 13 et 14 amalgame » — n'a pas besoin du mot d'éveil.",
     "INTERRUPTED_TITLE": "Session interrompue",
@@ -1473,16 +1472,10 @@
     "BUTTON": "Consultation",
     "BUTTON_HINT": "Enregistre toute la conversation avec le patient et relève les informations utiles",
     "IN_PROGRESS": "Consultation en cours",
-    "INTRO_BODY": "Le micro enregistre toute la conversation entre vous et le patient. Les informations utiles — identité, allergies, antécédents, traitements en cours, plan de soins — sont relevées ici et vous les validez à la fin.",
-    "STEP_1": "Parlez avec le patient : tout est transcrit, rien n’est enregistré au dossier avant votre validation.",
-    "STEP_2": "Parlez normalement. Dictez « dent 16, carie », dites « montre les allergies ». « Calypso » sert aux allergies, traitements, plan, rendez-vous et notes dictés.",
-    "STEP_3": "Dites « fin de la consultation » : vous relisez, corrigez, validez, fixez le prochain rendez-vous et imprimez.",
     "INTRO_NOTICE": "La conversation est transcrite par un service externe et conservée, horodatée, dans le dossier du patient : le médecin pourra la relire après la consultation. Le patient doit en être informé.",
     "INTRO_ACK": "J’ai informé le patient que la conversation est enregistrée, transcrite, horodatée et conservée dans son dossier.",
     "INTRO_NOTICE_NOT_KEPT": "La conversation est transcrite par un service externe. Seules les informations que vous validez sont enregistrées au dossier ; la transcription est effacée à la fin. Le patient doit en être informé.",
     "INTRO_ACK_NOT_KEPT": "J’ai informé le patient que la conversation est enregistrée et transcrite par un service externe.",
-    "START": "Démarrer l’enregistrement",
-    "START_AND_ALLOW_MIC": "Autoriser le micro et démarrer",
     "STARTING": "Démarrage…",
     "PHASE_REVIEW": "À valider",
     "PHASE_RECORDING": "En cours",
@@ -1682,8 +1675,6 @@
     "MODE_LIVE_HINT": "Les commandes du schéma s’appliquent et sont relues à voix haute pendant que vous parlez.",
     "MODE_LABEL_DEFERRED": "Analyse à la fin",
     "MODE_LABEL_LIVE": "En direct",
-    "STEP_2_DEFERRED": "Parlez normalement : dictez « dent 16, carie », « Calypso, allergie à la pénicilline ». Rien ne s’applique tout de suite.",
-    "STEP_3_DEFERRED": "Dites « fin de la consultation » : tout est analysé, puis vous relisez, corrigez, validez et enregistrez.",
     "INTRO_NOTICE_AUDIO": "L’enregistrement audio est conservé avec la transcription horodatée, dans l’onglet Documents du dossier.",
     "INTRO_ACK_AUDIO": "J’ai informé le patient que la conversation est enregistrée (y compris l’audio), transcrite, horodatée et conservée dans son dossier.",
     "PHASE_RECORDING_DEFERRED": "Enregistrement — analyse à la fin",
@@ -1761,9 +1752,18 @@
     "MENU_NEW": "Nouvelle consultation",
     "MENU_VOICE_HINT": "Dictez les constats dent par dent ; rien n'est enregistré avant votre relecture",
     "MENU_OFF": "Pas activée pour ce cabinet. Demandez à l'administrateur du cabinet.",
-    "HIDE_INTRO": "Ne plus afficher : j'informe chaque patient avant de lancer l'enregistrement",
-    "SHOW_INTRO_AGAIN": "Réafficher la carte de consentement avant chaque consultation",
-    "MENU_OFF_ADMIN": "Pas activée pour ce cabinet. Demandez au support OrthoFlow de l'activer : elle se règle sur le serveur."
+    "HIDE_INTRO": "Ne plus demander : j'informe chaque patient avant de lancer l'enregistrement",
+    "SHOW_INTRO_AGAIN": "Redemander « Patient informé » avant chaque consultation",
+    "MENU_OFF_ADMIN": "Pas activée pour ce cabinet. Demandez au support OrthoFlow de l'activer : elle se règle sur le serveur.",
+    "REVIEW_BUTTON": "Relire la consultation",
+    "DRAWER": {
+      "MODE_DEFERRED": "Analyse à la fin",
+      "MODE_LIVE": "En direct",
+      "INFORMED": "Patient informé",
+      "INFO": "Ce qui est enregistré",
+      "START": "Démarrer",
+      "PAUSE": "Pause"
+    }
   },
   "SET": {
     "TABS": {
@@ -3533,7 +3533,7 @@
       "VOICE": {
         "MODES": {
           "TITLE": "Dictée ou consultation",
-          "TEXT": "La dictée note vos constats dent par dent pendant l’examen. La consultation enregistre tout l’échange et en tire le dossier, le plan et le rendez-vous."
+          "TEXT": "La dictée note vos constats dent par dent pendant l’examen. La consultation enregistre tout l’échange et en tire le dossier, le plan et le rendez-vous ; ses commandes tiennent dans une barre en bas de l’écran."
         },
         "SPEAK": {
           "TITLE": "Parlez normalement, mains libres",
@@ -4580,7 +4580,6 @@
     "LEAVE": "Quitter le dossier (la consultation reste ouverte)",
     "RECORDING": "Enregistrement en cours",
     "ALLERGIES": "Allergies",
-    "MIC": "Micro",
     "HELP": "Ce que vous pouvez dire",
     "PAUSED": "En pause. Dites « Calypso, reprends ».",
     "RAIL": "Sections de la consultation",
@@ -4665,7 +4664,6 @@
       "END": "« fin de la consultation »"
     },
     "MENTIONS": "Mentions non enregistrées",
-    "DEFERRED": "Analyse à la fin",
     "DEFERRED_HINT": "Rien n’est appliqué maintenant : tout sera analysé à la fin, pour validation."
   },
   "PFILES": {

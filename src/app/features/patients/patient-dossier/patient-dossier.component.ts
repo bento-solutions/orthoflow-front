@@ -25,6 +25,7 @@ import { VoiceSessionPanelComponent } from '../../../shared/components/voice/voi
 import { VoiceSessionDockComponent } from '../../../shared/components/voice/voice-session-dock.component';
 import { ConsultationPanelComponent } from '../../../shared/components/consultation/consultation-panel.component';
 import { ConsultationCockpitComponent } from '../../../shared/components/consultation/cockpit/consultation-cockpit.component';
+import { ConsultationDrawerComponent } from '../../../shared/components/consultation/consultation-drawer.component';
 import { ConsultationService } from '../../../core/consultation/consultation.service';
 import { ConsultationApiService } from '../../../core/consultation/consultation-api.service';
 import { ConsultationLogComponent } from '../../../shared/components/consultation/consultation-log.component';
@@ -94,12 +95,13 @@ export function patientState(status: string | null | undefined, treatments: read
   standalone: true,
   imports: [
     TranslateModule, IconComponent, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent,
-    ConsultationCockpitComponent, ConsultationLogComponent, PatientAccountComponent, PatientDocumentsComponent,
+    ConsultationCockpitComponent, ConsultationDrawerComponent, ConsultationLogComponent, PatientAccountComponent, PatientDocumentsComponent,
     PatientFilesComponent, PatientPhotosComponent, TreatmentLogComponent, ChartPlanTabComponent, MedicalHistoryPanelComponent,
     PatientBannerComponent, SummaryTabComponent, VisitsTabComponent,
   ],
   template: `
-    <div class="dossier-container" [class.has-voice-dock]="voiceSession.isActive() && !cockpit()"
+    <div class="dossier-container" [class.has-voice-dock]="(voiceSession.isActive() || drawer()) && !cockpit()"
+         [class.has-drawer]="drawer() && !cockpit()"
          [class.has-consultation]="consultation.visible() && !cockpit()" [class.is-cockpit]="cockpit()">
       @if (patientService.currentPatient(); as patient) {
       @if (cockpit()) {
@@ -250,9 +252,13 @@ export function patientState(status: string | null | undefined, treatments: read
       }
       <app-consultation-log [consultationId]="logConsultationId()" (closed)="logConsultationId.set(null)" />
 
+      <!-- The consultation's controls, along the bottom: before the start, while it records (in the
+           cockpit too) and while the end is analysed. It takes the dictation dock's place meanwhile. -->
+      <app-consultation-drawer />
+
       <!-- Scoped to the file: a voice command like "sixteen, recurrent caries" only has a referent
            while a patient's record is open. -->
-      @if (!cockpit()) {
+      @if (!cockpit() && !drawer()) {
         <app-voice-session-dock
           [onVoiceTab]="activeTab() === 'voice'"
           (openPanel)="goTo('voice')"
@@ -297,6 +303,8 @@ export function patientState(status: string | null | undefined, treatments: read
 
     /* Room for the recording dock, so it never covers the last row. */
     .dossier-container.has-voice-dock { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
+    /* On a phone the consultation drawer takes two rows. */
+    @media (max-width: 639.98px) { .dossier-container.has-drawer { padding-bottom: calc(8.5rem + env(safe-area-inset-bottom, 0px)); } }
 
     /* A consultation puts its panel beside the file: the doctor keeps the chart in view while the
        conversation is read. Below the breakpoint the panel stacks above the content. */
@@ -384,9 +392,18 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   /** The consultation cockpit, while recording: one screen, no tabs. */
   readonly cockpit = computed(() => this.consultation.isRecording() && this.consultation.cockpitEnabled());
 
-  /** The intro and the review are shown beside the dictation tab. */
+  /**
+   * The bar along the bottom carries the consultation: before the start, while recording and while
+   * the end is analysed. The dictation dock stands aside meanwhile, so there is one bar, not two.
+   */
+  readonly drawer = computed(() => (this.consultation.intro() && !this.consultation.isOpen()) || this.consultation.isRecording());
+
+  /**
+   * The review (and, with the cockpit off, the recording) is shown beside the dictation tab. Before
+   * the start nothing moves: the drawer opens over whichever tab the doctor was on.
+   */
   private readonly consultationFocus = effect(() => {
-    if (this.consultation.intro() || (this.consultation.isOpen() && !this.cockpit())) untracked(() => this.goTo('voice'));
+    if (this.consultation.isOpen() && !this.cockpit()) untracked(() => this.goTo('voice'));
   });
 
   /** The cockpit's back arrow: leave the file, as its own back button does; the consultation stays open. */
@@ -613,11 +630,10 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   // ── Voice and consultation ─────────────────────────────────────────────
 
   /**
-   * The menu's New consultation: shows the attestation card, then the tap there starts recording.
-   * A doctor who asked not to see the card again starts at once, from this tap.
+   * The menu's New consultation: opens the drawer's ready bar on the current tab, and the tap on its
+   * Start begins recording. A doctor who asked not to be asked again starts at once, from this tap.
    */
   startConsultation(): void {
-    this.goTo('voice');
     if (this.consultation.introHidden()) {
       if (this.voice.needsConsent()) this.voice.grantMicrophoneConsent();
       void this.consultation.startWithoutIntro();

@@ -51,8 +51,13 @@ export interface PatientState {
         }
 
         <div class="pb-actions no-print">
-          <!-- Recording starts here and nowhere else. While one runs, its state takes the menu's place. -->
-          @if (voiceSession.isActive()) {
+          <!-- Recording starts here and nowhere else. While one runs, its state takes the menu's place;
+               before the start (the drawer's ready bar) the menu stays, since nothing records yet. -->
+          @if (consultation.phase() === 'review') {
+            <button type="button" class="btn btn-primary" data-banner-review (click)="openVoice.emit()">
+              <app-icon name="clipboard-check" [size]="18" /> {{ 'CONSULTATION.REVIEW_BUTTON' | translate }}
+            </button>
+          } @else if (voiceSession.isActive()) {
             <button type="button" class="btn btn-recording" (click)="endSession.emit()" [disabled]="voiceSession.busy()">
               <app-icon name="stop-circle" [size]="18" />
               {{ (voiceSession.busy() ? 'VOICE.ENDING' : 'VOICE.END_AND_REVIEW') | translate }}
@@ -61,7 +66,7 @@ export interface PatientState {
             <button type="button" class="btn btn-primary" (click)="openVoice.emit()">
               <app-icon name="clipboard-check" [size]="18" /> {{ 'VOICE.REVIEWING' | translate }}
             </button>
-          } @else if (consultation.isOpen() || consultation.intro()) {
+          } @else if (consultation.isRecording()) {
             <button type="button" class="btn btn-primary" (click)="openVoice.emit()">
               <app-icon name="message" [size]="18" /> {{ 'CONSULTATION.IN_PROGRESS' | translate }}
             </button>

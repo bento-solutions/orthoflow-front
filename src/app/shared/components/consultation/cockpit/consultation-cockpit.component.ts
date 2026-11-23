@@ -18,8 +18,11 @@ import { CockpitStageComponent } from './cockpit-stage.component';
 /**
  * One screen while a consultation is recording (docs/VOICE-COCKPIT-PLAN.md part I
  * §2). It replaces the dossier's tabs, the dictation panel, the side panel and the
- * dock: one status bar, one End, the stage in the middle, and — always in view —
- * what was last done and what was last heard.
+ * dock: a top bar (back, the patient, allergies, settings), the stage in the middle,
+ * and — always in view — what was last done and what was last heard. The recording
+ * controls (timer, microphone, Pause, language, End) and the end-of-consultation
+ * analysis are in the consultation drawer, fixed along the bottom; the cockpit keeps
+ * a strip free for it.
  *
  * It owns nothing but the layout. The page itself never scrolls: the cockpit
  * measures where it starts and fills what is left of the window, and each part
@@ -27,9 +30,9 @@ import { CockpitStageComponent } from './cockpit-stage.component';
  *
  * - **≥ 1100 px:** control bar across the top; rail and stage on the left; the
  *   last-action card and the conversation on the right.
- * - **below:** a "now" strip (the last sentence and the last action; a tap opens
- *   the conversation as a sheet), the rail, the stage, and the control bar at the
- *   bottom, in the thumb's reach, above the safe area.
+ * - **below:** the top bar, a "now" strip (the last sentence and the last action;
+ *   a tap opens the conversation as a sheet), the rail and the stage; the drawer
+ *   holds the controls at the bottom, in the thumb's reach, above the safe area.
  */
 @Component({
   selector: 'app-consultation-cockpit',
@@ -56,26 +59,6 @@ import { CockpitStageComponent } from './cockpit-stage.component';
       <app-cockpit-rail class="ck-a-rail" />
       <app-cockpit-stage class="ck-a-stage" [chart]="chart()" [findings]="findings()" [treatments]="treatments()" />
 
-      <!-- The end-of-consultation analysis, over the stage: the conversation stays in view beside it. -->
-      @if (c.analysis(); as a) {
-        <div class="ck-analysis ck-a-stage" role="status" aria-live="polite" data-analysis [attr.data-step]="a.step">
-          <app-icon class="mi ck-analysis-icon" name="autorenew" size="1em" />
-          <strong>{{ 'CONSULTATION.ANALYSIS_TITLE' | translate }}</strong>
-          <span>
-            @switch (a.step) {
-              @case ('finishing') { {{ 'CONSULTATION.ANALYSIS_FINISHING' | translate }} }
-              @case ('commands') { {{ 'CONSULTATION.ANALYSIS_COMMANDS' | translate: { done: a.done, total: a.total } }} }
-              @case ('reading') { {{ 'CONSULTATION.ANALYSIS_READING' | translate }} }
-              @default { {{ 'CONSULTATION.ANALYSIS_REPORT' | translate }} }
-            }
-          </span>
-          @if (a.step === 'commands' && a.total > 0) {
-            <progress [value]="a.done" [max]="a.total" [attr.aria-label]="'CONSULTATION.ANALYSIS_TITLE' | translate"></progress>
-          }
-          <small>{{ 'CONSULTATION.ANALYSIS_HINT' | translate }}</small>
-        </div>
-      }
-
       <aside class="ck-a-side" [attr.aria-label]="'COCKPIT.SIDE' | translate">
         <app-cockpit-last-action />
         <app-cockpit-conversation class="ck-side-conv" />
@@ -96,30 +79,23 @@ import { CockpitStageComponent } from './cockpit-stage.component';
   `,
   styles: [`
     :host { display: block; }
-    .ck { display: grid; gap: .5rem; padding: .5rem; box-sizing: border-box; min-height: 0; overflow: hidden;
+    /* The drawer floats over the bottom of the window: its height, kept free. */
+    .ck { --ck-drawer: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+      display: grid; gap: .5rem; padding: .5rem .5rem var(--ck-drawer); box-sizing: border-box; min-height: 0; overflow: hidden;
       grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
       grid-template-rows: auto auto minmax(0, 1fr);
       grid-template-areas: "controls controls" "rail side" "stage side"; }
     .ck-a-controls { grid-area: controls; min-width: 0; }
     .ck-a-rail { grid-area: rail; min-width: 0; }
     .ck-a-stage { grid-area: stage; min-height: 0; min-width: 0; }
-    .ck-analysis { z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .625rem;
-      padding: 1.5rem; text-align: center; border-radius: var(--radius-lg); background: rgb(var(--ink-50) / .94);
-      color: rgb(var(--ink-900)); font-size: var(--text-base); }
-    .ck-analysis strong { font-size: var(--text-lg); }
-    .ck-analysis small { color: rgb(var(--ink-700)); }
-    .ck-analysis progress { width: min(24rem, 100%); height: .5rem; accent-color: rgb(var(--petrol-600)); }
-    .ck-analysis-icon { font-size: 2.5rem; color: rgb(var(--petrol-600)); animation: ck-spin 1.4s linear infinite; }
-    @keyframes ck-spin { to { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { .ck-analysis-icon { animation: none; } }
     .ck-a-side { grid-area: side; display: flex; flex-direction: column; gap: .5rem; min-height: 0; }
     .ck-side-conv { flex: 1; min-height: 0; }
     .ck-a-now { display: none; }
     .ck-muted { color: rgb(var(--ink-600)); }
 
     @media (max-width: 1099.98px) {
-      .ck { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) auto;
-        grid-template-areas: "now" "rail" "stage" "controls"; padding: .375rem .375rem calc(.375rem + env(safe-area-inset-bottom, 0px)); gap: .375rem; }
+      .ck { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto minmax(0, 1fr);
+        grid-template-areas: "controls" "now" "rail" "stage"; padding: .375rem .375rem var(--ck-drawer); gap: .375rem; }
       .ck-a-side { display: none; }
       .ck-a-now { grid-area: now; display: flex; flex-direction: column; gap: .125rem; text-align: start; padding: .5rem .625rem; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid rgb(var(--ink-200)); min-width: 0; }
       .ck-now-line { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: var(--text-base); color: rgb(var(--ink-900)); }
@@ -128,7 +104,7 @@ import { CockpitStageComponent } from './cockpit-stage.component';
       .ck-now-action[data-kind='unsure'] { color: rgb(var(--caution-800)); }
       .ck-now-action app-icon.mi { font-size: var(--text-lg); }
     }
-    .ck-sheet { position: fixed; inset: 0; z-index: 50; background: var(--overlay); display: flex; align-items: flex-end; }
+    .ck-sheet { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--overlay); display: flex; align-items: flex-end; }
     .ck-sheet-body { position: relative; width: 100%; height: 80dvh; display: flex; flex-direction: column; gap: .5rem; padding: 2.75rem .5rem calc(.5rem + env(safe-area-inset-bottom, 0px)); background: var(--app-bg); border-radius: 1rem 1rem 0 0; }
     .ck-sheet-close { position: absolute; top: .375rem; inset-inline-end: .375rem; width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border-radius: var(--radius-md); }
   `],

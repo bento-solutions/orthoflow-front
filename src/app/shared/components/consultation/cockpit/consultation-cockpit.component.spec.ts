@@ -81,11 +81,13 @@ describe('ConsultationCockpitComponent', () => {
 
   afterEach(() => fixture.destroy());
 
-  it('has exactly one End control, and it ends the consultation', () => {
-    const ends = element.querySelectorAll('[data-cockpit-end]');
-    expect(ends.length).toBe(1);
-    (ends[0] as HTMLButtonElement).click();
-    expect(ended).toBe(1);
+  it('leaves End and the microphone to the drawer: its own bar has the patient, the allergies and the settings', () => {
+    expect(element.querySelector('[data-cockpit-end]')).toBeNull();
+    expect(element.textContent).not.toContain('CONSULTATION.END');
+    const bar = element.querySelector('app-cockpit-controls')!;
+    expect(bar.textContent).toContain('Karim Tazi');
+    expect(bar.textContent).toContain('pénicilline');
+    expect(ended).toBe(0);
   });
 
   it('carries nothing that deletes, edits or prints', () => {
@@ -177,28 +179,11 @@ describe('ConsultationCockpitComponent', () => {
     fixture.destroy();
     expect(document.documentElement.classList.contains('cockpit-mode')).toBe(false);
   });
-  it('says, in the bar, that a deferred consultation is analysed at the end, and its End says so too', async () => {
-    expect(element.querySelector('[data-cockpit-mode]')).toBeNull();
-    deferred.set(true);
-    await render();
-    expect(element.querySelector('[data-cockpit-mode="deferred"]')).not.toBeNull();
-    expect(element.querySelector('[data-cockpit-end]')?.textContent).toContain('CONSULTATION.END_DEFERRED');
-  });
 
-  it('shows the analysis over the stage, sentence by sentence, while the conversation stays in view', async () => {
-    lines.set([{ id: 1, text: 'dent 16 carie', at: Date.now(), typed: false, phase: 'INTAKE', verdict: 'heard' }]);
+  it('shows no analysis over the stage: the drawer carries it, and the conversation stays in view', async () => {
     analysis.set({ step: 'commands', done: 3, total: 12 });
     await render();
-    const card = element.querySelector('[data-analysis]')!;
-    expect(card.getAttribute('data-step')).toBe('commands');
-    expect((card.querySelector('progress') as HTMLProgressElement).value).toBe(3);
-    expect(element.querySelector('.ck-a-side')).not.toBeNull();
-
-    analysis.set({ step: 'reading', done: 0, total: 0 });
-    await render();
-    expect(element.querySelector('[data-analysis]')?.textContent).toContain('CONSULTATION.ANALYSIS_READING');
-    analysis.set(null);
-    await render();
     expect(element.querySelector('[data-analysis]')).toBeNull();
+    expect(element.querySelector('.ck-a-side')).not.toBeNull();
   });
 });

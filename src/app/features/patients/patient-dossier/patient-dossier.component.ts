@@ -125,7 +125,6 @@ export function patientState(status: string | null | undefined, treatments: read
           [balance]="canBilling() ? balanceDueForPatient() : null"
           [starting]="voiceStarting() || consultation.starting()"
           [compact]="compact()"
-          (startVoice)="startSession()"
           (startConsultation)="startConsultation()"
           (endSession)="endSession()"
           (openVoice)="goTo('voice')"
@@ -641,7 +640,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   // ── Voice and consultation ─────────────────────────────────────────────
 
   /**
-   * The menu's New consultation: opens the drawer's ready bar on the current tab, and the tap on its
+   * The banner's Start consultation: opens the drawer's ready bar on the current tab, and the tap on its
    * Start begins recording. A doctor who asked not to be asked again starts at once, from this tap.
    */
   startConsultation(): void {
@@ -651,13 +650,6 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
       return;
     }
     this.consultation.openIntro();
-  }
-
-  /** The menu's dictation: opens the voice tab; starts at once unless consent is still needed. */
-  startSession(): void {
-    this.goTo('voice');
-    if (this.voice.needsConsent()) return;
-    void this.beginSession();
   }
 
   /**

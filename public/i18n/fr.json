@@ -1469,7 +1469,8 @@
   },
   "CONSULTATION": {
     "TITLE": "Consultation",
-    "BUTTON": "Consultation",
+    "BUTTON": "Démarrer la consultation",
+    "MORE_OPTIONS": "Autres options de consultation",
     "BUTTON_HINT": "Enregistre toute la conversation avec le patient et relève les informations utiles",
     "IN_PROGRESS": "Consultation en cours",
     "INTRO_NOTICE": "La conversation est transcrite par un service externe et conservée, horodatée, dans le dossier du patient : le médecin pourra la relire après la consultation. Le patient doit en être informé.",
@@ -1749,8 +1750,6 @@
     "CONTINUE": "Continuer la consultation",
     "CONTINUE_HINT": "Un oubli ou quelque chose à ajouter au dossier : l’enregistrement reprend, rien de ce qui est déjà relevé n’est perdu.",
     "ERROR_CONTINUE": "La consultation n’a pas pu reprendre. Réessayez.",
-    "MENU_NEW": "Nouvelle consultation",
-    "MENU_VOICE_HINT": "Dictez les constats dent par dent ; rien n'est enregistré avant votre relecture",
     "MENU_OFF": "Pas activée pour ce cabinet. Demandez à l'administrateur du cabinet.",
     "HIDE_INTRO": "Ne plus demander : j'informe chaque patient avant de lancer l'enregistrement",
     "SHOW_INTRO_AGAIN": "Redemander « Patient informé » avant chaque consultation",
@@ -2168,6 +2167,10 @@
     "DEBT_ONLY": "Avec un reste dû",
     "SORT": "Trier par",
     "DIRECTION": "Sens du tri",
+    "DIR_ASC": "Croissant",
+    "DIR_DESC": "Décroissant",
+    "DATE_ADDED": "Date d'ajout",
+    "SORT_BY_COLUMN": "Trier par {{column}}",
     "SORTS": {
       "name": "Nom",
       "code": "Code patient",
@@ -3526,14 +3529,14 @@
           "TEXT": "La bouche du patient en 3D, avec les constats et les soins. Cliquez sur une dent pour l’ouvrir dans « Schéma et plan »."
         },
         "CONSULT": {
-          "TITLE": "Le bouton Consultation",
-          "TEXT": "Chaque séance commence ici. Il propose deux façons d’enregistrer, présentées juste après."
+          "TITLE": "Démarrer la consultation",
+          "TEXT": "Chaque consultation commence ici. Une barre s’ouvre en bas de l’écran pour choisir son déroulement, présenté juste après."
         }
       },
       "VOICE": {
         "MODES": {
-          "TITLE": "Dictée ou consultation",
-          "TEXT": "La dictée note vos constats dent par dent pendant l’examen. La consultation enregistre tout l’échange et en tire le dossier, le plan et le rendez-vous ; ses commandes tiennent dans une barre en bas de l’écran."
+          "TITLE": "Analyse à la fin, ou en direct",
+          "TEXT": "Par défaut, tout l’échange est enregistré puis analysé à la fin, et le dossier, le plan et le rendez-vous sont remplis pour que vous les validiez. Choisissez En direct dans la barre en bas de l’écran pour voir les constats apparaître pendant que vous parlez."
         },
         "SPEAK": {
           "TITLE": "Parlez normalement, mains libres",

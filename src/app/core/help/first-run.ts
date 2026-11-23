@@ -310,14 +310,15 @@ export class FirstRunService {
   }
 
   /**
-   * "Try it now" on the voice chapter's last step: opens the Consultation menu, so the doctor picks
-   * dictation or consultation themselves. The guide never starts the microphone.
+   * "Try it now" on the voice chapter's last step: opens the consultation's ready bar, where the doctor
+   * picks the mode and presses Start themselves. The guide never starts the microphone, so it does not
+   * press Start consultation, which records at once for a doctor who hid the consent card.
    */
   private tryNow(): { label: string; run: () => void } {
     return {
       label: this.translate.instant('TOUR.FIRST_RUN.TRY_NOW'),
-      // After the click that ended the tour has finished bubbling: the menu closes on an outside click.
-      run: () => setTimeout(() => document.querySelector<HTMLButtonElement>(`${tourSelector('dossier-consult')} button`)?.click()),
+      // After the click that ended the tour has finished bubbling.
+      run: () => setTimeout(() => { if (this.consultation.available()) this.consultation.openIntro(); }),
     };
   }
 

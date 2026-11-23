@@ -17,48 +17,51 @@ describe('ConsultationMenuComponent', () => {
     fixture = TestBed.createComponent(ConsultationMenuComponent);
     el = fixture.nativeElement;
     picked = [];
-    fixture.componentInstance.voice.subscribe(() => picked.push('voice'));
     fixture.componentInstance.consultation.subscribe(() => picked.push('consultation'));
     fixture.componentInstance.showIntro.subscribe(() => picked.push('showIntro'));
     fixture.componentRef.setInput('consultationAvailable', true);
     fixture.detectChanges();
   });
 
-  function open(): HTMLButtonElement[] {
-    (el.querySelector('.cm-trigger') as HTMLButtonElement).click();
-    fixture.detectChanges();
-    return Array.from(el.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
+  function trigger(): HTMLButtonElement {
+    return el.querySelector('.cm-trigger') as HTMLButtonElement;
   }
 
-  it('offers a voice session and a new consultation, and closes on a pick', () => {
-    const items = open();
-    expect(items).toHaveLength(2);
-    items[1].click();
+  it('starts a consultation in one tap, with no menu and no dictation entry', () => {
+    expect(trigger().textContent).toContain('CONSULTATION.BUTTON');
+    trigger().click();
     fixture.detectChanges();
     expect(picked).toEqual(['consultation']);
     expect(el.querySelector('[role="menu"]')).toBeNull();
+    expect(el.textContent).not.toContain('VOICE.START');
   });
 
-  it('keeps a new consultation disabled when the clinic has it off', () => {
+  it('explains instead of starting when the clinic has consultations off', () => {
     fixture.componentRef.setInput('consultationAvailable', false);
     fixture.detectChanges();
-    const items = open();
-    expect(items[1].disabled).toBe(true);
-    items[0].click();
-    expect(picked).toEqual(['voice']);
+    trigger().click();
+    fixture.detectChanges();
+    expect(picked).toEqual([]);
+    expect(el.querySelector('.cm-note')?.textContent).toContain('CONSULTATION.MENU_OFF');
   });
 
   it('offers the consent card back once the doctor has hidden it', () => {
+    expect(el.querySelector('.cm-more')).toBeNull();
     fixture.componentRef.setInput('introHidden', true);
     fixture.detectChanges();
-    const items = open();
-    expect(items).toHaveLength(3);
-    items[2].click();
+    (el.querySelector('.cm-more') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const items = Array.from(el.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
+    expect(items).toHaveLength(1);
+    items[0].click();
     expect(picked).toEqual(['showIntro']);
   });
 
   it('closes on Escape', () => {
-    open();
+    fixture.componentRef.setInput('introHidden', true);
+    fixture.detectChanges();
+    (el.querySelector('.cm-more') as HTMLButtonElement).click();
+    fixture.detectChanges();
     (el.querySelector('[role="menu"]') as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     fixture.detectChanges();
     expect(el.querySelector('[role="menu"]')).toBeNull();

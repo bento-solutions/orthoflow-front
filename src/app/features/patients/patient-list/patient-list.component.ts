@@ -1,5 +1,6 @@
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -31,7 +32,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
 @Component({
   selector: 'app-patient-list',
   standalone: true,
-  imports: [PageHeaderComponent, AppDatePipe, RouterModule, FormsModule, TranslateModule, IconComponent, StatusPillComponent, MoneyPipe, NumPipe],
+  imports: [PageHeaderComponent, AppDatePipe, NgTemplateOutlet, RouterModule, FormsModule, TranslateModule, IconComponent, StatusPillComponent, MoneyPipe, NumPipe],
   template: `
     <div class="anim-rise">
       <app-page-header>
@@ -105,15 +106,21 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
           <app-icon name="filter" [size]="16" /> {{ 'COMMON.FILTERS' | translate }}
           @if (activeFilters() > 0) { <span class="pill pill-active pill-nodot">{{ activeFilters() }}</span> }
         </button>
-        <label class="flex items-center gap-2 text-sm text-ink-600 lg:ms-auto">
-          {{ 'PAT.SORT' | translate }}
-          <select class="select w-auto" [ngModel]="sort()" (ngModelChange)="sort.set($event); page.set(0)">
-            @for (s of sorts; track s) { <option [value]="s">{{ 'PAT.SORTS.' + s | translate }}</option> }
-          </select>
-          <button type="button" class="btn btn-ghost btn-icon" (click)="toggleDir()" [attr.aria-label]="'PAT.DIRECTION' | translate" [title]="'PAT.DIRECTION' | translate">
+        <!-- The sorts without a column of their own (code, age, progress, last visit) stay here; the
+             column headers sort too, and both show the same choice. The direction says what it does. -->
+        <div class="flex items-center gap-2 text-sm text-ink-600 lg:ms-auto">
+          <label class="flex items-center gap-2">
+            {{ 'PAT.SORT' | translate }}
+            <select class="select w-auto" [ngModel]="sort()" (ngModelChange)="sortBy($event, false)">
+              @for (s of sorts; track s) { <option [value]="s">{{ 'PAT.SORTS.' + s | translate }}</option> }
+            </select>
+          </label>
+          <button type="button" class="btn btn-secondary sort-dir" (click)="toggleDir()" [attr.aria-label]="('PAT.DIRECTION' | translate) + ': ' + ((dir() === 'asc' ? 'PAT.DIR_ASC' : 'PAT.DIR_DESC') | translate)"
+                  [title]="'PAT.DIRECTION' | translate">
             <app-icon [name]="dir() === 'asc' ? 'chevron-up' : 'chevron-down'" [size]="16" />
+            {{ (dir() === 'asc' ? 'PAT.DIR_ASC' : 'PAT.DIR_DESC') | translate }}
           </button>
-        </label>
+        </div>
       </div>
       @if (filtersOpen()) {
       <div id="patient-filters" class="card mb-4 flex flex-wrap items-center gap-3 p-3">
@@ -146,12 +153,26 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
           <table class="data-table">
             <thead>
               <tr>
-                <th scope="col">{{ 'PATIENTS.NAME' | translate }}</th>
+                <ng-template #sortHead let-key let-label="label">
+                  <button type="button" class="sort-button th-sort" [class.is-sorted]="sort() === key" (click)="sortBy(key, true)"
+                          [title]="'PAT.SORT_BY_COLUMN' | translate: { column: (label | translate) }">
+                    {{ label | translate }}
+                    @if (sort() === key) {
+                      <app-icon class="th-sort-icon" [name]="dir() === 'asc' ? 'chevron-up' : 'chevron-down'" [size]="14" />
+                    } @else {
+                      <span class="th-sort-idle" aria-hidden="true"><app-icon name="chevron-up" [size]="10" /><app-icon name="chevron-down" [size]="10" /></span>
+                    }
+                  </button>
+                </ng-template>
+                <th scope="col" [attr.aria-sort]="ariaSort('name')"><ng-container *ngTemplateOutlet="sortHead; context: { $implicit: 'name', label: 'PATIENTS.NAME' }" /></th>
                 <th scope="col">{{ 'COMMON.STATUS' | translate }}</th>
                 <th scope="col">{{ 'PAT.PRACTITIONER' | translate }}</th>
-                <th scope="col">{{ 'PATIENTS.NEXT_APPOINTMENT' | translate }}</th>
+                <th scope="col" [attr.aria-sort]="ariaSort('next')"><ng-container *ngTemplateOutlet="sortHead; context: { $implicit: 'next', label: 'PATIENTS.NEXT_APPOINTMENT' }" /></th>
+                <th scope="col" [attr.aria-sort]="ariaSort('created')"><ng-container *ngTemplateOutlet="sortHead; context: { $implicit: 'created', label: 'PAT.DATE_ADDED' }" /></th>
                 <th scope="col">{{ 'PATIENTS.CONTACT' | translate }}</th>
-                @if (canSeeMoney()) { <th scope="col" class="cell-num">{{ 'PAT.BALANCE' | translate }}</th> }
+                @if (canSeeMoney()) {
+                  <th scope="col" class="cell-num" [attr.aria-sort]="ariaSort('balance')"><ng-container *ngTemplateOutlet="sortHead; context: { $implicit: 'balance', label: 'PAT.BALANCE' }" /></th>
+                }
                 <th scope="col" class="cell-actions"><span class="sr-only">{{ 'COMMON.ACTIONS' | translate }}</span></th>
               </tr>
             </thead>
@@ -175,6 +196,9 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
                     @if (patient.nextAppointment) {
                       <span class="font-semibold text-ink-900">{{ patient.nextAppointment | appDate }}</span>
                     } @else { <span class="text-ink-500">—</span> }
+                  </td>
+                  <td [attr.data-label]="'PAT.DATE_ADDED' | translate">
+                    @if (patient.createdAt) { <span class="text-ink-700">{{ patient.createdAt | appDate }}</span> } @else { <span class="text-ink-500">—</span> }
                   </td>
                   <td [attr.data-label]="'PATIENTS.CONTACT' | translate">
                     <span class="flex flex-col leading-tight">
@@ -200,7 +224,7 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="7" class="!p-0">
+                  <td colspan="8" class="!p-0">
                     <div class="empty">
                       <span class="empty-icon"><app-icon name="users" [size]="20" /></span>
                       @if (filtered()) {
@@ -239,6 +263,15 @@ const SORTS = ['name', 'code', 'created', 'age', 'progress', 'balance', 'next', 
     .row-link-host { position: relative; }
     .row-link::after { content: ''; position: absolute; inset: 0; }
     .row-above { position: relative; z-index: 1; }
+    /* Sortable headers: the sorted column is in the action colour with its arrow; the others show a
+       faint up-down mark that firms up on hover, so it is plain which headers sort. */
+    .th-sort { display: inline-flex; width: auto; padding: .125rem .25rem; margin-inline: -.25rem; border-radius: var(--radius-sm); font-weight: inherit; text-transform: inherit; letter-spacing: inherit; }
+    .th-sort:hover { background: var(--surface-hover); }
+    .th-sort:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+    .th-sort.is-sorted { color: var(--action-text); }
+    .th-sort-idle { display: inline-flex; flex-direction: column; line-height: 0; opacity: .4; }
+    .th-sort:hover .th-sort-idle { opacity: .9; }
+    .sort-dir { gap: .375rem; white-space: nowrap; }
     .kpi-label { font-size: var(--text-2xs); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
     .kpi-value { margin-top: 0.25rem; font-size: var(--text-2xl); font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
     .quick-add {
@@ -374,6 +407,25 @@ export class PatientListComponent {
   protected setStatus(value: string): void {
     this.status.set(value);
     this.page.set(0);
+  }
+
+  /**
+   * Sorts by a column. From a header, a second click on the sorted column turns the direction round;
+   * a new column starts the way a reader expects it: names A to Z, the newest patients and the
+   * largest balances first, the soonest appointment first.
+   */
+  protected sortBy(key: string, fromHeader: boolean): void {
+    if (fromHeader && this.sort() === key) {
+      this.toggleDir();
+      return;
+    }
+    this.sort.set(key);
+    if (fromHeader) this.dir.set(key === 'created' || key === 'balance' ? 'desc' : 'asc');
+    this.page.set(0);
+  }
+
+  protected ariaSort(key: string): 'ascending' | 'descending' | null {
+    return this.sort() === key ? (this.dir() === 'asc' ? 'ascending' : 'descending') : null;
   }
 
   protected toggleDir(): void {

@@ -1,9 +1,36 @@
-import { Component, ElementRef, effect, input, output, viewChild } from '@angular/core';
+import { Component, ElementRef, effect, inject, input, output, viewChild } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { IconComponent } from './icon.component';
 import { focusablesIn, keepTabInside } from './dialog.directive';
 
 let nextId = 1;
+
+/**
+ * Whether an ancestor of `el` makes a stacking context, which would keep a `position: fixed`
+ * overlay below whatever the page stacks above that ancestor (a sticky header, say).
+ */
+export function trappedInStackingContext(el: HTMLElement): boolean {
+  const view = el.ownerDocument.defaultView;
+  if (!view) return false;
+  for (let node = el.parentElement; node && node !== el.ownerDocument.body; node = node.parentElement) {
+    const s = view.getComputedStyle(node);
+    const parent = node.parentElement ? view.getComputedStyle(node.parentElement).display : '';
+    if (
+      s.position === 'fixed' || s.position === 'sticky'
+      || (s.zIndex !== 'auto' && s.zIndex !== '' && (s.position !== 'static' || /flex|grid/.test(parent)))
+      || (s.transform && s.transform !== 'none') || (s.filter && s.filter !== 'none')
+      || (s.perspective && s.perspective !== 'none') || (s.opacity !== '' && Number(s.opacity) < 1)
+      || s.isolation === 'isolate' || /transform|opacity|filter|perspective/.test(s.willChange || '')
+      || /paint|layout|strict|content/.test(s.contain || '')
+      || (s.mixBlendMode && s.mixBlendMode !== 'normal')
+      || /blur|brightness|contrast|drop-shadow|grayscale|hue|invert|opacity|saturate|sepia|url/.test(s.backdropFilter || '')
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /**
  * A dialog over the page. Moves focus into itself when it opens, keeps Tab inside
@@ -14,6 +41,12 @@ let nextId = 1;
  * Put the actions in a `modal-footer` slot:
  * `<div modal-footer><button class="btn btn-primary">…</button></div>`.
  * A form that must not be lost to a stray click passes `[dismissable]="false"`.
+ *
+ * A sticky, transformed or z-indexed ancestor makes a stacking context, and a modal inside one
+ * can never rise above the rest of the page: in the patient file, a modal opened from the 3D
+ * chart's sticky tooth panel or the sticky consultation panel slid under the sticky patient
+ * banner. When it opens inside such an ancestor, the overlay moves to `<body>`; Angular keeps
+ * updating the moved nodes and removes them with the view.
  */
 @Component({
   selector: 'app-modal',
@@ -21,7 +54,7 @@ let nextId = 1;
   imports: [TranslateModule, IconComponent],
   template: `
     @if (open()) {
-      <div class="fixed inset-0 flex items-end p-0" style="z-index: var(--z-modal)"
+      <div #overlay class="fixed inset-0 flex items-end p-0" style="z-index: var(--z-modal)"
            [class.justify-center]="placement() === 'center'" [class.sm:items-center]="placement() === 'center'" [class.sm:p-4]="placement() === 'center'"
            [class.justify-end]="placement() === 'side'" [class.sm:items-stretch]="placement() === 'side'">
         <div class="animate-fade absolute inset-0 bg-black/50" (click)="dismissable() && closed.emit()" aria-hidden="true"></div>
@@ -68,11 +101,20 @@ export class ModalComponent {
   readonly closed = output<void>();
 
   protected readonly titleId = `modal-title-${nextId++}`;
+  private readonly document = inject(DOCUMENT);
+  private readonly overlay = viewChild<ElementRef<HTMLElement>>('overlay');
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
   private readonly body = viewChild<ElementRef<HTMLElement>>('body');
   private opener: HTMLElement | null = null;
 
   constructor() {
+    // Out of every stacking context the page puts around it (see above).
+    effect(() => {
+      const overlay = this.overlay()?.nativeElement;
+      if (overlay && overlay.parentElement !== this.document.body && trappedInStackingContext(overlay)) {
+        this.document.body.appendChild(overlay);
+      }
+    });
     effect(() => {
       const panel = this.panel()?.nativeElement;
       if (panel) {

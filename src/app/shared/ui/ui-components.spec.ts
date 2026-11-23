@@ -40,6 +40,19 @@ describe('ModalComponent', () => {
     return fixture;
   };
 
+  it('leaves a sticky ancestor for <body>, so a sticky banner cannot cover it, and goes with its view', async () => {
+    const fixture = await mount();
+    (fixture.nativeElement as HTMLElement).style.position = 'sticky';
+    fixture.componentInstance.open.set(true);
+    fixture.detectChanges();
+    const dialog = document.querySelector('[role=dialog]') as HTMLElement;
+    expect(fixture.nativeElement.contains(dialog)).toBe(false);
+    expect(dialog.closest('body > div')?.parentElement).toBe(document.body);
+    fixture.componentInstance.open.set(false);
+    fixture.detectChanges();
+    expect(document.querySelector('[role=dialog]')).toBeNull();
+  });
+
   it('renders nothing until it is opened', async () => {
     const fixture = await mount();
     expect(fixture.nativeElement.querySelector('[role=dialog]')).toBeNull();

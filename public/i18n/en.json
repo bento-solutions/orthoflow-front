@@ -1469,7 +1469,8 @@
   },
   "CONSULTATION": {
     "TITLE": "Consultation",
-    "BUTTON": "Consultation",
+    "BUTTON": "Start consultation",
+    "MORE_OPTIONS": "More consultation options",
     "BUTTON_HINT": "Records the whole conversation with the patient and picks out what matters",
     "IN_PROGRESS": "Consultation in progress",
     "INTRO_NOTICE": "The conversation is transcribed by an external service and kept, timestamped, in the patient's file: the doctor can read it again after the consultation. The patient must be told.",
@@ -1749,8 +1750,6 @@
     "CONTINUE": "Continue the consultation",
     "CONTINUE_HINT": "Forgot something, or more to add to the dossier: recording starts again and nothing already caught is lost.",
     "ERROR_CONTINUE": "The consultation could not be continued. Try again.",
-    "MENU_NEW": "New consultation",
-    "MENU_VOICE_HINT": "Dictate findings tooth by tooth; nothing is saved until you review it",
     "MENU_OFF": "Not turned on for this clinic. Ask your clinic's administrator.",
     "HIDE_INTRO": "Don't ask again: I tell every patient before I start recording",
     "SHOW_INTRO_AGAIN": "Ask “Patient informed” again before each consultation",
@@ -2168,6 +2167,10 @@
     "DEBT_ONLY": "With a balance due",
     "SORT": "Sort by",
     "DIRECTION": "Sort direction",
+    "DIR_ASC": "Ascending",
+    "DIR_DESC": "Descending",
+    "DATE_ADDED": "Date added",
+    "SORT_BY_COLUMN": "Sort by {{column}}",
     "SORTS": {
       "name": "Name",
       "code": "Patient code",
@@ -3526,14 +3529,14 @@
           "TEXT": "The patient’s mouth in 3D, with findings and treatments. Click a tooth to open it in “Chart & plan”."
         },
         "CONSULT": {
-          "TITLE": "The Consultation button",
-          "TEXT": "Every session starts here. It offers two ways to record, shown next."
+          "TITLE": "Start consultation",
+          "TEXT": "Every consultation starts here. It opens a bar along the bottom where you choose how it runs, shown next."
         }
       },
       "VOICE": {
         "MODES": {
-          "TITLE": "Dictation or consultation",
-          "TEXT": "Dictation records your findings tooth by tooth during the exam. A consultation records the whole conversation and fills in the file, the plan and the appointment from it; its controls fit in one bar along the bottom of the screen."
+          "TITLE": "Analyse at the end, or live",
+          "TEXT": "By default the whole conversation is recorded and analysed at the end, then the file, the plan and the appointment are filled in for you to review. Choose Live in the bar along the bottom to see findings appear as you speak."
         },
         "SPEAK": {
           "TITLE": "Speak normally, hands free",

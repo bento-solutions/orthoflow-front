@@ -23,7 +23,7 @@ export interface PatientState {
  * Whose file this is, what to know before touching them, and what to do next.
  *
  * - The name, the treatment state and the **medical alerts** on every tab (P0-2).
- * - **One main action**, Consultation, in petrol; one secondary, Book appointment; the rest
+ * - **One main action**, Start consultation, in petrol; one secondary, Book appointment; the rest
  *   (registration link, print, edit, archive) in a More menu, Archive last and in red (P1-9, P0-7).
  * - It **stays in view**: once scrolled, it shrinks to one 48 px row with the name, the age, the
  *   alerts and Consultation, so the screen always says whose file it is (P0-3).
@@ -51,8 +51,8 @@ export interface PatientState {
         }
 
         <div class="pb-actions no-print">
-          <!-- Recording starts here and nowhere else. While one runs, its state takes the menu's place;
-               before the start (the drawer's ready bar) the menu stays, since nothing records yet. -->
+          <!-- Recording starts here and nowhere else: Start consultation. While one runs, its state takes the
+               button's place; before the start (the drawer's ready bar) the button stays, since nothing records yet. -->
           @if (consultation.phase() === 'review') {
             <button type="button" class="btn btn-primary" data-banner-review (click)="openVoice.emit()">
               <app-icon name="clipboard-check" [size]="18" /> {{ 'CONSULTATION.REVIEW_BUTTON' | translate }}
@@ -76,7 +76,6 @@ export interface PatientState {
               [consultationAvailable]="consultation.available()"
               [introHidden]="consultation.introHidden()"
               [starting]="starting()"
-              (voice)="startVoice.emit()"
               (consultation)="startConsultation.emit()"
               (showIntro)="consultation.setIntroHidden(false)"
             />
@@ -227,7 +226,6 @@ export class PatientBannerComponent {
   /** The one-row form, once the page has scrolled. */
   readonly compact = input(false);
 
-  readonly startVoice = output<void>();
   readonly startConsultation = output<void>();
   readonly endSession = output<void>();
   readonly openVoice = output<void>();

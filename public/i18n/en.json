@@ -1649,6 +1649,9 @@
       "TOTAL_PARTIAL": "Partial total",
       "UNPRICED_NOTE": "Some procedures have no price: the total is partial.",
       "NO_PLAN": "No treatment plan.",
+      "CONFIDENTIAL": "Confidential medical document",
+      "SAVED_TO_DOCUMENTS": "Report saved to the patient's documents.",
+      "PRINT_FAILED": "Could not prepare the document. A simplified version was printed.",
       "SEVERITY_MILD": "mild",
       "SEVERITY_MODERATE": "moderate",
       "SEVERITY_SEVERE": "severe"

@@ -1649,6 +1649,9 @@
       "TOTAL_PARTIAL": "Total partiel",
       "UNPRICED_NOTE": "Certains actes n’ont pas de prix : le total est partiel.",
       "NO_PLAN": "Aucun plan de traitement.",
+      "CONFIDENTIAL": "Document médical confidentiel",
+      "SAVED_TO_DOCUMENTS": "Compte rendu enregistré dans les documents du patient.",
+      "PRINT_FAILED": "Impossible de préparer le document. Version simplifiée imprimée.",
       "SEVERITY_MILD": "légère",
       "SEVERITY_MODERATE": "modérée",
       "SEVERITY_SEVERE": "sévère"

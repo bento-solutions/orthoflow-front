@@ -12,6 +12,7 @@ import {
   ConsultationMode,
   ExtractionResponseDto,
 } from './consultation.model';
+import { ConsultationDocumentRequest } from './consultation-documents';
 
 /** The server side of full-consultation recording. See {@link ConsultationService}. */
 @Injectable({ providedIn: 'root' })
@@ -113,6 +114,14 @@ export class ConsultationApiService {
   /** Saves what the doctor validated. `saved: false` means a chart finding failed and nothing was written. */
   commit(id: string, body: CommitConsultationDto): Observable<CommitConsultationResultDto> {
     return this.http.post<CommitConsultationResultDto>(`${this.base}/${id}/commit`, body);
+  }
+
+  /**
+   * Lays out the report or the assistant's sheet as a PDF. The report is also
+   * kept in the patient's documents.
+   */
+  document(body: ConsultationDocumentRequest): Observable<Blob> {
+    return this.http.post(`${this.base}/documents`, body, { responseType: 'blob' });
   }
 
   /** Throws it away, transcript included. */

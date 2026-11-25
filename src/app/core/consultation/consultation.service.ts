@@ -17,9 +17,12 @@ import {
 } from './consultation-draft';
 import {
   buildAssistantSheetHtml,
+  buildDocumentRequest,
   buildReportHtml,
+  ConsultationDocumentKind,
   DocumentInput,
   printHtml,
+  printPdf,
 } from './consultation-documents';
 import { isBeginExaminationCommand, isBeginExaminationPhrase } from './consultation-phrases';
 import { chartLine } from './consultation-chart';
@@ -235,7 +238,7 @@ export const DOC_LABEL_KEYS = [
   'COMPLAINT', 'ALLERGIES', 'HISTORY', 'ACTIVE_TREATMENTS', 'CHART_FINDINGS', 'REPORT', 'PLAN', 'TOOTH',
   'NEXT_APPOINTMENT', 'DOCTOR_SIGNATURE', 'TREATMENT', 'QUANTITY', 'UNIT_PRICE', 'AMOUNT', 'TOTAL',
   'TOTAL_PARTIAL', 'UNPRICED_NOTE', 'NO_PLAN', 'SEVERITY_MILD', 'SEVERITY_MODERATE', 'SEVERITY_SEVERE',
-  'GENDER_M', 'GENDER_F',
+  'GENDER_M', 'GENDER_F', 'CONFIDENTIAL',
 ] as const;
 
 @Injectable({ providedIn: 'root' })
@@ -1695,14 +1698,30 @@ export class ConsultationService {
 
   // ── Printing ────────────────────────────────────────────────────────
 
-  printReport(): boolean {
-    const input = this.documentInput();
-    return input ? printHtml(buildReportHtml(input)) : false;
+  /**
+   * Prints the report as the server lays it out (and keeps it in the
+   * patient's documents); prints the plain version when the server cannot.
+   */
+  printReport(): Promise<boolean> {
+    return this.printDocument('REPORT');
   }
 
-  printAssistantSheet(): boolean {
+  printAssistantSheet(): Promise<boolean> {
+    return this.printDocument('ASSISTANT_SHEET');
+  }
+
+  private async printDocument(kind: ConsultationDocumentKind): Promise<boolean> {
     const input = this.documentInput();
-    return input ? printHtml(buildAssistantSheetHtml(input)) : false;
+    const patientId = this.savedSignal()?.patient.id;
+    if (!input || !patientId) return false;
+    try {
+      const pdf = await firstValueFrom(this.api.document(buildDocumentRequest(kind, patientId, input)));
+      if (kind === 'REPORT') this.toast.success(this.translate.instant('CONSULTATION.DOC.SAVED_TO_DOCUMENTS'));
+      return printPdf(pdf);
+    } catch {
+      this.toast.error(this.translate.instant('CONSULTATION.DOC.PRINT_FAILED'));
+      return printHtml(kind === 'REPORT' ? buildReportHtml(input) : buildAssistantSheetHtml(input));
+    }
   }
 
   /** What the printed documents are built from, or null when nothing has been saved. */

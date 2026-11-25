@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildAssistantSheetHtml, buildReportHtml, DocumentInput, esc } from './consultation-documents';
+import { buildAssistantSheetHtml, buildDocumentRequest, buildReportHtml, DocumentInput, esc } from './consultation-documents';
 
 const LABELS: Record<string, string> = {
   REPORT_TITLE: 'Compte rendu de consultation', SHEET_TITLE: 'Fiche assistant', DOCTOR: 'Dr', PATIENT: 'Patient',
@@ -9,7 +9,7 @@ const LABELS: Record<string, string> = {
   NEXT_APPOINTMENT: 'Prochain rendez-vous', DOCTOR_SIGNATURE: 'Signature', TREATMENT: 'Soin', QUANTITY: 'Qté',
   UNIT_PRICE: 'Prix unitaire', AMOUNT: 'Montant', TOTAL: 'Total', TOTAL_PARTIAL: 'Total partiel',
   UNPRICED_NOTE: 'Certains actes n\'ont pas de prix.', NO_PLAN: 'Aucun plan de traitement.',
-  SEVERITY_MODERATE: 'modérée',
+  SEVERITY_MODERATE: 'modérée', CONFIDENTIAL: 'Document médical confidentiel',
 };
 
 function input(overrides: Partial<DocumentInput> = {}): DocumentInput {
@@ -160,5 +160,52 @@ describe('the assistant\'s sheet', () => {
     doc.record.treatmentPlan = [];
 
     expect(buildAssistantSheetHtml(doc)).toContain('Aucun plan de traitement.');
+  });
+});
+
+describe('the documents laid out by the server', () => {
+  it('sends the report as the same sections, in order, with the allergies flagged', () => {
+    const body = buildDocumentRequest('REPORT', 'p-1', input());
+    expect(body).toMatchObject({
+      patientId: 'p-1', kind: 'REPORT', lang: 'fr', title: 'Compte rendu de consultation',
+      doctorName: 'Bennani', signature: 'Signature', confidential: 'Document médical confidentiel',
+    });
+    expect(body.patient.map(f => f.label)).toEqual(['Patient', 'Âge', 'Sexe', 'Téléphone', 'CIN', 'Assurance']);
+    expect(body.sections.map(s => s.title)).toEqual([
+      'Motif', 'Allergies', 'Antécédents', 'Traitements en cours', 'Constatations', 'Compte rendu',
+      'Plan de traitement', 'Prochain rendez-vous',
+    ]);
+    expect(body.sections[1]).toEqual({ title: 'Allergies', items: ['pénicilline (urticaire, modérée)'], alert: true });
+    expect(body.sections[6].items).toEqual(['Détartrage', 'Composite (Dent 16 ×2)']);
+  });
+
+  it('leaves out an empty section and keeps text as text', () => {
+    const body = buildDocumentRequest('REPORT', 'p-1', input({
+      record: { ...input().record, chiefComplaint: '<b>mal</b>', medicalHistory: [], report: '' },
+    }));
+    const titles = body.sections.map(s => s.title);
+    expect(titles).not.toContain('Antécédents');
+    expect(titles).not.toContain('Compte rendu');
+    expect(body.sections[0].text).toBe('<b>mal</b>');
+  });
+
+  it('sends the assistant\'s sheet as a priced table with its total, and nothing clinical but the allergies', () => {
+    const body = buildDocumentRequest('ASSISTANT_SHEET', 'p-1', input());
+    expect(body.patient).toEqual([{ label: 'Patient', value: 'Karim Alaoui' }]);
+    expect(body.signature).toBeNull();
+    expect(body.confidential).toBeNull();
+    expect(body.sections.map(s => s.title)).toEqual(['Allergies', 'Plan de traitement', 'Prochain rendez-vous']);
+    const table = body.sections[1].table!;
+    expect(table.headers).toEqual(['Soin', 'Dent', 'Qté', 'Prix unitaire', 'Montant']);
+    expect(table.rows[1][0]).toBe('Composite — anesthésie locale');
+    expect(table.rows[1][2]).toBe('2');
+    expect(table.totalLabel).toBe('Total');
+    expect(table.total).toMatch(/1\s?100 MAD/);
+    expect(table.note).toBeNull();
+  });
+
+  it('asks the server for Arabic when the app is in Arabic', () => {
+    expect(buildDocumentRequest('REPORT', 'p-1', input({ lang: 'ar-MA', dir: 'rtl' })).lang).toBe('ar');
+    expect(buildDocumentRequest('REPORT', 'p-1', input({ lang: 'en-GB' })).lang).toBe('en');
   });
 });

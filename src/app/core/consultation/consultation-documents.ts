@@ -2,7 +2,13 @@ import { planTotal } from './consultation-draft';
 import { CommitConsultationDto } from './consultation.model';
 
 /**
- * The two papers a consultation produces, built as self-contained HTML.
+ * The two papers a consultation produces.
+ *
+ * They are laid out by the server, in the same frame as the invoice and every
+ * other document (letterhead, legal footer, page numbers), from the content
+ * built here by {@link buildDocumentRequest}; the report is also kept in the
+ * patient's documents. The self-contained HTML below is the fallback used when
+ * the server cannot be reached, so the doctor can always print.
  *
  * **The consultation report** is the doctor's record of the visit: who the
  * patient is, what they reported, what was found on the chart, the plan, the
@@ -239,6 +245,184 @@ export function buildAssistantSheetHtml(input: DocumentInput): string {
   ].join('\n');
 
   return page(input, labels['SHEET_TITLE'], body);
+}
+
+// ── The server-laid-out documents ────────────────────────────────────
+
+export type ConsultationDocumentKind = 'REPORT' | 'ASSISTANT_SHEET';
+
+export interface DocumentField { label: string; value: string }
+
+export interface DocumentTable {
+  headers: string[];
+  rows: string[][];
+  totalLabel: string | null;
+  total: string | null;
+  note: string | null;
+}
+
+export interface DocumentSection {
+  title: string;
+  text?: string | null;
+  items?: string[] | null;
+  alert?: boolean;
+  table?: DocumentTable | null;
+}
+
+/** The body of `POST /consultations/documents`: worded content, laid out by the server. */
+export interface ConsultationDocumentRequest {
+  patientId: string;
+  kind: ConsultationDocumentKind;
+  lang: 'fr' | 'en' | 'ar';
+  title: string;
+  dateText: string | null;
+  doctorName: string | null;
+  patient: DocumentField[];
+  sections: DocumentSection[];
+  signature: string | null;
+  confidential: string | null;
+}
+
+function serverLang(input: DocumentInput): 'fr' | 'en' | 'ar' {
+  const tag = input.lang.slice(0, 2).toLowerCase();
+  return tag === 'ar' || tag === 'en' ? tag : 'fr';
+}
+
+function patientFields(input: DocumentInput, withDetails: boolean): DocumentField[] {
+  const { patient, labels } = input;
+  const rows: Array<[string, string | number | null | undefined]> = [[labels['PATIENT'], patient.fullName]];
+  if (withDetails) {
+    rows.push(
+      [labels['AGE'], patient.age != null ? `${patient.age} ${labels['YEARS']}` : null],
+      [labels['GENDER'], patient.gender],
+      [labels['PHONE'], patient.phone],
+      [labels['CIN'], patient.cin],
+      [labels['INSURANCE'], patient.insurance],
+    );
+  }
+  return rows
+    .filter(([, value]) => value !== null && value !== undefined && value !== '')
+    .map(([label, value]) => ({ label, value: String(value) }));
+}
+
+/** A section only when it has something to say. */
+function textSection(title: string, text: string | null | undefined): DocumentSection[] {
+  return text && text.trim() ? [{ title, text }] : [];
+}
+
+function listSection(title: string, items: string[], alert = false): DocumentSection[] {
+  return items.length ? [{ title, items, alert }] : [];
+}
+
+/**
+ * The content of the report or the assistant's sheet, as the server lays it
+ * out: the same sections, in the same order, as the printed HTML.
+ */
+export function buildDocumentRequest(kind: ConsultationDocumentKind, patientId: string, input: DocumentInput): ConsultationDocumentRequest {
+  const { record, labels } = input;
+  const withDetail = (label: string, detail: string | null | undefined) => (detail ? `${label} — ${detail}` : label);
+  let sections: DocumentSection[];
+
+  if (kind === 'REPORT') {
+    const allergies = record.allergies.map(a => {
+      const extra = [a.reaction, a.severity ? labels[`SEVERITY_${a.severity}`] ?? a.severity : null].filter(Boolean).join(', ');
+      return extra ? `${a.substance} (${extra})` : a.substance;
+    });
+    const plan = record.treatmentPlan.map(line => {
+      const bits = [line.teeth ? `${labels['TOOTH']} ${line.teeth}` : null, line.quantity > 1 ? `×${line.quantity}` : null]
+        .filter(Boolean).join(' ');
+      return bits ? `${line.label} (${bits})` : line.label;
+    });
+    sections = [
+      ...textSection(labels['COMPLAINT'], record.chiefComplaint),
+      ...listSection(labels['ALLERGIES'], allergies, true),
+      ...listSection(labels['HISTORY'], record.medicalHistory.map(h => withDetail(h.label, h.detail))),
+      ...listSection(labels['ACTIVE_TREATMENTS'], record.activeTreatments.map(t => withDetail(t.label, t.detail))),
+      ...listSection(labels['CHART_FINDINGS'], input.chartLines),
+      ...textSection(labels['REPORT'], record.report),
+      ...listSection(labels['PLAN'], plan),
+      ...textSection(labels['NEXT_APPOINTMENT'], input.appointmentText),
+    ];
+  } else {
+    const { total, complete } = planTotal(record.treatmentPlan);
+    const price = (value: number) => money(value, input.lang, input.currency);
+    const planSection: DocumentSection = record.treatmentPlan.length
+      ? {
+          title: labels['PLAN'],
+          table: {
+            headers: [labels['TREATMENT'], labels['TOOTH'], labels['QUANTITY'], labels['UNIT_PRICE'], labels['AMOUNT']],
+            rows: record.treatmentPlan.map(line => {
+              const quantity = Math.max(1, line.quantity || 1);
+              const unit = line.price ?? null;
+              return [
+                line.notes ? `${line.label} — ${line.notes}` : line.label,
+                line.teeth ?? '',
+                String(quantity),
+                unit === null ? '—' : price(unit),
+                unit === null ? '—' : price(unit * quantity),
+              ];
+            }),
+            totalLabel: complete ? labels['TOTAL'] : labels['TOTAL_PARTIAL'],
+            total: price(total),
+            note: complete ? null : labels['UNPRICED_NOTE'],
+          },
+        }
+      : { title: labels['PLAN'], text: labels['NO_PLAN'] };
+    sections = [
+      // An allergy the assistant should know before preparing the room.
+      ...listSection(labels['ALLERGIES'], record.allergies.map(a => a.substance), true),
+      planSection,
+      ...textSection(labels['NEXT_APPOINTMENT'], input.appointmentText),
+    ];
+  }
+
+  const report = kind === 'REPORT';
+  return {
+    patientId,
+    kind,
+    lang: serverLang(input),
+    title: report ? labels['REPORT_TITLE'] : labels['SHEET_TITLE'],
+    dateText: formatDate(input.date, input.lang),
+    doctorName: input.doctorName,
+    patient: patientFields(input, report),
+    sections,
+    signature: report ? labels['DOCTOR_SIGNATURE'] : null,
+    confidential: report ? labels['CONFIDENTIAL'] ?? null : null,
+  };
+}
+
+/**
+ * Prints a PDF through a hidden frame and removes the frame.
+ * Returns false when there is no DOM to print from.
+ */
+export function printPdf(pdf: Blob): boolean {
+  if (typeof document === 'undefined' || typeof URL === 'undefined' || !URL.createObjectURL) return false;
+  const url = URL.createObjectURL(pdf);
+  const frame = document.createElement('iframe');
+  frame.setAttribute('aria-hidden', 'true');
+  frame.style.cssText = 'position:fixed;inset-inline-end:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  frame.src = url;
+  const cleanup = () => {
+    frame.remove();
+    URL.revokeObjectURL(url);
+  };
+  frame.onload = () => {
+    const view = frame.contentWindow;
+    if (!view) {
+      cleanup();
+      return;
+    }
+    try {
+      view.focus();
+      view.print();
+    } catch {
+      // A browser that will not print a PDF from a frame still shows it.
+      window.open(url, '_blank', 'noopener');
+    }
+    setTimeout(cleanup, 60_000);
+  };
+  document.body.appendChild(frame);
+  return true;
 }
 
 /**

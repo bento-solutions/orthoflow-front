@@ -1649,6 +1649,9 @@
       "TOTAL_PARTIAL": "مجموع جزئي",
       "UNPRICED_NOTE": "بعض الإجراءات بلا سعر: المجموع جزئي.",
       "NO_PLAN": "لا توجد خطة علاج.",
+      "CONFIDENTIAL": "وثيقة طبية سرية",
+      "SAVED_TO_DOCUMENTS": "تم حفظ التقرير في وثائق المريض.",
+      "PRINT_FAILED": "تعذر إعداد الوثيقة. تمت طباعة نسخة مبسطة.",
       "SEVERITY_MILD": "خفيفة",
       "SEVERITY_MODERATE": "متوسطة",
       "SEVERITY_SEVERE": "شديدة"

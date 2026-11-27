@@ -102,6 +102,16 @@ export class InvoiceService {
   }
 
   /**
+   * Issues a draft ("Émettre"): it becomes SENT, the invoice handed to the patient. An invoice
+   * already issued or paid comes back unchanged. The list is kept in step.
+   */
+  issueInvoice(id: string): Observable<Invoice> {
+    return this.http.post<Invoice>(`${this.apiUrl}/${id}/issue`, {}).pipe(
+      tap(issued => this.invoicesSignal.update(list => list.map(i => (i.id === issued.id ? { ...i, status: issued.status } : i)))),
+    );
+  }
+
+  /**
    * Creates a new invoice and updates the internal state.
    */
   createInvoice(invoice: CreateInvoiceRequest): Observable<Invoice> {

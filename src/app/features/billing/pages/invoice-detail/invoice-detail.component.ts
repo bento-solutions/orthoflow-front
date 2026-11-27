@@ -10,7 +10,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ApiErrors } from '../../../../core/services/api-error.service';
 import { PracticeProfileService } from '../../../../core/services/practice-profile.service';
-import { downloadInvoicePdf } from '../../../../core/utils/invoice-pdf';
+import { issueAndDownloadInvoicePdf } from '../../../../core/utils/invoice-pdf';
 import { DownloadService } from '../../../../core/services/download.service';
 import { LanguageService } from '../../../../core/services/language.service';
 import { PatientService } from '../../../../core/services/patient.service';
@@ -41,12 +41,12 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
               <app-icon class="mi" name="download" size="1em" />
               PDF
             </button>
-            <button type="button" class="btn btn-secondary">
+            <button type="button" class="btn btn-secondary" (click)="send(inv)">
               <app-icon class="mi" name="email" size="1em" />
               {{ 'BILLING.FORM.SEND' | translate }}
             </button>
             @if (inv.status === 'DRAFT') {
-              <button type="button" class="btn btn-primary">{{ 'BILLING.FORM.EDIT' | translate }}</button>
+              <button type="button" class="btn btn-primary" (click)="issue(inv)">{{ 'BILLING.FORM.ISSUE' | translate }}</button>
             }
           </div>
         </header>
@@ -479,9 +479,33 @@ export class InvoiceDetailComponent implements OnInit {
   private language = inject(LanguageService);
   private translate = inject(TranslateService);
 
-  downloadPdf(invoice: Invoice): void {
-    downloadInvoicePdf(this.downloads, invoice, this.language.currentLang())
-      .catch(error => this.errors.report(error, 'COMMON.EXPORT_FAILED'));
+  /** Printing a draft issues it: the invoice handed to the patient is never a draft. */
+  downloadPdf(invoice: Invoice): Promise<boolean> {
+    return issueAndDownloadInvoicePdf(id => this.invoiceService.issueInvoice(id), this.downloads, invoice, this.language.currentLang())
+      .then(current => {
+        this.invoice.update(inv => (inv ? { ...inv, status: current.status } : inv));
+        return true;
+      })
+      .catch(error => {
+        this.errors.report(error, 'COMMON.EXPORT_FAILED');
+        return false;
+      });
+  }
+
+  /** Issues the invoice and hands over its PDF, to attach to an email or a WhatsApp message. */
+  async send(invoice: Invoice): Promise<void> {
+    if (await this.downloadPdf(invoice)) this.toast.success(this.translate.instant('BILLING.FORM.SEND_READY'));
+  }
+
+  /** "Émettre": the draft becomes the issued invoice. */
+  issue(invoice: Invoice): void {
+    this.invoiceService.issueInvoice(invoice.id).subscribe({
+      next: issued => {
+        this.invoice.update(inv => (inv ? { ...inv, status: issued.status } : inv));
+        this.toast.success(this.translate.instant('BILLING.FORM.ISSUED'));
+      },
+      error: error => this.errors.report(error, 'COMMON.SAVE_FAILED'),
+    });
   }
 
   invoice = signal<Invoice | null>(null);

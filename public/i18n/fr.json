@@ -484,7 +484,7 @@
     "ACCEPT_CONVERT": "Accepter & Convertir",
     "STATUS": {
       "DRAFT": "Brouillon",
-      "SENT": "Envoyée",
+      "SENT": "Émise",
       "PARTIALLY_PAID": "Partiellement payée",
       "PAID": "Payée",
       "CANCELLED": "Annulée"
@@ -518,6 +518,9 @@
       "CREATE": "Créer la facture",
       "SEND": "Envoyer",
       "EDIT": "Modifier la facture",
+      "ISSUE": "Émettre",
+      "ISSUED": "Facture émise.",
+      "SEND_READY": "Facture émise et téléchargée : joignez-la à votre e-mail ou à WhatsApp.",
       "PATIENT_PRACTICE": "Patient et cabinet",
       "BILL_TO": "Facturé à",
       "PRACTICE": "Cabinet",

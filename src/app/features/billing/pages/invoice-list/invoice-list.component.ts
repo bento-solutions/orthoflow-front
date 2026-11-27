@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { InvoiceService } from '../../services/invoice.service';
 import { Invoice, InvoiceStatus } from '../../models/billing.model';
 import { TranslateModule } from '@ngx-translate/core';
-import { downloadInvoicePdf } from '../../../../core/utils/invoice-pdf';
+import { issueAndDownloadInvoicePdf } from '../../../../core/utils/invoice-pdf';
 import { ApiErrors } from '../../../../core/services/api-error.service';
 import { DownloadService } from '../../../../core/services/download.service';
 import { LanguageService } from '../../../../core/services/language.service';
@@ -277,8 +277,9 @@ export class InvoiceListComponent {
     this.statusFilter.set('');
   }
 
+  /** Printing a draft issues it: the invoice handed to the patient is never a draft. */
   downloadPdf(invoice: Invoice): void {
-    downloadInvoicePdf(this.downloads, invoice, this.language.currentLang())
+    issueAndDownloadInvoicePdf(id => this.invoiceService.issueInvoice(id), this.downloads, invoice, this.language.currentLang())
       .catch(error => this.errors.report(error, 'COMMON.EXPORT_FAILED'));
   }
 

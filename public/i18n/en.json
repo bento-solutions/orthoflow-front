@@ -484,7 +484,7 @@
     "ACCEPT_CONVERT": "Accept & Convert",
     "STATUS": {
       "DRAFT": "Draft",
-      "SENT": "Sent",
+      "SENT": "Issued",
       "PARTIALLY_PAID": "Partially paid",
       "PAID": "Paid",
       "CANCELLED": "Cancelled"
@@ -518,6 +518,9 @@
       "CREATE": "Create invoice",
       "SEND": "Send",
       "EDIT": "Edit invoice",
+      "ISSUE": "Issue",
+      "ISSUED": "Invoice issued.",
+      "SEND_READY": "Invoice issued and downloaded: attach it to your email or WhatsApp.",
       "PATIENT_PRACTICE": "Patient & Practice",
       "BILL_TO": "Bill to",
       "PRACTICE": "Practice",

@@ -13,7 +13,14 @@ export const MIN_SEATS = 1;
 export const MAX_SEATS = 5;
 export const SEAT_CAPACITIES: readonly number[] = [1, 2, 3, 4, 5];
 
-/** One seating position, the unit both kinds are built from. */
+/**
+ * How large the furniture is drawn against the room. The shapes below are designed at
+ * 1x; everything placed on the plan (footprint, seat centres, markers) is this many times
+ * that, so benches read at a useful size in the room.
+ */
+export const FURNITURE_SCALE = 3;
+
+/** One seating position, the unit both kinds are built from (at 1x). */
 const SEAT_WIDTH = 40;
 
 /** A bench is the seats and nothing else; a sofa adds an armrest at each end. */
@@ -40,12 +47,18 @@ export function clampSeats(seats: number): number {
   return Math.min(MAX_SEATS, Math.max(MIN_SEATS, Math.round(seats)));
 }
 
-/** The module's own size, before any rotation. */
-export function moduleSize(kind: FurnitureKind, seats: number): Size {
+/** The module's size at 1x, the scale its line art is drawn at. */
+export function baseModuleSize(kind: FurnitureKind, seats: number): Size {
   const n = clampSeats(seats);
   return kind === 'SOFA'
     ? { w: n * SEAT_WIDTH + SOFA_ARM * 2, h: SOFA_DEPTH }
     : { w: n * SEAT_WIDTH, h: BENCH_DEPTH };
+}
+
+/** The module's own size in the room, before any rotation. */
+export function moduleSize(kind: FurnitureKind, seats: number): Size {
+  const { w, h } = baseModuleSize(kind, seats);
+  return { w: w * FURNITURE_SCALE, h: h * FURNITURE_SCALE };
 }
 
 /**
@@ -63,8 +76,13 @@ export function rotatedSize(kind: FurnitureKind, seats: number, rotation: number
  * stability is what lets a stored assignment survive a move.
  */
 export function seatCentres(kind: FurnitureKind, seats: number): Point[] {
+  return baseSeatCentres(kind, seats).map(p => ({ x: p.x * FURNITURE_SCALE, y: p.y * FURNITURE_SCALE }));
+}
+
+/** {@link seatCentres} at 1x, for drawing the line art. */
+export function baseSeatCentres(kind: FurnitureKind, seats: number): Point[] {
   const n = clampSeats(seats);
-  const { h } = moduleSize(kind, seats);
+  const { h } = baseModuleSize(kind, seats);
   const left = kind === 'SOFA' ? SOFA_ARM : 0;
   // Sat slightly forward of centre: the back of the seat is at the top, so the person
   // reads as sitting on the cushion rather than floating over the frame.

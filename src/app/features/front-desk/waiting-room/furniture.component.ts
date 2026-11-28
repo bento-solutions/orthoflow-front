@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
-import { FurnitureKind, MAX_SEATS, MIN_SEATS, moduleSize, seatCentres } from './furniture-geometry';
+import { FURNITURE_SCALE, FurnitureKind, MAX_SEATS, MIN_SEATS, baseModuleSize, baseSeatCentres } from './furniture-geometry';
 
 interface Rect {
   x: number;
@@ -25,7 +25,8 @@ interface Rect {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg:g [class.is-muted]="muted">
+    <!-- Drawn at 1x and scaled up to the room's furniture size; strokes stay hairline. -->
+    <svg:g [class.is-muted]="muted" [attr.transform]="'scale(' + scale + ')'">
       @if (kind === 'SOFA') {
         <!-- One continuous shell, so the arms read as part of the same piece. -->
         <svg:rect class="shell" [attr.x]="0.5" [attr.y]="0.5" [attr.width]="size.w - 1" [attr.height]="size.h - 1" rx="6" />
@@ -83,22 +84,24 @@ export class WaitingRoomFurnitureComponent {
     return Math.min(MAX_SEATS, Math.max(MIN_SEATS, this.seats));
   }
 
+  protected readonly scale = FURNITURE_SCALE;
+
   protected get size() {
-    return moduleSize(this.kind, this.count);
+    return baseModuleSize(this.kind, this.count);
   }
 
   /** Each chair gets its own back, which is what distinguishes a bench from a sofa. */
   protected get backs(): Rect[] {
-    return seatCentres('BENCH', this.count).map(c => ({ x: c.x - 18, y: 0.5, w: 36, h: 8, r: 2 }));
+    return baseSeatCentres('BENCH', this.count).map(c => ({ x: c.x - 18, y: 0.5, w: 36, h: 8, r: 2 }));
   }
 
   protected get pads(): Rect[] {
-    return seatCentres('BENCH', this.count).map(c => ({ x: c.x - 17, y: 11, w: 34, h: 27, r: 3 }));
+    return baseSeatCentres('BENCH', this.count).map(c => ({ x: c.x - 17, y: 11, w: 34, h: 27, r: 3 }));
   }
 
   protected get benchFrame(): string {
     const { w, h } = this.size;
-    const feet = seatCentres('BENCH', this.count)
+    const feet = baseSeatCentres('BENCH', this.count)
       .map(c => `M${c.x - 14} ${h - 4.5}v4 M${c.x + 14} ${h - 4.5}v4`)
       .join(' ');
     return `M1 ${h - 4.5}H${w - 1} ${feet}`;
@@ -115,6 +118,6 @@ export class WaitingRoomFurnitureComponent {
   }
 
   protected get cushions(): Rect[] {
-    return seatCentres('SOFA', this.count).map(c => ({ x: c.x - 18, y: 13, w: 36, h: 30, r: 4 }));
+    return baseSeatCentres('SOFA', this.count).map(c => ({ x: c.x - 18, y: 13, w: 36, h: 30, r: 4 }));
   }
 }

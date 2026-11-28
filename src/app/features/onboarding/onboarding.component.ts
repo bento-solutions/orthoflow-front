@@ -28,6 +28,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
           <span class="font-extrabold tracking-tight text-ink-900 text-base">OrthoFlow</span>
         </div>
         
+        <div class="flex items-center gap-4">
         <!-- Language selector -->
         <div class="flex gap-2 text-xs font-semibold text-ink-500">
           <button type="button" lang="fr" aria-label="Français" [attr.aria-pressed]="isLang('fr')" (click)="changeLang('fr')" class="hover:text-ink-900" [class.text-ink-900]="isLang('fr')">FR</button>
@@ -35,6 +36,13 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
           <button type="button" lang="en" aria-label="English" [attr.aria-pressed]="isLang('en')" (click)="changeLang('en')" class="hover:text-ink-900" [class.text-ink-900]="isLang('en')">EN</button>
           <span aria-hidden="true">|</span>
           <button type="button" lang="ar" aria-label="العربية" [attr.aria-pressed]="isLang('ar')" (click)="changeLang('ar')" class="hover:text-ink-900" [class.text-ink-900]="isLang('ar')">AR</button>
+        </div>
+
+        <!-- For a practice that already has an account: straight to sign-in. -->
+        <button type="button" (click)="goToLogin()"
+                class="rounded-lg border-0 bg-white px-4 py-2 text-sm font-bold text-petrol-800 shadow-md transition-shadow hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-petrol-600">
+          {{ 'ONBOARDING.UI.LOGIN' | translate }}
+        </button>
         </div>
       </header>
 

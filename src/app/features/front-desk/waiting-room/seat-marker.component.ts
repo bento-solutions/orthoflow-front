@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { FURNITURE_SCALE } from './furniture-geometry';
 
 /** "M", "F", or anything else (including nothing) for a patient whose gender was never recorded. */
 export type SeatGender = string | null | undefined;
@@ -19,7 +20,8 @@ export type SeatGender = string | null | undefined;
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg:g [attr.class]="'marker tone-' + tone">
+    <!-- Scaled with the furniture, so the person still fills the seat. -->
+    <svg:g [attr.class]="'marker tone-' + tone" [attr.transform]="'scale(' + scale + ')'">
       <svg:circle class="halo" [attr.r]="12" />
       <svg:circle class="head" [attr.cy]="-3.5" [attr.r]="4.2" />
       <svg:path class="body" d="M-6.4 7.2a6.4 6.4 0 0 1 12.8 0" />
@@ -64,6 +66,8 @@ export type SeatGender = string | null | undefined;
 })
 export class SeatMarkerComponent {
   @Input() gender: SeatGender;
+
+  protected readonly scale = FURNITURE_SCALE;
 
   protected get tone(): 'male' | 'female' | 'neutral' {
     const g = (this.gender ?? '').trim().toUpperCase();

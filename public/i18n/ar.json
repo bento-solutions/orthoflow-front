@@ -1,5 +1,8 @@
 {
   "COMMON": {
+    "UPLOADING_FILE": "جارٍ رفع الملف",
+    "UPLOADING_FILES": "{{count}} ملفات",
+    "UPLOAD_STAY": "ابقَ في هذه الشاشة حتى ينتهي الرفع.",
     "WELCOME": "مرحباً بكم في OrthoFlow",
     "DASHBOARD": "لوحة القيادة",
     "OVERVIEW": "نظرة عامة",
@@ -766,6 +769,7 @@
       "CREATE_ACCOUNT": "أنشئ حسابك",
       "CREATE_ACCOUNT_HINT": "ستستخدم هذا الحساب لتسجيل الدخول إلى OrthoFlow.",
       "GO_TO_LOGIN": "الانتقال إلى تسجيل الدخول",
+      "LOGIN": "تسجيل الدخول",
       "FIRST_NAME": "الاسم الأول",
       "LAST_NAME": "اسم العائلة",
       "EMAIL": "البريد الإلكتروني",

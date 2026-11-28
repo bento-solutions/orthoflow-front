@@ -8,6 +8,7 @@ import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confi
 import { CommandPaletteComponent } from './shared/components/command-palette/command-palette.component';
 import { LiveRegionComponent } from './shared/components/live-region/live-region.component';
 import { SessionExpiryBannerComponent } from './shared/components/session-expiry/session-expiry-banner.component';
+import { UploadProgressComponent } from './shared/components/upload-progress/upload-progress.component';
 import { EmergencyButtonComponent } from './shared/components/emergency-button/emergency-button.component';
 import { CommandRegistryService } from './core/services/command-registry.service';
 import { registerAppCommands } from './core/services/register-app-commands';
@@ -31,6 +32,7 @@ import { assertLexiconMatches } from './core/voice/clinical-lexicon';
     LiveRegionComponent,
     SessionExpiryBannerComponent,
     EmergencyButtonComponent,
+    UploadProgressComponent,
   ],
   // The voice HUD is deliberately *not* here. It used to be mounted at the
   // app root, which put a listening indicator and a live microphone on every
@@ -44,6 +46,7 @@ import { assertLexiconMatches } from './core/voice/clinical-lexicon';
     <app-command-palette />
     <app-live-region />
     <app-session-expiry-banner />
+    <app-upload-progress />
     @if (showStandaloneEmergency()) {
       <app-emergency-button />
     }`,

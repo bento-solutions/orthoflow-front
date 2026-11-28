@@ -18,7 +18,7 @@ import { IconComponent } from '../../ui/icon.component';
         type="button"
         data-testid="emergency-trigger"
         (click)="openPanel()"
-        class="pointer-events-auto flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white shadow-lg ring-2 ring-red-700/20 transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-300 sm:w-auto sm:rounded-full sm:px-5 sm:py-3"
+        class="pointer-events-auto flex w-full items-center justify-center gap-2 rounded-xl bg-critical-600 px-4 py-3 text-sm font-bold text-white shadow-lg ring-2 ring-critical-700/20 transition hover:bg-critical-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-critical-300 sm:w-auto sm:rounded-full sm:px-5 sm:py-3"
       >
         <app-icon name="alert" [size]="18" />
         <span>{{ 'PUB.EMERGENCY.CTA' | translate }}</span>
@@ -38,8 +38,8 @@ import { IconComponent } from '../../ui/icon.component';
           (click)="$event.stopPropagation()"
         >
           <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-2.5 text-red-700">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100">
+            <div class="flex items-center gap-2.5 text-critical-700">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-critical-100">
                 <app-icon name="alert" [size]="20" />
               </span>
               <h2 id="emergency-dialog-title" class="text-lg font-bold text-ink-900">
@@ -68,7 +68,7 @@ import { IconComponent } from '../../ui/icon.component';
                 <a
                   data-testid="emergency-call"
                   [href]="tel"
-                  class="order-1 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white no-underline shadow-sm hover:bg-red-700 sm:order-1"
+                  class="order-1 flex w-full items-center justify-center gap-2 rounded-xl bg-critical-600 px-4 py-3 text-sm font-bold text-white no-underline shadow-sm hover:bg-critical-700 sm:order-1"
                 >
                   <app-icon name="phone" [size]="18" />
                   <span>{{ 'PUB.EMERGENCY.CALL' | translate }}</span>
@@ -81,7 +81,7 @@ import { IconComponent } from '../../ui/icon.component';
                   [href]="wa"
                   target="_blank"
                   rel="noopener"
-                  class="order-2 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-600 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 no-underline hover:bg-emerald-100 sm:order-2"
+                  class="order-2 flex w-full items-center justify-center gap-2 rounded-xl border border-positive-600 bg-positive-50 px-4 py-3 text-sm font-semibold text-positive-800 no-underline hover:bg-positive-100 sm:order-2"
                 >
                   <app-icon name="message" [size]="18" />
                   <span>{{ 'PUB.EMERGENCY.WHATSAPP' | translate }}</span>

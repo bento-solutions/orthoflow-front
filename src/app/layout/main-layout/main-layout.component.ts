@@ -36,12 +36,12 @@ import { FirstRunDialogComponent } from '../first-run-dialog/first-run-dialog.co
         <main #main id="main-content" tabindex="-1" class="flex-1 p-4 md:p-6 lg:p-8">
           @if (counts.urgentInbox() > 0) {
             <div role="alert" data-testid="urgent-whatsapp-banner"
-                 class="no-print mx-auto mb-4 flex max-w-[88rem] flex-wrap items-center justify-between gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
+                 class="no-print mx-auto mb-4 flex max-w-[88rem] flex-wrap items-center justify-between gap-3 rounded-lg border border-critical-300 bg-critical-50 px-4 py-3 text-sm text-critical-900">
               <div class="flex items-center gap-2 font-semibold">
-                <span class="rounded bg-red-600 px-2 py-0.5 text-2xs font-bold uppercase text-white">{{ 'COM.INBOX.URGENT_BADGE' | translate }}</span>
+                <span class="rounded bg-critical-600 px-2 py-0.5 text-2xs font-bold uppercase text-white">{{ 'COM.INBOX.URGENT_BADGE' | translate }}</span>
                 <span>{{ 'COM.INBOX.URGENT_BANNER' | translate: { count: counts.urgentInbox() } }}</span>
               </div>
-              <a routerLink="/communication" class="btn btn-sm bg-red-600 text-white no-underline hover:bg-red-700">
+              <a routerLink="/communication" class="btn btn-sm bg-critical-600 text-white no-underline hover:bg-critical-700">
                 {{ 'COM.INBOX.VIEW_INBOX' | translate }}
               </a>
             </div>

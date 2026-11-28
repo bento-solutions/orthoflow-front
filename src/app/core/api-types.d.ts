@@ -603,7 +603,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["config"];
+        get: operations["config_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3147,9 +3147,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["info_2"];
+        get: operations["info_3"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/book/{token}/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["book_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3163,7 +3179,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["availability"];
+        get: operations["availability_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3182,6 +3198,70 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["submit_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/booking/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["book"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/booking/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["availability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/booking/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["info_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["config"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5789,6 +5869,10 @@ export interface components {
             practiceId?: string;
             /** Format: uuid */
             practitionerId?: string;
+            replyNote?: string;
+            /** Format: date-time */
+            replyReceivedAt?: string;
+            replyStatus?: string;
             /** Format: date-time */
             seatedAt?: string;
             /** @enum {string} */
@@ -6694,39 +6778,6 @@ export interface components {
         Decline: {
             reason?: string;
         };
-        DirectBookRequest: {
-            /** Format: uuid */
-            appointmentTypeId: string;
-            captchaToken?: string;
-            consent: boolean;
-            countryCode?: string;
-            fullName: string;
-            language?: string;
-            notes?: string;
-            phone: string;
-            /** Format: uuid */
-            practitionerId?: string;
-            /** Format: date-time */
-            startsAt: string;
-            website?: string;
-        };
-        DirectBookResponse: {
-            /** Format: uuid */
-            appointmentId?: string;
-            appointmentTypeName?: string;
-            clinicAddress?: string;
-            clinicName?: string;
-            doctorName?: string;
-            /** Format: int32 */
-            durationMinutes?: number;
-            existingPatient?: boolean;
-            reference?: string;
-            registrationAlreadyCompleted?: boolean;
-            registrationLinkSentByWhatsapp?: boolean;
-            registrationUrl?: string;
-            /** Format: date-time */
-            startsAt?: string;
-        };
         DeliveryNoteLineRequest: {
             batchNumber?: string;
             /** Format: date */
@@ -6777,6 +6828,39 @@ export interface components {
             teeth?: components["schemas"]["ToothStateResponse"][];
             /** Format: date-time */
             updatedAt?: string;
+        };
+        DirectBookRequest: {
+            /** Format: uuid */
+            appointmentTypeId: string;
+            captchaToken?: string;
+            consent?: boolean;
+            countryCode?: string;
+            fullName: string;
+            language?: string;
+            notes?: string;
+            phone: string;
+            /** Format: uuid */
+            practitionerId?: string;
+            /** Format: date-time */
+            startsAt: string;
+            website?: string;
+        };
+        DirectBookResponse: {
+            /** Format: uuid */
+            appointmentId?: string;
+            appointmentTypeName?: string;
+            clinicAddress?: string;
+            clinicName?: string;
+            doctorName?: string;
+            /** Format: int32 */
+            durationMinutes?: number;
+            existingPatient?: boolean;
+            reference?: string;
+            registrationAlreadyCompleted?: boolean;
+            registrationLinkSentByWhatsapp?: boolean;
+            registrationUrl?: string;
+            /** Format: date-time */
+            startsAt?: string;
         };
         DirectoryPerson: {
             cin?: string;
@@ -11613,7 +11697,7 @@ export interface operations {
             };
         };
     };
-    config: {
+    config_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -13854,6 +13938,7 @@ export interface operations {
             query?: {
                 unhandledOnly?: boolean;
                 landingPageOnly?: boolean;
+                urgentOnly?: boolean;
                 limit?: number;
             };
             header?: never;
@@ -16293,7 +16378,7 @@ export interface operations {
             };
         };
     };
-    info_2: {
+    info_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -16315,7 +16400,35 @@ export interface operations {
             };
         };
     };
-    availability: {
+    book_1: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Booking-Api-Key"?: string;
+            };
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DirectBookRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DirectBookResponse"];
+                };
+            };
+        };
+    };
+    availability_1: {
         parameters: {
             query: {
                 typeId: string;
@@ -16364,6 +16477,97 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["Received"];
+                };
+            };
+        };
+    };
+    book: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Booking-Api-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DirectBookRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DirectBookResponse"];
+                };
+            };
+        };
+    };
+    availability: {
+        parameters: {
+            query?: {
+                typeId?: string;
+                from?: string;
+                days?: number;
+                durationMinutes?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Availability"];
+                };
+            };
+        };
+    };
+    info_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookingPublicInfo"];
+                };
+            };
+        };
+    };
+    config: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookingPublicConfig"];
                 };
             };
         };

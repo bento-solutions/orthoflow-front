@@ -590,11 +590,11 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .event-pill.braces_fit { background: rgb(var(--ink-100)); color: rgb(var(--ink-700)); }
     .event-pill.aligner_fit { background: rgb(var(--ink-100)); color: rgb(var(--ink-700)); }
     .event-pill.retainer { background: rgb(var(--positive-100)); color: rgb(var(--positive-700)); }
-    .status-late { border: 1px solid #d97706 !important; background: #fef3c7 !important; color: #92400e !important; }
-    .status-cancelled { border: 1px solid #dc2626 !important; background: #fee2e2 !important; color: #991b1b !important; opacity: 0.9; text-decoration: line-through; }
-    .status-flag { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 0 4px; border-radius: 4px; margin-inline-start: 4px; text-decoration: none; }
-    .status-flag-late { background: #d97706; color: #fff; }
-    .status-flag-cancelled { background: #dc2626; color: #fff; }
+    .status-late { border: 1px solid rgb(var(--caution-600)) !important; background: rgb(var(--caution-100)) !important; color: rgb(var(--caution-900)) !important; }
+    .status-cancelled { border: 1px solid rgb(var(--critical-600)) !important; background: rgb(var(--critical-100)) !important; color: rgb(var(--critical-900)) !important; opacity: 0.9; text-decoration: line-through; }
+    .status-flag { display: inline-block; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; padding: 0 4px; border-radius: var(--radius-sm); margin-inline-start: 4px; text-decoration: none; }
+    .status-flag-late { background: rgb(var(--caution-600)); color: rgb(var(--on-inverse)); }
+    .status-flag-cancelled { background: rgb(var(--critical-600)); color: rgb(var(--on-inverse)); }
 
     /* Day View */
     .day-view {

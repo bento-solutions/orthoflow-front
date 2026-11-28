@@ -770,6 +770,8 @@
       "CREATE_ACCOUNT_HINT": "C'est avec ce compte que vous vous connecterez à OrthoFlow.",
       "GO_TO_LOGIN": "Aller à la connexion",
       "LOGIN": "Connexion",
+      "HAVE_ACCOUNT": "Vous avez déjà un compte ?",
+      "LOGIN_INSTEAD": "Connectez-vous",
       "FIRST_NAME": "Prénom",
       "LAST_NAME": "Nom",
       "EMAIL": "E-mail",

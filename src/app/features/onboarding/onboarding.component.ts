@@ -68,6 +68,12 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
               >
                 {{ 'ONBOARDING.UI.GET_STARTED' | translate }}
               </button>
+              <p class="mt-3 text-sm text-ink-500">
+                {{ 'ONBOARDING.UI.HAVE_ACCOUNT' | translate }}
+                <button type="button" (click)="goToLogin()" class="font-bold text-petrol-800 underline-offset-2 hover:underline">
+                  {{ 'ONBOARDING.UI.LOGIN_INSTEAD' | translate }}
+                </button>
+              </p>
             </div>
           }
 

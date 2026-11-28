@@ -534,7 +534,38 @@
       "CREATED": "تم إنشاء الفاتورة.",
       "LOAD_FAILED": "تعذر تحميل بيانات الفوترة. يرجى المحاولة مرة أخرى."
     },
-    "INVOICE_DETAIL": "تفاصيل الفاتورة"
+    "INVOICE_DETAIL": "تفاصيل الفاتورة",
+    "PAYMENT_TERMS": {
+      "TITLE": "طريقة الأداء",
+      "IMMEDIATE": "فوري",
+      "IMMEDIATE_HINT": "يؤدى عند الاستلام، بدون أجل",
+      "ONE_PAYMENT": "دفعة واحدة",
+      "ONE_PAYMENT_HINT": "يؤدى كاملاً في أجل واحد",
+      "INSTALMENTS": "على دفعات",
+      "INSTALMENTS_HINT": "مقسم إلى دفعات، لكل منها أجلها",
+      "DEADLINE": "الأجل",
+      "PARTS": "عدد الدفعات",
+      "FREQUENCY": "الوتيرة",
+      "FIRST_DEADLINE": "أجل الدفعة الأولى",
+      "SCHEDULE": "جدول الأداء",
+      "PART": "الدفعة {{n}} من {{count}}",
+      "NO_DEADLINE": "بدون أجل: يؤدى عند الاستلام",
+      "IN_PARTS": "على {{n}} دفعات",
+      "STATUS_PAID": "مدفوعة",
+      "STATUS_DUE": "مستحقة",
+      "STATUS_OVERDUE": "متأخرة",
+      "STATUS_CANCELLED": "ملغاة",
+      "PAID_SO_FAR": "تم أداء {{amount}}",
+      "NEED_DEADLINE": "اختر تاريخ الأجل.",
+      "DEADLINE_PAST": "لا يمكن أن يكون الأجل قبل اليوم.",
+      "NEED_PARTS": "الأداء على دفعات يتطلب دفعتين على الأقل.",
+      "FREQ": {
+        "WEEKLY": "كل أسبوع",
+        "BIWEEKLY": "كل أسبوعين",
+        "MONTHLY": "كل شهر",
+        "QUARTERLY": "كل ثلاثة أشهر"
+      }
+    }
   },
   "AUTH": {
     "SIGN_IN_TITLE": "تسجيل الدخول إلى OrthoFlow",

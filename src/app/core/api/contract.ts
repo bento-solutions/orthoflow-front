@@ -127,6 +127,10 @@ export type Invoice = Always<
 >;
 
 export type CreateInvoiceRequest = Api<'CreateInvoiceRequest'>;
+export type PaymentTermsRequest = Api<'PaymentTermsRequest'>;
+export type PaymentFrequency = NonNullable<Api<'PaymentTermsRequest'>['frequency']>;
+export type InvoicePaymentPlan = Api<'InvoicePaymentPlanResponse'>;
+export type InvoicePaymentPart = Api<'InvoicePaymentPart'>;
 export type InvoiceLineRequest = Api<'InvoiceLineRequest'>;
 export type RecordPaymentRequest = Api<'RecordPaymentRequest'>;
 export type BillingSummary = Always<

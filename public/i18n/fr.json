@@ -534,7 +534,38 @@
       "CREATED": "Facture créée.",
       "LOAD_FAILED": "La facturation n'a pas pu être chargée. Veuillez réessayer."
     },
-    "INVOICE_DETAIL": "Détail de la facture"
+    "INVOICE_DETAIL": "Détail de la facture",
+    "PAYMENT_TERMS": {
+      "TITLE": "Modalités de paiement",
+      "IMMEDIATE": "Immédiat",
+      "IMMEDIATE_HINT": "Payable à réception, sans échéance",
+      "ONE_PAYMENT": "En une fois",
+      "ONE_PAYMENT_HINT": "Réglé en totalité à une échéance",
+      "INSTALMENTS": "En plusieurs fois",
+      "INSTALMENTS_HINT": "Réparti en échéances, chacune avec sa date limite",
+      "DEADLINE": "Échéance",
+      "PARTS": "Nombre d'échéances",
+      "FREQUENCY": "Fréquence",
+      "FIRST_DEADLINE": "Première échéance",
+      "SCHEDULE": "Échéancier",
+      "PART": "Échéance {{n}} sur {{count}}",
+      "NO_DEADLINE": "Sans échéance : payable à réception",
+      "IN_PARTS": "En {{n}} fois",
+      "STATUS_PAID": "Réglée",
+      "STATUS_DUE": "À venir",
+      "STATUS_OVERDUE": "En retard",
+      "STATUS_CANCELLED": "Annulée",
+      "PAID_SO_FAR": "{{amount}} réglé",
+      "NEED_DEADLINE": "Choisissez une date d'échéance.",
+      "DEADLINE_PAST": "Une échéance ne peut pas être antérieure à aujourd'hui.",
+      "NEED_PARTS": "Un paiement en plusieurs fois compte au moins 2 échéances.",
+      "FREQ": {
+        "WEEKLY": "Chaque semaine",
+        "BIWEEKLY": "Toutes les deux semaines",
+        "MONTHLY": "Chaque mois",
+        "QUARTERLY": "Chaque trimestre"
+      }
+    }
   },
   "AUTH": {
     "SIGN_IN_TITLE": "Connectez-vous à OrthoFlow",

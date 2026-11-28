@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { InvoiceService } from '../../services/invoice.service';
 import { PageLabelService } from '../../../../core/services/page-label.service';
-import { Invoice, Payment } from '../../models/billing.model';
+import { Invoice, InvoicePaymentPart, Payment } from '../../models/billing.model';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastService } from '../../../../core/services/toast.service';
@@ -73,8 +73,21 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
                   <span class="info-value">{{ inv.issueDate | appDate }}</span>
                 </div>
                 <div class="info-group">
-                  <label>{{ 'BILLING.EXPIRY_DATE' | translate }}</label>
-                  <span class="info-value">{{ inv.dueDate | appDate }}</span>
+                  <label>{{ 'BILLING.PAYMENT_TERMS.TITLE' | translate }}</label>
+                  @switch (termsOf(inv)) {
+                    @case ('IMMEDIATE') {
+                      <span class="info-value">{{ 'BILLING.PAYMENT_TERMS.IMMEDIATE' | translate }}</span>
+                      <span class="info-sub">{{ 'BILLING.PAYMENT_TERMS.NO_DEADLINE' | translate }}</span>
+                    }
+                    @case ('INSTALMENTS') {
+                      <span class="info-value">{{ 'BILLING.PAYMENT_TERMS.IN_PARTS' | translate: { n: inv.paymentPlan?.instalments?.length } }}</span>
+                      <span class="info-sub">{{ 'BILLING.PAYMENT_TERMS.FREQ.' + inv.paymentPlan?.frequency | translate }}</span>
+                    }
+                    @default {
+                      <span class="info-value">{{ 'BILLING.PAYMENT_TERMS.ONE_PAYMENT' | translate }}</span>
+                      <span class="info-sub">{{ 'BILLING.PAYMENT_TERMS.DEADLINE' | translate }}: {{ (inv.paymentPlan?.instalments?.[0]?.dueDate ?? inv.dueDate) | appDate }}</span>
+                    }
+                  }
                 </div>
               </div>
             </div>
@@ -124,6 +137,50 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
                 </div>
               </div>
             </div>
+
+            @if (inv.paymentPlan?.instalments?.length) {
+              <div class="invoice-card schedule-card">
+                <div class="card-header">
+                  <h3>{{ 'BILLING.PAYMENT_TERMS.SCHEDULE' | translate }}</h3>
+                </div>
+                <table class="items-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{{ 'BILLING.PAYMENT_TERMS.DEADLINE' | translate }}</th>
+                      <th scope="col">{{ 'BILLING.FORM.DESCRIPTION' | translate }}</th>
+                      <th scope="col" class="text-end">{{ 'COMMON.AMOUNT' | translate }}</th>
+                      <th scope="col" class="text-end">{{ 'COMMON.STATUS' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (part of inv.paymentPlan!.instalments!; track part.id) {
+                      <tr>
+                        <td class="font-bold">{{ part.dueDate | appDate }}</td>
+                        <td>
+                          {{ 'BILLING.PAYMENT_TERMS.PART' | translate: { n: $index + 1, count: inv.paymentPlan!.instalments!.length } }}
+                          @if (part.status === 'PENDING' && (part.paidAmount ?? 0) > 0) {
+                            <span class="part-paid">· {{ 'BILLING.PAYMENT_TERMS.PAID_SO_FAR' | translate: { amount: (part.paidAmount | money:inv.currency) } }}</span>
+                          }
+                        </td>
+                        <td class="text-end">{{ part.amount | money:inv.currency }}</td>
+                        <td class="text-end">
+                          <span class="part-status" [class]="'part-status ' + partState(part)">{{ 'BILLING.PAYMENT_TERMS.STATUS_' + partState(part) | translate }}</span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+
+            @if (inv.notes?.trim()) {
+              <div class="invoice-card notes-card">
+                <div class="card-header">
+                  <h3>{{ 'COMMON.NOTES' | translate }}</h3>
+                </div>
+                <p class="card-body notes-text">{{ inv.notes }}</p>
+              </div>
+            }
 
             <div class="invoice-card payments-card">
               <div class="card-header">
@@ -354,7 +411,9 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
       font-weight: 600;
       color: rgb(var(--ink-500));
       text-transform: uppercase;
+      text-align: start;
     }
+    .items-table th.text-end { text-align: end; }
 
     .items-table td {
       padding: 1rem 1.5rem;
@@ -362,7 +421,21 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
       color: rgb(var(--ink-700));
     }
 
-    .text-right { text-align: end; }
+    .text-right, .text-end { text-align: end; }
+
+    .notes-text { margin: 0; white-space: pre-wrap; color: rgb(var(--ink-700)); }
+    .part-paid { color: rgb(var(--ink-500)); font-size: var(--text-sm); }
+    .part-status {
+      display: inline-block;
+      padding: 0.125rem 0.625rem;
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      background: rgb(var(--ink-100));
+      color: rgb(var(--ink-700));
+    }
+    .part-status.PAID { background: rgb(var(--positive-50)); color: rgb(var(--positive-700)); }
+    .part-status.OVERDUE { background: rgb(var(--critical-50)); color: rgb(var(--critical-700)); }
     .font-bold { font-weight: 600; }
 
     .totals-section {
@@ -506,6 +579,19 @@ export class InvoiceDetailComponent implements OnInit {
       },
       error: error => this.errors.report(error, 'COMMON.SAVE_FAILED'),
     });
+  }
+
+  /** How the invoice is paid; an invoice from before payment terms has a deadline and reads as one payment. */
+  termsOf(invoice: Invoice): 'IMMEDIATE' | 'INSTALMENTS' | 'ONE_PAYMENT' {
+    if ((invoice.paymentPlan?.instalments?.length ?? 0) > 1) return 'INSTALMENTS';
+    if (!invoice.paymentPlan && invoice.paymentMode === 'IMMEDIATE') return 'IMMEDIATE';
+    return 'ONE_PAYMENT';
+  }
+
+  partState(part: InvoicePaymentPart): 'PAID' | 'DUE' | 'OVERDUE' | 'CANCELLED' {
+    if (part.status === 'PAID') return 'PAID';
+    if (part.status === 'CANCELLED') return 'CANCELLED';
+    return part.overdue ? 'OVERDUE' : 'DUE';
   }
 
   invoice = signal<Invoice | null>(null);

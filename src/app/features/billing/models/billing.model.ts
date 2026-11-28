@@ -23,6 +23,10 @@ export type {
   PaymentMethod,
   BillingSummary,
   CreateInvoiceRequest,
+  PaymentTermsRequest,
+  PaymentFrequency,
+  InvoicePaymentPlan,
+  InvoicePaymentPart,
   InvoiceLineRequest,
   RecordPaymentRequest,
 } from '../../../core/api/contract';

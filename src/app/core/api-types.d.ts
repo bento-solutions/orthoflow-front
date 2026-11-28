@@ -612,6 +612,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/consultations/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["document"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/consultations/open": {
         parameters: {
             query?: never;
@@ -1572,6 +1588,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/invoices/{id}/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["issue_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/invoices/{id}/payments": {
         parameters: {
             query?: never;
@@ -1675,7 +1707,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["document"];
+        get: operations["document_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6328,6 +6360,20 @@ export interface components {
             retainTranscript?: boolean;
             tailReading?: boolean;
         };
+        ConsultationDocumentRequest: {
+            confidential?: string;
+            dateText?: string;
+            doctorName?: string;
+            /** @enum {string} */
+            kind: "REPORT" | "ASSISTANT_SHEET";
+            lang?: string;
+            patient?: components["schemas"]["Field"][];
+            /** Format: uuid */
+            patientId: string;
+            sections?: components["schemas"]["Section"][];
+            signature?: string;
+            title: string;
+        };
         ConsultationDraft: {
             activeTreatments?: components["schemas"]["ActiveTreatment"][];
             allergies?: components["schemas"]["Allergy"][];
@@ -6837,6 +6883,10 @@ export interface components {
             auditId?: string;
             errorMessage?: string;
             intent?: string;
+        };
+        Field: {
+            label?: string;
+            value?: string;
         };
         FileInfo: {
             /** @enum {string} */
@@ -9169,6 +9219,13 @@ export interface components {
             /** Format: int64 */
             waitMinutes?: number;
         };
+        Section: {
+            alert?: boolean;
+            items?: string[];
+            table?: components["schemas"]["Table"];
+            text?: string;
+            title?: string;
+        };
         SendTest: {
             /** @enum {string} */
             channel: "EMAIL" | "WHATSAPP" | "IN_APP";
@@ -9522,6 +9579,13 @@ export interface components {
             distribution?: number[];
             /** Format: int64 */
             responses?: number;
+        };
+        Table: {
+            headers?: string[];
+            note?: string;
+            rows?: string[][];
+            total?: string;
+            totalLabel?: string;
         };
         TaskRequest: {
             /** Format: uuid */
@@ -11510,6 +11574,30 @@ export interface operations {
             };
         };
     };
+    document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsultationDocumentRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+        };
+    };
     open_1: {
         parameters: {
             query: {
@@ -13211,6 +13299,28 @@ export interface operations {
             };
         };
     };
+    issue_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InvoiceResponse"];
+                };
+            };
+        };
+    };
     recordPayment: {
         parameters: {
             query?: never;
@@ -13408,7 +13518,7 @@ export interface operations {
             };
         };
     };
-    document: {
+    document_1: {
         parameters: {
             query?: {
                 lang?: string;

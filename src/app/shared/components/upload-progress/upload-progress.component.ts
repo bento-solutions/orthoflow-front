@@ -56,9 +56,9 @@ import { UploadProgressService } from '../../../core/uploads/upload-progress';
     }
     .track {
       margin-top: 0.625rem; height: 0.5rem; overflow: hidden;
-      border-radius: 999px; background: rgb(var(--ink-100));
+      border-radius: var(--radius-full); background: rgb(var(--ink-100));
     }
-    .fill { border-radius: 999px; }
+    .fill { border-radius: var(--radius-full); }
     /* Before the browser reports a size: a sliding stripe instead of a fake percentage. */
     .indeterminate {
       width: 40% !important;

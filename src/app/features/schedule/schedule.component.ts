@@ -107,12 +107,19 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                           type="button"
                           class="event-pill"
                           [class]="'event-pill ' + event.type.toLowerCase()"
+                          [class.status-late]="event.status === 'LATE' || event.replyStatus === 'CONFIRMED_LATE'"
+                          [class.status-cancelled]="event.status === 'CANCELLED' || event.replyStatus === 'CANNOT_COME'"
                           [style.box-shadow]="barShadow(event)"
                           [attr.title]="eventTitle(event)"
                           (click)="openEditModal(event); $event.stopPropagation()"
                         >
                           <span class="event-time">{{ formatTime(event.dateTime) }}</span>
                           <span class="event-patient">{{ getPatientName(event.patientId) }}</span>
+                          @if (event.status === 'LATE' || event.replyStatus === 'CONFIRMED_LATE') {
+                            <span class="status-flag status-flag-late">{{ 'SCHEDULE.STATUS.LATE' | translate }}</span>
+                          } @else if (event.status === 'CANCELLED' || event.replyStatus === 'CANNOT_COME') {
+                            <span class="status-flag status-flag-cancelled">{{ 'SCHEDULE.STATUS.CANCELLED' | translate }}</span>
+                          }
                         </button>
                       }
                     </div>
@@ -158,6 +165,8 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                         [style.box-shadow]="barShadow(event)"
                         [attr.title]="eventTitle(event)"
                         [class]="event.type.toLowerCase()"
+                        [class.status-late]="event.status === 'LATE' || event.replyStatus === 'CONFIRMED_LATE'"
+                        [class.status-cancelled]="event.status === 'CANCELLED' || event.replyStatus === 'CANNOT_COME'"
                         [class.dragging]="draggingId() === event.id"
                         draggable="true"
                         tabindex="0"
@@ -170,6 +179,11 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                       >
                         <div class="card-time">{{ formatTime(event.dateTime) }}</div>
                         <span class="patient">{{ getPatientName(event.patientId) }}</span>
+                        @if (event.status === 'LATE' || event.replyStatus === 'CONFIRMED_LATE') {
+                          <span class="status-flag status-flag-late">{{ 'SCHEDULE.STATUS.LATE' | translate }}</span>
+                        } @else if (event.status === 'CANCELLED' || event.replyStatus === 'CANNOT_COME') {
+                          <span class="status-flag status-flag-cancelled">{{ 'SCHEDULE.STATUS.CANCELLED' | translate }}</span>
+                        }
                         @if (event.chairName) {
                           <span class="chair-tag">{{ event.chairName }}</span>
                         }
@@ -203,6 +217,8 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                     [style.box-shadow]="barShadow(event)"
                     [attr.title]="eventTitle(event)"
                     [class]="event.type.toLowerCase()"
+                    [class.status-late]="event.status === 'LATE' || event.replyStatus === 'CONFIRMED_LATE'"
+                    [class.status-cancelled]="event.status === 'CANCELLED' || event.replyStatus === 'CANNOT_COME'"
                     [class.dragging]="draggingId() === event.id"
                     draggable="true"
                     tabindex="0"
@@ -217,6 +233,11 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
                     <div class="card-content">
                       <span class="patient">{{ getPatientName(event.patientId) }}</span>
                       <span class="type">{{ 'SCHEDULE.TYPES.' + event.type.toUpperCase() | translate }}</span>
+                      @if (event.status === 'LATE' || event.replyStatus === 'CONFIRMED_LATE') {
+                        <span class="status-flag status-flag-late">{{ 'SCHEDULE.STATUS.LATE' | translate }}</span>
+                      } @else if (event.status === 'CANCELLED' || event.replyStatus === 'CANNOT_COME') {
+                        <span class="status-flag status-flag-cancelled">{{ 'SCHEDULE.STATUS.CANCELLED' | translate }}</span>
+                      }
                       @if (event.chairName) {
                         <span class="chair-tag">{{ event.chairName }}</span>
                       }
@@ -569,6 +590,11 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
     .event-pill.braces_fit { background: rgb(var(--ink-100)); color: rgb(var(--ink-700)); }
     .event-pill.aligner_fit { background: rgb(var(--ink-100)); color: rgb(var(--ink-700)); }
     .event-pill.retainer { background: rgb(var(--positive-100)); color: rgb(var(--positive-700)); }
+    .status-late { border: 1px solid #d97706 !important; background: #fef3c7 !important; color: #92400e !important; }
+    .status-cancelled { border: 1px solid #dc2626 !important; background: #fee2e2 !important; color: #991b1b !important; opacity: 0.9; text-decoration: line-through; }
+    .status-flag { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 0 4px; border-radius: 4px; margin-inline-start: 4px; text-decoration: none; }
+    .status-flag-late { background: #d97706; color: #fff; }
+    .status-flag-cancelled { background: #dc2626; color: #fff; }
 
     /* Day View */
     .day-view {

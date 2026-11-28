@@ -110,6 +110,7 @@ const FAMILIES: Record<string, readonly string[]> = {
   'SET.AGENDA.GROUPS': ['ANY', 'ORTHODONTICS', 'GENERAL'],
   // The status pill translates STATUS.<status> for whatever an appointment is in.
   'STATUS': APPOINTMENT_STATUSES,
+  'SCHEDULE.REPLY': ['CONFIRMED_ON_TIME', 'CONFIRMED_LATE', 'CANNOT_COME'],
   'STER.STATES': ITEM_STATES,
   'STER.KINDS': ITEM_KINDS,
   'STER.RESULTS': ['PENDING', 'PASSED', 'FAILED'],

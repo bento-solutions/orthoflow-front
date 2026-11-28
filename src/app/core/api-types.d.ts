@@ -5855,6 +5855,10 @@ export interface components {
             /** Format: uuid */
             practitionerId?: string;
             practitionerName?: string;
+            replyNote?: string;
+            /** Format: date-time */
+            replyReceivedAt?: string;
+            replyStatus?: string;
             /** Format: date-time */
             seatedAt?: string;
             /** @enum {string} */

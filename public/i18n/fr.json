@@ -690,6 +690,11 @@
       "ARRIVED": "Arrivé",
       "IN_CHAIR": "Au fauteuil"
     },
+    "REPLY": {
+      "CONFIRMED_ON_TIME": "Confirmé à l'heure (WhatsApp)",
+      "CONFIRMED_LATE": "Confirmé avec retard (WhatsApp)",
+      "CANNOT_COME": "Annulé via WhatsApp"
+    },
     "PREVIOUS": "Précédent",
     "NEXT": "Suivant",
     "ADD_APPOINTMENT_ON": "Ajouter un rendez-vous le {{date}}",

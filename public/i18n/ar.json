@@ -690,6 +690,11 @@
       "ARRIVED": "وصل",
       "IN_CHAIR": "على الكرسي"
     },
+    "REPLY": {
+      "CONFIRMED_ON_TIME": "مؤكد في الموعد (واتساب)",
+      "CONFIRMED_LATE": "مؤكد مع تأخر (واتساب)",
+      "CANNOT_COME": "ملغي عبر واتساب"
+    },
     "PREVIOUS": "السابق",
     "NEXT": "التالي",
     "ADD_APPOINTMENT_ON": "إضافة موعد في {{date}}",

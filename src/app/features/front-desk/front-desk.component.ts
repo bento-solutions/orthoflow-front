@@ -150,7 +150,18 @@ export function waitTone(minutes: number): 'ok' | 'warn' | 'critical' {
                     <td class="font-semibold">{{ a.patientName }}<span class="block text-xs font-normal text-ink-500"><span class="ltr-data">{{ a.patientPhone }}</span></span></td>
                     <td>{{ a.type }}</td>
                     <td>{{ a.practitionerName || '—' }}</td>
-                    <td><span class="pill pill-idle">{{ 'SCHEDULE.STATUS.' + a.status | translate }}</span></td>
+                    <td>
+                      <span
+                        class="pill"
+                        [class.pill-attention]="a.status === 'LATE' || a.replyStatus === 'CONFIRMED_LATE'"
+                        [class.pill-critical]="a.status === 'CANCELLED' || a.replyStatus === 'CANNOT_COME'"
+                        [class.pill-active]="a.status === 'CONFIRMED' && a.replyStatus !== 'CONFIRMED_LATE'"
+                        [class.pill-idle]="a.status !== 'LATE' && a.status !== 'CANCELLED' && a.status !== 'CONFIRMED'"
+                      >{{ 'SCHEDULE.STATUS.' + a.status | translate }}</span>
+                      @if (a.replyStatus) {
+                        <span class="mt-1 block text-2xs font-medium text-ink-600">{{ 'SCHEDULE.REPLY.' + a.replyStatus | translate }}</span>
+                      }
+                    </td>
                     <td class="cell-actions">
                       @if (canManage()) { <button type="button" class="btn btn-secondary btn-sm" (click)="checkIn(a)">{{ 'FD.CHECK_IN' | translate }}</button> }
                     </td>

@@ -64,7 +64,7 @@ import { readAndValidateLogo, LogoValidationError } from '../../core/utils/logo-
               <button 
                 type="button"
                 (click)="nextStep()"
-                class="btn btn-primary w-full shrink-0"
+                class="btn btn-primary mt-8 w-full shrink-0"
               >
                 {{ 'ONBOARDING.UI.GET_STARTED' | translate }}
               </button>

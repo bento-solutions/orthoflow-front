@@ -6,7 +6,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IntakeApi } from '../../core/services/intake-api.service';
 import { LanguageService } from '../../core/services/language.service';
-import { PublicBookingComponent, slotMoment, typeName } from './public-booking.component';
+import { PublicBookingComponent, normalizeE164, slotMoment, typeName } from './public-booking.component';
 import { BLANK_REGISTRATION, PublicRegistrationComponent, isMinor, registrationRequest } from './public-registration.component';
 import { PublicSurveyComponent } from './public-survey.component';
 import { useClinicLanguage } from './public-shell.component';
@@ -41,6 +41,14 @@ describe('public page helpers', () => {
     const child = registrationRequest({ ...BLANK_REGISTRATION, firstName: 'Adam', lastName: 'Alami', dateOfBirth: new Date().getFullYear() - 8 + '-01-01', guardianName: 'Sara', guardianPhone: '0661', consent: true }, 'fr', '');
     expect(child.guardianName).toBe('Sara');
     expect(child.guardianPhone).toBe('0661');
+  });
+
+  it('normalizes phone numbers to strict E.164 with country selector', () => {
+    expect(normalizeE164('06 61 23 45 67', '+212')).toBe('+212661234567');
+    expect(normalizeE164('661234567', '+212')).toBe('+212661234567');
+    expect(normalizeE164('+33 6 12 34 56 78', '+212')).toBe('+33612345678');
+    expect(normalizeE164('00212661234567', '+212')).toBe('+212661234567');
+    expect(normalizeE164('123', '+212')).toBeNull();
   });
 
   it('uses the clinic\'s language only when the visitor has not chosen one', () => {
@@ -101,7 +109,9 @@ describe('public pages', () => {
 
   describe('booking', () => {
     const info = {
-      clinicName: 'Cabinet Atlas', phone: '0522000000', city: 'Casablanca', maxDaysAhead: 30, defaultLanguage: 'fr', timeZone: 'Africa/Lagos',
+      clinicName: 'Cabinet Atlas', clinicAddress: '12 rue Atlas, Casablanca', phone: '0522000000', city: 'Casablanca',
+      maxDaysAhead: 30, defaultLanguage: 'fr', timeZone: 'Africa/Lagos', baileysPhone: '+212754411515', emergencyMarker: 'URGENT',
+      captchaEnabled: false,
       types: [{ id: 'ty1', nameFr: 'Contrôle', nameEn: 'Check-up', nameAr: 'فحص', color: '#2f8fa2', durationMinutes: 30 }],
       practitioners: [{ id: 'd1', name: 'Dr Tazi', color: '#1a9a5c' }],
     };
@@ -109,7 +119,11 @@ describe('public pages', () => {
     beforeEach(() => {
       api['publicBookingInfo'] = vi.fn(async () => info);
       api['publicAvailability'] = vi.fn(async () => ({ '2026-10-07': ['09:00', '09:30'], '2026-10-08': ['14:00'] }));
-      api['submitBooking'] = vi.fn(async () => ({ reference: 'RDV-4821' }));
+      api['bookWithTokenDirect'] = vi.fn(async () => ({
+        reference: 'RDV4821', appointmentId: 'ap1', doctorName: 'Dr Tazi', clinicName: 'Cabinet Atlas',
+        clinicAddress: '12 rue Atlas, Casablanca', registrationUrl: 'https://ortho.crmbento.com/public/register/secret123',
+        registrationAlreadyCompleted: false, existingPatient: false, registrationLinkSentByWhatsapp: true,
+      }));
     });
 
     const goToDetails = async (fixture: { detectChanges(): void; whenStable(): Promise<unknown> }) => {
@@ -121,14 +135,13 @@ describe('public pages', () => {
       await settleUi(fixture);
     };
     const fillDetails = async (fixture: { detectChanges(): void; whenStable(): Promise<unknown> }) => {
-      type(document.querySelector('input[name=firstName]'), 'Nadia');
-      type(document.querySelector('input[name=lastName]'), 'Zniber');
+      type(document.querySelector('input[name=fullName]'), 'Nadia Zniber');
       type(document.querySelector('input[name=phone]'), '0655443322');
       (document.querySelector('input[name=consent]') as HTMLInputElement).click();
       await settleUi(fixture);
     };
 
-    it('walks from the reason to a request, sending the time as a moment in the clinic\'s zone', async () => {
+    it('walks from reason to confirmed booking with E.164 phone and registration CTA for new patients', async () => {
       setup(PublicBookingComponent);
       const fixture = await mount(PublicBookingComponent);
       await goToDetails(fixture);
@@ -138,26 +151,60 @@ describe('public pages', () => {
       (document.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
       await settleUi(fixture);
 
-      expect(api['submitBooking']).toHaveBeenCalledWith('tok123', expect.objectContaining({
-        appointmentTypeId: 'ty1', practitionerId: undefined, startsAt: '2026-10-07T09:30:00+01:00', firstName: 'Nadia', lastName: 'Zniber', phone: '0655443322',
-        consent: true, website: '', language: 'fr',
+      expect(api['bookWithTokenDirect']).toHaveBeenCalledWith('tok123', expect.objectContaining({
+        appointmentTypeId: 'ty1', practitionerId: undefined, startsAt: '2026-10-07T09:30:00+01:00',
+        fullName: 'Nadia Zniber', phone: '+212655443322', countryCode: '+212', consent: true, website: '', language: 'fr',
       }));
-      expect(document.body.textContent).toContain('RDV-4821');
+      expect(document.body.textContent).toContain('RDV4821');
+      const cta = document.querySelector('a[href="https://ortho.crmbento.com/public/register/secret123"]');
+      expect(cta).not.toBeNull();
+      expect(cta!.textContent).toContain('PUB.BOOK.REG_CTA');
+      expect(document.body.textContent).toContain('PUB.BOOK.REG_SUPPORTING');
     });
 
-    it('cannot be sent without consent', async () => {
+    it('hides registration CTA for existing patients matched by phone', async () => {
+      api['bookWithTokenDirect'].mockResolvedValueOnce({
+        reference: 'RDV9999', existingPatient: true, registrationAlreadyCompleted: false, registrationLinkSentByWhatsapp: true,
+      });
       setup(PublicBookingComponent);
       const fixture = await mount(PublicBookingComponent);
       await goToDetails(fixture);
-      type(document.querySelector('input[name=firstName]'), 'Nadia');
-      type(document.querySelector('input[name=lastName]'), 'Zniber');
+      await fillDetails(fixture);
+      (document.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
+      await settleUi(fixture);
+
+      expect(document.body.textContent).toContain('RDV9999');
+      expect(document.body.textContent).not.toContain('PUB.BOOK.REG_CTA');
+      expect(document.body.textContent).toContain('PUB.BOOK.REG_SENT_WHATSAPP');
+    });
+
+    it('notes when registration form is already completed and hides CTA', async () => {
+      api['bookWithTokenDirect'].mockResolvedValueOnce({
+        reference: 'RDV7777', existingPatient: true, registrationAlreadyCompleted: true, registrationLinkSentByWhatsapp: false,
+      });
+      setup(PublicBookingComponent);
+      const fixture = await mount(PublicBookingComponent);
+      await goToDetails(fixture);
+      await fillDetails(fixture);
+      (document.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
+      await settleUi(fixture);
+
+      expect(document.body.textContent).not.toContain('PUB.BOOK.REG_CTA');
+      expect(document.body.textContent).toContain('PUB.BOOK.REG_ALREADY_DONE');
+    });
+
+    it('cannot be sent without consent or with invalid phone', async () => {
+      setup(PublicBookingComponent);
+      const fixture = await mount(PublicBookingComponent);
+      await goToDetails(fixture);
+      type(document.querySelector('input[name=fullName]'), 'Nadia Zniber');
       type(document.querySelector('input[name=phone]'), '0655443322');
       await settleUi(fixture);
       expect((document.querySelector('button[type=submit]') as HTMLButtonElement).disabled).toBe(true);
     });
 
     it('goes back to the free times when the slot was just taken', async () => {
-      api['submitBooking'].mockRejectedValueOnce(new HttpErrorResponse({ status: 409 }));
+      api['bookWithTokenDirect'].mockRejectedValueOnce(new HttpErrorResponse({ status: 409 }));
       setup(PublicBookingComponent);
       const fixture = await mount(PublicBookingComponent);
       await goToDetails(fixture);

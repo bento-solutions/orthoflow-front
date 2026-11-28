@@ -6690,6 +6690,39 @@ export interface components {
         Decline: {
             reason?: string;
         };
+        DirectBookRequest: {
+            /** Format: uuid */
+            appointmentTypeId: string;
+            captchaToken?: string;
+            consent: boolean;
+            countryCode?: string;
+            fullName: string;
+            language?: string;
+            notes?: string;
+            phone: string;
+            /** Format: uuid */
+            practitionerId?: string;
+            /** Format: date-time */
+            startsAt: string;
+            website?: string;
+        };
+        DirectBookResponse: {
+            /** Format: uuid */
+            appointmentId?: string;
+            appointmentTypeName?: string;
+            clinicAddress?: string;
+            clinicName?: string;
+            doctorName?: string;
+            /** Format: int32 */
+            durationMinutes?: number;
+            existingPatient?: boolean;
+            reference?: string;
+            registrationAlreadyCompleted?: boolean;
+            registrationLinkSentByWhatsapp?: boolean;
+            registrationUrl?: string;
+            /** Format: date-time */
+            startsAt?: string;
+        };
         DeliveryNoteLineRequest: {
             batchNumber?: string;
             /** Format: date */

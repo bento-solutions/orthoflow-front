@@ -2893,7 +2893,16 @@
       "SUBMIT": "Envoyer ma demande",
       "SLOT_TAKEN": "Cet horaire vient d'être pris. Choisissez-en un autre.",
       "DONE_TITLE": "Demande envoyée",
-      "DONE_TEXT": "Le cabinet va la confirmer très vite par message. Votre rendez-vous n'est pris qu'à ce moment-là."
+      "DONE_TEXT": "Le cabinet va la confirmer très vite par message. Votre rendez-vous n'est pris qu'à ce moment-là.",
+      "WITH_DOCTOR": "Avec {{name}}",
+      "DONE_CONFIRMED_TITLE": "Rendez-vous confirmé",
+      "DONE_CONFIRMED_TEXT": "Votre rendez-vous est enregistré. Une confirmation avec tous les détails vous a été envoyée sur WhatsApp.",
+      "REG_CTA": "Simplifiez votre consultation en remplissant ce formulaire patient",
+      "REG_SUPPORTING": "Prend environ 5 minutes.",
+      "REG_ALREADY_DONE": "Votre fiche patient est déjà complétée.",
+      "REG_SENT_WHATSAPP": "Pour votre confidentialité, le lien de votre fiche patient a été envoyé uniquement sur votre WhatsApp.",
+      "CAPTCHA_REQUIRED": "Veuillez compléter la vérification de sécurité.",
+      "ADDRESS_LABEL": "Adresse :"
     },
     "REG": {
       "TITLE": "Votre fiche patient",
@@ -2939,6 +2948,19 @@
       "DONE_TITLE": "Merci pour votre avis",
       "DONE_TEXT": "Il aide le cabinet à s'améliorer.",
       "USED": "Cet avis a déjà été envoyé, ou le lien a expiré."
+    },
+    "FULL_NAME": "Nom complet",
+    "COUNTRY_CODE": "Indicatif",
+    "PHONE_WHATSAPP": "Téléphone (WhatsApp)",
+    "PHONE_INVALID": "Entrez un numéro WhatsApp valide.",
+    "EMERGENCY": {
+      "CTA": "Contactez-nous immédiatement",
+      "TITLE": "Urgence dentaire",
+      "SUBTITLE": "Vous avez une douleur aiguë, un traumatisme ou un appareil décollé ? Contactez le cabinet sans attendre.",
+      "CALL": "Appeler le cabinet",
+      "WHATSAPP": "Décrire votre urgence",
+      "PREFILL": "URGENT - Bonjour, j'ai une urgence dentaire : ",
+      "CLOSE": "Fermer"
     }
   },
   "INT": {

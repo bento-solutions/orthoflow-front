@@ -17,6 +17,8 @@ export type PublicBookingInfo = Wire<'BookingPublicInfo'>;
 export type PublicRegistrationInfo = Wire<'RegistrationPublicInfo'>;
 export type PublicSurveyInfo = Wire<'SurveyPublicInfo'>;
 export type BookingSubmission = Req<'Submit'>;
+export type DirectBookingSubmission = Req<'DirectBookRequest'>;
+export type DirectBookResult = Wire<'DirectBookResponse'>;
 export type RegistrationForm = Req<'Form'>;
 export type SurveyAnswer = Req<'Answer'>;
 
@@ -88,6 +90,12 @@ export class IntakeApi {
   }
   directAvailability(typeId: string | undefined, from: string, days: number, durationMinutes?: number): Promise<Record<string, string[]>> {
     return this.get<Wire<'Availability'>>('/public/booking/availability', { typeId, from, days, durationMinutes }).then(a => a.days);
+  }
+  bookDirect(body: DirectBookingSubmission): Promise<DirectBookResult> {
+    return this.post('/public/booking/appointments', body);
+  }
+  bookWithTokenDirect(token: string, body: DirectBookingSubmission): Promise<DirectBookResult> {
+    return this.post(`/public/book/${token}/appointments`, body);
   }
   publicBookingInfo(token: string): Promise<PublicBookingInfo> {
     return this.get(`/public/book/${token}`);

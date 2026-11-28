@@ -2893,7 +2893,16 @@
       "SUBMIT": "Send my request",
       "SLOT_TAKEN": "That time was just taken. Please pick another.",
       "DONE_TITLE": "Request sent",
-      "DONE_TEXT": "The clinic will confirm it shortly by message. Your appointment is only booked once they do."
+      "DONE_TEXT": "The clinic will confirm it shortly by message. Your appointment is only booked once they do.",
+      "WITH_DOCTOR": "With {{name}}",
+      "DONE_CONFIRMED_TITLE": "Appointment confirmed",
+      "DONE_CONFIRMED_TEXT": "Your appointment is booked. A confirmation with all details has been sent to you on WhatsApp.",
+      "REG_CTA": "Make your consultation simple by filling this patient form",
+      "REG_SUPPORTING": "Takes about 5 minutes.",
+      "REG_ALREADY_DONE": "Your patient registration form is already completed.",
+      "REG_SENT_WHATSAPP": "For your privacy, your patient form link was sent only to your WhatsApp number.",
+      "CAPTCHA_REQUIRED": "Please complete the security check.",
+      "ADDRESS_LABEL": "Address:"
     },
     "REG": {
       "TITLE": "Your patient form",
@@ -2939,6 +2948,19 @@
       "DONE_TITLE": "Thank you for your feedback",
       "DONE_TEXT": "It helps the clinic improve.",
       "USED": "This feedback was already sent, or the link has expired."
+    },
+    "FULL_NAME": "Full name",
+    "COUNTRY_CODE": "Code",
+    "PHONE_WHATSAPP": "Phone (WhatsApp)",
+    "PHONE_INVALID": "Please enter a valid WhatsApp phone number.",
+    "EMERGENCY": {
+      "CTA": "Contact us immediately",
+      "TITLE": "Dental emergency",
+      "SUBTITLE": "Experiencing severe pain, trauma, or a broken appliance? Reach the clinic directly right now.",
+      "CALL": "Call the clinic",
+      "WHATSAPP": "Describe your emergency",
+      "PREFILL": "URGENT - Hello, I have a dental emergency: ",
+      "CLOSE": "Close"
     }
   },
   "INT": {

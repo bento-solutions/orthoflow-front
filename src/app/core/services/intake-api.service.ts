@@ -12,6 +12,7 @@ export type SurveyReport = Wire<'Report'>;
 export type SurveyRow = Wire<'SurveyRow'>;
 export type Appointment = Wire<'AppointmentResponse'>;
 
+export type PublicConfig = Wire<'BookingPublicConfig'>;
 export type PublicBookingInfo = Wire<'BookingPublicInfo'>;
 export type PublicRegistrationInfo = Wire<'RegistrationPublicInfo'>;
 export type PublicSurveyInfo = Wire<'SurveyPublicInfo'>;
@@ -79,6 +80,15 @@ export class IntakeApi {
   }
 
   // ── public forms (no session) ──────────────────────────────────────
+  publicConfig(): Promise<PublicConfig> {
+    return this.get('/public/config');
+  }
+  directBookingInfo(): Promise<PublicBookingInfo> {
+    return this.get('/public/booking/info');
+  }
+  directAvailability(typeId: string | undefined, from: string, days: number, durationMinutes?: number): Promise<Record<string, string[]>> {
+    return this.get<Wire<'Availability'>>('/public/booking/availability', { typeId, from, days, durationMinutes }).then(a => a.days);
+  }
   publicBookingInfo(token: string): Promise<PublicBookingInfo> {
     return this.get(`/public/book/${token}`);
   }

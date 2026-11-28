@@ -5970,10 +5970,29 @@ export interface components {
             totalCollected?: number;
             totalInvoiced?: number;
         };
+        BookingPublicConfig: {
+            baileysPhone?: string;
+            captchaEnabled?: boolean;
+            captchaSiteKey?: string;
+            clinicAddress?: string;
+            clinicName?: string;
+            clinicPhone?: string;
+            defaultLanguage?: string;
+            emergencyMarker?: string;
+            timeZone?: string;
+        };
         BookingPublicInfo: {
+            baileysPhone?: string;
+            captchaEnabled?: boolean;
+            captchaSiteKey?: string;
             city?: string;
+            clinicAddress?: string;
             clinicName?: string;
             defaultLanguage?: string;
+            emergencyMarker?: string;
+            /** Format: uuid */
+            lockedPractitionerId?: string;
+            lockedPractitionerName?: string;
             /** Format: int32 */
             maxDaysAhead?: number;
             phone?: string;

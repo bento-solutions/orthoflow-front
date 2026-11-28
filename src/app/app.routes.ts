@@ -33,6 +33,12 @@ export const routes: Routes = [
     canActivate: [onboardingGuard]
   },
   {
+    // Direct public booking page for the configured clinic/doctor (no token in URL needed).
+    path: 'book',
+    title: 'PUB.BOOK.TITLE',
+    loadComponent: () => import('./features/public/public-booking.component').then(m => m.PublicBookingComponent),
+  },
+  {
     // Pages a patient opens from a link: no sign-in, no staff navigation. The token in the address is the only authority.
     path: 'public',
     children: [

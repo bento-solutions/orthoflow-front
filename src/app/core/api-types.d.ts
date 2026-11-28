@@ -8626,6 +8626,7 @@ export interface components {
             reference?: string;
         };
         PaymentTermsRequest: {
+            dueDates?: string[];
             /** Format: date */
             firstDueDate?: string;
             /** @enum {string} */

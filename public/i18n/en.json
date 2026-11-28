@@ -564,7 +564,9 @@
         "BIWEEKLY": "Every two weeks",
         "MONTHLY": "Every month",
         "QUARTERLY": "Every three months"
-      }
+      },
+      "EDIT_HINT": "Change any date if a part falls on another day.",
+      "DEADLINES_ORDER": "Each deadline must be on or after the one before it."
     }
   },
   "AUTH": {

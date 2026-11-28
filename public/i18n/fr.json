@@ -564,7 +564,9 @@
         "BIWEEKLY": "Toutes les deux semaines",
         "MONTHLY": "Chaque mois",
         "QUARTERLY": "Chaque trimestre"
-      }
+      },
+      "EDIT_HINT": "Modifiez une date si une échéance tombe un autre jour.",
+      "DEADLINES_ORDER": "Chaque échéance doit tomber le même jour ou après la précédente."
     }
   },
   "AUTH": {

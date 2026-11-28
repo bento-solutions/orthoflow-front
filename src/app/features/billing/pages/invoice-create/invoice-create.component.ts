@@ -106,11 +106,11 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
               <div class="terms-fields">
                 <div class="field-group">
                   <label for="invoice-create-parts">{{ 'BILLING.PAYMENT_TERMS.PARTS' | translate }}</label>
-                  <input id="invoice-create-parts" type="number" min="2" max="120" class="form-control" [ngModel]="instalmentCount()" (ngModelChange)="instalmentCount.set(+$event)">
+                  <input id="invoice-create-parts" type="number" min="2" max="120" class="form-control" [ngModel]="instalmentCount()" (ngModelChange)="instalmentCount.set(+$event); dateOverrides.set({})">
                 </div>
                 <div class="field-group">
                   <label for="invoice-create-frequency">{{ 'BILLING.PAYMENT_TERMS.FREQUENCY' | translate }}</label>
-                  <select id="invoice-create-frequency" class="form-control" [ngModel]="frequency()" (ngModelChange)="frequency.set($event)">
+                  <select id="invoice-create-frequency" class="form-control" [ngModel]="frequency()" (ngModelChange)="frequency.set($event); dateOverrides.set({})">
                     @for (f of frequencies; track f) {
                       <option [value]="f">{{ 'BILLING.PAYMENT_TERMS.FREQ.' + f | translate }}</option>
                     }
@@ -118,7 +118,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
                 </div>
                 <div class="field-group">
                   <label for="invoice-create-first">{{ 'BILLING.PAYMENT_TERMS.FIRST_DEADLINE' | translate }}</label>
-                  <input id="invoice-create-first" type="date" class="form-control" [min]="today" [ngModel]="firstDeadline()" (ngModelChange)="firstDeadline.set($event)">
+                  <input id="invoice-create-first" type="date" class="form-control" [min]="today" [ngModel]="firstDeadline()" (ngModelChange)="firstDeadline.set($event); dateOverrides.set({})">
                 </div>
               </div>
             }
@@ -128,11 +128,20 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
             } @else if (schedule().length) {
               <div class="schedule-preview">
                 <h3>{{ 'BILLING.PAYMENT_TERMS.SCHEDULE' | translate }}</h3>
+                @if (paymentChoice() === 'INSTALMENTS') {
+                  <p class="terms-note schedule-hint">{{ 'BILLING.PAYMENT_TERMS.EDIT_HINT' | translate }}</p>
+                }
                 <ol>
                   @for (part of schedule(); track part.seq) {
                     <li>
                       <span class="part-name">{{ 'BILLING.PAYMENT_TERMS.PART' | translate: { n: part.seq, count: schedule().length } }}</span>
-                      <span class="part-date">{{ part.dueDate | appDate }}</span>
+                      @if (paymentChoice() === 'INSTALMENTS') {
+                        <input type="date" class="form-control part-date-input" [min]="today"
+                          [attr.aria-label]="'BILLING.PAYMENT_TERMS.PART' | translate: { n: part.seq, count: schedule().length }"
+                          [ngModel]="part.dueDate" (ngModelChange)="setPartDate(part.seq, $event)">
+                      } @else {
+                        <span class="part-date">{{ part.dueDate | appDate }}</span>
+                      }
                       <span class="part-amount">{{ part.amount | money }}</span>
                     </li>
                   }
@@ -431,6 +440,9 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
     }
     .part-name { color: rgb(var(--ink-700)); }
     .part-date { color: rgb(var(--ink-900)); font-weight: 500; }
+    .schedule-preview li { align-items: center; }
+    .part-date-input { padding: 0.375rem 0.625rem; width: 11rem; }
+    .schedule-hint { margin: 0 0 0.5rem; font-size: var(--text-sm); }
     .part-amount { text-align: end; font-weight: 600; color: rgb(var(--ink-900)); }
     @media (max-width: 720px) {
       .terms-choice { grid-template-columns: 1fr; }
@@ -482,6 +494,12 @@ export class InvoiceCreateComponent implements OnInit {
   readonly instalmentCount = signal(3);
   readonly frequency = signal<PaymentFrequency>('MONTHLY');
   readonly firstDeadline = signal(after(this.today, 'MONTHLY', 1));
+  /** Deadlines changed by hand, by part number; cleared when the count, frequency or first deadline change. */
+  readonly dateOverrides = signal<Record<number, string>>({});
+
+  setPartDate(seq: number, day: string): void {
+    this.dateOverrides.update(o => ({ ...o, [seq]: day }));
+  }
 
   /** The parts and their deadlines as the server will create them. */
   readonly schedule = computed(() => {
@@ -490,7 +508,10 @@ export class InvoiceCreateComponent implements OnInit {
       case 'ONE_PAYMENT': return this.singleDeadline() ? previewSchedule(this.total(), 1, 'MONTHLY', this.singleDeadline()) : [];
       case 'INSTALMENTS': {
         const n = this.instalmentCount();
-        return this.firstDeadline() && n >= 2 && n <= 120 ? previewSchedule(this.total(), n, this.frequency(), this.firstDeadline()) : [];
+        if (!this.firstDeadline() || n < 2 || n > 120) return [];
+        const overrides = this.dateOverrides();
+        return previewSchedule(this.total(), n, this.frequency(), this.firstDeadline())
+          .map(part => ({ ...part, dueDate: overrides[part.seq] ?? part.dueDate }));
       }
     }
   });
@@ -512,7 +533,13 @@ export class InvoiceCreateComponent implements OnInit {
         if (!Number.isInteger(n) || n < 2 || n > 120) return 'BILLING.PAYMENT_TERMS.NEED_PARTS';
         if (!first) return 'BILLING.PAYMENT_TERMS.NEED_DEADLINE';
         if (first < this.today) return 'BILLING.PAYMENT_TERMS.DEADLINE_PAST';
-        return { mode: 'INSTALMENTS', instalmentCount: n, frequency: this.frequency(), firstDueDate: first };
+        const dates = this.schedule().map(p => p.dueDate);
+        if (dates.some(d => !d)) return 'BILLING.PAYMENT_TERMS.NEED_DEADLINE';
+        if (dates.some(d => d < this.today)) return 'BILLING.PAYMENT_TERMS.DEADLINE_PAST';
+        if (dates.some((d, i) => i > 0 && d < dates[i - 1])) return 'BILLING.PAYMENT_TERMS.DEADLINES_ORDER';
+        const edited = Object.keys(this.dateOverrides()).length > 0;
+        return { mode: 'INSTALMENTS', instalmentCount: n, frequency: this.frequency(), firstDueDate: dates[0],
+          ...(edited ? { dueDates: dates } : {}) };
       }
     }
   }

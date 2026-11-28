@@ -1,4 +1,5 @@
 import type { BufferGeometry, Object3D } from 'three';
+import { toothGumColors } from './scan-shading';
 
 /** The 3D formats an intraoral scan may come in, by the type the server decided from the bytes. */
 export const MODEL_TYPES = ['model/stl', 'model/x-ply', 'model/obj', 'model/3mf', 'model/gltf-binary', 'model/gltf+json'] as const;
@@ -51,7 +52,15 @@ export async function loadScanModel(blob: Blob, type: ModelType): Promise<Object
   switch (type) {
     case 'model/stl': {
       const { STLLoader } = await import('three/examples/jsm/loaders/STLLoader.js');
-      return meshOf(new STLLoader().parse(await blob.arrayBuffer()));
+      const geometry = shade(new STLLoader().parse(await blob.arrayBuffer()), mergeVertices);
+      // STL holds no colour (bar a rare per-facet extension the loader reads itself): tint the
+      // crowns and gums from the shape so the arch reads as teeth and gingiva, not a white cast.
+      if (!geometry.getAttribute('color')) {
+        const position = geometry.getAttribute('position');
+        const colors = toothGumColors(position.array, geometry.index ? geometry.index.array : null);
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      }
+      return new THREE.Mesh(geometry, scanMaterial(true));
     }
     case 'model/x-ply': {
       const { PLYLoader } = await import('three/examples/jsm/loaders/PLYLoader.js');

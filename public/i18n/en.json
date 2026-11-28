@@ -534,7 +534,40 @@
       "CREATED": "Invoice created.",
       "LOAD_FAILED": "Could not load billing data. Please try again."
     },
-    "INVOICE_DETAIL": "Invoice details"
+    "INVOICE_DETAIL": "Invoice details",
+    "PAYMENT_TERMS": {
+      "TITLE": "Payment plan",
+      "IMMEDIATE": "Immediate",
+      "IMMEDIATE_HINT": "Paid on receipt, no deadline",
+      "ONE_PAYMENT": "One payment",
+      "ONE_PAYMENT_HINT": "Paid in full by one deadline",
+      "INSTALMENTS": "Instalments",
+      "INSTALMENTS_HINT": "Split into parts, each with its own deadline",
+      "DEADLINE": "Deadline",
+      "PARTS": "Number of parts",
+      "FREQUENCY": "Frequency",
+      "FIRST_DEADLINE": "First deadline",
+      "SCHEDULE": "Schedule",
+      "PART": "Part {{n}} of {{count}}",
+      "NO_DEADLINE": "No deadline: payable on receipt",
+      "IN_PARTS": "In {{n}} instalments",
+      "STATUS_PAID": "Paid",
+      "STATUS_DUE": "Due",
+      "STATUS_OVERDUE": "Overdue",
+      "STATUS_CANCELLED": "Cancelled",
+      "PAID_SO_FAR": "{{amount}} paid",
+      "NEED_DEADLINE": "Choose a deadline for the payment.",
+      "DEADLINE_PAST": "A deadline cannot be before today.",
+      "NEED_PARTS": "An instalment plan needs at least 2 parts.",
+      "FREQ": {
+        "WEEKLY": "Every week",
+        "BIWEEKLY": "Every two weeks",
+        "MONTHLY": "Every month",
+        "QUARTERLY": "Every three months"
+      },
+      "EDIT_HINT": "Change any date if a part falls on another day.",
+      "DEADLINES_ORDER": "Each deadline must be on or after the one before it."
+    }
   },
   "AUTH": {
     "SIGN_IN_TITLE": "Sign in to OrthoFlow",

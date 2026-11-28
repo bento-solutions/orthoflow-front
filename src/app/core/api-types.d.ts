@@ -6639,6 +6639,7 @@ export interface components {
             notes?: string;
             /** Format: uuid */
             patientId: string;
+            payment?: components["schemas"]["PaymentTermsRequest"];
             /** Format: uuid */
             practiceId?: string;
             /** Format: uuid */
@@ -7548,6 +7549,30 @@ export interface components {
             quantity?: number;
             unitPrice?: number;
         };
+        InvoicePaymentPart: {
+            amount?: number;
+            /** Format: date */
+            dueDate?: string;
+            /** Format: uuid */
+            id?: string;
+            overdue?: boolean;
+            paidAmount?: number;
+            /** Format: int32 */
+            seq?: number;
+            /** @enum {string} */
+            status?: "PENDING" | "PAID" | "CANCELLED";
+        };
+        InvoicePaymentPlanResponse: {
+            /** @enum {string} */
+            frequency?: "WEEKLY" | "BIWEEKLY" | "MONTHLY" | "QUARTERLY";
+            /** Format: uuid */
+            id?: string;
+            /** Format: int32 */
+            instalmentCount?: number;
+            instalments?: components["schemas"]["InvoicePaymentPart"][];
+            /** @enum {string} */
+            status?: "ACTIVE" | "COMPLETED" | "CANCELLED";
+        };
         InvoiceResponse: {
             amountPaid?: number;
             balanceDue?: number;
@@ -7563,9 +7588,12 @@ export interface components {
             /** Format: date */
             issueDate?: string;
             lines?: components["schemas"]["InvoiceLineResponse"][];
+            notes?: string;
             /** Format: uuid */
             patientId?: string;
             patientName?: string;
+            paymentMode?: string;
+            paymentPlan?: components["schemas"]["InvoicePaymentPlanResponse"];
             payments?: components["schemas"]["PaymentResponse"][];
             /** Format: uuid */
             practiceId?: string;
@@ -8596,6 +8624,17 @@ export interface components {
             /** Format: date */
             paymentDate?: string;
             reference?: string;
+        };
+        PaymentTermsRequest: {
+            dueDates?: string[];
+            /** Format: date */
+            firstDueDate?: string;
+            /** @enum {string} */
+            frequency?: "WEEKLY" | "BIWEEKLY" | "MONTHLY" | "QUARTERLY";
+            /** Format: int32 */
+            instalmentCount?: number;
+            /** @enum {string} */
+            mode: "IMMEDIATE" | "INSTALMENTS";
         };
         PayoutRequest: {
             amount: number;

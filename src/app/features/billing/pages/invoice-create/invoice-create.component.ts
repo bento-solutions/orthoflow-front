@@ -116,7 +116,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
   styles: [`
     .create-invoice-container {
       padding: 2rem;
-      max-width: 1200px;
+      max-width: 1440px;
       margin: 0 auto;
     }
 
@@ -159,7 +159,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 
     .form-grid {
       display: grid;
-      grid-template-columns: 1fr 350px;
+      grid-template-columns: minmax(0, 1fr) 320px;
       gap: 2rem;
     }
 
@@ -214,6 +214,8 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
     }
 
     .line-items-table {
+      /* act code | description | qty | unit price | disc % | total | remove */
+      --line-cols: minmax(6.5rem, 1fr) minmax(11rem, 2.4fr) 4.5rem 7rem 4.5rem 7.5rem 2.75rem;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
@@ -221,9 +223,9 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 
     .table-header {
       display: grid;
-      grid-template-columns: 110px 1fr 80px 120px 80px 100px 40px;
-      gap: 1rem;
-      padding: 0 0.5rem;
+      grid-template-columns: var(--line-cols);
+      gap: 0.75rem;
+      padding: 0 0.75rem;
       font-size: var(--text-xs);
       font-weight: 600;
       color: rgb(var(--ink-500));
@@ -232,10 +234,20 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 
     .line-item-row {
       display: grid;
-      grid-template-columns: 110px 1fr 80px 120px 80px 100px 40px;
-      gap: 1rem;
+      grid-template-columns: var(--line-cols);
+      gap: 0.75rem;
       align-items: center;
     }
+
+    /* Inputs fill their column exactly, so each one sits under its header (a number input's
+       intrinsic width used to push the row's columns out of line with the header's). */
+    .line-item-row .form-control {
+      width: 100%;
+      min-width: 0;
+      padding: 0.625rem 0.75rem;
+    }
+
+    .table-header .col-total, .line-item-row .col-total { text-align: end; white-space: nowrap; }
 
     .col-total {
       font-weight: 600;
@@ -279,6 +291,12 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
       top: 2rem;
     }
 
+    .summary-card h2 {
+      margin: 0 0 1.25rem 0;
+      font-size: var(--text-lg);
+      font-weight: 600;
+    }
+
     .summary-row {
       display: flex;
       justify-content: space-between;
@@ -308,10 +326,13 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
     /* The lines are a table: on a narrow screen it scrolls on its own, and the page does not. */
     .form-grid > * { min-width: 0; }
     .line-items-table { overflow-x: auto; }
-    .line-items-table > * { min-width: 40rem; }
+    .line-items-table > * { min-width: 49rem; }
 
-    @media (max-width: 992px) {
+    /* Below this width the summary moves under the form, so a whole line still fits
+       side by side instead of the line table having to scroll. */
+    @media (max-width: 1360px) {
       .form-grid { grid-template-columns: 1fr; }
+      .summary-card { position: static; }
     }
   `]
 })

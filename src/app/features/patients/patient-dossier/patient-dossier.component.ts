@@ -219,8 +219,9 @@ export function patientState(status: string | null | undefined, treatments: read
           @case ('imaging') {
             <h2 class="sr-only">{{ 'PATIENTS.DOSSIER.TAB.IMAGING' | translate }}</h2>
             <div class="space-y-6">
-              @if (canClinical()) { <app-patient-photos [patientId]="patient.id" /> }
+              <!-- Upload and file list first, then the photo and radiograph series. -->
               <app-patient-files [patientId]="patient.id" />
+              @if (canClinical()) { <app-patient-photos [patientId]="patient.id" /> }
             </div>
           }
           @case ('billing') {

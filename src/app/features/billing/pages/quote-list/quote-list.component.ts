@@ -1,89 +1,101 @@
-import { IconComponent } from '../../../../shared/ui/icon.component';
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { InvoiceService } from '../../services/invoice.service';
-import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { Quote, QuoteApi, QuoteState, quoteState } from '../../../../core/services/quote-api.service';
+import { loadable } from '../../../../core/utils/loadable';
 import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { PageHeaderComponent } from '../../../../shared/ui/page-header.component';
 
+const PILL: Record<QuoteState, string> = {
+  DRAFT: 'pill-idle', SENT: 'pill-active', ACCEPTED: 'pill-done', REFUSED: 'pill-critical', CANCELLED: 'pill-idle', EXPIRED: 'pill-attention',
+};
+
+/**
+ * Every devis of the clinic, newest first: what is waiting for an answer, what was accepted and is
+ * still to invoice. A devis is written and handled in the patient's file; a row opens it there.
+ */
 @Component({
   selector: 'app-quote-list',
   standalone: true,
-  imports: [IconComponent, AppDatePipe, MoneyPipe, CommonModule, RouterModule, TranslateModule],
+  imports: [AppDatePipe, MoneyPipe, FormsModule, RouterModule, TranslateModule, PageHeaderComponent],
   template: `
-    <div class="billing-container">
-      <header class="page-header">
-        <div class="header-content">
-          <button type="button" class="back-btn" [attr.aria-label]="'COMMON.BACK' | translate" routerLink="/billing/invoices">
-            <app-icon class="mi" name="arrow_back" size="1em" />
-          </button>
+    <div class="anim-rise">
+      <app-page-header>
+        <div page-actions class="contents">
+          <a class="btn btn-secondary" routerLink="/billing/invoices">{{ 'BILLING.INVOICES' | translate }}</a>
         </div>
-        <button type="button" class="btn btn-primary">
-          <app-icon class="mi" name="add" size="1em" />
-          {{ 'BILLING.NEW_QUOTE' | translate }}
-        </button>
-      </header>
+      </app-page-header>
 
-      <div class="table-wrap">
-        <div class="table-scroll">
+      <div class="mb-4 flex flex-wrap gap-2" role="group" [attr.aria-label]="'COMMON.STATUS' | translate">
+        @for (f of filters; track f) {
+          <button type="button" class="btn btn-sm" [class.btn-primary]="filter() === f" [class.btn-secondary]="filter() === f ? false : true"
+                  [attr.aria-pressed]="filter() === f" (click)="filter.set(f)">
+            {{ 'QUOTE.FILTER.' + f | translate }} <span class="tnum">({{ count(f) }})</span>
+          </button>
+        }
+      </div>
+
+      <div class="table-wrap"><div class="table-scroll">
         <table class="data-table">
-          <thead>
-            <tr>
-              <th scope="col">{{ 'BILLING.QUOTE_NUMBER' | translate }}</th>
-              <th scope="col">{{ 'PATIENTS.NAME' | translate }}</th>
-              <th scope="col">{{ 'COMMON.STATUS' | translate }}</th>
-              <th scope="col">{{ 'BILLING.ISSUE_DATE' | translate }}</th>
-              <th scope="col">{{ 'BILLING.EXPIRY_DATE' | translate }}</th>
-              <th scope="col">{{ 'COMMON.AMOUNT' | translate }}</th>
-              <th scope="col">{{ 'COMMON.ACTIONS' | translate }}</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th scope="col">{{ 'QUOTE.COL.NUMBER' | translate }}</th>
+            <th scope="col">{{ 'QUOTE.COL.PATIENT' | translate }}</th>
+            <th scope="col">{{ 'QUOTE.COL.DATE' | translate }}</th>
+            <th scope="col">{{ 'QUOTE.COL.VALID' | translate }}</th>
+            <th scope="col">{{ 'COMMON.STATUS' | translate }}</th>
+            <th scope="col" class="cell-num">{{ 'QUOTE.COL.TOTAL' | translate }}</th>
+            <th scope="col" class="cell-num">{{ 'QUOTE.COL.TO_INVOICE' | translate }}</th>
+          </tr></thead>
           <tbody>
-            @for (quote of invoiceService.quotes(); track quote.id) {
+            @for (q of shown(); track q.id) {
               <tr>
-                <td><span class="quote-number">{{ quote.quoteNumber }}</span></td>
-                <td>{{ quote.patientName }}</td>
-                <td>
-                  <span class="status-badge" [class]="quote.status.toLowerCase()">
-                     {{ 'BILLING.STATUS.' + quote.status | translate }}
-                  </span>
-                </td>
-                <td>{{ quote.issueDate | appDate }}</td>
-                <td>{{ quote.expiryDate | appDate }}</td>
-                <td><span class="amount">{{ quote.total | money:quote.currency }}</span></td>
-                <td>
-                  <div class="row-actions">
-                    <button type="button" class="icon-btn" [title]="'BILLING.ACCEPT_CONVERT' | translate" [attr.aria-label]="'BILLING.ACCEPT_CONVERT' | translate">
-                      <app-icon class="mi" name="check_circle" size="1em" />
-                    </button>
-                    <button type="button" class="icon-btn" [title]="'BILLING.DOWNLOAD_PDF' | translate" [attr.aria-label]="'BILLING.DOWNLOAD_PDF' | translate">
-                      <app-icon class="mi" name="download" size="1em" />
-                    </button>
-                  </div>
-                </td>
+                <td><a class="font-bold text-ink-900 no-underline hover:text-petrol-700" [routerLink]="['/patients', q.patientId]" [queryParams]="{ tab: 'billing' }">
+                  <span class="ltr-data">{{ q.quoteNumber }}</span></a>
+                  @if (q.title) { <span class="block text-xs text-ink-500">{{ q.title }}</span> }</td>
+                <td>{{ q.patientName || '—' }}</td>
+                <td>{{ q.issueDate | appDate }}</td>
+                <td>{{ q.validUntil | appDate }}</td>
+                <td><span [class]="'pill ' + pill(q)">{{ 'QUOTE.STATUS.' + state(q) | translate }}</span></td>
+                <td class="cell-num">{{ q.total | money }}</td>
+                <td class="cell-num">{{ q.status === 'ACCEPTED' ? (q.acceptedTotal - q.invoicedTotal | money) : '—' }}</td>
               </tr>
+            } @empty {
+              <tr><td colspan="7" class="py-6 text-center text-ink-500">{{ (all.loading() ? 'COMMON.LOADING' : 'QUOTE.EMPTY_ALL') | translate }}</td></tr>
             }
           </tbody>
         </table>
-        </div>
-      </div>
+      </div></div>
     </div>
   `,
-  styles: [`
-    .billing-container { padding: 2rem; max-width: 1200px; margin: 0 auto; }
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-    .header-content { display: flex; align-items: center; gap: 1.5rem; }
-    .header-content h1 { margin: 0; font-size: var(--text-2xl); font-weight: 700; }
-    .back-btn { background: var(--surface); border: 1px solid rgb(var(--ink-200)); border-radius: var(--radius-lg); padding: 0.5rem; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; cursor: pointer; display: flex; color: rgb(var(--ink-500)); }
-    .back-btn:focus-visible, .icon-btn:focus-visible, .btn-primary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-
-    .quote-number { font-weight: 600; color: rgb(var(--petrol-800)); }
-    
-    .amount { font-weight: 700; color: rgb(var(--ink-900)); }
-    .row-actions { display: flex; gap: 0.5rem; }
-  `]
 })
 export class QuoteListComponent {
-  invoiceService = inject(InvoiceService);
+  private readonly api = inject(QuoteApi);
+  protected readonly all = loadable<Quote[]>([]);
+  protected readonly filters = ['ALL', 'PENDING', 'TO_INVOICE', 'DRAFT'] as const;
+  protected readonly filter = signal<(typeof this.filters)[number]>('ALL');
+  protected readonly shown = computed(() => this.all.data().filter(q => this.matches(q, this.filter())));
+  protected readonly state = quoteState;
+
+  constructor() {
+    void this.all.load(() => this.api.list());
+  }
+
+  protected pill(q: Quote): string {
+    return PILL[quoteState(q)];
+  }
+
+  protected count(f: (typeof this.filters)[number]): number {
+    return this.all.data().filter(q => this.matches(q, f)).length;
+  }
+
+  private matches(q: Quote, f: (typeof this.filters)[number]): boolean {
+    switch (f) {
+      case 'PENDING': return q.status === 'SENT' && !q.expired;
+      case 'TO_INVOICE': return q.status === 'ACCEPTED' && q.acceptedTotal > q.invoicedTotal;
+      case 'DRAFT': return q.status === 'DRAFT';
+      default: return true;
+    }
+  }
 }

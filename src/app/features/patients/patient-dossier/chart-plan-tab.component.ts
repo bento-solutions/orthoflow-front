@@ -17,6 +17,8 @@ import { Dental3dChartComponent } from '../../dental-3d/dental-3d-chart.componen
 import { GumStatusComponent } from '../gum-status/gum-status.component';
 import { AssignedTreatmentsComponent } from './assigned-treatments.component';
 import { reportVisits } from './consultation-report.component';
+import type { Quote } from '../../../core/services/quote-api.service';
+import { QuotePrefill, blankLine, lineFromTreatment, plannedNotQuoted } from '../quotes/quote-logic';
 
 interface ToothGroup {
   fdi: string;
@@ -97,10 +99,18 @@ interface ToothGroup {
       <section class="card p-5" aria-labelledby="cp-plan">
         <header class="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h3 id="cp-plan" class="text-lg font-bold">{{ 'PATIENTS.DOSSIER.TREATMENT_PLAN' | translate }}</h3>
-          @if (canWrite() && form() !== 'plan') {
-            <button type="button" class="btn btn-secondary btn-sm" (click)="openForm('plan')"><app-icon name="plus" [size]="14" /> {{ 'COMMON.ADD' | translate }}</button>
-          }
+          <div class="flex flex-wrap gap-2">
+            @if (canQuote()) {
+              <button type="button" class="btn btn-primary btn-sm" (click)="quoteFromPlan()"><app-icon name="file-text" [size]="14" /> {{ 'QUOTE.CREATE_FROM_PLAN' | translate }}</button>
+            }
+            @if (canWrite() && form() !== 'plan') {
+              <button type="button" class="btn btn-secondary btn-sm" (click)="openForm('plan')"><app-icon name="plus" [size]="14" /> {{ 'COMMON.ADD' | translate }}</button>
+            }
+          </div>
         </header>
+        @if (quotedPlan(); as q) {
+          <p class="mb-2 text-xs text-ink-500">{{ 'QUOTE.PLAN_QUOTED' | translate: { count: q } }}</p>
+        }
         @if (form() === 'plan') { <ng-container [ngTemplateOutlet]="findingForm" /> }
 
         @if (planned().length) {
@@ -147,6 +157,9 @@ interface ToothGroup {
               {{ 'PATIENTS.DOSSIER.PROPOSED_PLAN' | translate }} <span class="pill pill-idle">{{ 'PATIENTS.DOSSIER.NOT_ACCEPTED' | translate }}</span>
             </p>
             <p class="whitespace-pre-line text-sm text-ink-800">{{ p.content }}</p>
+            @if (canQuote()) {
+              <button type="button" class="btn btn-secondary btn-sm mt-2" (click)="quoteFromProposal(p.content)"><app-icon name="file-text" [size]="14" /> {{ 'QUOTE.FROM_PROPOSAL' | translate }}</button>
+            }
           </div>
         }
 
@@ -158,7 +171,7 @@ interface ToothGroup {
       </section>
     </div>
 
-    <app-assigned-treatments class="mt-4 block" [patientId]="patient().id" [treatments]="treatments()" (changed)="treatmentsChanged.emit()" />
+    <app-assigned-treatments class="mt-4 block" [patientId]="patient().id" [treatments]="treatments()" [quotes]="quotes()" (changed)="treatmentsChanged.emit()" />
 
     <section class="card mt-4 p-5">
       <app-gum-status [patientId]="patient().id" [patientName]="patient().firstName + ' ' + patient().lastName" [patientBirthDate]="patient().dateOfBirth ?? null" />
@@ -221,6 +234,9 @@ export class ChartPlanTabComponent {
   readonly focusFdi = input<string | null>(null);
   readonly selected = model<string | null>(null);
   readonly treatmentsChanged = output<void>();
+  readonly quotes = input<Quote[]>([]);
+  /** "Créer un devis": the dossier opens the devis form, in the Facturation tab, with these lines. */
+  readonly createQuote = output<QuotePrefill>();
 
   private readonly records = inject(ClinicalRecordService);
   private readonly translate = inject(TranslateService);
@@ -229,6 +245,23 @@ export class ChartPlanTabComponent {
   protected readonly assigned = viewChild.required(AssignedTreatmentsComponent);
 
   protected readonly canWrite = computed(() => this.permissions.can('CLINICAL_WRITE'));
+  protected readonly canQuote = computed(() => this.permissions.can('BILLING_WRITE'));
+  /** How many planned treatments are already on a devis (and so are left out of a new one). */
+  protected readonly quotedPlan = computed(() => {
+    const planned = this.planned().length;
+    return planned - plannedNotQuoted(this.treatments(), this.quotes()).length || null;
+  });
+
+  /** A devis with the plan's treatments that no devis holds yet, priced from the catalogue. */
+  protected quoteFromPlan(): void {
+    const lines = plannedNotQuoted(this.treatments(), this.quotes()).map(lineFromTreatment).filter(l => l !== null);
+    this.createQuote.emit({ lines });
+  }
+
+  /** The plan a consultation proposed, as the devis's note: its acts are picked from the catalogue. */
+  protected quoteFromProposal(content: string): void {
+    this.createQuote.emit({ lines: [blankLine()], notes: content });
+  }
   protected readonly form = signal<'diagnostic' | 'plan' | null>(null);
   protected draft: { fdi: string; findingCode: string; severity: Severity | ''; note: string } = { fdi: '', findingCode: '', severity: '', note: '' };
 

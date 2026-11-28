@@ -32,6 +32,9 @@ import { ConsultationLogComponent } from '../../../shared/components/consultatio
 import { PermissionService } from '../../../core/services/permission.service';
 import { IconComponent, IconName } from '../../../shared/ui/icon.component';
 import { PatientAccountComponent } from '../account/patient-account.component';
+import { PatientQuotesComponent } from '../quotes/patient-quotes.component';
+import { QuotePrefill } from '../quotes/quote-logic';
+import { Quote, QuoteApi, isPending } from '../../../core/services/quote-api.service';
 import { PatientDocumentsComponent } from '../documents/patient-documents.component';
 import { PatientFilesComponent } from '../documents/patient-files.component';
 import { PatientPhotosComponent } from '../patient-photos/patient-photos.component';
@@ -99,7 +102,7 @@ export function patientState(status: string | null | undefined, treatments: read
     TranslateModule, IconComponent, VoiceSessionPanelComponent, VoiceSessionDockComponent, ConsultationPanelComponent,
     ConsultationCockpitComponent, ConsultationDrawerComponent, ConsultationLogComponent, PatientAccountComponent, PatientDocumentsComponent,
     PatientFilesComponent, PatientPhotosComponent, TreatmentLogComponent, ChartPlanTabComponent, MedicalHistoryPanelComponent,
-    PatientBannerComponent, SummaryTabComponent, VisitsTabComponent,
+    PatientBannerComponent, SummaryTabComponent, VisitsTabComponent, PatientQuotesComponent,
   ],
   template: `
     <div class="dossier-container" [class.has-voice-dock]="(voiceSession.isActive() || drawer()) && !cockpit()"
@@ -123,6 +126,7 @@ export function patientState(status: string | null | undefined, treatments: read
           [state]="state()"
           [nextAppointment]="nextAppointment()"
           [balance]="canBilling() ? balanceDueForPatient() : null"
+          [pendingQuotes]="canBilling() ? pendingQuotes() : 0"
           [starting]="voiceStarting() || consultation.starting()"
           [compact]="compact()"
           (startConsultation)="startConsultation()"
@@ -200,11 +204,13 @@ export function patientState(status: string | null | undefined, treatments: read
               [findings]="clinicalRecordService.findings()"
               [notes]="clinicalRecordService.notes()"
               [treatments]="patientTreatments()"
+              [quotes]="patientQuotes()"
               [staged]="stagedFindings()"
               [focusFdi]="voiceFocusFdi()"
               [selected]="selectedToothForTreatments()"
               (selectedChange)="onToothSelected3D($event)"
               (treatmentsChanged)="loadPatientTreatments(patient.id)"
+              (createQuote)="startQuote($event)"
             />
           }
           @case ('visits') {
@@ -227,6 +233,8 @@ export function patientState(status: string | null | undefined, treatments: read
           @case ('billing') {
             <h2 class="sr-only">{{ 'PATIENTS.DOSSIER.TAB.BILLING' | translate }}</h2>
             <div class="space-y-6">
+              <app-patient-quotes [patientId]="patient.id" [quotes]="patientQuotes()" [prefill]="quotePrefill()"
+                (prefillUsed)="quotePrefill.set(null)" (changed)="loadPatientQuotes(patient.id); loadPatientTreatments(patient.id); loadPatientBilling(patient.id)" />
               <app-patient-account [patientId]="patient.id" />
               <app-patient-documents [patientId]="patient.id" [patientName]="patient.firstName + ' ' + patient.lastName" [sections]="['forms']" />
             </div>
@@ -335,6 +343,7 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
   private chartService = inject(DentalChartService);
   private chartView = inject(Dental3dViewService);
   private invoiceService = inject(InvoiceService);
+  private readonly quoteApi = inject(QuoteApi);
   private translate = inject(TranslateService);
   private scheduleService = inject(ScheduleService);
   private toast = inject(ToastService);
@@ -481,6 +490,10 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
 
   patientInvoices = signal<Invoice[]>([]);
   patientTreatments = signal<PatientTreatment[]>([]);
+  patientQuotes = signal<Quote[]>([]);
+  /** The devis the plan's "Créer un devis" asked for, waiting for the Facturation tab to open it. */
+  readonly quotePrefill = signal<QuotePrefill | null>(null);
+  readonly pendingQuotes = computed(() => this.patientQuotes().filter(isPending).length);
   selectedToothForTreatments = signal<string | null>(null);
 
   readonly state = computed(() => patientState(this.patientService.currentPatient()?.status, this.patientTreatments()));
@@ -528,6 +541,8 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
           this.historyOpen.set(false);
           this.chartService.loadChart(patient.id, patient.dateOfBirth);
           this.loadPatientBilling(patient.id);
+          this.patientQuotes.set([]);
+          this.loadPatientQuotes(patient.id);
           this.loadPatientTreatments(patient.id);
           this.clinicalRecordService.refresh(patient.id);
           void this.restoreConsultationAndVoice(patient.id);
@@ -563,6 +578,17 @@ export class PatientDossierComponent implements OnInit, OnDestroy {
     this.voiceSession.detach();
     // A tooth selected on this patient must not follow the doctor to the next one.
     this.voiceContext.selectTooth(null);
+  }
+
+  loadPatientQuotes(patientId: string) {
+    if (!this.canBilling()) return;
+    this.quoteApi.list(patientId).then(list => this.patientQuotes.set(list), () => undefined);
+  }
+
+  /** "Créer un devis" on the plan: the devis is written in the Facturation tab, where it lives. */
+  startQuote(prefill: QuotePrefill): void {
+    this.goTo('billing', false);
+    this.quotePrefill.set(prefill);
   }
 
   loadPatientBilling(patientId: string) {

@@ -15,11 +15,10 @@ export const BILLING_ROUTES: Routes = [
         loadComponent: () => import('./pages/invoice-create/invoice-create.component').then(m => m.InvoiceCreateComponent),
       },
       {
-        // Quotes are not built: the page shows nothing real and its "New quote" button does nothing, and
-        // the backend has no quote model. It is kept out of reach, not deleted, until quotes exist.
+        // Every devis of the clinic; each is written and handled in the patient's file.
         path: 'quotes',
-        redirectTo: 'invoices',
-        pathMatch: 'full',
+        title: 'BILLING.QUOTES',
+        loadComponent: () => import('./pages/quote-list/quote-list.component').then(m => m.QuoteListComponent),
       },
       {
         path: 'invoices/:id',

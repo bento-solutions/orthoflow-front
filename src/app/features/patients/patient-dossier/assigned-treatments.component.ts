@@ -1,5 +1,7 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import type { Quote, QuoteLine } from '../../../core/services/quote-api.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PatientTreatment, PatientTreatmentConsumable, PatientTreatmentStatus } from '../../../core/models/patient-treatment.model';
 import { StockItem, Treatment } from '../../../core/models/stock.model';
@@ -40,7 +42,11 @@ import { StatusPillComponent } from '../../../shared/ui/status-pill.component';
               <div class="min-w-0 flex-1">
                 <p class="flex flex-wrap items-center gap-2">
                   <span class="font-bold text-ink-900">{{ pt.treatment.name }}</span>
-                  <span class="rounded bg-ink-200 px-1.5 py-0.5 text-xs font-bold text-ink-700">{{ 'PATIENTS.DOSSIER.UI.TEETH' | translate: { teeth: pt.teeth } }}</span>
+                  @if (pt.teeth) { <span class="rounded bg-ink-200 px-1.5 py-0.5 text-xs font-bold text-ink-700">{{ 'PATIENTS.DOSSIER.UI.TEETH' | translate: { teeth: pt.teeth } }}</span> }
+                  @if (quoteOf(pt); as link) {
+                    <span class="pill pill-idle ltr-data">{{ 'QUOTE.ON_QUOTE' | translate: { number: link.quote.quoteNumber } }}</span>
+                    @if (link.line.invoiceId) { <span class="pill pill-done">{{ 'QUOTE.INVOICED' | translate }}</span> }
+                  }
                 </p>
                 <p class="mt-1 flex flex-wrap gap-x-4 text-xs text-ink-500">
                   @if (pt.doctorName) { <span><b class="text-ink-700">{{ 'PATIENTS.DOSSIER.UI.DOCTOR' | translate }}</b> {{ pt.doctorName }}</span> }
@@ -59,6 +65,9 @@ import { StatusPillComponent } from '../../../shared/ui/status-pill.component';
                     <span class="text-xs font-bold text-ink-500">{{ pt.progress }}%</span>
                   </div>
                 </div>
+                @if (canBill() && pt.status !== 'CANCELLED' && !quoteOf(pt)?.line?.invoiceId) {
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="bill(pt)">{{ 'QUOTE.INVOICE' | translate }}</button>
+                }
                 @if (canWrite()) {
                   <div class="flex gap-1">
                     <button type="button" class="btn btn-ghost btn-icon" (click)="open(pt)" [attr.aria-label]="('COMMON.EDIT' | translate) + ' ' + pt.treatment.name">
@@ -161,6 +170,8 @@ import { StatusPillComponent } from '../../../shared/ui/status-pill.component';
 export class AssignedTreatmentsComponent {
   readonly patientId = input.required<string>();
   readonly treatments = input<PatientTreatment[]>([]);
+  /** The patient's devis: a treatment that came from one says so, and is invoiced through it. */
+  readonly quotes = input<Quote[]>([]);
   /** The patient's treatments changed: the parent reloads them. */
   readonly changed = output<void>();
 
@@ -172,6 +183,32 @@ export class AssignedTreatmentsComponent {
   private readonly permissions = inject(PermissionService);
 
   protected readonly canWrite = computed(() => this.permissions.can('CLINICAL_WRITE'));
+  protected readonly canBill = computed(() => this.permissions.can('BILLING_WRITE'));
+  private readonly router = inject(Router);
+  private readonly quoteLines = computed(() => {
+    const byTreatment = new Map<string, { quote: Quote; line: QuoteLine }>();
+    for (const quote of this.quotes()) {
+      if (quote.status !== 'ACCEPTED') continue;
+      for (const line of quote.lines) if (line.patientTreatmentId && line.accepted) byTreatment.set(line.patientTreatmentId, { quote, line });
+    }
+    return byTreatment;
+  });
+
+  protected quoteOf(pt: PatientTreatment): { quote: Quote; line: QuoteLine } | null {
+    return (pt.id && this.quoteLines().get(pt.id)) || null;
+  }
+
+  /**
+   * "Facturer": the invoice form, filled in. A treatment accepted on a devis is billed at the
+   * devis's price and marked billed on it; any other at the catalogue price.
+   */
+  protected bill(pt: PatientTreatment): void {
+    const link = this.quoteOf(pt);
+    const queryParams = link
+      ? { patientId: this.patientId(), quoteId: link.quote.id, quoteLines: link.line.id }
+      : { patientId: this.patientId(), treatmentIds: pt.id };
+    void this.router.navigate(['/billing/invoices/create'], { queryParams });
+  }
   protected readonly catalogue = signal<Treatment[]>([]);
   protected readonly stock = signal<StockItem[]>([]);
   protected readonly modal = signal(false);

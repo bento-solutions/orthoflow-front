@@ -34,7 +34,10 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
     <div class="anim-rise">
       <app-page-header>
         <div page-actions class="contents">
-          <!-- No link to quotes: that page is a mock-up with no backend behind it (see billing.routes.ts). -->
+          <a class="btn btn-secondary" routerLink="/billing/quotes">
+            <app-icon name="file-text" [size]="16" />
+            {{ 'BILLING.QUOTES' | translate }}
+          </a>
           <a class="btn btn-primary" routerLink="create">
             <app-icon name="plus" [size]="16" />
             {{ 'BILLING.NEW_INVOICE' | translate }}

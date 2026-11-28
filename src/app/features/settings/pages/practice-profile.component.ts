@@ -11,15 +11,17 @@ import { IconComponent } from '../../../shared/ui/icon.component';
 type Form = {
   name: string; legalName: string; ice: string; taxId: string; patente: string; rc: string; cnssNumber: string; rib: string; inpe: string;
   address: string; city: string; phone: string; email: string; website: string; currency: string; timezone: string; defaultLanguage: string;
+  quoteValidityDays: string;
 };
 
 const TIMEZONES = ['Africa/Casablanca', 'Europe/Paris', 'Europe/Madrid', 'Africa/Algiers', 'Africa/Tunis', 'UTC'];
 const CURRENCIES = ['MAD', 'EUR', 'USD'];
 
-const fromProfile = (p: Partial<Record<keyof Form, string | undefined>>): Form => ({
+const fromProfile = (p: Partial<Record<keyof Form, string | number | undefined>> & Partial<Record<Exclude<keyof Form, 'quoteValidityDays'>, string>>): Form => ({
   name: p.name ?? '', legalName: p.legalName ?? '', ice: p.ice ?? '', taxId: p.taxId ?? '', patente: p.patente ?? '', rc: p.rc ?? '', cnssNumber: p.cnssNumber ?? '',
   rib: p.rib ?? '', inpe: p.inpe ?? '', address: p.address ?? '', city: p.city ?? '', phone: p.phone ?? '', email: p.email ?? '', website: p.website ?? '',
   currency: p.currency ?? 'MAD', timezone: p.timezone ?? 'Africa/Casablanca', defaultLanguage: p.defaultLanguage ?? 'fr',
+  quoteValidityDays: p.quoteValidityDays != null ? String(p.quoteValidityDays) : '90',
 });
 
 /**
@@ -111,6 +113,9 @@ const fromProfile = (p: Partial<Record<keyof Form, string | undefined>>): Form =
               <option value="fr" lang="fr">Français</option><option value="en" lang="en">English</option><option value="ar" lang="ar">العربية</option>
             </select>
             <span class="hint">{{ 'SET.PROFILE.DEFAULT_LANGUAGE_HINT' | translate }}</span></label>
+          <label class="field"><span class="label">{{ 'SET.PROFILE.QUOTE_VALIDITY' | translate }}</span>
+            <input class="input" type="number" min="1" max="730" step="1" name="quoteValidityDays" [ngModel]="f.value().quoteValidityDays" (ngModelChange)="f.set('quoteValidityDays', '' + ($event ?? ''))" />
+            <span class="hint">{{ 'SET.PROFILE.QUOTE_VALIDITY_HINT' | translate }}</span></label>
         </div>
       </section>
 
@@ -156,6 +161,7 @@ export class PracticeProfileComponent {
       cnssNumber: blank(v.cnssNumber), rib: blank(v.rib), inpe: blank(v.inpe), address: blank(v.address), city: blank(v.city), phone: blank(v.phone),
       email: blank(v.email), website: blank(v.website), currency: v.currency, timezone: v.timezone, defaultLanguage: v.defaultLanguage as 'fr' | 'en' | 'ar',
       logoFileId: this.profile.profile()?.logoFileId,
+      quoteValidityDays: validity(v.quoteValidityDays),
     };
     this.saving.set(true);
     try {
@@ -186,4 +192,10 @@ export class PracticeProfileComponent {
       this.errors.report(error);
     }
   }
+}
+
+/** Days a new devis stays valid; anything out of range keeps the clinic's current setting. */
+function validity(text: string): number | undefined {
+  const n = Math.round(Number(text));
+  return Number.isFinite(n) && n >= 1 && n <= 730 ? n : undefined;
 }

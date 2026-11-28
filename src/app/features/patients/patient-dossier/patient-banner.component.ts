@@ -150,6 +150,10 @@ export interface PatientState {
                 } @else { <span class="pb-muted">{{ 0 | money }}</span> }
               </dd></div>
           }
+          @if (pendingQuotes() > 0) {
+            <div><dt>{{ 'QUOTE.TITLE' | translate }}</dt>
+              <dd><button type="button" class="pb-link pb-quote" (click)="openBilling.emit()">{{ 'QUOTE.PENDING_BADGE' | translate: { count: pendingQuotes() } }}</button></dd></div>
+          }
         </dl>
       }
     </header>
@@ -202,6 +206,7 @@ export interface PatientState {
     .pb-muted { color: var(--text-muted); font-weight: 500; }
     .pb-link { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: var(--action-text); text-decoration: underline; cursor: pointer; }
     .pb-due { color: rgb(var(--critical-700)); }
+    .pb-quote { color: rgb(var(--caution-700)); font-weight: 600; }
 
     /* Narrower: Book keeps its icon; on a phone the actions take their own row. */
     @media (max-width: 1279.98px) { .pb-label { display: none; } }
@@ -222,6 +227,8 @@ export class PatientBannerComponent {
   readonly nextAppointment = input<Appointment | null>(null);
   /** What the patient owes, or null when this person may not see billing. */
   readonly balance = input<number | null>(null);
+  /** Devis handed to the patient and still waiting for an answer. */
+  readonly pendingQuotes = input(0);
   readonly starting = input(false);
   /** The one-row form, once the page has scrolled. */
   readonly compact = input(false);

@@ -92,7 +92,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["update_11"];
+        put: operations["update_12"];
         post?: never;
         delete?: never;
         options?: never;
@@ -411,7 +411,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_13"];
+        get: operations["list_14"];
         put?: never;
         post?: never;
         delete?: never;
@@ -493,7 +493,7 @@ export interface paths {
         };
         get: operations["search"];
         put?: never;
-        post: operations["create_16"];
+        post: operations["create_17"];
         delete?: never;
         options?: never;
         head?: never;
@@ -587,7 +587,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         post: operations["start_1"];
         delete?: never;
@@ -651,7 +651,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_8"];
+        get: operations["get_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -955,7 +955,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post: operations["upload_1"];
         delete?: never;
@@ -974,7 +974,7 @@ export interface paths {
         get: operations["download"];
         put?: never;
         post?: never;
-        delete: operations["delete_7"];
+        delete: operations["delete_8"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1099,9 +1099,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
-        post: operations["create_15"];
+        post: operations["create_16"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1163,8 +1163,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_4"];
-        put: operations["update_10"];
+        get: operations["get_5"];
+        put: operations["update_11"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1181,7 +1181,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["cancel_7"];
+        post: operations["cancel_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1387,9 +1387,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
-        post: operations["create_14"];
+        post: operations["create_15"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1435,7 +1435,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_7"];
+        get: operations["get_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1597,7 +1597,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["issue_2"];
+        post: operations["issue_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1627,7 +1627,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["pdf_1"];
+        get: operations["pdf_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1659,9 +1659,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
-        post: operations["create_13"];
+        post: operations["create_14"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1691,8 +1691,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_3"];
-        put: operations["update_9"];
+        get: operations["get_4"];
+        put: operations["update_10"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1917,7 +1917,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["cancel_6"];
+        post: operations["cancel_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2027,7 +2027,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_12"];
+        get: operations["list_13"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2139,7 +2139,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2443,7 +2443,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["pdf"];
+        get: operations["pdf_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2459,9 +2459,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
-        post: operations["create_12"];
+        post: operations["create_13"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2475,10 +2475,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_2"];
+        get: operations["get_3"];
         put: operations["save_1"];
         post?: never;
-        delete: operations["delete_3"];
+        delete: operations["delete_4"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2669,7 +2669,7 @@ export interface paths {
         };
         get: operations["forPatient"];
         put?: never;
-        post: operations["create_11"];
+        post: operations["create_12"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2683,9 +2683,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
-        post: operations["create_10"];
+        post: operations["create_11"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2827,7 +2827,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_6"];
+        get: operations["get_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2845,7 +2845,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["cancel_5"];
+        post: operations["cancel_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2860,9 +2860,9 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["update_8"];
+        put: operations["update_9"];
         post?: never;
-        delete: operations["delete_2"];
+        delete: operations["delete_3"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2891,9 +2891,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_2"];
+        get: operations["list_3"];
         put?: never;
-        post: operations["create_9"];
+        post: operations["create_10"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2956,7 +2956,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["update_7"];
+        put: operations["update_8"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2971,9 +2971,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_1"];
+        get: operations["list_2"];
         put?: never;
-        post: operations["issue_1"];
+        post: operations["issue_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3300,6 +3300,134 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/quotes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_1"];
+        put?: never;
+        post: operations["create_9"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quotes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_2"];
+        put: operations["update_7"];
+        post?: never;
+        delete: operations["delete_2"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quotes/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quotes/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancel_5"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quotes/{id}/invoice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["invoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quotes/{id}/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["issue_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quotes/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quotes/{id}/refuse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["refuse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/recalls/send-reminders": {
         parameters: {
             query?: never;
@@ -3323,7 +3451,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3435,7 +3563,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_5"];
+        get: operations["get_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4574,7 +4702,7 @@ export interface paths {
         get: operations["getById_4"];
         put?: never;
         post?: never;
-        delete: operations["delete_6"];
+        delete: operations["delete_7"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4862,7 +4990,7 @@ export interface paths {
         get: operations["getById_3"];
         put?: never;
         post?: never;
-        delete: operations["delete_5"];
+        delete: operations["delete_6"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5118,7 +5246,7 @@ export interface paths {
         get: operations["getById_2"];
         put?: never;
         post?: never;
-        delete: operations["delete_4"];
+        delete: operations["delete_5"];
         options?: never;
         head?: never;
         patch?: never;
@@ -8943,6 +9071,8 @@ export interface components {
             name: string;
             patente?: string;
             phone?: string;
+            /** Format: int32 */
+            quoteValidityDays?: number;
             rc?: string;
             rib?: string;
             taxId?: string;
@@ -9002,6 +9132,95 @@ export interface components {
             status?: "DRAFT" | "SENT" | "PARTIAL" | "RECEIVED" | "CANCELLED";
             supplier?: components["schemas"]["SupplierResponse"];
             totalAmount?: number;
+        };
+        QuoteAcceptRequest: {
+            createTreatments?: boolean;
+            lineIds: string[];
+        };
+        QuoteInvoiceRequest: {
+            invoice: components["schemas"]["CreateInvoiceRequest"];
+            quoteLineIds: string[];
+        };
+        QuoteLineRequest: {
+            actCode?: string;
+            discountPct?: number;
+            label?: string;
+            /** Format: uuid */
+            patientTreatmentId?: string;
+            quantity?: number;
+            teeth?: string;
+            /** Format: uuid */
+            treatmentId?: string;
+            unitPrice?: number;
+        };
+        QuoteLineView: {
+            accepted?: boolean;
+            actCode?: string;
+            discountPct?: number;
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            invoiceId?: string;
+            label?: string;
+            lineTotal?: number;
+            /** Format: uuid */
+            patientTreatmentId?: string;
+            quantity?: number;
+            /** Format: int32 */
+            sortOrder?: number;
+            teeth?: string;
+            /** Format: uuid */
+            treatmentId?: string;
+            unitPrice?: number;
+        };
+        QuoteSaveRequest: {
+            /** Format: uuid */
+            consultationId?: string;
+            lines: components["schemas"]["QuoteLineRequest"][];
+            notes?: string;
+            /** Format: uuid */
+            patientId: string;
+            /** Format: uuid */
+            practitionerId?: string;
+            regionCode?: string;
+            title?: string;
+            /** Format: date */
+            validUntil?: string;
+        };
+        QuoteView: {
+            acceptedTotal?: number;
+            /** Format: uuid */
+            consultationId?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            currency?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            discountAmount?: number;
+            expired?: boolean;
+            /** Format: uuid */
+            id?: string;
+            invoicedTotal?: number;
+            /** Format: date */
+            issueDate?: string;
+            lines?: components["schemas"]["QuoteLineView"][];
+            notes?: string;
+            /** Format: uuid */
+            patientId?: string;
+            patientName?: string;
+            /** Format: uuid */
+            practitionerId?: string;
+            quoteNumber?: string;
+            regionCode?: string;
+            /** Format: date-time */
+            sentAt?: string;
+            /** @enum {string} */
+            status?: "DRAFT" | "SENT" | "ACCEPTED" | "REFUSED" | "CANCELLED";
+            subtotal?: number;
+            title?: string;
+            total?: number;
+            /** Format: date */
+            validUntil?: string;
         };
         QuotedInteger: {
             quote?: string;
@@ -10732,7 +10951,7 @@ export interface operations {
             };
         };
     };
-    update_11: {
+    update_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -11338,7 +11557,7 @@ export interface operations {
             };
         };
     };
-    list_13: {
+    list_14: {
         parameters: {
             query?: {
                 status?: string;
@@ -11501,7 +11720,7 @@ export interface operations {
             };
         };
     };
-    create_16: {
+    create_17: {
         parameters: {
             query?: never;
             header?: never;
@@ -11651,7 +11870,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query: {
                 patientId: string;
@@ -11763,7 +11982,7 @@ export interface operations {
             };
         };
     };
-    get_8: {
+    get_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -12279,7 +12498,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query: {
                 ownerType: "PATIENT_PHOTO" | "PATIENT_DOCUMENT" | "PRACTICE_LOGO" | "EXPENSE_RECEIPT" | "LAB_ORDER" | "MESSAGE_ATTACHMENT" | "TAX_DOCUMENT" | "INSURANCE_FORM" | "PRESCRIPTION" | "CLINICAL_PHOTO" | "CONSULTATION_AUDIO";
@@ -12355,7 +12574,7 @@ export interface operations {
             };
         };
     };
-    delete_7: {
+    delete_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -12547,7 +12766,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query: {
                 from: string;
@@ -12573,7 +12792,7 @@ export interface operations {
             };
         };
     };
-    create_15: {
+    create_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -12694,7 +12913,7 @@ export interface operations {
             };
         };
     };
-    get_4: {
+    get_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -12716,7 +12935,7 @@ export interface operations {
             };
         };
     };
-    update_10: {
+    update_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -12742,7 +12961,7 @@ export interface operations {
             };
         };
     };
-    cancel_7: {
+    cancel_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -13103,7 +13322,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: {
                 patientId?: string;
@@ -13126,7 +13345,7 @@ export interface operations {
             };
         };
     };
-    create_14: {
+    create_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -13193,7 +13412,7 @@ export interface operations {
             };
         };
     };
-    get_7: {
+    get_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -13442,7 +13661,7 @@ export interface operations {
             };
         };
     };
-    issue_2: {
+    issue_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -13488,7 +13707,7 @@ export interface operations {
             };
         };
     };
-    pdf_1: {
+    pdf_2: {
         parameters: {
             query?: {
                 lang?: string;
@@ -13538,7 +13757,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: {
                 status?: ("SENT" | "IN_PROGRESS" | "RECEIVED" | "FITTED" | "REMAKE")[];
@@ -13569,7 +13788,7 @@ export interface operations {
             };
         };
     };
-    create_13: {
+    create_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -13613,7 +13832,7 @@ export interface operations {
             };
         };
     };
-    get_3: {
+    get_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -13635,7 +13854,7 @@ export interface operations {
             };
         };
     };
-    update_9: {
+    update_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -14004,7 +14223,7 @@ export interface operations {
             };
         };
     };
-    cancel_6: {
+    cancel_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -14182,7 +14401,7 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    list_13: {
         parameters: {
             query?: {
                 limit?: number;
@@ -14351,7 +14570,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query?: {
                 search?: string;
@@ -14933,7 +15152,7 @@ export interface operations {
             };
         };
     };
-    pdf: {
+    pdf_1: {
         parameters: {
             query?: {
                 lang?: string;
@@ -14957,7 +15176,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: {
                 deleted?: boolean;
@@ -14981,7 +15200,7 @@ export interface operations {
             };
         };
     };
-    create_12: {
+    create_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -15007,7 +15226,7 @@ export interface operations {
             };
         };
     };
-    get_2: {
+    get_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -15057,7 +15276,7 @@ export interface operations {
             };
         };
     };
-    delete_3: {
+    delete_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -15436,7 +15655,7 @@ export interface operations {
             };
         };
     };
-    create_11: {
+    create_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -15462,7 +15681,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -15484,7 +15703,7 @@ export interface operations {
             };
         };
     };
-    create_10: {
+    create_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -15777,7 +15996,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -15799,7 +16018,7 @@ export interface operations {
             };
         };
     };
-    cancel_5: {
+    cancel_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -15821,7 +16040,7 @@ export interface operations {
             };
         };
     };
-    update_8: {
+    update_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -15847,7 +16066,7 @@ export interface operations {
             };
         };
     };
-    delete_2: {
+    delete_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -15920,7 +16139,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_3: {
         parameters: {
             query?: {
                 includeInactive?: boolean;
@@ -15942,7 +16161,7 @@ export interface operations {
             };
         };
     };
-    create_9: {
+    create_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -16034,7 +16253,7 @@ export interface operations {
             };
         };
     };
-    update_7: {
+    update_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -16060,7 +16279,7 @@ export interface operations {
             };
         };
     };
-    list_1: {
+    list_2: {
         parameters: {
             query: {
                 patientId: string;
@@ -16082,7 +16301,7 @@ export interface operations {
             };
         };
     };
-    issue_1: {
+    issue_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -16672,6 +16891,262 @@ export interface operations {
             };
         };
     };
+    list_1: {
+        parameters: {
+            query?: {
+                patientId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteView"][];
+                };
+            };
+        };
+    };
+    create_9: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteView"];
+                };
+            };
+        };
+    };
+    get_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteView"];
+                };
+            };
+        };
+    };
+    update_7: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteView"];
+                };
+            };
+        };
+    };
+    delete_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteAcceptRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteView"];
+                };
+            };
+        };
+    };
+    cancel_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteView"];
+                };
+            };
+        };
+    };
+    invoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteInvoiceRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InvoiceResponse"];
+                };
+            };
+        };
+    };
+    issue_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteView"];
+                };
+            };
+        };
+    };
+    pdf: {
+        parameters: {
+            query?: {
+                lang?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    refuse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteView"];
+                };
+            };
+        };
+    };
     sendRecall: {
         parameters: {
             query?: never;
@@ -16698,7 +17173,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query?: {
                 practitionerId?: string;
@@ -16898,7 +17373,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -19195,7 +19670,7 @@ export interface operations {
             };
         };
     };
-    delete_6: {
+    delete_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -19790,7 +20265,7 @@ export interface operations {
             };
         };
     };
-    delete_5: {
+    delete_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -20400,7 +20875,7 @@ export interface operations {
             };
         };
     };
-    delete_4: {
+    delete_5: {
         parameters: {
             query?: never;
             header?: never;

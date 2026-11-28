@@ -13,6 +13,8 @@ import { finalize } from 'rxjs';
 import { ToastService } from '../../../../core/services/toast.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { QuoteApi, linesToInvoice } from '../../../../core/services/quote-api.service';
+import { PatientTreatmentService } from '../../../../core/services/patient-treatment.service';
 
 @Component({
   selector: 'app-invoice-create',
@@ -40,6 +42,9 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
             </div>
           </section>
 
+          @if (fromQuote(); as q) {
+            <p class="from-quote" role="status"><app-icon name="file-text" [size]="16" /> {{ 'QUOTE.INVOICING_FROM' | translate: { number: q.number } }}</p>
+          }
           <section class="form-section">
             <div class="section-header">
               <h2>{{ 'BILLING.FORM.LINES' | translate }}</h2>
@@ -330,6 +335,8 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 
     /* Below this width the summary moves under the form, so a whole line still fits
        side by side instead of the line table having to scroll. */
+    .from-quote { display: flex; align-items: center; gap: .5rem; margin: 0 0 1rem; padding: .625rem .875rem; border-radius: var(--radius-md);
+      background: var(--status-active-tint, rgb(var(--petrol-50))); color: rgb(var(--ink-800)); font-weight: 600; }
     @media (max-width: 1360px) {
       .form-grid { grid-template-columns: 1fr; }
       .summary-card { position: static; }
@@ -354,9 +361,12 @@ export class InvoiceCreateComponent implements OnInit {
   }
   treatmentPlanId = '';
   notes = '';
-  lines = signal<InvoiceDraftLine[]>([
-    { actCode: 'ORTHO-01', label: 'Orthodontic Treatment - Monthly Fee', quantity: 1, unitPrice: 1500, discountPct: 0, lineTotal: 1500, sortOrder: 0 }
-  ]);
+  // An invoice starts with one empty line, not a sample one somebody has to notice and delete.
+  lines = signal<InvoiceDraftLine[]>([emptyLine(0)]);
+  /** Opened from a devis ("Facturer"): its accepted lines are billed and marked billed on it. */
+  readonly fromQuote = signal<{ id: string; number: string; lineIds: string[] } | null>(null);
+  private readonly quoteApi = inject(QuoteApi);
+  private readonly patientTreatments = inject(PatientTreatmentService);
 
   loading = signal(false);
 
@@ -369,9 +379,50 @@ export class InvoiceCreateComponent implements OnInit {
           next: (p) => this.pickedPatient.set({ id: p.id, name: `${p.lastName} ${p.firstName}`.trim(), phone: p.phone || undefined }),
           error: () => this.pickedPatient.set(null),
         });
+        if (params['quoteId']) void this.prefillFromQuote(params['quoteId'], String(params['quoteLines'] ?? '').split(',').filter(Boolean));
+        else if (params['treatmentIds']) this.prefillFromTreatments(id, String(params['treatmentIds']).split(',').filter(Boolean));
       }
     });
     this.calculateTotal();
+  }
+
+  /** The accepted lines of the devis not invoiced yet (or those asked for), at the devis's prices. */
+  private async prefillFromQuote(quoteId: string, lineIds: string[]): Promise<void> {
+    try {
+      const quote = await this.quoteApi.get(quoteId);
+      const wanted = linesToInvoice(quote).filter(l => !lineIds.length || lineIds.includes(l.id));
+      if (!wanted.length) {
+        this.toast.error(this.translate.instant('QUOTE.NOTHING_TO_INVOICE'));
+        return;
+      }
+      this.fromQuote.set({ id: quote.id, number: quote.quoteNumber, lineIds: wanted.map(l => l.id) });
+      this.notes = this.notes || this.translate.instant('QUOTE.INVOICE_NOTE', { number: quote.quoteNumber });
+      this.lines.set(wanted.map((l, i) => ({
+        actCode: l.actCode || 'ACTE',
+        label: l.teeth ? `${l.label} (${this.translate.instant('QUOTE.TOOTH')} ${l.teeth})` : l.label,
+        quantity: l.quantity, unitPrice: l.unitPrice, discountPct: l.discountPct, lineTotal: l.lineTotal, sortOrder: i,
+      })));
+      this.calculateTotal();
+    } catch {
+      this.toast.error(this.translate.instant('QUOTE.LOAD_FAILED'));
+    }
+  }
+
+  /** Treatments from the patient's file, at the catalogue price. */
+  private prefillFromTreatments(patientId: string, ids: string[]): void {
+    this.patientTreatments.getPatientTreatments(patientId).subscribe(list => {
+      const picked = list.filter(t => t.id && ids.includes(t.id) && t.treatment);
+      if (!picked.length) return;
+      this.lines.set(picked.map((t, i) => {
+        const price = t.treatment.basePrice ?? 0;
+        return {
+          actCode: t.treatment.actCode || t.treatment.code || 'ACTE',
+          label: t.teeth ? `${t.treatment.name} (${this.translate.instant('QUOTE.TOOTH')} ${t.teeth})` : t.treatment.name,
+          quantity: 1, unitPrice: price, discountPct: 0, lineTotal: price, sortOrder: i,
+        };
+      }));
+      this.calculateTotal();
+    });
   }
 
   subtotal = signal(0);
@@ -379,15 +430,7 @@ export class InvoiceCreateComponent implements OnInit {
   total = signal(0);
 
   addLine() {
-    this.lines.update(l => [...l, {
-      actCode: '',
-      label: '',
-      quantity: 1,
-      unitPrice: 0,
-      discountPct: 0,
-      lineTotal: 0,
-      sortOrder: l.length
-    }]);
+    this.lines.update(l => [...l, emptyLine(l.length)]);
   }
 
   removeLine(index: number) {
@@ -450,6 +493,22 @@ export class InvoiceCreateComponent implements OnInit {
       lines: this.lines(),
     };
 
+    const quote = this.fromQuote();
+    if (quote) {
+      if (invoiceData.patientId !== this.route.snapshot.queryParamMap.get('patientId')) {
+        this.loading.set(false);
+        this.toast.error(this.translate.instant('QUOTE.WRONG_PATIENT'));
+        return;
+      }
+      this.quoteApi.invoice(quote.id, { quoteLineIds: quote.lineIds, invoice: invoiceData })
+        .then(created => {
+          this.toast.success(this.translate.instant('BILLING.FORM.CREATED'));
+          void this.router.navigate(['/billing/invoices', created.id]);
+        }, err => this.toast.error(err?.error?.detail || this.translate.instant('QUOTE.INVOICE_FAILED')))
+        .finally(() => this.loading.set(false));
+      return;
+    }
+
     this.invoiceService.createInvoice(invoiceData)
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
@@ -463,4 +522,8 @@ export class InvoiceCreateComponent implements OnInit {
         }
       });
   }
+}
+
+function emptyLine(sortOrder: number): InvoiceDraftLine {
+  return { actCode: '', label: '', quantity: 1, unitPrice: 0, discountPct: 0, lineTotal: 0, sortOrder };
 }

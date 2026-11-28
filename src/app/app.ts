@@ -1,11 +1,14 @@
-import { Component, HostListener, inject } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { LanguageService } from './core/services/language.service';
 import { ToastContainerComponent } from './shared/components/toast/toast-container.component';
 import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
 import { CommandPaletteComponent } from './shared/components/command-palette/command-palette.component';
 import { LiveRegionComponent } from './shared/components/live-region/live-region.component';
 import { SessionExpiryBannerComponent } from './shared/components/session-expiry/session-expiry-banner.component';
+import { EmergencyButtonComponent } from './shared/components/emergency-button/emergency-button.component';
 import { CommandRegistryService } from './core/services/command-registry.service';
 import { registerAppCommands } from './core/services/register-app-commands';
 import { HelpPanelService } from './core/services/help-panel.service';
@@ -27,6 +30,7 @@ import { assertLexiconMatches } from './core/voice/clinical-lexicon';
     CommandPaletteComponent,
     LiveRegionComponent,
     SessionExpiryBannerComponent,
+    EmergencyButtonComponent,
   ],
   // The voice HUD is deliberately *not* here. It used to be mounted at the
   // app root, which put a listening indicator and a live microphone on every
@@ -39,12 +43,22 @@ import { assertLexiconMatches } from './core/voice/clinical-lexicon';
     <app-confirm-dialog />
     <app-command-palette />
     <app-live-region />
-    <app-session-expiry-banner />`,
+    <app-session-expiry-banner />
+    @if (showStandaloneEmergency()) {
+      <app-emergency-button />
+    }`,
 })
 export class App {
   private voiceCommands = inject(VoiceCommandsService);
   private voice = inject(VoiceOrchestratorService);
   private voiceApi = inject(VoiceApiService);
+  private readonly currentUrl = signal('');
+  // PublicShellComponent already renders <app-emergency-button /> for /book and /public/*;
+  // this mounts it on the other public entry pages (/landing, /login, password recovery).
+  protected readonly showStandaloneEmergency = computed(() => {
+    const path = this.currentUrl().split(/[?#]/)[0];
+    return path === '/landing' || path === '/login' || path === '/forgot-password' || path === '/reset-password';
+  });
 
   constructor(
     private languageService: LanguageService,
@@ -53,6 +67,11 @@ export class App {
     help: HelpPanelService,
     theme: ThemeService,
   ) {
+    this.currentUrl.set(this.router.url);
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      takeUntilDestroyed(),
+    ).subscribe(e => this.currentUrl.set(e.urlAfterRedirects));
     registerAppCommands(this.commandRegistry, this.router, help, theme);
     inject(ScrollRegionsService).start();
     inject(FocusRecoveryService).start();

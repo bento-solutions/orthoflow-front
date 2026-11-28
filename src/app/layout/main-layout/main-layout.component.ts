@@ -1,8 +1,9 @@
 import { Component, DestroyRef, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AnnouncerService } from '../../core/services/announcer.service';
+import { NavCounts } from '../../core/services/nav-counts.service';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { HeaderComponent } from '../header/header.component';
 import { TranslateModule } from '@ngx-translate/core';
@@ -13,7 +14,7 @@ import { FirstRunDialogComponent } from '../first-run-dialog/first-run-dialog.co
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, HeaderComponent, HelpPanelComponent, FirstRunDialogComponent, TranslateModule],
+  imports: [RouterLink, RouterOutlet, SidebarComponent, HeaderComponent, HelpPanelComponent, FirstRunDialogComponent, TranslateModule],
   template: `
     <!-- A real link would leave the app: the address has a <base>, so #main-content would resolve against it. -->
     <a href="#main-content" class="skip-link" (click)="skipToContent($event)">{{ 'COMMON.SKIP_TO_CONTENT' | translate }}</a>
@@ -33,6 +34,18 @@ import { FirstRunDialogComponent } from '../first-run-dialog/first-run-dialog.co
       <div class="flex w-full min-w-0 flex-1 flex-col">
         <app-header class="no-print" [menuOpen]="isMobileMenuOpen()" (menuToggle)="toggleMobileMenu()" />
         <main #main id="main-content" tabindex="-1" class="flex-1 p-4 md:p-6 lg:p-8">
+          @if (counts.urgentInbox() > 0) {
+            <div role="alert" data-testid="urgent-whatsapp-banner"
+                 class="no-print mx-auto mb-4 flex max-w-[88rem] flex-wrap items-center justify-between gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
+              <div class="flex items-center gap-2 font-semibold">
+                <span class="rounded bg-red-600 px-2 py-0.5 text-2xs font-bold uppercase text-white">{{ 'COM.INBOX.URGENT_BADGE' | translate }}</span>
+                <span>{{ 'COM.INBOX.URGENT_BANNER' | translate: { count: counts.urgentInbox() } }}</span>
+              </div>
+              <a routerLink="/communication" class="btn btn-sm bg-red-600 text-white no-underline hover:bg-red-700">
+                {{ 'COM.INBOX.VIEW_INBOX' | translate }}
+              </a>
+            </div>
+          }
           <div class="mx-auto max-w-[88rem]">
             <router-outlet />
           </div>
@@ -82,6 +95,7 @@ export class MainLayoutComponent {
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
   private readonly sidebar = viewChild.required('sidebar', { read: ElementRef<HTMLElement> });
   private readonly announcer = inject(AnnouncerService);
+  protected readonly counts = inject(NavCounts);
   protected readonly firstRun = inject(FirstRunService);
   private currentPath = '';
 

@@ -23,7 +23,7 @@ export const MESSAGE_STATUSES: readonly MessageStatus[] = ['QUEUED', 'SENDING', 
 export const MESSAGE_PURPOSES: readonly MessagePurpose[] = [
   'APPOINTMENT_REMINDER', 'APPOINTMENT_CONFIRMED', 'APPOINTMENT_CANCELLED', 'INSTALMENT_REMINDER', 'RECALL', 'SURVEY_REQUEST', 'BOOKING_RECEIVED',
   'BOOKING_CONFIRMED', 'BOOKING_DECLINED', 'REGISTRATION_INVITE', 'STAFF_INVITE', 'PASSWORD_RESET', 'LAB_ORDER_RECEIVED', 'CHEQUE_REJECTED', 'TASK_ASSIGNED',
-  'INTERNAL_MESSAGE', 'TEST', 'GENERIC',
+  'INTERNAL_MESSAGE', 'URGENT_ALERT', 'TEST', 'GENERIC',
 ];
 
 /** What a template may contain between `{{ }}`; the server leaves anything else visible so a typo shows in the preview. */
@@ -55,8 +55,8 @@ export class MessagingApi {
     return this.post('/messaging/send-test', { channel, recipient });
   }
 
-  inbox(unhandledOnly: boolean, limit = 100, landingPageOnly = false): Promise<InboxMessage[]> {
-    return this.get('/messaging/inbox', { unhandledOnly, landingPageOnly, limit });
+  inbox(unhandledOnly: boolean, limit = 100, landingPageOnly = false, urgentOnly = false): Promise<InboxMessage[]> {
+    return this.get('/messaging/inbox', { unhandledOnly, landingPageOnly, urgentOnly, limit });
   }
   markHandled(id: string): Promise<void> {
     return this.post(`/messaging/inbox/${id}/handled`);

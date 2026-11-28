@@ -2784,6 +2784,7 @@
       "CHEQUE_REJECTED": "Cheque rejected",
       "TASK_ASSIGNED": "Task assigned",
       "INTERNAL_MESSAGE": "Staff message",
+      "URGENT_ALERT": "WhatsApp Urgent",
       "TEST": "Test message",
       "GENERIC": "Other"
     },
@@ -2805,7 +2806,11 @@
       "MARK_HANDLED": "Mark handled",
       "EMPTY": "No replies waiting.",
       "LANDING_ONLY": "From the landing page",
-      "LANDING_BADGE": "Landing page"
+      "LANDING_BADGE": "Landing page",
+      "URGENT_ONLY": "Urgent only",
+      "URGENT_BADGE": "URGENT",
+      "URGENT_BANNER": "{{count}} urgent WhatsApp message(s) awaiting attention.",
+      "VIEW_INBOX": "Open inbox"
     },
     "TPL": {
       "PURPOSE": "Message",
@@ -2960,6 +2965,7 @@
       "CALL": "Call the clinic",
       "WHATSAPP": "Describe your emergency",
       "PREFILL": "URGENT - Hello, I have a dental emergency: ",
+      "UNAVAILABLE": "The emergency contact number is temporarily unavailable. Please try again shortly.",
       "CLOSE": "Close"
     }
   },

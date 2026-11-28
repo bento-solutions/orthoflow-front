@@ -20,16 +20,18 @@ import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
   standalone: true,
   imports: [AppDatePipe, FormsModule, RouterLink, TranslateModule, CanDirective, IconComponent],
   template: `
-    <div class="mb-4 flex items-center gap-4">
+    <div class="mb-4 flex flex-wrap items-center gap-4">
       <label class="flex items-center gap-1.5 text-sm font-semibold text-ink-700"><input type="checkbox" [ngModel]="unhandledOnly()" (ngModelChange)="unhandledOnly.set($event)" /> {{ 'COM.INBOX.UNHANDLED_ONLY' | translate }}</label>
       <label class="flex items-center gap-1.5 text-sm font-semibold text-ink-700"><input type="checkbox" [ngModel]="landingPageOnly()" (ngModelChange)="landingPageOnly.set($event)" /> {{ 'COM.INBOX.LANDING_ONLY' | translate }}</label>
+      <label class="flex items-center gap-1.5 text-sm font-semibold text-red-700"><input type="checkbox" [ngModel]="urgentOnly()" (ngModelChange)="urgentOnly.set($event)" /> {{ 'COM.INBOX.URGENT_ONLY' | translate }}</label>
     </div>
     <ul class="card divide-y divide-ink-100" [attr.aria-busy]="inbox.loading()">
       @for (m of inbox.data(); track m.id) {
-        <li class="flex items-start gap-3 px-4 py-3">
-          <span class="mt-0.5 text-ink-500" aria-hidden="true"><app-icon name="message" [size]="18" /></span>
+        <li class="flex items-start gap-3 px-4 py-3" [class.bg-red-50]="m.urgent && !m.handledAt">
+          <span class="mt-0.5" [class.text-red-600]="m.urgent" [class.text-ink-500]="!m.urgent" aria-hidden="true"><app-icon name="message" [size]="18" /></span>
           <div class="min-w-0 flex-1">
             <p class="text-sm font-semibold text-ink-900">
+              @if (m.urgent) { <span class="me-2 inline-block rounded bg-red-600 px-1.5 py-0.5 text-2xs font-bold uppercase text-white">{{ 'COM.INBOX.URGENT_BADGE' | translate }}</span> }
               @if (m.patientId) { <a class="no-underline hover:text-petrol-700" [routerLink]="['/patients', m.patientId]">{{ m.patientName }}</a> } @else { {{ 'COM.INBOX.UNKNOWN' | translate }} }
               <span class="ms-2 text-xs font-normal text-ink-500"><span class="ltr-data">{{ m.fromPhone }}</span></span>
               @if (m.fromLandingPage) { <span class="pill pill-active pill-nodot ms-2">{{ 'COM.INBOX.LANDING_BADGE' | translate }}</span> }
@@ -55,6 +57,7 @@ export class WhatsappInboxComponent {
   protected readonly unhandledOnly = signal(true);
   /** Only people who reached the clinic through its landing page (a number shared with the CRM keeps nobody else). */
   protected readonly landingPageOnly = signal(false);
+  protected readonly urgentOnly = signal(false);
   protected readonly inbox = loadable<InboxMessage[]>([]);
   protected readonly busy = signal(false);
 
@@ -62,13 +65,14 @@ export class WhatsappInboxComponent {
     effect(() => {
       const only = this.unhandledOnly();
       const landing = this.landingPageOnly();
-      untracked(() => void this.inbox.load(() => this.api.inbox(only, 100, landing)));
+      const urgent = this.urgentOnly();
+      untracked(() => void this.inbox.load(() => this.api.inbox(only, 100, landing, urgent)));
     });
-    refreshOnLive(['whatsapp-inbox'], () => void this.reload());
+    refreshOnLive(['whatsapp-inbox', 'whatsapp-urgent'], () => void this.reload());
   }
 
   private reload(): Promise<boolean> {
-    return this.inbox.load(() => this.api.inbox(this.unhandledOnly(), 100, this.landingPageOnly()));
+    return this.inbox.load(() => this.api.inbox(this.unhandledOnly(), 100, this.landingPageOnly(), this.urgentOnly()));
   }
 
   protected async handle(message: InboxMessage): Promise<void> {

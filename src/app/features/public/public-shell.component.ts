@@ -1,6 +1,7 @@
 import { Component, inject, input } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { LanguageService } from '../../core/services/language.service';
+import { EmergencyButtonComponent } from '../../shared/components/emergency-button/emergency-button.component';
 
 const LANGS = [{ code: 'fr', label: 'Français' }, { code: 'en', label: 'English' }, { code: 'ar', label: 'العربية' }];
 
@@ -12,7 +13,7 @@ const LANGS = [{ code: 'fr', label: 'Français' }, { code: 'en', label: 'English
 @Component({
   selector: 'app-public-shell',
   standalone: true,
-  imports: [TranslateModule],
+  imports: [TranslateModule, EmergencyButtonComponent],
   template: `
     <div class="min-h-screen bg-app-bg">
       <header class="border-b border-ink-100 bg-surface">
@@ -26,9 +27,10 @@ const LANGS = [{ code: 'fr', label: 'Français' }, { code: 'en', label: 'English
           </div>
         </div>
       </header>
-      <main id="main" class="mx-auto max-w-2xl px-4 py-6">
+      <main id="main" class="mx-auto max-w-2xl px-4 py-6 pb-24 sm:pb-6">
         <ng-content />
       </main>
+      <app-emergency-button />
     </div>
   `,
 })

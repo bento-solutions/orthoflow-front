@@ -142,7 +142,7 @@ describe('communication screens', () => {
   });
 
   describe('WhatsApp replies', () => {
-    const reply = (over: Partial<InboxMessage> = {}): InboxMessage => ({ id: 'r1', fromPhone: '+212661000000', body: 'Je voudrais décaler', patientId: 'p1', patientName: 'Sara Alami', occurredAt: '2026-10-06T10:00:00Z', handledAt: '', fromLandingPage: false, ...over });
+    const reply = (over: Partial<InboxMessage> = {}): InboxMessage => ({ id: 'r1', fromPhone: '+212661000000', body: 'Je voudrais décaler', patientId: 'p1', patientName: 'Sara Alami', occurredAt: '2026-10-06T10:00:00Z', handledAt: '', fromLandingPage: false, urgent: false, ...over });
 
     beforeEach(() => {
       api['inbox'] = vi.fn(async () => [reply(), reply({ id: 'r2', patientId: '', patientName: '', body: 'Bonjour ?', fromLandingPage: true })]);
@@ -152,7 +152,7 @@ describe('communication screens', () => {
 
     it('asks only for replies still to deal with, and names an unknown sender as such', async () => {
       await mount(WhatsappInboxComponent);
-      expect(api['inbox']).toHaveBeenCalledWith(true, 100, false);
+      expect(api['inbox']).toHaveBeenCalledWith(true, 100, false, false);
       expect(document.body.textContent).toContain('COM.INBOX.UNKNOWN');
     });
 
@@ -162,7 +162,17 @@ describe('communication screens', () => {
       const landing = Array.from(document.querySelectorAll('label')).find(l => l.textContent?.includes('COM.INBOX.LANDING_ONLY'))!;
       landing.querySelector('input')!.click();
       await settleUi(fixture);
-      expect(api['inbox']).toHaveBeenLastCalledWith(true, 100, true);
+      expect(api['inbox']).toHaveBeenLastCalledWith(true, 100, true, false);
+    });
+
+    it('highlights urgent messages and filters urgent only when toggled', async () => {
+      api['inbox'] = vi.fn(async () => [reply({ id: 'u1', urgent: true, body: 'URGENT - douleur' })]);
+      const fixture = await mount(WhatsappInboxComponent);
+      expect(document.body.textContent).toContain('COM.INBOX.URGENT_BADGE');
+      const urgent = Array.from(document.querySelectorAll('label')).find(l => l.textContent?.includes('COM.INBOX.URGENT_ONLY'))!;
+      urgent.querySelector('input')!.click();
+      await settleUi(fixture);
+      expect(api['inbox']).toHaveBeenLastCalledWith(true, 100, false, true);
     });
 
     it('marks a reply handled and refreshes the counter', async () => {
@@ -253,7 +263,7 @@ describe('communication screens', () => {
 
   describe('settings', () => {
     beforeEach(() => {
-      api['whatsappStatus'] = vi.fn(async () => ({ enabled: true, sessionState: 'open', lastReportedState: 'open', lastReportedAt: '2026-10-06T09:00:00Z', unhandledReplies: 2 }));
+      api['whatsappStatus'] = vi.fn(async () => ({ enabled: true, sessionState: 'open', lastReportedState: 'open', lastReportedAt: '2026-10-06T09:00:00Z', unhandledReplies: 2, unhandledUrgent: 0 }));
       api['settings'] = vi.fn(async () => ({ appointmentReminders: false, reminderSendHour: 17, instalmentReminders: false, instalmentDaysBefore: 2, surveyEnabled: false, surveyDelayHours: 3, appointmentReminderDaysBefore: 1 }));
       api['saveSettings'] = vi.fn(async (s: unknown) => s);
       api['sendTest'] = vi.fn(async () => ({}));

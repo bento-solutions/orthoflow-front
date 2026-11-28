@@ -26,6 +26,8 @@ export class NavCounts {
   readonly messages = signal(0);
   /** WhatsApp replies from patients that nobody has dealt with yet. */
   readonly inbox = signal(0);
+  /** Unhandled WhatsApp messages flagged with the clinic emergency marker. */
+  readonly urgentInbox = signal(0);
   /** Online booking requests and self-registrations waiting for the front desk to decide. */
   readonly bookingRequests = signal(0);
   readonly registrations = signal(0);
@@ -44,6 +46,7 @@ export class NavCounts {
           this.tasks.set(NO_TASKS);
           this.messages.set(0);
           this.inbox.set(0);
+          this.urgentInbox.set(0);
           this.bookingRequests.set(0);
           this.registrations.set(0);
         }
@@ -51,7 +54,7 @@ export class NavCounts {
     });
     this.live.of('task').subscribe(() => void this.refreshTasks());
     this.live.of('staff-message').subscribe(() => void this.refreshMessages());
-    this.live.of('whatsapp-inbox').subscribe(() => void this.refreshInbox());
+    this.live.of('whatsapp-inbox', 'whatsapp-urgent').subscribe(() => void this.refreshInbox());
     this.live.of('booking-request', 'registration').subscribe(() => void this.refreshIntake());
   }
 
@@ -87,7 +90,9 @@ export class NavCounts {
       return;
     }
     try {
-      this.inbox.set(Number((await this.messaging.whatsappStatus()).unhandledReplies ?? 0));
+      const status = await this.messaging.whatsappStatus();
+      this.inbox.set(Number(status.unhandledReplies ?? 0));
+      this.urgentInbox.set(Number(status.unhandledUrgent ?? 0));
     } catch {
       /* keep the last number */
     }

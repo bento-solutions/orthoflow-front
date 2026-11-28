@@ -7154,6 +7154,7 @@ export interface components {
             /** Format: uuid */
             patientId?: string;
             patientName?: string;
+            urgent?: boolean;
         };
         IncomeStatement: {
             basis?: string;
@@ -7712,7 +7713,7 @@ export interface components {
             /** Format: uuid */
             patientId?: string;
             /** @enum {string} */
-            purpose?: "APPOINTMENT_REMINDER" | "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELLED" | "INSTALMENT_REMINDER" | "RECALL" | "SURVEY_REQUEST" | "BOOKING_RECEIVED" | "BOOKING_CONFIRMED" | "BOOKING_DECLINED" | "REGISTRATION_INVITE" | "STAFF_INVITE" | "PASSWORD_RESET" | "LAB_ORDER_RECEIVED" | "CHEQUE_REJECTED" | "TASK_ASSIGNED" | "INTERNAL_MESSAGE" | "TEST" | "GENERIC";
+            purpose?: "APPOINTMENT_REMINDER" | "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELLED" | "INSTALMENT_REMINDER" | "RECALL" | "SURVEY_REQUEST" | "BOOKING_RECEIVED" | "BOOKING_CONFIRMED" | "BOOKING_DECLINED" | "REGISTRATION_INVITE" | "STAFF_INVITE" | "PASSWORD_RESET" | "LAB_ORDER_RECEIVED" | "CHEQUE_REJECTED" | "TASK_ASSIGNED" | "INTERNAL_MESSAGE" | "URGENT_ALERT" | "TEST" | "GENERIC";
             recipient?: string;
             /** Format: date-time */
             scheduledFor?: string;
@@ -7863,7 +7864,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             /** @enum {string} */
-            purpose?: "APPOINTMENT_REMINDER" | "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELLED" | "INSTALMENT_REMINDER" | "RECALL" | "SURVEY_REQUEST" | "BOOKING_RECEIVED" | "BOOKING_CONFIRMED" | "BOOKING_DECLINED" | "REGISTRATION_INVITE" | "STAFF_INVITE" | "PASSWORD_RESET" | "LAB_ORDER_RECEIVED" | "CHEQUE_REJECTED" | "TASK_ASSIGNED" | "INTERNAL_MESSAGE" | "TEST" | "GENERIC";
+            purpose?: "APPOINTMENT_REMINDER" | "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELLED" | "INSTALMENT_REMINDER" | "RECALL" | "SURVEY_REQUEST" | "BOOKING_RECEIVED" | "BOOKING_CONFIRMED" | "BOOKING_DECLINED" | "REGISTRATION_INVITE" | "STAFF_INVITE" | "PASSWORD_RESET" | "LAB_ORDER_RECEIVED" | "CHEQUE_REJECTED" | "TASK_ASSIGNED" | "INTERNAL_MESSAGE" | "URGENT_ALERT" | "TEST" | "GENERIC";
             read?: boolean;
             /** Format: uuid */
             relatedId?: string;
@@ -8809,7 +8810,7 @@ export interface components {
             channel: "EMAIL" | "WHATSAPP" | "IN_APP";
             language: string;
             /** @enum {string} */
-            purpose: "APPOINTMENT_REMINDER" | "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELLED" | "INSTALMENT_REMINDER" | "RECALL" | "SURVEY_REQUEST" | "BOOKING_RECEIVED" | "BOOKING_CONFIRMED" | "BOOKING_DECLINED" | "REGISTRATION_INVITE" | "STAFF_INVITE" | "PASSWORD_RESET" | "LAB_ORDER_RECEIVED" | "CHEQUE_REJECTED" | "TASK_ASSIGNED" | "INTERNAL_MESSAGE" | "TEST" | "GENERIC";
+            purpose: "APPOINTMENT_REMINDER" | "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELLED" | "INSTALMENT_REMINDER" | "RECALL" | "SURVEY_REQUEST" | "BOOKING_RECEIVED" | "BOOKING_CONFIRMED" | "BOOKING_DECLINED" | "REGISTRATION_INVITE" | "STAFF_INVITE" | "PASSWORD_RESET" | "LAB_ORDER_RECEIVED" | "CHEQUE_REJECTED" | "TASK_ASSIGNED" | "INTERNAL_MESSAGE" | "URGENT_ALERT" | "TEST" | "GENERIC";
             subject?: string;
         };
         ProcedureActivity: {
@@ -9763,7 +9764,7 @@ export interface components {
             customised?: boolean;
             language?: string;
             /** @enum {string} */
-            purpose?: "APPOINTMENT_REMINDER" | "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELLED" | "INSTALMENT_REMINDER" | "RECALL" | "SURVEY_REQUEST" | "BOOKING_RECEIVED" | "BOOKING_CONFIRMED" | "BOOKING_DECLINED" | "REGISTRATION_INVITE" | "STAFF_INVITE" | "PASSWORD_RESET" | "LAB_ORDER_RECEIVED" | "CHEQUE_REJECTED" | "TASK_ASSIGNED" | "INTERNAL_MESSAGE" | "TEST" | "GENERIC";
+            purpose?: "APPOINTMENT_REMINDER" | "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELLED" | "INSTALMENT_REMINDER" | "RECALL" | "SURVEY_REQUEST" | "BOOKING_RECEIVED" | "BOOKING_CONFIRMED" | "BOOKING_DECLINED" | "REGISTRATION_INVITE" | "STAFF_INVITE" | "PASSWORD_RESET" | "LAB_ORDER_RECEIVED" | "CHEQUE_REJECTED" | "TASK_ASSIGNED" | "INTERNAL_MESSAGE" | "URGENT_ALERT" | "TEST" | "GENERIC";
             subject?: string;
         };
         TemplateUpsert: {
@@ -9773,7 +9774,7 @@ export interface components {
             channel: "EMAIL" | "WHATSAPP" | "IN_APP";
             language: string;
             /** @enum {string} */
-            purpose: "APPOINTMENT_REMINDER" | "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELLED" | "INSTALMENT_REMINDER" | "RECALL" | "SURVEY_REQUEST" | "BOOKING_RECEIVED" | "BOOKING_CONFIRMED" | "BOOKING_DECLINED" | "REGISTRATION_INVITE" | "STAFF_INVITE" | "PASSWORD_RESET" | "LAB_ORDER_RECEIVED" | "CHEQUE_REJECTED" | "TASK_ASSIGNED" | "INTERNAL_MESSAGE" | "TEST" | "GENERIC";
+            purpose: "APPOINTMENT_REMINDER" | "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELLED" | "INSTALMENT_REMINDER" | "RECALL" | "SURVEY_REQUEST" | "BOOKING_RECEIVED" | "BOOKING_CONFIRMED" | "BOOKING_DECLINED" | "REGISTRATION_INVITE" | "STAFF_INVITE" | "PASSWORD_RESET" | "LAB_ORDER_RECEIVED" | "CHEQUE_REJECTED" | "TASK_ASSIGNED" | "INTERNAL_MESSAGE" | "URGENT_ALERT" | "TEST" | "GENERIC";
             subject?: string;
         };
         ThreadDetail: {
@@ -10467,6 +10468,8 @@ export interface components {
             sessionState?: string;
             /** Format: int64 */
             unhandledReplies?: number;
+            /** Format: int64 */
+            unhandledUrgent?: number;
         };
     };
     responses: never;
@@ -14053,7 +14056,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                purpose: "APPOINTMENT_REMINDER" | "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELLED" | "INSTALMENT_REMINDER" | "RECALL" | "SURVEY_REQUEST" | "BOOKING_RECEIVED" | "BOOKING_CONFIRMED" | "BOOKING_DECLINED" | "REGISTRATION_INVITE" | "STAFF_INVITE" | "PASSWORD_RESET" | "LAB_ORDER_RECEIVED" | "CHEQUE_REJECTED" | "TASK_ASSIGNED" | "INTERNAL_MESSAGE" | "TEST" | "GENERIC";
+                purpose: "APPOINTMENT_REMINDER" | "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELLED" | "INSTALMENT_REMINDER" | "RECALL" | "SURVEY_REQUEST" | "BOOKING_RECEIVED" | "BOOKING_CONFIRMED" | "BOOKING_DECLINED" | "REGISTRATION_INVITE" | "STAFF_INVITE" | "PASSWORD_RESET" | "LAB_ORDER_RECEIVED" | "CHEQUE_REJECTED" | "TASK_ASSIGNED" | "INTERNAL_MESSAGE" | "URGENT_ALERT" | "TEST" | "GENERIC";
                 channel: "EMAIL" | "WHATSAPP" | "IN_APP";
                 language: string;
             };

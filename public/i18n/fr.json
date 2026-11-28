@@ -2784,6 +2784,7 @@
       "CHEQUE_REJECTED": "Chèque rejeté",
       "TASK_ASSIGNED": "Tâche attribuée",
       "INTERNAL_MESSAGE": "Message interne",
+      "URGENT_ALERT": "Urgence WhatsApp",
       "TEST": "Message d'essai",
       "GENERIC": "Autre"
     },
@@ -2805,7 +2806,11 @@
       "MARK_HANDLED": "Marquer traité",
       "EMPTY": "Aucune réponse en attente.",
       "LANDING_ONLY": "Venus par la landing page",
-      "LANDING_BADGE": "Landing page"
+      "LANDING_BADGE": "Landing page",
+      "URGENT_ONLY": "Urgences uniquement",
+      "URGENT_BADGE": "URGENT",
+      "URGENT_BANNER": "{{count}} message(s) WhatsApp urgent(s) en attente de prise en charge.",
+      "VIEW_INBOX": "Ouvrir la messagerie"
     },
     "TPL": {
       "PURPOSE": "Message",
@@ -2960,6 +2965,7 @@
       "CALL": "Appeler le cabinet",
       "WHATSAPP": "Décrire votre urgence",
       "PREFILL": "URGENT - Bonjour, j'ai une urgence dentaire : ",
+      "UNAVAILABLE": "Le numéro d'urgence est momentanément indisponible. Merci de réessayer dans un instant.",
       "CLOSE": "Fermer"
     }
   },

@@ -50,13 +50,22 @@ export function isMinor(dateOfBirth: string, today: Date = new Date()): boolean 
   return age < 18;
 }
 
+/** Auto-clean common typos in email input, e.g. .com typed as ,com on AZERTY keyboards. */
+export function cleanEmail(email: string | undefined): string | undefined {
+  if (!email) return undefined;
+  let cleaned = email.trim();
+  if (!cleaned) return undefined;
+  cleaned = cleaned.replace(/,([a-zA-Z]{2,})$/, '.$1');
+  return cleaned;
+}
+
 /** The form as the server takes it: nothing blank is sent as an empty string, a guardian only for a minor. */
 export function registrationRequest(f: RegistrationFields, language: string, website: string): RegistrationForm {
   const blank = (v: string): string | undefined => (v.trim() === '' ? undefined : v.trim());
   const minor = isMinor(f.dateOfBirth);
   return {
     firstName: f.firstName.trim(), lastName: f.lastName.trim(), gender: f.gender || undefined, dateOfBirth: f.dateOfBirth || undefined, phone: blank(f.phone),
-    email: blank(f.email), address: blank(f.address), cin: blank(f.cin), guardianName: minor ? blank(f.guardianName) : undefined,
+    email: cleanEmail(f.email), address: blank(f.address), cin: blank(f.cin), guardianName: minor ? blank(f.guardianName) : undefined,
     guardianPhone: minor ? blank(f.guardianPhone) : undefined, insuranceProvider: blank(f.insuranceProvider), insuranceNumber: blank(f.insuranceNumber),
     occupation: blank(f.occupation), language, consent: f.consent, consentWhatsapp: f.consentWhatsapp, consentEmail: f.consentEmail, website,
   };
@@ -109,7 +118,13 @@ export function registrationRequest(f: RegistrationFields, language: string, web
             <legend class="px-1 font-bold text-ink-900">{{ 'PUB.REG.CONTACT' | translate }}</legend>
             <div class="grid gap-4 sm:grid-cols-2">
               <label class="field"><span class="label">{{ 'PUB.PHONE' | translate }}</span><input class="input" type="tel" name="phone" maxlength="50" autocomplete="tel" inputmode="tel" [ngModel]="f.value().phone" (ngModelChange)="f.set('phone', $event)" /></label>
-              <label class="field"><span class="label">{{ 'PUB.EMAIL' | translate }}</span><input class="input" type="email" name="email" maxlength="255" autocomplete="email" [ngModel]="f.value().email" (ngModelChange)="f.set('email', $event)" /></label>
+              <label class="field">
+                <span class="label">{{ 'PUB.EMAIL' | translate }}</span>
+                <input class="input" type="email" name="email" maxlength="255" autocomplete="email" [ngModel]="f.value().email" (ngModelChange)="f.set('email', $event)" />
+                @if (!emailValid()) {
+                  <p class="mt-1 text-xs text-critical-600" role="alert">{{ 'PUB.EMAIL_INVALID' | translate }}</p>
+                }
+              </label>
             </div>
             <label class="field"><span class="label">{{ 'PUB.REG.ADDRESS' | translate }}</span><textarea class="textarea" rows="2" name="address" maxlength="2000" autocomplete="street-address" [ngModel]="f.value().address" (ngModelChange)="f.set('address', $event)"></textarea></label>
           </fieldset>
@@ -164,7 +179,13 @@ export class PublicRegistrationComponent {
   protected readonly error = signal('');
 
   protected readonly minor = computed(() => isMinor(this.f.value().dateOfBirth));
-  protected readonly ready = computed(() => !!this.f.value().firstName.trim() && !!this.f.value().lastName.trim() && this.f.value().consent);
+  protected readonly emailValid = computed(() => {
+    const raw = this.f.value().email?.trim();
+    if (!raw) return true;
+    const email = cleanEmail(raw) ?? '';
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+  });
+  protected readonly ready = computed(() => !!this.f.value().firstName.trim() && !!this.f.value().lastName.trim() && this.f.value().consent && this.emailValid());
 
   constructor() {
     void this.load();
@@ -191,7 +212,11 @@ export class PublicRegistrationComponent {
       await this.api.submitRegistration(this.token, registrationRequest(this.f.value(), this.language.currentLang(), this.website()));
       this.done.set(true);
     } catch (error) {
-      this.error.set(this.translate.instant(error instanceof HttpErrorResponse && error.status === 429 ? 'PUB.TOO_MANY' : error instanceof HttpErrorResponse && error.status === 409 ? 'PUB.REG.ALREADY' : 'PUB.ERROR'));
+      if (error instanceof HttpErrorResponse && error.error?.detail) {
+        this.error.set(error.error.detail);
+      } else {
+        this.error.set(this.translate.instant(error instanceof HttpErrorResponse && error.status === 429 ? 'PUB.TOO_MANY' : error instanceof HttpErrorResponse && error.status === 409 ? 'PUB.REG.ALREADY' : 'PUB.ERROR'));
+      }
     } finally {
       this.busy.set(false);
     }

@@ -2969,6 +2969,7 @@
     "COUNTRY_CODE": "Code",
     "PHONE_WHATSAPP": "Phone (WhatsApp)",
     "PHONE_INVALID": "Please enter a valid WhatsApp phone number.",
+    "EMAIL_INVALID": "Please enter a valid email address.",
     "EMERGENCY": {
       "CTA": "Contact us immediately",
       "TITLE": "Dental emergency",

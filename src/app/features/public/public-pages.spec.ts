@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IntakeApi } from '../../core/services/intake-api.service';
 import { LanguageService } from '../../core/services/language.service';
 import { PublicBookingComponent, normalizeE164, slotMoment, typeName } from './public-booking.component';
-import { BLANK_REGISTRATION, PublicRegistrationComponent, isMinor, registrationRequest } from './public-registration.component';
+import { BLANK_REGISTRATION, PublicRegistrationComponent, cleanEmail, isMinor, registrationRequest } from './public-registration.component';
 import { PublicSurveyComponent } from './public-survey.component';
 import { useClinicLanguage } from './public-shell.component';
 
@@ -33,6 +33,14 @@ describe('public page helpers', () => {
     expect(isMinor('2008-10-07', today)).toBe(true);
     expect(isMinor('', today)).toBe(false);
     expect(isMinor('not a date', today)).toBe(false);
+  });
+
+  it('cleans emails and fixes comma domain typos', () => {
+    expect(cleanEmail(' test@domain,com ')).toBe('test@domain.com');
+    expect(cleanEmail('user@test,fr')).toBe('user@test.fr');
+    expect(cleanEmail('user@test,org')).toBe('user@test.org');
+    expect(cleanEmail('  ')).toBeUndefined();
+    expect(cleanEmail(undefined)).toBeUndefined();
   });
 
   it('builds the registration without blanks and drops a guardian for an adult', () => {

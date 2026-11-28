@@ -2969,6 +2969,7 @@
     "COUNTRY_CODE": "Indicatif",
     "PHONE_WHATSAPP": "Téléphone (WhatsApp)",
     "PHONE_INVALID": "Entrez un numéro WhatsApp valide.",
+    "EMAIL_INVALID": "Veuillez entrer une adresse e-mail valide.",
     "EMERGENCY": {
       "CTA": "Contactez-nous immédiatement",
       "TITLE": "Urgence dentaire",

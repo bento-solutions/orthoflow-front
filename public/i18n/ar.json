@@ -1,5 +1,8 @@
 {
   "COMMON": {
+    "UPLOADING_FILE": "جارٍ رفع الملف",
+    "UPLOADING_FILES": "{{count}} ملفات",
+    "UPLOAD_STAY": "ابقَ في هذه الشاشة حتى ينتهي الرفع.",
     "WELCOME": "مرحباً بكم في OrthoFlow",
     "DASHBOARD": "لوحة القيادة",
     "OVERVIEW": "نظرة عامة",
@@ -323,7 +326,7 @@
         "SUMMARY": "الملخص",
         "CHART": "المخطط والخطة",
         "VISITS": "الزيارات",
-        "IMAGING": "التصوير",
+        "IMAGING": "الصور",
         "BILLING": "الفوترة",
         "DOCUMENTS": "المستندات"
       },
@@ -766,6 +769,9 @@
       "CREATE_ACCOUNT": "أنشئ حسابك",
       "CREATE_ACCOUNT_HINT": "ستستخدم هذا الحساب لتسجيل الدخول إلى OrthoFlow.",
       "GO_TO_LOGIN": "الانتقال إلى تسجيل الدخول",
+      "LOGIN": "تسجيل الدخول",
+      "HAVE_ACCOUNT": "لديك حساب بالفعل؟",
+      "LOGIN_INSTEAD": "سجّل الدخول",
       "FIRST_NAME": "الاسم الأول",
       "LAST_NAME": "اسم العائلة",
       "EMAIL": "البريد الإلكتروني",

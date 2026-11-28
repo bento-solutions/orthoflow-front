@@ -11,6 +11,7 @@ import { WaitingRoomFurnitureComponent } from './furniture.component';
 import { SeatMarkerComponent } from './seat-marker.component';
 import {
   FurnitureKind,
+  FURNITURE_SCALE,
   GRID,
   ROOM_HEIGHT,
   ROOM_WIDTH,
@@ -252,7 +253,7 @@ type Mode = 'live' | 'edit';
                     class="hit"
                     [attr.width]="moduleSize(m).w"
                     [attr.height]="moduleSize(m).h"
-                    rx="6"
+                    [attr.rx]="6 * FURNITURE_SCALE"
                   />
                   <svg:g appWrFurniture [kind]="m.kind" [seats]="m.seats" />
                 </g>
@@ -275,16 +276,16 @@ type Mode = 'live' | 'edit';
                       tabindex="0"
                       [attr.aria-label]="s.occupant.patientName"
                     >
-                      @if (highlighted === s.occupant.appointmentId) { <circle class="seat-ring" r="15" /> }
+                      @if (highlighted === s.occupant.appointmentId) { <circle class="seat-ring" [attr.r]="15 * FURNITURE_SCALE" /> }
                       <svg:g appWrSeatMarker [gender]="s.occupant.gender" />
                     </g>
                   } @else if (assigningFor()) {
                     <!-- Assignment in progress: free seats light up and become targets. -->
-                    <circle class="seat seat-free-target" r="11" (click)="placeHere(s)"
+                    <circle class="seat seat-free-target" [attr.r]="11 * FURNITURE_SCALE" (click)="placeHere(s)"
                             (keydown.enter)="placeHere(s)" (keydown.space)="$event.preventDefault(); placeHere(s)" role="button" tabindex="0"
                             [attr.aria-label]="'FD.WR.ASSIGN_HERE' | translate" />
                   } @else {
-                    <circle class="seat seat-free" r="3.5" />
+                    <circle class="seat seat-free" [attr.r]="3.5 * FURNITURE_SCALE" />
                   }
                 </g>
               }
@@ -378,6 +379,7 @@ export class WaitingRoomDesignerComponent {
   protected readonly ROOM_WIDTH = ROOM_WIDTH;
   protected readonly ROOM_HEIGHT = ROOM_HEIGHT;
   protected readonly GRID = GRID;
+  protected readonly FURNITURE_SCALE = FURNITURE_SCALE;
   protected readonly capacities = SEAT_CAPACITIES;
   protected readonly kinds: FurnitureKind[] = ['BENCH', 'SOFA'];
 

@@ -385,8 +385,15 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
 
     .rtl { direction: rtl; }
 
+    /* The page header sits inside the calendar card here, so it takes the card's inner padding
+       instead of the page-level spacing (it used to touch the card's top and side borders). */
+    .schedule-container > app-page-header {
+      padding: 1.5rem 2rem 0;
+    }
+    .schedule-container > app-page-header ::ng-deep .page-header { margin-bottom: 0; }
+
     .schedule-header {
-      padding: 1.5rem 2rem;
+      padding: 1rem 2rem 1.25rem;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
@@ -830,6 +837,7 @@ type CalendarView = 'day' | 'week' | 'month' | 'year';
         flex-direction: column;
         padding: 1rem;
       }
+      .schedule-container > app-page-header { padding: 1rem 1rem 0; }
       .header-right {
         align-items: center;
         width: 100%;

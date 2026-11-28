@@ -1,5 +1,8 @@
 {
   "COMMON": {
+    "UPLOADING_FILE": "Uploading file",
+    "UPLOADING_FILES": "{{count}} files",
+    "UPLOAD_STAY": "Stay on this screen until the upload finishes.",
     "WELCOME": "Welcome to OrthoFlow",
     "DASHBOARD": "Dashboard",
     "OVERVIEW": "Overview",
@@ -323,7 +326,7 @@
         "SUMMARY": "Summary",
         "CHART": "Chart & plan",
         "VISITS": "Visits",
-        "IMAGING": "Imaging",
+        "IMAGING": "Images",
         "BILLING": "Billing",
         "DOCUMENTS": "Documents"
       },
@@ -766,6 +769,9 @@
       "CREATE_ACCOUNT": "Create your account",
       "CREATE_ACCOUNT_HINT": "This is how you'll sign in to OrthoFlow going forward.",
       "GO_TO_LOGIN": "Go to login",
+      "LOGIN": "Login",
+      "HAVE_ACCOUNT": "Already have an account?",
+      "LOGIN_INSTEAD": "Log in instead",
       "FIRST_NAME": "First name",
       "LAST_NAME": "Last name",
       "EMAIL": "Email",

@@ -9,6 +9,7 @@ import localeAr from '@angular/common/locales/ar';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { uploadProgressInterceptor } from './core/uploads/upload-progress';
 import { TranslatedTitleStrategy } from './core/services/page-title.strategy';
 import { installVoiceTestHook } from './core/voice/testing/voice-test-hook';
 import { environment } from '../environments/environment';
@@ -36,7 +37,7 @@ export const appConfig: ApplicationConfig = {
     ...(environment.production ? [] : [provideAppInitializer(() => { installVoiceTestHook(inject(Injector)); })]),
     provideRouter(routes),
     { provide: TitleStrategy, useClass: TranslatedTitleStrategy },
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, uploadProgressInterceptor])),
     { provide: LOCALE_ID, useValue: resolveLocaleId() },
     provideTranslateService({
       defaultLanguage: 'fr'
